@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Iron Loot: Plataforma de Subastas</title>
+    
+    <!-- External Libraries (React, ReactDOM, Router, Babel, Tailwind) -->
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/history@5/umd/history.development.js"></script>
+    <script src="https://unpkg.com/react-router@6.3.0/umd/react-router.development.js"></script>
+    <script src="https://unpkg.com/react-router-dom@6.3.0/umd/react-router-dom.development.js"></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com" rel="preconnect"/>
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+    <!-- Theme Config -->
+    <script>
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "primary-hover": "#0f6bd0",
+                        "primary-dark": "#0f66bd",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "surface-light": "#ffffff",
+                        "surface-dark": "#1c2630",
+                        "text-main-light": "#111418",
+                        "text-main-dark": "#ffffff",
+                        "text-secondary-light": "#617589",
+                        "text-secondary-dark": "#9aaab9",
+                        "border-light": "#dbe0e6",
+                        "border-dark": "#2d3b4a",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"],
+                        "body": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "2xl": "1rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; vertical-align: middle; }
+        .material-symbols-outlined.filled { font-variation-settings: 'FILL' 1; }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; }
+        .dark ::-webkit-scrollbar-thumb:hover { background: #475569; }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-main-light dark:text-white transition-colors duration-200">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { createRoot } = ReactDOM;
+        const { MemoryRouter, Routes, Route, Link, useNavigate, useLocation } = ReactRouterDOM;
+
+        // --- Shared Components ---
+
+        const Navigation = () => {
+            const navigate = useNavigate();
+            const location = useLocation();
+
+            // Only show full nav on specific pages, simplified on auth pages
+            const isAuthPage = ['/login', '/register', '/recovery'].includes(location.pathname);
+            
+            if (isAuthPage) return null;
+
+            return (
+                <nav className="sticky top-0 z-50 w-full border-b border-[#f0f2f4] dark:border-gray-800 bg-surface-light dark:bg-surface-dark shadow-sm">
+                    <div className="px-4 md:px-10 py-3 flex items-center justify-between max-w-[1440px] mx-auto">
+                        <div className="flex items-center gap-4 lg:gap-8">
+                            <Link to="/" className="flex items-center gap-2 text-[#111418] dark:text-white group">
+                                <div className="size-8 flex items-center justify-center bg-primary/10 rounded-lg text-primary">
+                                    <span className="material-symbols-outlined text-2xl">gavel</span>
+                                </div>
+                                <h2 className="text-xl font-bold leading-tight tracking-[-0.015em] group-hover:text-primary transition-colors">Iron Loot</h2>
+                            </Link>
+                            <div className="hidden md:flex flex-col min-w-40 !h-10 max-w-64">
+                                <div className="flex w-full flex-1 items-stretch rounded-lg h-full bg-[#f0f2f4] dark:bg-gray-800 focus-within:ring-2 focus-within:ring-primary/50 transition-all">
+                                    <div className="flex items-center justify-center pl-3 text-[#617589]">
+                                        <span className="material-symbols-outlined">search</span>
+                                    </div>
+                                    <input className="flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] dark:text-white focus:outline-0 bg-transparent border-none placeholder:text-[#617589] px-3 text-sm font-normal leading-normal" placeholder="Buscar subastas..." />
+                                </div>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-4 lg:gap-8">
+                            <div className="hidden lg:flex items-center gap-6">
+                                <Link to="/active-auctions" className="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors">Subastas</Link>
+                                <Link to="/dashboard" className="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors">Dashboard</Link>
+                                <Link to="/watchlist" className="text-[#111418] dark:text-gray-200 text-sm font-medium hover:text-primary transition-colors">Seguimiento</Link>
+                            </div>
+                            <div className="flex gap-2">
+                                <button onClick={() => navigate('/login')} className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-[#111418] dark:text-white text-sm font-bold transition-colors">
+                                    <span className="truncate">Iniciar Sesión</span>
+                                </button>
+                                <button onClick={() => navigate('/register')} className="flex min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-10 px-4 bg-primary hover:bg-blue-600 text-white text-sm font-bold transition-colors shadow-sm">
+                                    <span className="truncate">Registrarse</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </nav>
+            );
+        };
+
+        const Sidebar = () => {
+            const location = useLocation();
+            
+            const menuItems = [
+                { icon: 'dashboard', label: 'Dashboard', path: '/dashboard' },
+                { icon: 'gavel', label: 'Mis Pujas', path: '/my-bids' }, // Using Dashboard Client as My Bids/Dashboard
+                { icon: 'credit_card', label: 'Pagos', path: '/payments' },
+                { icon: 'trophy', label: 'Ganadas', path: '/won-auctions' },
+                { icon: 'visibility', label: 'Seguimiento', path: '/watchlist' },
+                { icon: 'verified', label: 'Reputación', path: '/reputation' },
+                { icon: 'person', label: 'Perfil', path: '/profile' },
+            ];
+
+            return (
+                <aside className="hidden lg:flex flex-col w-72 bg-white dark:bg-[#1a2632] border-r border-slate-200 dark:border-slate-800 h-screen sticky top-0 flex-shrink-0">
+                    <div className="p-6 pb-2">
+                        <div className="flex items-center gap-3">
+                            <div className="size-8 text-primary bg-primary/10 rounded-lg flex items-center justify-center">
+                                <span className="material-symbols-outlined text-2xl">gavel</span>
+                            </div>
+                            <h2 className="text-slate-900 dark:text-white text-xl font-bold tracking-tight">Iron Loot</h2>
+                        </div>
+                    </div>
+                    <div className="flex flex-col gap-2 p-4">
+                        {menuItems.map((item) => {
+                            const isActive = location.pathname === item.path;
+                            return (
+                                <Link 
+                                    key={item.path} 
+                                    to={item.path}
+                                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors group ${
+                                        isActive 
+                                        ? 'bg-primary/10 text-primary dark:text-blue-400' 
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-white'
+                                    }`}
+                                >
+                                    <span className={`material-symbols-outlined ${isActive ? 'filled' : ''}`}>{item.icon}</span>
+                                    <span className="text-sm font-medium">{item.label}</span>
+                                </Link>
+                            );
+                        })}
+                    </div>
+                    <div className="mt-auto p-4 border-t border-slate-200 dark:border-slate-700">
+                         <div className="flex items-center gap-3 px-3 py-2">
+                            <div className="h-10 w-10 rounded-full bg-cover bg-center" style={{backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAhPCKdZUCatH3esfgUOkm3eL4eTWKrF0QYKIY15pXr305tJUyFk11cRpUgpx-Ly8spJfG8-4JJBuPFAim94xng77bq90RENszfko84vaeYsfTAZKBmIo5CutRVj6CW459i8bloYzsuO8GdAF37DhZJR8GDKQ--oFv2t-Id8BAsGjoDaa_MWO-gqJXtftH1OqGjwkDc8i_gdsl5YkmAvSL1RVaaiGau0-kAMPXE0JaZKqmHrde0qZs18izwfs_RfPZrUa4EmlkxkuIS')"}}></div>
+                            <div className="flex flex-col">
+                                <p className="text-sm font-semibold text-slate-900 dark:text-white">Alex Morgan</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Usuario Verificado</p>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            );
+        };
+
+        const LayoutWithSidebar = ({ children }) => {
+            return (
+                <div className="flex min-h-screen bg-background-light dark:bg-background-dark">
+                    <Sidebar />
+                    <div className="flex-1 flex flex-col min-w-0">
+                        {children}
+                    </div>
+                </div>
+            );
+        };
+
+        // --- Screen Components ---
+
+        // Screen 1: Home Pública
+        const HomePage = () => {
+            const navigate = useNavigate();
+            return (
+                <div className="flex flex-col min-h-screen">
+                    <Navigation />
+                    <main className="flex-grow">
+                        <section className="w-full bg-surface-light dark:bg-surface-dark py-12 lg:py-20 px-4 md:px-10">
+                            <div className="max-w-[1280px] mx-auto">
+                                <div className="flex flex-col-reverse lg:flex-row gap-10 items-center">
+                                    <div className="flex flex-col gap-6 lg:w-1/2 items-start text-left">
+                                        <h1 className="text-[#111418] dark:text-white text-4xl md:text-5xl lg:text-6xl font-black leading-tight tracking-[-0.033em]">
+                                            Subastas Transparentes.<br/><span className="text-primary">Confianza Total.</span>
+                                        </h1>
+                                        <h2 className="text-[#617589] dark:text-gray-300 text-lg font-normal leading-relaxed max-w-xl">
+                                            Iron Loot es la plataforma donde la equidad define el precio. Únete a miles de compradores y vendedores en el mercado más seguro de la web.
+                                        </h2>
+                                        <div className="flex flex-wrap gap-3 mt-2">
+                                            <button onClick={() => navigate('/active-auctions')} className="flex items-center justify-center rounded-lg h-12 px-6 bg-primary hover:bg-blue-600 text-white text-base font-bold transition-all shadow-lg shadow-primary/20">
+                                                Explorar Subastas
+                                            </button>
+                                            <button className="flex items-center justify-center rounded-lg h-12 px-6 bg-[#f0f2f4] dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-[#111418] dark:text-white text-base font-bold transition-all">
+                                                Más Información
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div className="w-full lg:w-1/2">
+                                        <div className="relative w-full aspect-[4/3] rounded-2xl overflow-hidden shadow-2xl bg-gray-200 dark:bg-gray-800">
+                                            <div className="w-full h-full bg-center bg-cover" style={{backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuD1jMsErNzZbR83uisiQ0_ulLdlI3t2YwCdJwnjV2woC7sCilk_iCqZNu57Q2YCVAK56TNSQHu1EFJI7rZeccAXkojBUm_UL5dikZZQjV33zZll8qOUgBuojq3e0cbV4Yu5vojj91mEIcAh-fEw8EF-43vbarwq8aBPiYx7tVBXIGonN3KC_MYGx-Cj38HZwD-0Q1PZRl_Zql7qeGU6qXhsmOoK-hdZxsGiL3QnBL_eRb6Lh1fNk6SKkqT2-g3nEcMK9zwUnJT7rIFY')"}}></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                        <section className="py-12 bg-white dark:bg-surface-dark">
+                             <div className="max-w-[1280px] mx-auto px-4 md:px-10">
+                                <h2 className="text-[#111418] dark:text-white text-2xl md:text-3xl font-bold leading-tight mb-8">Subastas Destacadas</h2>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {/* Mock Card 1 linking to detail */}
+                                    <div onClick={() => navigate('/auction-detail')} className="group cursor-pointer flex flex-col rounded-xl overflow-hidden border border-gray-100 dark:border-gray-700 bg-white dark:bg-[#1e293b] shadow-sm hover:shadow-xl transition-all duration-300">
+                                        <div className="relative w-full aspect-[16/10] bg-gray-200 overflow-hidden">
+                                            <div className="w-full h-full bg-center bg-cover group-hover:scale-105 transition-transform duration-500" style={{backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCzW7YY6kG_KiSXqzCsLz3JgwLGGE6rsjZADBGydB1bsw3zXmeEZNoZp1TgAHq9XMrFB44uKZYKVrRQhMWjxFKkITBTQJ03ctVuQ8Qb1EjjeLU2tFbm2jMcsd9iWXMI4kwme-34do-Rf9PL5l9L0tLs_qYWPJlMqQ4ZMxmKi9TBtgIYxO8oynIU3QSKMRP_3RLr9x9PjFHDKIr9RTu_jEKu2fwADk-CXnZWbAp7On3mjC3jDzbpgkyH8aZIGgV3nD9czlUV9gqXiW6W')"}}></div>
+                                            <div className="absolute top-3 right-3 bg-black/70 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                                                <span className="material-symbols-outlined text-sm">timer</span> 2h 14m
+                                            </div>
+                                        </div>
+                                        <div className="flex flex-col p-4 gap-3">
+                                            <h3 className="text-[#111418] dark:text-white text-lg font-bold leading-tight group-hover:text-primary transition-colors">Leica M3 Single Stroke</h3>
+                                            <div className="mt-auto pt-3 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                                                <div>
+                                                    <p className="text-xs text-[#617589] dark:text-gray-500 font-medium">Oferta actual</p>
+                                                    <p className="text-xl font-black text-primary">$1,450.00</p>
+                                                </div>
+                                                <button className="h-9 px-4 bg-primary hover:bg-blue-600 text-white text-sm font-medium rounded-lg transition-colors shadow-sm">Pujar</button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {/* Other cards would go here */}
+                                </div>
+                             </div>
+                        </section>
+                    </main>
+                    <footer className="bg-white dark:bg-surface-dark border-t border-[#f0f2f4] dark:border-gray-800 pt-16 pb-8">
+                        <div className="max-w-[1280px] mx-auto px-4 md:px-10 text-center text-sm text-[#617589] dark:text-gray-500">
+                             © 2023 Iron Loot Inc. Todos los derechos reservados.
+                        </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        // Screen 2: Pagos Cliente
+        const PaymentsPage = () => {
+            return (
+                <LayoutWithSidebar>
+                    <main className="flex-1 overflow-y-auto p-4 md:p-8 lg:px-12 lg:py-8">
+                        <div className="mx-auto max-w-6xl flex flex-col gap-8 pb-10">
+                            <h1 className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">Cartera de Pagos</h1>
+                            
+                            {/* Stats */}
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700 shadow-sm">
+                                    <p className="text-slate-500 dark:text-slate-400 font-medium text-sm">Total Pendiente</p>
+                                    <p className="text-3xl font-bold text-slate-900 dark:text-white tracking-tight">$1,250.00</p>
+                                </div>
+                            </div>
+
+                            {/* Table */}
+                            <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden shadow-sm">
+                                <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800">
+                                    <h3 className="text-base font-semibold text-slate-900 dark:text-white">Pagos por procesar</h3>
+                                </div>
+                                <div className="overflow-x-auto">
+                                    <table className="w-full text-left text-sm text-slate-500 dark:text-slate-400">
+                                        <thead className="bg-slate-50 dark:bg-slate-900/50 text-xs uppercase text-slate-500 dark:text-slate-400">
+                                            <tr>
+                                                <th className="px-6 py-3 font-semibold">Producto</th>
+                                                <th className="px-6 py-3 font-semibold text-right">Total</th>
+                                                <th className="px-6 py-3 font-semibold text-center">Acción</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+                                            <tr className="bg-white dark:bg-slate-800">
+                                                <td className="px-6 py-4 font-semibold text-slate-900 dark:text-white">MacBook Pro M2 14"</td>
+                                                <td className="px-6 py-4 text-right font-bold text-slate-900 dark:text-white">$1,250.00</td>
+                                                <td className="px-6 py-4 text-center">
+                                                    <button className="bg-primary hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold">Pagar Ahora</button>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </LayoutWithSidebar>
+            );
+        };
+
+        // Screen 3: Registro
+        const RegisterPage = () => {
+            const navigate = useNavigate();
+            return (
+                <div className="min-h-screen bg-background-light dark:bg-background-dark flex flex-col">
+                    <header className="w-full px-6 py-4 flex items-center justify-between z-10">
+                        <Link to="/" className="flex items-center gap-3">
+                             <div className="size-8 text-primary"><span className="material-symbols-outlined text-3xl">gavel</span></div>
+                             <h2 className="text-xl font-bold tracking-tight text-[#111418] dark:text-white">Iron Loot</h2>
+                        </Link>
+                    </header>
+                    <main className="flex-1 flex items-center justify-center p-4 lg:p-8">
+                        <div className="w-full max-w-6xl bg-white dark:bg-surface-dark rounded-2xl shadow-xl overflow-hidden flex flex-col lg:flex-row min-h-[600px]">
+                            <div className="hidden lg:flex w-1/2 bg-primary flex-col justify-center p-12 text-white">
+                                <h1 className="text-5xl font-black mb-4">Únete a<br/>Iron Loot</h1>
+                                <p className="text-lg text-blue-100">La plataforma de subastas más transparente.</p>
+                            </div>
+                            <div className="w-full lg:w-1/2 p-6 md:p-12 lg:px-16 flex flex-col justify-center bg-white dark:bg-surface-dark">
+                                <h2 className="text-3xl font-bold text-[#111418] dark:text-white mb-2">Crea tu cuenta</h2>
+                                <form className="flex flex-col gap-5 mt-6" onSubmit={(e) => { e.preventDefault(); navigate('/dashboard'); }}>
+                                    <label className="flex flex-col gap-1.5">
+                                        <span className="text-[#111418] dark:text-gray-200 text-sm font-semibold">Nombre completo</span>
+                                        <input className="form-input w-full rounded-lg border border-[#dbe0e6] dark:border-gray-600 bg-white dark:bg-gray-800 h-12 px-4" placeholder="Ej: Juan Pérez" type="text"/>
+                                    </label>
+                                    <label className="flex flex-col gap-1.5">
+                                        <span className="text-[#111418] dark:text-gray-200 text-sm font-semibold">Correo electrónico</span>
+                                        <input className="form-input w-full rounded-lg border border-[#dbe0e6] dark:border-gray-600 bg-white dark:bg-gray-800 h-12 px-4" placeholder="nombre@ejemplo.com" type="email"/>
+                                    </label>
+                                    <button className="flex w-full cursor-pointer items-center justify-center rounded-lg h-12 px-4 bg-primary hover:bg-blue-600 text-white text-base font-bold transition-all shadow-md mt-2">
+                                        Registrarse
+                                    </button>
+                                </form>
+                                <div className="mt-8 text-center">
+                                    <p className="text-sm text-[#617589] dark:text-gray-400">¿Ya tienes cuenta? <Link to="/login" className="text-primary font-bold hover:underline">Iniciar sesión</Link></p>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        // Screen 4: Subastas Activas
+        const ActiveAuctionsPage = () => {
+            const navigate = useNavigate();
+            return (
+                <div className="flex flex-col min-h-screen">
+                    <Navigation />
+                    <main className="flex-grow max-w-[1440px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+                        <div className="flex flex-col lg:flex-row gap-8">
+                            {/* Simplified Filters for brevity */}
+                            <aside className="hidden lg:block w-64 flex-shrink-0 space-y-8">
+                                <h3 className="font-bold text-lg mb-4 flex items-center gap-2"><span className="material-symbols-outlined text-primary">filter_list</span> Filtros</h3>
+                                <div className="space-y-3">
+                                    <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" className="rounded text-primary focus:ring-primary" /> <span className="text-sm">Electrónica</span></label>
+                                    <label className="flex items-center gap-3 cursor-pointer"><input type="checkbox" className="rounded text-primary focus:ring-primary" /> <span className="text-sm">Arte</span></label>
+                                </div>
+                            </aside>
+                            <div className="flex-1">
+                                <h1 className="text-3xl font-black tracking-tight text-[#111418] dark:text-white mb-6">Subastas Activas</h1>
+                                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                    {/* Card 1 */}
+                                    <article onClick={() => navigate('/auction-detail')} className="group cursor-pointer flex flex-col bg-white dark:bg-[#1a2634] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-xl transition-all">
+                                        <div className="relative aspect-[4/3] bg-gray-100">
+                                            <div className="w-full h-full bg-center bg-cover group-hover:scale-105 transition-transform duration-500" style={{backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCVPcyYMfs9pbOR-2FK_03oA8osSW5TBSLzDJGQAiRtFQVoDpPo21Pu9j3HyBlN6tFVw1XiKVqddw4kQEyooaZtXdQB105yCJRKLBhD53Q2HRaiqYTB04lDtxqDFE2QgZhndFmdiK25QXo4GSr-93nY7dyki3oIBkZgvoR83h0ya7YtBeV0Lwdyy7PVK8gE28d1yPPxc8xvSwfqJyAug_u8dpb3C6A8XkzsWmRWmBj469YZ3Hla1umQWvpx64Z3z6CCXvuVjc81PeIa')"}}></div>
+                                        </div>
+                                        <div className="p-5">
+                                            <h3 className="text-lg font-bold text-[#111418] dark:text-white mb-1">MacBook Pro M2 14"</h3>
+                                            <p className="text-2xl font-black text-primary">$1,250.00</p>
+                                        </div>
+                                    </article>
+                                     {/* Card 2 */}
+                                     <article onClick={() => navigate('/auction-detail')} className="group cursor-pointer flex flex-col bg-white dark:bg-[#1a2634] rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-xl transition-all">
+                                        <div className="relative aspect-[4/3] bg-gray-100">
+                                            <div className="w-full h-full bg-center bg-cover group-hover:scale-105 transition-transform duration-500" style={{backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCzW7YY6kG_KiSXqzCsLz3JgwLGGE6rsjZADBGydB1bsw3zXmeEZNoZp1TgAHq9XMrFB44uKZYKVrRQhMWjxFKkITBTQJ03ctVuQ8Qb1EjjeLU2tFbm2jMcsd9iWXMI4kwme-34do-Rf9PL5l9L0tLs_qYWPJlMqQ4ZMxmKi9TBtgIYxO8oynIU3QSKMRP_3RLr9x9PjFHDKIr9RTu_jEKu2fwADk-CXnZWbAp7On3mjC3jDzbpgkyH8aZIGgV3nD9czlUV9gqXiW6W')"}}></div>
+                                        </div>
+                                        <div className="p-5">
+                                            <h3 className="text-lg font-bold text-[#111418] dark:text-white mb-1">Leica M3 Single Stroke</h3>
+                                            <p className="text-2xl font-black text-primary">$1,450.00</p>
+                                        </div>
+                                    </article>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        // Screen 5: Subastas Ganadas
+        const WonAuctionsPage = () => {
+            return (
+                <LayoutWithSidebar>
+                    <main className="flex-1 p-6 md:p-8 overflow-y-auto">
+                        <h2 className="text-slate-900 dark:text-white text-3xl font-black tracking-tight mb-6">Mis Subastas Ganadas</h2>
+                        <div className="flex flex-col gap-4">
+                            {/* Item 1 */}
+                            <div className="flex flex-col md:flex-row gap-6 p-5 rounded-xl bg-white dark:bg-[#151f2b] border border-slate-200 dark:border-slate-800 shadow-sm">
+                                <div className="w-full md:w-48 aspect-[4/3] rounded-lg overflow-hidden bg-slate-100 relative">
+                                    <img className="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDMhHFZwtvA-_9FgGtaDcDS2RYvvNeJKq3XfeQe_7aO1bWs-sx5f49f_QEb-IxIL6Yot_W2x8tCkdY55ZIrf4o7dfelVzNONjQ93QNrFcHKR5vOkMDcB5-c7v-4cAh9bqaZy1dWeZOEi0P9cns1a-fqhdx2s1jFAGiB6tN022Nr8O_goIbxYJF2NzuNDuXZtRX68o34gttVe0vpJhYV__cUANxOqCeJSizPlqwT-ePxVjPEUcONZ8QpYku9uFAgTqnaU1kX2fpOyhWX"/>
+                                </div>
+                                <div className="flex flex-1 flex-col justify-between">
+                                    <div>
+                                        <h3 className="text-lg font-bold text-slate-900 dark:text-white">Rolex Submariner Date - Vintage</h3>
+                                        <p className="text-2xl font-black text-primary mt-2">$8,450.00</p>
+                                    </div>
+                                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 w-fit">Pendiente de Pago</span>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </LayoutWithSidebar>
+            );
+        };
+
+        // Screen 6: Dashboard Cliente (Also serves as "My Bids" / Main dashboard)
+        const DashboardPage = () => {
+            return (
+                <LayoutWithSidebar>
+                    <main className="flex-1 p-4 md:p-8 lg:px-12 overflow-y-auto">
+                        <div className="flex flex-col gap-6 max-w-[1200px]">
+                            <h1 className="text-[#111418] dark:text-white text-3xl md:text-4xl font-black">Hola, Alex</h1>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                                <div className="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-[#1a2632] border border-[#dbe0e6] dark:border-gray-800 shadow-sm">
+                                    <p className="text-[#617589] dark:text-gray-400 text-sm font-medium">Pujas Activas</p>
+                                    <p className="text-[#111418] dark:text-white text-2xl font-bold">4</p>
+                                </div>
+                                <div className="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-[#1a2632] border border-[#dbe0e6] dark:border-gray-800 shadow-sm">
+                                    <p className="text-[#617589] dark:text-gray-400 text-sm font-medium">Ganando</p>
+                                    <p className="text-[#111418] dark:text-white text-2xl font-bold">3</p>
+                                </div>
+                            </div>
+                            
+                            <h2 className="text-[#111418] dark:text-white text-xl font-bold mt-4">Mis Pujas Activas</h2>
+                            <div className="flex overflow-hidden rounded-xl border border-[#dbe0e6] dark:border-gray-800 bg-white dark:bg-[#1a2632] shadow-sm">
+                                <table className="flex-1 w-full text-left">
+                                    <thead>
+                                        <tr className="bg-gray-50 dark:bg-[#22303e] border-b border-[#dbe0e6] dark:border-gray-800">
+                                            <th className="px-4 py-3 text-[#617589] text-xs uppercase font-semibold">Artículo</th>
+                                            <th className="px-4 py-3 text-[#617589] text-xs uppercase font-semibold">Estado</th>
+                                            <th className="px-4 py-3 text-[#617589] text-xs uppercase font-semibold">Mi Puja</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr className="border-b border-[#dbe0e6] dark:border-gray-800">
+                                            <td className="px-4 py-4 text-sm font-semibold">MacBook Pro 2018</td>
+                                            <td className="px-4 py-4"><span className="text-green-600 bg-green-100 px-2 py-1 rounded text-xs font-bold">Ganando</span></td>
+                                            <td className="px-4 py-4 font-bold">$650</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="px-4 py-4 text-sm font-semibold">Lente Vintage 50mm</td>
+                                            <td className="px-4 py-4"><span className="text-red-600 bg-red-100 px-2 py-1 rounded text-xs font-bold">Superado</span></td>
+                                            <td className="px-4 py-4 font-bold">$150</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </main>
+                </LayoutWithSidebar>
+            );
+        };
+
+        // Screen 7: Perfil
+        const ProfilePage = () => {
+            return (
+                <LayoutWithSidebar>
+                    <main className="flex-1 p-6 md:p-10 overflow-y-auto">
+                        <h2 className="text-slate-900 dark:text-white text-3xl font-black mb-8">Mi Perfil</h2>
+                        <div className="bg-white dark:bg-[#1a2632] rounded-xl border border-slate-200 dark:border-slate-800 p-6 shadow-sm mb-6 flex flex-col md:flex-row gap-6 items-center">
+                            <div className="bg-center bg-no-repeat bg-cover rounded-full h-24 w-24" style={{backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDZv2qeCs7QuPqx27wOZejDsjCovxqQCPi3mXTR0R_vk9sAq1Xq9bzHv9Eno9gSEvP87Uz_Tobg8tiI1VIoAdet9FgjFsGQKaWCs7j56yB_GNSOFbbnR4iTuLxkk1rq_j6vpwpEmHigZMRkjKJISRs-245YRzJIwYDCqwazm1JZ0FJsKgXKNYCSDe6wAgEc5LvisBd6j65BZDa250LNPfCJvXBoawhYYsO_5Cqusax5ZEG7LViL4DaYodm4HkKVD0pIgC3ShES2IunY')"}}></div>
+                            <div>
+                                <h3 className="text-2xl font-bold text-slate-900 dark:text-white">Alex Morgan</h3>
+                                <p className="text-slate-500 dark:text-slate-400">Madrid, España</p>
+                            </div>
+                        </div>
+                        <div className="bg-white dark:bg-[#1a2632] rounded-xl p-6 border border-slate-200 dark:border-slate-800">
+                            <h3 className="text-lg font-bold mb-4 text-slate-900 dark:text-white">Datos Personales</h3>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input className="w-full bg-slate-50 dark:bg-[#111922] border border-slate-200 dark:border-slate-700 rounded-lg p-2.5" defaultValue="Alex Morgan" />
+                                <input className="w-full bg-slate-50 dark:bg-[#111922] border border-slate-200 dark:border-slate-700 rounded-lg p-2.5" defaultValue="alex@example.com" />
+                            </div>
+                        </div>
+                    </main>
+                </LayoutWithSidebar>
+            );
+        };
+
+        // Screen 8: Recuperar Acceso
+        const RecoveryPage = () => {
+            const navigate = useNavigate();
+            return (
+                <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-background-light dark:bg-background-dark">
+                    <div className="flex w-full max-w-[520px] flex-col gap-6 rounded-xl bg-white dark:bg-surface-dark p-6 shadow-sm border border-[#e5e7eb] dark:border-gray-800 md:p-10">
+                        <div className="flex justify-center pb-2">
+                             <div className="flex h-16 w-16 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20 text-primary">
+                                <span className="material-symbols-outlined text-[32px]">lock_reset</span>
+                             </div>
+                        </div>
+                        <h1 className="text-center text-3xl font-black">Recuperar tu cuenta</h1>
+                        <p className="text-center text-[#617589] dark:text-gray-400">Ingresa tu correo para restablecer tu contraseña.</p>
+                        <input className="form-input w-full rounded-lg h-12 px-4 border border-[#dbe0e6] dark:border-gray-700 bg-white dark:bg-background-dark" placeholder="nombre@ejemplo.com" type="email"/>
+                        <button className="w-full rounded-lg h-12 bg-primary hover:bg-blue-600 text-white font-bold transition-colors">Enviar instrucciones</button>
+                        <button onClick={() => navigate('/login')} className="flex w-full items-center justify-center gap-2 text-[#617589] font-bold mt-2">
+                            <span className="material-symbols-outlined text-lg">arrow_back</span> Volver al inicio de sesión
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
+        // Screen 9: Reputación
+        const ReputationPage = () => {
+            return (
+                <LayoutWithSidebar>
+                     <main className="flex-1 p-4 md:p-10 overflow-y-auto">
+                        <h1 className="text-3xl font-black mb-2 text-[#111418] dark:text-white">Mi Reputación</h1>
+                        <p className="text-[#617589] mb-6">Visualiza tu nivel de confianza.</p>
+                        
+                        <div className="bg-white dark:bg-[#1a232e] rounded-xl p-6 border border-[#dbe0e6] dark:border-[#2a3441] shadow-sm mb-6">
+                            <h3 className="text-[#617589] font-medium mb-1">Puntuación General</h3>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-5xl font-black text-[#111418] dark:text-white">4.9</span>
+                                <span className="text-xl text-[#617589]">/ 5.0</span>
+                            </div>
+                            <div className="mt-4 inline-flex items-center px-3 py-1 rounded-full bg-green-100 text-green-700 font-bold">
+                                <span className="material-symbols-outlined text-[16px] mr-1">check_circle</span> Comprador Experto
+                            </div>
+                        </div>
+                     </main>
+                </LayoutWithSidebar>
+            );
+        };
+
+        // Screen 10: Auction Detail
+        const AuctionDetailPage = () => {
+            const navigate = useNavigate();
+            return (
+                <div className="bg-background-light dark:bg-background-dark min-h-screen pb-10">
+                    <Navigation />
+                    <main className="w-full max-w-[1280px] mx-auto px-4 md:px-6 lg:px-10 py-6">
+                        <nav className="flex flex-wrap gap-2 pb-6 text-sm">
+                            <Link to="/active-auctions" className="text-primary hover:underline">Subastas</Link>
+                            <span className="text-gray-400">/</span>
+                            <span>Detalle</span>
+                        </nav>
+                        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
+                            <div className="lg:col-span-8 flex flex-col gap-8">
+                                <div className="w-full aspect-[4/3] md:aspect-[16/9] rounded-xl overflow-hidden bg-gray-100 relative">
+                                    <div className="w-full h-full bg-center bg-no-repeat bg-cover" style={{backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuCzW7YY6kG_KiSXqzCsLz3JgwLGGE6rsjZADBGydB1bsw3zXmeEZNoZp1TgAHq9XMrFB44uKZYKVrRQhMWjxFKkITBTQJ03ctVuQ8Qb1EjjeLU2tFbm2jMcsd9iWXMI4kwme-34do-Rf9PL5l9L0tLs_qYWPJlMqQ4ZMxmKi9TBtgIYxO8oynIU3QSKMRP_3RLr9x9PjFHDKIr9RTu_jEKu2fwADk-CXnZWbAp7On3mjC3jDzbpgkyH8aZIGgV3nD9czlUV9gqXiW6W')"}}></div>
+                                </div>
+                                <div className="bg-surface-light dark:bg-surface-dark rounded-xl border border-[#e5e7eb] dark:border-gray-700 p-6 shadow-sm">
+                                    <h3 className="text-lg font-bold mb-2">Leica M3 Single Stroke</h3>
+                                    <p className="text-gray-600 dark:text-gray-300">This is a pristine example of the legendary Leica M3 Single Stroke rangefinder camera. Manufactured in 1959.</p>
+                                </div>
+                            </div>
+                            <div className="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
+                                <div className="bg-surface-light dark:bg-surface-dark border border-[#e5e7eb] dark:border-gray-700 rounded-xl p-5 shadow-lg">
+                                    <p className="text-sm font-medium text-gray-500 mb-1">Oferta Actual</p>
+                                    <div className="flex items-baseline gap-2 mb-4">
+                                        <span className="text-4xl font-bold text-[#111418] dark:text-white">$1,450.00</span>
+                                        <span className="text-gray-400 text-sm">USD</span>
+                                    </div>
+                                    <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30 rounded-lg p-4 text-center">
+                                        <h3 className="font-bold mb-2">¿Quieres pujar?</h3>
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <button onClick={() => navigate('/login')} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600 font-bold py-2 px-4 rounded-lg text-sm">Login</button>
+                                            <button onClick={() => navigate('/register')} className="bg-primary text-white font-bold py-2 px-4 rounded-lg text-sm">Registro</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </main>
+                </div>
+            );
+        };
+
+        // Screen 11: Watchlist
+        const WatchlistPage = () => {
+            return (
+                <LayoutWithSidebar>
+                    <main className="flex-1 p-4 md:p-8 overflow-y-auto">
+                        <div className="max-w-[1200px] mx-auto flex flex-col gap-8">
+                             <div className="flex items-center justify-between mb-2">
+                                <h1 className="text-3xl font-black text-[#111418] dark:text-white">Lista de Seguimiento</h1>
+                            </div>
+                            <div className="bg-white dark:bg-[#111418] border border-[#dbe0e6] dark:border-gray-800 rounded-xl overflow-hidden shadow-sm">
+                                <table className="w-full text-left">
+                                    <thead className="bg-[#f0f2f4] dark:bg-gray-800/50">
+                                        <tr>
+                                            <th className="p-4 text-sm font-medium text-[#617589] uppercase">Artículo</th>
+                                            <th className="p-4 text-sm font-medium text-[#617589] uppercase">Precio</th>
+                                            <th className="p-4 text-sm font-medium text-[#617589] uppercase">Termina</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-[#dbe0e6] dark:divide-gray-800">
+                                        <tr>
+                                            <td className="p-4 font-medium">Reloj Omega Vintage 1970</td>
+                                            <td className="p-4 font-bold">$1,850</td>
+                                            <td className="p-4 text-sm">2d 14h</td>
+                                        </tr>
+                                        <tr>
+                                            <td className="p-4 font-medium">NVIDIA RTX 4080</td>
+                                            <td className="p-4 font-bold">$980</td>
+                                            <td className="p-4 text-sm text-red-500 font-bold">45m 20s</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </main>
+                </LayoutWithSidebar>
+            );
+        };
+
+        // Screen 12: Iniciar Sesión
+        const LoginPage = () => {
+            const navigate = useNavigate();
+            return (
+                <div className="relative flex min-h-screen w-full flex-row overflow-hidden bg-background-light dark:bg-background-dark">
+                    <div className="hidden lg:flex lg:w-1/2 relative bg-surface-dark items-center justify-center overflow-hidden">
+                         <img class="absolute inset-0 w-full h-full object-cover opacity-60 mix-blend-overlay" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDXbwL0n70B12EhvxDJgoCAWY3PnCqHVD-jQ5lvotmTQdGaWuk7zJJCgNTcE5Yu1SZBWAB0H4jIYJdvApUoqmwk4W3wcqqeltkQyNsjTSXQ3lRT2PiKroBwzyUHBtrQotYcpGL0t5FRmbpWk2thyXj3IhmH512YTs1AcLMqICaZIeYr7ONaVxDuSBETcZIGMYWCTdDH8YmIAXpohDORE_We6kk2xTPAo26ThZx-KVZauFPSMKh21ryJvjPpFXKhnHVyUTpx-WFXP-P"/>
+                         <div className="relative z-10 p-10 max-w-lg">
+                             <h1 className="text-3xl font-black text-white mb-6 flex items-center gap-2"><span className="material-symbols-outlined">gavel</span> Iron Loot</h1>
+                             <p className="text-white text-2xl font-bold">"La transparencia es la base de cada oferta ganadora."</p>
+                         </div>
+                    </div>
+                    <div className="flex flex-1 flex-col items-center justify-center p-6 bg-white dark:bg-background-dark w-full">
+                        <div className="w-full max-w-[440px] flex flex-col gap-6">
+                            <h2 className="text-3xl font-black dark:text-white">Bienvenido de nuevo</h2>
+                            <form className="flex flex-col gap-5" onSubmit={(e) => { e.preventDefault(); navigate('/dashboard'); }}>
+                                <label className="flex flex-col gap-2">
+                                    <span className="text-sm font-medium dark:text-white">Correo electrónico</span>
+                                    <div className="relative flex items-center">
+                                        <span className="material-symbols-outlined absolute left-4 text-gray-500 text-[20px]">mail</span>
+                                        <input className="form-input flex w-full rounded-lg border border-gray-300 dark:border-gray-700 h-12 pl-12 pr-4 bg-white dark:bg-surface-dark dark:text-white" placeholder="ejemplo@correo.com" type="email"/>
+                                    </div>
+                                </label>
+                                <label className="flex flex-col gap-2">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-sm font-medium dark:text-white">Contraseña</span>
+                                        <Link to="/recovery" className="text-primary text-sm font-medium">¿Olvidaste tu contraseña?</Link>
+                                    </div>
+                                    <div className="relative flex items-center">
+                                        <span className="material-symbols-outlined absolute left-4 text-gray-500 text-[20px]">lock</span>
+                                        <input className="form-input flex w-full rounded-lg border border-gray-300 dark:border-gray-700 h-12 pl-12 pr-12 bg-white dark:bg-surface-dark dark:text-white" placeholder="******" type="password"/>
+                                    </div>
+                                </label>
+                                <button className="w-full rounded-lg h-12 bg-primary hover:bg-blue-600 text-white font-bold transition-colors">Iniciar Sesión</button>
+                            </form>
+                            <div className="flex justify-center gap-1.5 text-sm">
+                                <span className="text-gray-500">¿No tienes cuenta?</span>
+                                <Link to="/register" className="text-primary font-bold">Regístrate ahora</Link>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // Screen 13 (My Bids) - Reused Dashboard logic for simplification, but specific route
+        const MyBidsPage = () => {
+             return <DashboardPage />;
+        };
+
+        // --- App Component ---
+
+        const App = () => {
+            return (
+                <MemoryRouter>
+                    <Routes>
+                        <Route path="/" element={<HomePage />} />
+                        <Route path="/login" element={<LoginPage />} />
+                        <Route path="/register" element={<RegisterPage />} />
+                        <Route path="/recovery" element={<RecoveryPage />} />
+                        
+                        <Route path="/dashboard" element={<DashboardPage />} />
+                        <Route path="/my-bids" element={<MyBidsPage />} />
+                        <Route path="/payments" element={<PaymentsPage />} />
+                        <Route path="/active-auctions" element={<ActiveAuctionsPage />} />
+                        <Route path="/auction-detail" element={<AuctionDetailPage />} />
+                        <Route path="/won-auctions" element={<WonAuctionsPage />} />
+                        <Route path="/watchlist" element={<WatchlistPage />} />
+                        <Route path="/reputation" element={<ReputationPage />} />
+                        <Route path="/profile" element={<ProfilePage />} />
+                    </Routes>
+                </MemoryRouter>
+            );
+        };
+
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
