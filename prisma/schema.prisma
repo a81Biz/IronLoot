@@ -1,0 +1,152 @@
+// ===========================================
+// Iron Loot - Prisma Schema
+// ===========================================
+// This schema defines the database structure for Iron Loot
+// Reference: 03-modelo-registro-db.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ===========================================
+// OBSERVABILITY TABLES
+// Reference: 03-modelo-registro-db.md
+// ===========================================
+
+/// Audit Events - Business events for auditing
+/// Stores all significant business actions (bids, payments, etc.)
+model AuditEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Event identification
+  eventType String @map("event_type") @db.VarChar(100)
+  timestamp DateTime @default(now()) @db.Timestamptz
+
+  // Correlation
+  traceId String @map("trace_id") @db.VarChar(100)
+  env     String @db.VarChar(20)
+  service String @db.VarChar(50)
+
+  // Actor information
+  actorType   String  @map("actor_type") @db.VarChar(20) // 'user' | 'system'
+  actorUserId String? @map("actor_user_id") @db.Uuid
+
+  // Target entity
+  entityType String @map("entity_type") @db.VarChar(50)
+  entityId   String @map("entity_id") @db.Uuid
+
+  // Result
+  result     String  @db.VarChar(20) // 'SUCCESS' | 'FAIL'
+  reasonCode String? @map("reason_code") @db.VarChar(100)
+
+  // Payload (whitelisted data only)
+  payload        Json @default("{}") @db.JsonB
+  payloadVersion Int  @default(1) @map("payload_version")
+
+  @@index([entityType, entityId, timestamp(sort: Desc)], name: "idx_audit_events_entity")
+  @@index([actorUserId, timestamp(sort: Desc)], name: "idx_audit_events_actor")
+  @@index([traceId], name: "idx_audit_events_trace")
+  @@index([eventType, timestamp(sort: Desc)], name: "idx_audit_events_type_time")
+  @@map("audit_events")
+}
+
+/// Error Events - Captured errors (business + exceptions)
+/// Stores all errors for debugging and monitoring
+model ErrorEvent {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Correlation
+  timestamp DateTime @default(now()) @db.Timestamptz
+  traceId   String   @map("trace_id") @db.VarChar(100)
+  env       String   @db.VarChar(20)
+  service   String   @db.VarChar(50)
+
+  // Error details
+  errorCode       String  @map("error_code") @db.VarChar(100)
+  message         String  @db.Text
+  severity        String  @db.VarChar(20) // 'WARN' | 'ERROR'
+  httpStatus      Int?    @map("http_status")
+  isBusinessError Boolean @default(false) @map("is_business_error")
+
+  // Request context
+  httpMethod String? @map("http_method") @db.VarChar(10)
+  httpPath   String? @map("http_path") @db.Text
+  httpQuery  String? @map("http_query") @db.Text
+  clientIp   String? @map("client_ip") @db.VarChar(50)
+  userAgent  String? @map("user_agent") @db.Text
+
+  // Actor
+  actorUserId String? @map("actor_user_id") @db.Uuid
+
+  // Target entity (if applicable)
+  entityType String? @map("entity_type") @db.VarChar(50)
+  entityId   String? @map("entity_id") @db.Uuid
+
+  // Additional details
+  details Json    @default("{}") @db.JsonB
+  stack   String? @db.Text
+
+  @@index([traceId], name: "idx_error_events_trace")
+  @@index([errorCode, timestamp(sort: Desc)], name: "idx_error_events_code_time")
+  @@index([actorUserId, timestamp(sort: Desc)], name: "idx_error_events_actor")
+  @@index([entityType, entityId, timestamp(sort: Desc)], name: "idx_error_events_entity")
+  @@index([httpStatus, timestamp(sort: Desc)], name: "idx_error_events_http")
+  @@map("error_events")
+}
+
+/// Request Logs - HTTP request/response logs
+/// For diagnostics and performance monitoring
+model RequestLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Correlation
+  timestamp DateTime @default(now()) @db.Timestamptz
+  traceId   String   @map("trace_id") @db.VarChar(100)
+  env       String   @db.VarChar(20)
+  service   String   @db.VarChar(50)
+
+  // Request/Response
+  httpMethod        String @map("http_method") @db.VarChar(10)
+  httpPath          String @map("http_path") @db.Text
+  httpStatus        Int    @map("http_status")
+  durationMs        Int    @map("duration_ms")
+  requestSizeBytes  Int?   @map("request_size_bytes")
+  responseSizeBytes Int?   @map("response_size_bytes")
+
+  // Actor
+  actorUserId String? @map("actor_user_id") @db.Uuid
+  actorState  String? @map("actor_state") @db.VarChar(50)
+
+  // Client info
+  clientIp  String? @map("client_ip") @db.VarChar(50)
+  userAgent String? @map("user_agent") @db.Text
+  clientApp String? @map("client_app") @db.VarChar(20)
+
+  // Target entity (optional)
+  entityType String? @map("entity_type") @db.VarChar(50)
+  entityId   String? @map("entity_id") @db.Uuid
+
+  @@index([traceId], name: "idx_request_logs_trace")
+  @@index([httpPath, timestamp(sort: Desc)], name: "idx_request_logs_path_time")
+  @@index([httpStatus, timestamp(sort: Desc)], name: "idx_request_logs_status_time")
+  @@index([actorUserId, timestamp(sort: Desc)], name: "idx_request_logs_actor_time")
+  @@map("request_logs")
+}
+
+// ===========================================
+// DOMAIN TABLES (placeholder for future)
+// ===========================================
+
+// User model will be added when implementing auth module
+// model User {
+//   id String @id @default(uuid()) @db.Uuid
+//   ...
+// }

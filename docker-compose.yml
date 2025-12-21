@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  # ===========================================
+  # Iron Loot API (NestJS)
+  # ===========================================
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: ironloot-api
+    ports:
+      - "${API_PORT:-3000}:3000"
+    environment:
+      - NODE_ENV=development
+      - DATABASE_URL=postgresql://${DB_USER:-ironloot}:${DB_PASSWORD:-ironloot_dev}@db:5432/${DB_NAME:-ironloot_db}
+      - REDIS_URL=redis://redis:6379
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - TRACE_ENABLED=true
+    volumes:
+      - ./src:/app/src
+      - ./package.json:/app/package.json
+      - ./tsconfig.json:/app/tsconfig.json
+      - ./nest-cli.json:/app/nest-cli.json
+      # Exclude node_modules to use container's version
+      - /app/node_modules
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - ironloot-network
+    restart: unless-stopped
+
+  # ===========================================
+  # PostgreSQL Database
+  # ===========================================
+  db:
+    image: postgres:16-alpine
+    container_name: ironloot-db
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    environment:
+      POSTGRES_USER: ${DB_USER:-ironloot}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ironloot_dev}
+      POSTGRES_DB: ${DB_NAME:-ironloot_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    networks:
+      - ironloot-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ironloot} -d ${DB_NAME:-ironloot_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # ===========================================
+  # Redis (Cache & Sessions)
+  # ===========================================
+  redis:
+    image: redis:7-alpine
+    container_name: ironloot-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - ironloot-network
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+
+  # ===========================================
+  # pgAdmin (Database Administration) - Optional
+  # ===========================================
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: ironloot-pgadmin
+    ports:
+      - "${PGADMIN_PORT:-5050}:80"
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@ironloot.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - ironloot-network
+    depends_on:
+      - db
+    profiles:
+      - tools
+    restart: unless-stopped
+
+networks:
+  ironloot-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: ironloot_postgres_data
+  redis_data:
+    name: ironloot_redis_data
+  pgadmin_data:
+    name: ironloot_pgadmin_data

@@ -1,0 +1,44 @@
+# ===========================================
+# Iron Loot API - Development Dockerfile
+# ===========================================
+# Base: Node.js LTS with Alpine for smaller image
+FROM node:20-alpine
+
+# Install dependencies for native modules and utilities
+RUN apk add --no-cache \
+    python3 \
+    make \
+    g++ \
+    git \
+    netcat-openbsd
+
+# Set working directory
+WORKDIR /app
+
+# Copy package files first for better caching
+COPY package*.json ./
+
+# Install all dependencies (including devDependencies)
+# Using npm install since package-lock.json may not exist on first build
+RUN npm install
+
+# Copy Prisma schema and generate client
+COPY prisma ./prisma
+RUN npx prisma generate
+
+# Copy NestJS configuration files
+COPY tsconfig*.json ./
+COPY nest-cli.json ./
+
+# Copy scripts
+COPY scripts ./scripts
+RUN chmod +x ./scripts/*.sh
+
+# Copy source code
+COPY src ./src
+
+# Expose API port
+EXPOSE 3000
+
+# Use entrypoint script for migrations
+ENTRYPOINT ["./scripts/entrypoint.dev.sh"]
