@@ -1,6 +1,6 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ModuleRef } from '@nestjs/core';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import {
   StructuredLogger,
@@ -30,8 +30,9 @@ export class AuditPersistenceService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly config: ConfigService,
-    private readonly moduleRef: ModuleRef,
     private readonly logger: StructuredLogger,
+    private readonly exceptionFilter: GlobalExceptionFilter,
+    private readonly interceptor: ObservabilityInterceptor,
   ) {
     this.env = this.config.get<string>('NODE_ENV', 'development');
     this.isProd = this.env === 'production';
@@ -42,22 +43,14 @@ export class AuditPersistenceService implements OnModuleInit {
    */
   async onModuleInit(): Promise<void> {
     try {
-      // Get the global exception filter and interceptor
-      const filter = this.moduleRef.get(GlobalExceptionFilter, { strict: false });
-      const interceptor = this.moduleRef.get(ObservabilityInterceptor, { strict: false });
-
       // Wire up error persistence
-      if (filter) {
-        filter.setPersistFn(this.persistError.bind(this));
-        this.logger.info('Error persistence connected', { context: 'AuditPersistence' });
-      }
+      this.exceptionFilter.setPersistFn(this.persistError.bind(this));
+      this.logger.info('Error persistence connected', { context: 'AuditPersistence' });
 
       // Wire up audit and request log persistence
-      if (interceptor) {
-        interceptor.setAuditPersistFn(this.persistAuditEvent.bind(this));
-        interceptor.setRequestLogPersistFn(this.persistRequestLog.bind(this));
-        this.logger.info('Audit persistence connected', { context: 'AuditPersistence' });
-      }
+      this.interceptor.setAuditPersistFn(this.persistAuditEvent.bind(this));
+      this.interceptor.setRequestLogPersistFn(this.persistRequestLog.bind(this));
+      this.logger.info('Audit persistence connected', { context: 'AuditPersistence' });
     } catch (error) {
       this.logger.warn('Failed to wire up persistence callbacks', {
         context: 'AuditPersistence',
@@ -97,7 +90,7 @@ export class AuditPersistenceService implements OnModuleInit {
           entityId: data.entityId,
           result: data.result,
           reasonCode: data.reasonCode,
-          payload: data.payload || {},
+          payload: (data.payload || {}) as Prisma.InputJsonValue,
           payloadVersion: 1,
         },
       });
@@ -138,7 +131,7 @@ export class AuditPersistenceService implements OnModuleInit {
           entityId,
           result,
           reasonCode: options?.reasonCode,
-          payload: options?.payload || {},
+          payload: (options?.payload || {}) as Prisma.InputJsonValue,
           payloadVersion: 1,
         },
       });
@@ -190,7 +183,7 @@ export class AuditPersistenceService implements OnModuleInit {
           actorUserId: data.actorUserId,
           entityType: data.entityType,
           entityId: data.entityId,
-          details: this.sanitizeDetails(data.details || {}),
+          details: this.sanitizeDetails(data.details || {}) as Prisma.InputJsonValue,
           stack: this.isProd ? this.truncateStack(data.stack) : data.stack,
         },
       });

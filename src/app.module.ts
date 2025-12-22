@@ -14,6 +14,7 @@ import { ObservabilityModule, ContextMiddleware } from './common/observability';
 import { DatabaseModule } from './database/database.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { HealthModule } from './modules/health/health.module';
+import { DiagnosticsModule } from './modules/diagnostics/diagnostics.module';
 
 // TODO: Uncomment as modules are implemented
 // import { AuthModule } from './modules/auth/auth.module';
@@ -64,6 +65,9 @@ import { HealthModule } from './modules/health/health.module';
 
     // Health check
     HealthModule,
+
+    // Diagnostics (logs, errors, metrics - dev only)
+    DiagnosticsModule,
 
     // Feature modules (uncomment as implemented)
     // AuthModule,

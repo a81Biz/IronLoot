@@ -1,5 +1,5 @@
 import { Global, Module, OnModuleInit } from '@nestjs/common';
-import { APP_FILTER, APP_INTERCEPTOR, ModuleRef } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR, ModuleRef, Reflector } from '@nestjs/core';
 
 // Services
 import { RequestContextService } from './request-context.service';
@@ -51,16 +51,18 @@ import { ContextMiddleware } from './context.middleware';
     // Middleware (exported, applied in AppModule)
     ContextMiddleware,
 
-    // Global exception filter
+    // Global exception filter - also provide as class for DI access
+    GlobalExceptionFilter,
     {
       provide: APP_FILTER,
-      useClass: GlobalExceptionFilter,
+      useExisting: GlobalExceptionFilter,
     },
 
-    // Global interceptor
+    // Global interceptor - also provide as class for DI access
+    ObservabilityInterceptor,
     {
       provide: APP_INTERCEPTOR,
-      useClass: ObservabilityInterceptor,
+      useExisting: ObservabilityInterceptor,
     },
   ],
   exports: [
@@ -68,25 +70,8 @@ import { ContextMiddleware } from './context.middleware';
     StructuredLogger,
     MetricsService,
     ContextMiddleware,
+    GlobalExceptionFilter,
+    ObservabilityInterceptor,
   ],
 })
-export class ObservabilityModule implements OnModuleInit {
-  constructor(private readonly moduleRef: ModuleRef) {}
-
-  /**
-   * Hook called after module initialization
-   * Used to wire up persistence callbacks between services
-   */
-  async onModuleInit(): Promise<void> {
-    // Get instances
-    const filter = this.moduleRef.get(GlobalExceptionFilter, { strict: false });
-    const interceptor = this.moduleRef.get(ObservabilityInterceptor, { strict: false });
-
-    // Try to get audit services from AuditModule (if loaded)
-    // These will be set by the audit module when it initializes
-    // This allows the observability module to work without database dependency
-
-    // The actual wiring is done by AuditModule.onModuleInit()
-    // See: src/modules/audit/audit.module.ts
-  }
-}
+export class ObservabilityModule {}
