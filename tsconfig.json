@@ -26,6 +26,6 @@
       "@config/*": ["src/config/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "test/unit/auth.service.spec.ts"],
   "exclude": ["node_modules", "dist", "test", "**/*.spec.ts"]
 }

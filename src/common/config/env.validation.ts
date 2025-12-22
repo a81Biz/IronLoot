@@ -58,6 +58,18 @@ class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
+  JWT_EXPIRES_IN?: string;
+
+  @IsNumber()
+  @IsOptional()
+  REFRESH_TOKEN_EXPIRES_DAYS?: number;
+
+  @IsNumber()
+  @IsOptional()
+  BCRYPT_SALT_ROUNDS?: number;
+
+  @IsString()
+  @IsOptional()
   LOG_LEVEL?: string;
 }
 

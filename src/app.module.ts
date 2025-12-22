@@ -16,8 +16,8 @@ import { AuditModule } from './modules/audit/audit.module';
 import { HealthModule } from './modules/health/health.module';
 import { DiagnosticsModule } from './modules/diagnostics/diagnostics.module';
 
-// TODO: Uncomment as modules are implemented
-// import { AuthModule } from './modules/auth/auth.module';
+// Feature modules
+import { AuthModule, JwtAuthGuard } from './modules/auth';
 // import { UsersModule } from './modules/users/users.module';
 // import { AuctionsModule } from './modules/auctions/auctions.module';
 // import { BidsModule } from './modules/bids/bids.module';
@@ -69,8 +69,10 @@ import { DiagnosticsModule } from './modules/diagnostics/diagnostics.module';
     // Diagnostics (logs, errors, metrics - dev only)
     DiagnosticsModule,
 
+    // Authentication & Authorization
+    AuthModule,
+
     // Feature modules (uncomment as implemented)
-    // AuthModule,
     // UsersModule,
     // AuctionsModule,
     // BidsModule,
@@ -86,6 +88,12 @@ import { DiagnosticsModule } from './modules/diagnostics/diagnostics.module';
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
+    },
+    // Global JWT authentication guard
+    // Routes are protected by default, use @Public() to make them public
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
     },
   ],
 })
