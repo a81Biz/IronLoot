@@ -1,16 +1,18 @@
 # ===========================================
 # Iron Loot API - Development Dockerfile
 # ===========================================
-# Base: Node.js LTS with Alpine for smaller image
-FROM node:20-alpine
+# Using Debian slim instead of Alpine for better Prisma compatibility
+FROM node:20-slim
 
 # Install dependencies for native modules and utilities
-RUN apk add --no-cache \
+RUN apt-get update && apt-get install -y \
+    openssl \
     python3 \
     make \
     g++ \
     git \
-    netcat-openbsd
+    netcat-openbsd \
+    && rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -19,7 +21,6 @@ WORKDIR /app
 COPY package*.json ./
 
 # Install all dependencies (including devDependencies)
-# Using npm install since package-lock.json may not exist on first build
 RUN npm install
 
 # Copy Prisma schema and generate client
