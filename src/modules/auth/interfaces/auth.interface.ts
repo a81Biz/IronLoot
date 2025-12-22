@@ -8,7 +8,6 @@ export interface JwtPayload {
   email: string;
   username: string;
   state: UserState;
-  isSeller: boolean;
   iat?: number;
   exp?: number;
 }
@@ -21,7 +20,6 @@ export interface AuthenticatedUser {
   email: string;
   username: string;
   state: UserState;
-  isSeller: boolean;
 }
 
 /**

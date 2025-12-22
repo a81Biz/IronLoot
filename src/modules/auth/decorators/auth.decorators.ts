@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext, SetMetadata } from '@nestjs/common';
-import { User } from '@prisma/client';
+import { UserState } from '@prisma/client';
 
 /**
  * Key for public routes metadata
@@ -23,7 +23,7 @@ export interface JwtPayload {
   sub: string;      // User ID
   email: string;
   username: string;
-  state: string;
+  state: UserState;
   iat?: number;
   exp?: number;
 }
@@ -35,7 +35,7 @@ export interface AuthenticatedUser {
   id: string;
   email: string;
   username: string;
-  state: string;
+  state: UserState;
 }
 
 /**

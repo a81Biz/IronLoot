@@ -14,6 +14,85 @@ datasource db {
 }
 
 // ===========================================
+// USER & AUTH TABLES
+// ===========================================
+
+/// User states enum
+enum UserState {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+/// User - Main user entity
+model User {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Authentication
+  email        String  @unique @db.VarChar(255)
+  username     String  @unique @db.VarChar(50)
+  passwordHash String  @map("password_hash") @db.VarChar(255)
+
+  // Profile
+  displayName String? @map("display_name") @db.VarChar(100)
+  avatarUrl   String? @map("avatar_url") @db.Text
+
+  // State
+  state           UserState @default(PENDING_VERIFICATION)
+  suspendedReason String?   @map("suspended_reason") @db.Text
+  bannedReason    String?   @map("banned_reason") @db.Text
+
+  // Seller status
+  isSeller        Boolean   @default(false) @map("is_seller")
+  sellerEnabledAt DateTime? @map("seller_enabled_at") @db.Timestamptz
+
+  // Email verification
+  emailVerifiedAt          DateTime? @map("email_verified_at") @db.Timestamptz
+  emailVerificationToken   String?   @map("email_verification_token") @db.VarChar(255)
+  emailVerificationExpiresAt DateTime? @map("email_verification_expires_at") @db.Timestamptz
+
+  // Password reset
+  passwordResetToken     String?   @map("password_reset_token") @db.VarChar(255)
+  passwordResetExpiresAt DateTime? @map("password_reset_expires_at") @db.Timestamptz
+
+  // Relations
+  sessions Session[]
+
+  @@index([email], name: "idx_users_email")
+  @@index([username], name: "idx_users_username")
+  @@index([state], name: "idx_users_state")
+  @@map("users")
+}
+
+/// Session - User sessions for refresh tokens
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relation
+  userId String @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Token
+  refreshToken String   @unique @map("refresh_token") @db.VarChar(255)
+  expiresAt    DateTime @map("expires_at") @db.Timestamptz
+
+  // Session metadata
+  ipAddress  String?   @map("ip_address") @db.VarChar(50)
+  userAgent  String?   @map("user_agent") @db.Text
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz
+
+  @@index([userId], name: "idx_sessions_user")
+  @@index([refreshToken], name: "idx_sessions_token")
+  @@index([expiresAt], name: "idx_sessions_expires")
+  @@map("sessions")
+}
+
+// ===========================================
 // OBSERVABILITY TABLES
 // Reference: 03-modelo-registro-db.md
 // ===========================================
@@ -25,7 +104,7 @@ model AuditEvent {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
 
   // Event identification
-  eventType String @map("event_type") @db.VarChar(100)
+  eventType String   @map("event_type") @db.VarChar(100)
   timestamp DateTime @default(now()) @db.Timestamptz
 
   // Correlation
@@ -140,13 +219,3 @@ model RequestLog {
   @@index([actorUserId, timestamp(sort: Desc)], name: "idx_request_logs_actor_time")
   @@map("request_logs")
 }
-
-// ===========================================
-// DOMAIN TABLES (placeholder for future)
-// ===========================================
-
-// User model will be added when implementing auth module
-// model User {
-//   id String @id @default(uuid()) @db.Uuid
-//   ...
-// }
