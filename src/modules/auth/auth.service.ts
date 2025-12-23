@@ -7,6 +7,7 @@ import * as crypto from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
 import {
   StructuredLogger,
+  ChildLogger,
   RequestContextService,
   MetricsService,
   InvalidCredentialsException,
@@ -45,7 +46,7 @@ import { JwtPayload, AuthenticatedUser } from './decorators';
  */
 @Injectable()
 export class AuthService {
-  private readonly log = this.logger.child('AuthService');
+  private readonly log: ChildLogger;
   private readonly saltRounds = 12;
   private readonly accessTokenExpiry: string;
   private readonly refreshTokenExpiry: string;
@@ -60,6 +61,8 @@ export class AuthService {
     private readonly metrics: MetricsService,
     private readonly audit: AuditPersistenceService,
   ) {
+    // Initialize log AFTER logger is injected
+    this.log = this.logger.child('AuthService');
     this.accessTokenExpiry = this.config.get<string>('JWT_ACCESS_EXPIRY', '15m');
     this.refreshTokenExpiry = this.config.get<string>('JWT_REFRESH_EXPIRY', '7d');
     this.accessTokenExpirySeconds = this.parseExpiryToSeconds(this.accessTokenExpiry);
