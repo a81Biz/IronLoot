@@ -170,10 +170,12 @@ export class StructuredLogger implements NestLoggerService {
   // SANITIZATION
   // ===========================================
 
-  private sanitizeMessage(message: string): string {
-    if (!message) return '';
-    
-    return message
+  private sanitizeMessage(message: unknown): string {
+    if (message === null || message === undefined) return '';
+
+    const msg = typeof message === 'string' ? message : JSON.stringify(message);
+
+    return msg
       // Emails
       .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[EMAIL]')
       // Tokens/Keys (32+ chars)

@@ -32,6 +32,7 @@ import {
   AuthTokensResponseDto,
   UserResponseDto,
 } from './dto';
+import { Prisma } from '@prisma/client';
 import { JwtPayload, AuthenticatedUser } from './decorators';
 
 /**
@@ -74,26 +75,36 @@ export class AuthService {
 
   async register(dto: RegisterDto): Promise<AuthResponseDto> {
     const traceId = this.ctx.getTraceId();
-    this.log.info('Attempting user registration', { email: dto.email, username: dto.username });
 
-    // Check if email already exists
-    const existingEmail = await this.prisma.user.findUnique({
-      where: { email: dto.email.toLowerCase() },
+    // Normalize inputs early to ensure checks and persistence use the same canonical form
+    const email = (dto.email || '').trim().toLowerCase();
+    const username = (dto.username || '').trim().toLowerCase();
+    const displayName = dto.displayName ? dto.displayName.trim() : undefined;
+
+    this.log.info('Attempting user registration', { email, username });
+
+    // Check if email already exists (use findFirst for robustness)
+    const existingEmail = await this.prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' } },
     });
 
+    this.log.debug('Existing email check', { email, found: !!existingEmail, existingId: existingEmail?.id });
+
     if (existingEmail) {
-      this.log.warn('Registration failed: email already exists', { email: dto.email });
+      this.log.warn('Registration failed: email already exists', { email });
       this.metrics.increment('auth_register_failed', 1, { reason: 'email_exists' });
       throw new EmailAlreadyExistsException();
     }
 
-    // Check if username already exists
-    const existingUsername = await this.prisma.user.findUnique({
-      where: { username: dto.username.toLowerCase() },
+    // Check if username already exists (use findFirst for robustness)
+    const existingUsername = await this.prisma.user.findFirst({
+      where: { username: { equals: username, mode: 'insensitive' } },
     });
 
+    this.log.debug('Existing username check', { username, found: !!existingUsername, existingId: existingUsername?.id });
+
     if (existingUsername) {
-      this.log.warn('Registration failed: username already exists', { username: dto.username });
+      this.log.warn('Registration failed: username already exists', { username });
       this.metrics.increment('auth_register_failed', 1, { reason: 'username_exists' });
       throw new ValidationException('Username already taken');
     }
@@ -105,20 +116,63 @@ export class AuthService {
     const emailVerificationToken = this.generateSecureToken();
     const emailVerificationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
-    // Create user
-    const user = await this.prisma.user.create({
-      data: {
-        email: dto.email.toLowerCase(),
-        username: dto.username.toLowerCase(),
-        passwordHash,
-        displayName: dto.displayName,
-        state: UserState.PENDING_VERIFICATION,
-        emailVerificationToken,
-        emailVerificationExpiresAt,
-      },
-    });
+    // Create user (handle unique constraint at DB level as a fallback)
+    // Extra DB-level check using raw SQL as an additional guard
+    try {
+      const rawCount: any = await this.prisma.$queryRaw`
+        SELECT count(1) as cnt FROM "users" WHERE lower(email) = ${email}
+      `;
+      const cnt = rawCount && rawCount[0] ? parseInt(Object.values(rawCount[0])[0] as any, 10) : 0;
+      if (cnt > 0) {
+        this.log.warn('Registration failed: email already exists (raw-check)', { email, count: cnt });
+        this.metrics.increment('auth_register_failed', 1, { reason: 'email_exists' });
+        throw new EmailAlreadyExistsException();
+      }
+    } catch (err) {
+      // If raw query fails, continue and let the DB or Prisma handle uniqueness
+      this.log.debug('Raw email existence check failed', { err: (err as any)?.message });
+    }
+
+    let user;
+    try {
+      this.log.debug('Creating user in DB', { email, username });
+
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          username,
+          passwordHash,
+          displayName,
+          state: UserState.PENDING_VERIFICATION,
+          emailVerificationToken,
+          emailVerificationExpiresAt,
+        },
+      });
+    } catch (e) {
+      // Log Prisma error details for debugging and instrumentation
+      const err = e as any;
+      this.log.error('Prisma create user error', { message: err?.message, code: (err as any)?.code, meta: (err as any)?.meta } as any);
+
+      // Prisma unique constraint error
+      if ((err as Prisma.PrismaClientKnownRequestError)?.code === 'P2002') {
+        const meta = err.meta || {};
+        const target = meta.target || [];
+        if (Array.isArray(target) && target.includes('email')) {
+          this.log.warn('Registration failed: email already exists (db)', { email: dto.email });
+          throw new EmailAlreadyExistsException();
+        }
+        if (Array.isArray(target) && target.includes('username')) {
+          this.log.warn('Registration failed: username already exists (db)', { username: dto.username });
+          throw new ValidationException('Username already taken');
+        }
+      }
+
+      // Re-throw unexpected errors
+      throw e;
+    }
 
     this.log.info('User registered successfully', { userId: user.id });
+    this.log.debug('Created user record', { email: user.email, userId: user.id });
     this.metrics.increment('auth_register_success');
 
     // Audit event
@@ -128,7 +182,7 @@ export class AuthService {
       EntityType.USER,
       user.id,
       AuditResult.SUCCESS,
-      { actorUserId: user.id, payload: { email: dto.email, username: dto.username } },
+      { actorUserId: user.id, payload: { email, username } },
     );
 
     // Generate tokens

@@ -43,8 +43,8 @@ describe('HealthController', () => {
       if (typeof controller.check === 'function') {
         const result = await controller.check();
         expect(result).toHaveProperty('status');
-      } else if (typeof controller.getHealth === 'function') {
-        const result = await controller.getHealth();
+      } else if (typeof (controller as any).getHealth === 'function') {
+        const result = await (controller as any).getHealth();
         expect(result).toHaveProperty('status');
       } else if (typeof (controller as any).checkHealth === 'function') {
         const result = await (controller as any).checkHealth();

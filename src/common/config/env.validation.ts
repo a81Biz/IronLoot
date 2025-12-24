@@ -60,6 +60,22 @@ class EnvironmentVariables {
   @IsOptional()
   JWT_EXPIRES_IN?: string;
 
+  @IsString()
+  @IsOptional()
+  JWT_ACCESS_EXPIRY?: string;
+
+  @IsString()
+  @IsOptional()
+  JWT_EXPIRATION?: string;
+
+  @IsString()
+  @IsOptional()
+  JWT_REFRESH_EXPIRY?: string;
+
+  @IsString()
+  @IsOptional()
+  JWT_REFRESH_EXPIRATION?: string;
+
   @IsNumber()
   @IsOptional()
   REFRESH_TOKEN_EXPIRES_DAYS?: number;

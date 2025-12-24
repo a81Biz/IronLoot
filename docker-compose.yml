@@ -15,6 +15,9 @@ services:
       - REDIS_URL=redis://redis:6379
       - LOG_LEVEL=${LOG_LEVEL:-debug}
       - TRACE_ENABLED=true
+    # Load additional env vars from project .env into the container
+    env_file:
+      - .env
     volumes:
       - ./src:/app/src
       - ./prisma:/app/prisma

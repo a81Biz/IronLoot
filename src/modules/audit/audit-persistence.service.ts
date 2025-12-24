@@ -280,8 +280,12 @@ export class AuditPersistenceService implements OnModuleInit {
   // SANITIZATION HELPERS
   // ===========================================
 
-  private sanitizeMessage(message: string): string {
-    return message
+  private sanitizeMessage(message: unknown): string {
+    if (message === null || message === undefined) return '';
+
+    const msg = typeof message === 'string' ? message : JSON.stringify(message);
+
+    return msg
       .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[EMAIL]')
       .replace(/[a-zA-Z0-9_-]{32,}/g, '[TOKEN]');
   }

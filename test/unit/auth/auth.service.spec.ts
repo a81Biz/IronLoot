@@ -150,7 +150,7 @@ describe('AuthService', () => {
         state: UserState.PENDING_VERIFICATION,
       };
 
-      (prismaService.user.findUnique as jest.Mock)
+      (prismaService.user.findFirst as jest.Mock)
         .mockResolvedValueOnce(null) // email check
         .mockResolvedValueOnce(null); // username check
       (prismaService.user.create as jest.Mock).mockResolvedValue(newUser);
@@ -168,7 +168,7 @@ describe('AuthService', () => {
     });
 
     it('should throw EmailAlreadyExistsException if email exists', async () => {
-      (prismaService.user.findUnique as jest.Mock).mockResolvedValueOnce(mockUser);
+      (prismaService.user.findFirst as jest.Mock).mockResolvedValueOnce(mockUser);
 
       await expect(service.register(registerDto)).rejects.toThrow(EmailAlreadyExistsException);
     });
