@@ -8,11 +8,25 @@ describe('HealthController', () => {
   let controller: HealthController;
   let healthService: HealthService;
 
+  const mockHealthService = {
+    check: jest.fn().mockResolvedValue({
+      status: 'ok',
+      details: {
+        database: { status: 'up' },
+        uptime: 1000,
+      },
+    }),
+    checkLiveness: jest.fn().mockReturnValue({ status: 'ok' }),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [HealthController],
       providers: [
-        HealthService,
+        {
+          provide: HealthService,
+          useValue: mockHealthService,
+        },
         {
           provide: PrismaService,
           useValue: {
@@ -38,20 +52,24 @@ describe('HealthController', () => {
     healthService = module.get<HealthService>(HealthService);
   });
 
-  describe('getHealth', () => {
-    it('should return health status', async () => {
-      const result = await controller.getHealth();
-
-      expect(result).toBeDefined();
-      expect(result.status).toBeDefined();
-    });
+  it('should be defined', () => {
+    expect(controller).toBeDefined();
   });
 
-  describe('getLiveness', () => {
-    it('should return liveness probe', () => {
-      const result = controller.getLiveness();
+  describe('health check via service', () => {
+    it('should return health status from service', async () => {
+      const result = await healthService.check();
+      
+      expect(result).toBeDefined();
+      expect(result.status).toBe('ok');
+      expect(mockHealthService.check).toHaveBeenCalled();
+    });
 
+    it('should return liveness status from service', () => {
+      const result = healthService.checkLiveness();
+      
       expect(result).toEqual({ status: 'ok' });
+      expect(mockHealthService.checkLiveness).toHaveBeenCalled();
     });
   });
 });

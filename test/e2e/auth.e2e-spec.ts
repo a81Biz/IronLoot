@@ -1,8 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication, ValidationPipe } from '@nestjs/common';
-import * as request from 'supertest';
+import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
+import request from 'supertest';
 import { AppModule } from '@/app.module';
 import { PrismaService } from '@/database/prisma.service';
+import { Response } from 'supertest';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;
@@ -17,7 +18,7 @@ describe('Auth (e2e)', () => {
     
     app.setGlobalPrefix('api');
     app.enableVersioning({
-      type: 1, // URI versioning
+      type: VersioningType.URI,
       defaultVersion: '1',
     });
     
@@ -56,7 +57,7 @@ describe('Auth (e2e)', () => {
         .post('/api/v1/auth/register')
         .send(testUser)
         .expect(201)
-        .expect((res) => {
+        .expect((res: Response) => {
           expect(res.body.user).toBeDefined();
           expect(res.body.user.email).toBe(testUser.email.toLowerCase());
           expect(res.body.user.username).toBe(testUser.username.toLowerCase());
@@ -161,7 +162,7 @@ describe('Auth (e2e)', () => {
       return request(app.getHttpServer())
         .get('/api/v1/health')
         .expect(200)
-        .expect((res) => {
+        .expect((res: Response) => {
           expect(res.body.status).toBeDefined();
         });
     });
