@@ -112,11 +112,6 @@ iron-loot/
 | `BidsModule` | Pujas, validaciones en tiempo real | ✅ |
 | `OrdersModule` | Órdenes post-subasta | ✅ |
 | `PaymentsModule` | Pagos (PayPal/Mercado Pago Sandbox) | ✅ |
-
-### ⏳ Pendientes
-
-| Módulo | Descripción | Estado |
-|--------|-------------|--------|
 | `ShipmentsModule` | Tracking de envíos | ✅ |
 | `RatingsModule` | Calificaciones y reputación | ✅ |
 | `DisputesModule` | Resolución de disputas | ✅ |
@@ -174,7 +169,35 @@ import { BidsModule } from './modules/bids/bids.module';
 export class AppModule {}
 ```
 
-### 4. Implementar Tests (Obligatorio)
+### 4. Integrar Observabilidad
+
+Usa los decoradores de `src/common/observability` para asegurar logs y auditoría:
+
+```typescript
+import { Log, AuditedAction } from '@/common/observability/decorators';
+import { AuditEventType, EntityType } from '@/common/observability/constants';
+
+@Controller('bids')
+export class BidsController {
+
+  // @Log: Para endpoints de lectura o no críticos
+  @Get()
+  @Log() 
+  findAll() { ... }
+
+  // @AuditedAction: Para cambios de estado (crear, editar, borrar)
+  @Post()
+  @AuditedAction(
+    AuditEventType.BID_PLACED,    // Qué pasó
+    EntityType.AUCTION,           // Sobre qué entidad
+    (args, result) => args[0].id, // Cómo obtener el ID de la entidad
+    ['amount']                    // Qué campos guardar en el log (payload)
+  )
+  create(@Body() dto: CreateBidDto) { ... }
+}
+```
+
+### 5. Implementar Tests (Obligatorio)
 
 **Unitarios (`test/unit/bids/`)**:
 Debes crear tests para Service y Controller isolados (mockeando dependencias).
