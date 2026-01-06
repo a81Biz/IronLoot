@@ -1,6 +1,11 @@
 # 🎮 Iron Loot API
 
-Plataforma de subastas en línea construida con NestJS, PostgreSQL y Redis.
+![CI Status](https://img.shields.io/badge/CI-Success-brightgreen)
+![Coverage](https://img.shields.io/badge/Coverage-41%25-yellow)
+![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![License](https://img.shields.io/badge/license-MIT-green)
+
+Backend de la plataforma de subastas Iron Loot. Construido con NestJS, Prisma y PostgreSQL. y Redis.
 
 ## 📋 Tabla de Contenidos
 
@@ -201,6 +206,43 @@ export class BidsController {
 
 **Unitarios (`test/unit/bids/`)**:
 Debes crear tests para Service y Controller isolados (mockeando dependencias).
+
+## 🌍 Variables de Entorno
+
+| Variable | Descripción | Requerido | Default |
+|----------|-------------|-----------|---------|
+| `DATABASE_URL` | Connection string PostgreSQL | ✅ | - |
+| `JWT_SECRET` | Clave secreta para firmar tokens | ✅ | - |
+| `NODE_ENV` | Entorno (development, production) | ❌ | development |
+| `PORT` | Puerto de la API | ❌ | 3000 |
+| `RATE_LIMIT_TTL` | Ventana de tiempo en segundos | ❌ | 60 |
+| `RATE_LIMIT_MAX` | Max requests por ventana | ❌ | 100 |
+
+## 🚀 Deployment
+
+### Producción con Docker
+
+1.  **Construir imagen optimizada**:
+    ```bash
+    docker build -t ironloot-api .
+    ```
+2.  **Correr contenedor**:
+    ```bash
+    docker run -d -p 3000:3000 --env-file .env ironloot-api
+    ```
+
+## 📊 Monitoreo y Observabilidad
+
+La plataforma incluye endpoints y herramientas para monitoreo:
+
+-   **Health Check**: `GET /health` (Estado general)
+-   **Detailed Health**: `GET /health/detailed` (Estado de dependencias: DB, Redis)
+-   **Diagnósticos**: `GET /diagnostics` (Solo DEV/Admin - Logs y errores recientes)
+-   **Trace ID**: Cada request incluye un header `x-trace-id` para trazabilidad distribuida.
+
+## 📄 Licencia
+
+Este proyecto está bajo la licencia [MIT](./LICENSE).
 Ver ejemplos en `test/unit/auctions/`.
 
 **End-to-End (`test/e2e/bids.e2e-spec.ts`)**:

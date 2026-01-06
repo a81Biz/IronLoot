@@ -3,7 +3,7 @@ import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { AuditPersistenceService } from '../audit/audit-persistence.service';
 import { PrismaService } from '../../database/prisma.service';
 import { MetricsService, RequestContextService } from '../../common/observability';
-import { Public } from '../auth/decorators';
+// import { Public } from '../auth/decorators';
 
 /**
  * DiagnosticsController
@@ -13,7 +13,7 @@ import { Public } from '../auth/decorators';
  */
 @ApiTags('diagnostics')
 @Controller('diagnostics')
-@Public() // Diagnostics endpoints are public (TODO: restrict in production)
+// @Public() // Diagnostics endpoints are public (TODO: restrict in production)
 export class DiagnosticsController {
   constructor(
     private readonly prisma: PrismaService,

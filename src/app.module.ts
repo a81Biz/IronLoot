@@ -23,9 +23,6 @@ import { AuctionsModule } from './modules/auctions/auctions.module';
 import { BidsModule } from './modules/bids/bids.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { PaymentsModule } from './modules/payments/payments.module';
-// import { OrdersModule } from './modules/orders/orders.module';
-// import { PaymentsModule } from './modules/payments/payments.module';
-// import { ShipmentsModule } from './modules/shipments/shipments.module';
 import { RatingsModule } from './modules/ratings/ratings.module';
 import { DisputesModule } from './modules/disputes/disputes.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -78,7 +75,6 @@ import { ShipmentsModule } from './modules/shipments/shipments.module';
     // Feature modules (uncomment as implemented)
     UsersModule,
     AuctionsModule,
-    BidsModule,
     BidsModule,
     OrdersModule,
     PaymentsModule,
