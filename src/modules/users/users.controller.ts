@@ -34,7 +34,7 @@ export class UsersController {
    */
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Get own profile',
     description: "Returns the authenticated user's complete profile including private data",
@@ -75,7 +75,7 @@ export class UsersController {
    */
   @Patch('me')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Update own profile',
     description: "Update the authenticated user's profile information",
@@ -121,7 +121,7 @@ export class UsersController {
    */
   @Get('me/stats')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Get user statistics',
     description: "Returns statistics about the user's activity on the platform",
@@ -142,7 +142,7 @@ export class UsersController {
    */
   @Get('me/verification-status')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Get verification status',
     description: "Check the user's verification status and seller eligibility",
@@ -164,7 +164,7 @@ export class UsersController {
    */
   @Post('me/resend-verification')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Resend verification email',
@@ -191,7 +191,7 @@ export class UsersController {
    */
   @Post('me/enable-seller')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Enable seller status',

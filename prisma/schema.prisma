@@ -25,6 +25,15 @@ enum UserState {
   BANNED
 }
 
+/// Auction status enum
+enum AuctionStatus {
+  DRAFT
+  PUBLISHED
+  ACTIVE
+  CLOSED
+  CANCELLED
+}
+
 /// User - Main user entity
 model User {
   id        String   @id @default(uuid()) @db.Uuid
@@ -61,6 +70,7 @@ model User {
   // Relations
   sessions Session[]
   profile  Profile?
+  auctions Auction[] // Relation as seller
 
   @@index([email], name: "idx_users_email")
   @@index([username], name: "idx_users_username")
@@ -114,6 +124,41 @@ model Session {
   @@index([refreshToken], name: "idx_sessions_token")
   @@index([expiresAt], name: "idx_sessions_expires")
   @@map("sessions")
+}
+
+// ===========================================
+// AUCTION & COMMERCE TABLES
+// ===========================================
+
+/// Auction - Core auction entity
+model Auction {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Info
+  title         String  @db.VarChar(200)
+  description   String  @db.Text
+  slug          String  @unique @db.VarChar(255)
+  images        Json    @default("[]") @db.JsonB
+
+  // Pricing & Time
+  startingPrice Decimal   @map("starting_price") @db.Decimal(10, 2)
+  currentPrice  Decimal   @map("current_price") @db.Decimal(10, 2)
+  startsAt      DateTime  @map("starts_at") @db.Timestamptz
+  endsAt        DateTime  @map("ends_at") @db.Timestamptz
+
+  // Status
+  status        AuctionStatus @default(DRAFT)
+
+  // Relations
+  sellerId      String    @map("seller_id") @db.Uuid
+  seller        User      @relation(fields: [sellerId], references: [id])
+
+  @@index([sellerId], name: "idx_auctions_seller")
+  @@index([status], name: "idx_auctions_status")
+  @@index([endsAt], name: "idx_auctions_ends_at")
+  @@map("auctions")
 }
 
 // ===========================================

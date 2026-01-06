@@ -59,7 +59,17 @@ async function bootstrap(): Promise<void> {
       .setTitle('Iron Loot API')
       .setDescription('Auction platform API')
       .setVersion('0.1.0')
-      .addBearerAuth()
+      .addBearerAuth(
+        {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+          name: 'JWT',
+          description: 'Enter JWT token',
+          in: 'header',
+        },
+        'access-token', // This name must match @ApiBearerAuth() in controllers
+      )
       .addTag('health', 'Service health')
       .addTag('auth', 'Authentication')
       .addTag('users', 'User management')
