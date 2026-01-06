@@ -14,8 +14,17 @@ Plataforma de subastas en línea construida con NestJS, PostgreSQL y Redis.
 - [Scripts Disponibles](#scripts-disponibles)
 - [Desarrollo](#desarrollo)
 - [Guía: Agregar Módulos](#guía-agregar-módulos)
+- [Enlaces de Interés](#enlaces-de-interés)
 
 ---
+
+## 🔗 Enlaces de Interés
+
+| Aplicación | URL | Credenciales (Dev) |
+|------------|-----|--------------------|
+| **API Swagger** | [http://localhost:3000/docs](http://localhost:3000/docs) | - |
+| **API Root** | [http://localhost:3000](http://localhost:3000) | - |
+| **Admin BD (pgAdmin)** | [http://localhost:5050](http://localhost:5050) | `admin@ironloot.com` / `admin` |
 
 ## 📦 Requisitos
 
@@ -100,17 +109,17 @@ iron-loot/
 | `AuthModule` | JWT, Registro, Login, Roles | ✅ |
 | `UsersModule` | Perfiles, Vendedores, Auditoría | ✅ |
 | `AuctionsModule` | CRUD Subastas, Estados (Draft/Published) | ✅ |
+| `BidsModule` | Pujas, validaciones en tiempo real | ✅ |
+| `OrdersModule` | Órdenes post-subasta | ✅ |
 
 ### ⏳ Pendientes
 
 | Módulo | Descripción | Estado |
 |--------|-------------|--------|
-| `BidsModule` | Pujas, validaciones en tiempo real | ⏳ |
-| `OrdersModule` | Órdenes post-subasta | ⏳ |
-| `PaymentsModule` | Integración de pagos | ⏳ |
 | `ShipmentsModule` | Tracking de envíos | ⏳ |
 | `RatingsModule` | Calificaciones | ⏳ |
 | `DisputesModule` | Resolución de disputas | ⏳ |
+| `NotificationsModule` | Notificaciones | ⏳ |
 
 ---
 

@@ -71,6 +71,9 @@ model User {
   sessions Session[]
   profile  Profile?
   auctions Auction[] // Relation as seller
+  bids     Bid[]     // Relation as bidder
+  ordersAsBuyer  Order[] @relation("OrdersBuyer")
+  ordersAsSeller Order[] @relation("OrdersSeller")
 
   @@index([email], name: "idx_users_email")
   @@index([username], name: "idx_users_username")
@@ -154,11 +157,72 @@ model Auction {
   // Relations
   sellerId      String    @map("seller_id") @db.Uuid
   seller        User      @relation(fields: [sellerId], references: [id])
+  bids          Bid[]
+
+  order         Order?   // One-to-One relation: Auction -> Order
 
   @@index([sellerId], name: "idx_auctions_seller")
   @@index([status], name: "idx_auctions_status")
   @@index([endsAt], name: "idx_auctions_ends_at")
   @@map("auctions")
+}
+
+/// Bid - Auction bid entity
+model Bid {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Amount
+  amount Decimal @db.Decimal(10, 2)
+
+  // Relations
+  auctionId String  @map("auction_id") @db.Uuid
+  auction   Auction @relation(fields: [auctionId], references: [id])
+
+  bidderId String @map("bidder_id") @db.Uuid
+  bidder   User   @relation(fields: [bidderId], references: [id])
+
+  @@index([auctionId], name: "idx_bids_auction")
+  @@index([bidderId], name: "idx_bids_bidder")
+  @@index([amount], name: "idx_bids_amount")
+  @@map("bids")
+}
+
+/// Order Status enum
+enum OrderStatus {
+  PENDING_PAYMENT
+  PAID
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+/// Order - Post-auction transaction
+model Order {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Info
+  totalAmount Decimal @map("total_amount") @db.Decimal(10, 2)
+  status      OrderStatus @default(PENDING_PAYMENT)
+
+  // Relations
+  auctionId String  @unique @map("auction_id") @db.Uuid
+  auction   Auction @relation(fields: [auctionId], references: [id])
+
+  buyerId   String  @map("buyer_id") @db.Uuid
+  buyer     User    @relation("OrdersBuyer", fields: [buyerId], references: [id])
+
+  sellerId  String  @map("seller_id") @db.Uuid
+  seller    User    @relation("OrdersSeller", fields: [sellerId], references: [id])
+
+  @@index([buyerId], name: "idx_orders_buyer")
+  @@index([sellerId], name: "idx_orders_seller")
+  @@index([status], name: "idx_orders_status")
+  @@map("orders")
 }
 
 // ===========================================

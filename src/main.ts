@@ -70,11 +70,13 @@ async function bootstrap(): Promise<void> {
         },
         'access-token', // This name must match @ApiBearerAuth() in controllers
       )
-      .addTag('health', 'Service health')
-      .addTag('auth', 'Authentication')
-      .addTag('users', 'User management')
-      .addTag('auctions', 'Auctions')
-      .addTag('bids', 'Bids')
+      .addTag('health', 'Service health check')
+      .addTag('auth', 'User authentication and session management')
+      .addTag('users', 'User profile and seller management')
+      .addTag('auctions', 'Auction creation and lifecycle management')
+      .addTag('bids', 'Bidding validation and processing')
+      .addTag('orders', 'Order creation and management')
+      .addTag('diagnostics', 'System diagnostics (Non-production)')
       .build();
 
     const document = SwaggerModule.createDocument(app, swaggerConfig);

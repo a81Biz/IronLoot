@@ -24,7 +24,7 @@ import {
   UserStatsDto,
 } from './dto';
 
-@ApiTags('Users')
+@ApiTags('users')
 @Controller('users')
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}

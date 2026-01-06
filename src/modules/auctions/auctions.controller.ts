@@ -25,7 +25,7 @@ import { CurrentUser, AuthenticatedUser, Public } from '@/modules/auth/decorator
 import { AuctionsService } from './auctions.service';
 import { CreateAuctionDto, UpdateAuctionDto, AuctionResponseDto } from './dto';
 
-@ApiTags('Auctions')
+@ApiTags('auctions')
 @Controller('auctions')
 export class AuctionsController {
   constructor(private readonly auctionsService: AuctionsService) {}
