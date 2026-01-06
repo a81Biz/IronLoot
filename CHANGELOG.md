@@ -1,4 +1,10 @@
-# Changelog
+## [0.1.1] - 2026-01-06
+
+### Added
+- **WalletModule**: Sistema de cuenta del usuario con saldo disponible y retenido.
+- **Ledger**: Registro inmutable de movimientos financieros.
+- Documentación completa en `docs/05-wallet/`.
+
 
 All notable changes to this project will be documented in this file.
 

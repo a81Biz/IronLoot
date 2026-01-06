@@ -1,13 +1,19 @@
-import { Injectable, BadRequestException, NotFoundException, Logger } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { LedgerType, Wallet } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
+import { StructuredLogger, ChildLogger } from '../../common/observability';
 
 @Injectable()
 export class WalletService {
-  private readonly logger = new Logger(WalletService.name);
+  private readonly log: ChildLogger;
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly logger: StructuredLogger,
+  ) {
+    this.log = this.logger.child('WalletService');
+  }
 
   /**
    * Get or create a user's wallet
@@ -86,7 +92,9 @@ export class WalletService {
         },
       });
 
-      this.logger.log(`Deposit successful for user ${userId}: +${amount}`);
+      this.log.info(`Deposit successful for user ${userId}`, {
+        data: { userId, amount, referenceId, newBalance: newBalance.toNumber() },
+      });
       return { wallet: updatedWallet, ledger };
     });
   }
@@ -134,7 +142,9 @@ export class WalletService {
         data: { balance: newBalance },
       });
 
-      this.logger.log(`Withdrawal successful for user ${userId}: -${amount}`);
+      this.log.info(`Withdrawal successful for user ${userId}`, {
+        data: { userId, amount, referenceId, newBalance: newBalance.toNumber() },
+      });
       return { wallet: updatedWallet, ledger };
     });
   }

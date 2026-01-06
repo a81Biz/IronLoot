@@ -3,6 +3,7 @@ import { WalletService } from '../../../src/modules/wallet/wallet.service';
 import { PrismaService } from '../../../src/database/prisma.service';
 import { BadRequestException } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
+import { StructuredLogger } from '../../../src/common/observability';
 
 // Mock types
 const mockWallet = {
@@ -25,9 +26,30 @@ const mockTx = {
   },
 };
 
+const mockPrismaService = {
+  wallet: {
+    findUnique: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+  },
+  ledger: {
+    create: jest.fn(),
+  },
+  $transaction: jest.fn((callback) => callback(mockTx)),
+};
+
+const mockStructuredLogger = {
+  child: jest.fn().mockReturnValue({
+    info: jest.fn(),
+    error: jest.fn(),
+    warn: jest.fn(),
+    debug: jest.fn(),
+  }),
+};
+
 describe('WalletService', () => {
   let service: WalletService;
-  let prisma: PrismaService;
+  let prisma: any; // Use any to avoid type errors with mock
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -35,15 +57,11 @@ describe('WalletService', () => {
         WalletService,
         {
           provide: PrismaService,
-          useValue: {
-            wallet: {
-              findUnique: jest.fn(),
-              create: jest.fn(),
-            },
-            $transaction: jest.fn().mockImplementation(async (callback) => {
-              return await callback(mockTx);
-            }),
-          },
+          useValue: mockPrismaService,
+        },
+        {
+          provide: StructuredLogger,
+          useValue: mockStructuredLogger,
         },
       ],
     }).compile();

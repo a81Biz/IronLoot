@@ -27,6 +27,7 @@ import { RatingsModule } from './modules/ratings/ratings.module';
 import { DisputesModule } from './modules/disputes/disputes.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ShipmentsModule } from './modules/shipments/shipments.module';
+import { WalletModule } from './modules/wallet/wallet.module';
 
 @Module({
   imports: [
@@ -82,6 +83,7 @@ import { ShipmentsModule } from './modules/shipments/shipments.module';
     RatingsModule,
     DisputesModule,
     NotificationsModule,
+    WalletModule,
   ],
   providers: [
     // Global rate limiting guard

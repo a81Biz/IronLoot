@@ -121,10 +121,11 @@ iron-loot/
 | `RatingsModule` | Calificaciones y reputación | ✅ |
 | `DisputesModule` | Resolución de disputas | ✅ |
 | `NotificationsModule` | Notificaciones (In-App) | ✅ |
+| `WalletModule` | Cuenta de usuario, saldo, retenciones | ✅ |
 
 ---
 
-## � Guía: Agregar Módulos
+## 📚 Guía: Agregar Módulos
 
 Sigue estos pasos para añadir un nuevo módulo de negocio (ej. `BidsModule`).
 
@@ -206,6 +207,21 @@ export class BidsController {
 
 **Unitarios (`test/unit/bids/`)**:
 Debes crear tests para Service y Controller isolados (mockeando dependencias).
+Ver ejemplos en `test/unit/auctions/`.
+
+**End-to-End (`test/e2e/bids.e2e-spec.ts`)**:
+Usa el `TestApp` y `AuthHelper` para probar el flujo completo.
+
+```typescript
+// Ejemplo E2E rápido
+describe('Bids (e2e)', () => {
+    // ... setup TestApp ...
+    it('should place a bid', async () => {
+        const user = await authHelper.createAuthenticatedUser();
+        // ... request ...
+    });
+});
+```
 
 ## 🌍 Variables de Entorno
 
@@ -240,24 +256,7 @@ La plataforma incluye endpoints y herramientas para monitoreo:
 -   **Diagnósticos**: `GET /diagnostics` (Solo DEV/Admin - Logs y errores recientes)
 -   **Trace ID**: Cada request incluye un header `x-trace-id` para trazabilidad distribuida.
 
-## 📄 Licencia
 
-Este proyecto está bajo la licencia [MIT](./LICENSE).
-Ver ejemplos en `test/unit/auctions/`.
-
-**End-to-End (`test/e2e/bids.e2e-spec.ts`)**:
-Usa el `TestApp` y `AuthHelper` para probar el flujo completo.
-
-```typescript
-// Ejemplo E2E rápido
-describe('Bids (e2e)', () => {
-    // ... setup TestApp ...
-    it('should place a bid', async () => {
-        const user = await authHelper.createAuthenticatedUser();
-        // ... request ...
-    });
-});
-```
 
 ---
 
@@ -286,7 +285,7 @@ npm run test:e2e test/e2e/auctions.e2e-spec.ts
 
 ---
 
-## � Troubleshooting Común
+## 🛠 Troubleshooting Común
 
 **Error: `PrismaClientInitializationError: Can't reach database server at localhost:5432`**
 *   Causa: No has levantado la base de datos o el puerto no está expuesto.
@@ -300,9 +299,9 @@ npm run test:e2e test/e2e/auctions.e2e-spec.ts
 
 ## 📄 Licencia
 
-MIT
+Este proyecto está bajo la licencia [MIT](./LICENSE).
 
-## 💳
+## 💳 Integraciones de Pago y Logística
 - **Integración de Pagos**:
   - `PaymentsModule`: Controladores y servicios para manejar pagos con MercadoPago y PayPal. Usa `PaymentProvider` interface para abstracción. Actualmente funciona en modo **MOCK** (simulación) por defecto.
 
