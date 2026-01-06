@@ -1,3 +1,4 @@
+/// <reference types="jest" />
 import { Test, TestingModule } from '@nestjs/testing';
 import { UserState } from '@prisma/client';
 import { UsersController } from '@/modules/users/users.controller';

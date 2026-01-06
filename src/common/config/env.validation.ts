@@ -8,6 +8,7 @@ enum Environment {
   Development = 'development',
   QA = 'qa',
   Production = 'production',
+  Test = 'test',
 }
 
 /**
