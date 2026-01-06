@@ -74,6 +74,8 @@ model User {
   bids     Bid[]     // Relation as bidder
   ordersAsBuyer  Order[] @relation("OrdersBuyer")
   ordersAsSeller Order[] @relation("OrdersSeller")
+  authoredRatings Rating[] @relation("RatingAuthor")
+  receivedRatings Rating[] @relation("RatingTarget")
 
   @@index([email], name: "idx_users_email")
   @@index([username], name: "idx_users_username")
@@ -221,6 +223,7 @@ model Order {
 
   payments  Payment[]
   shipment  Shipment?
+  ratings   Rating[]
 
   @@index([buyerId], name: "idx_orders_buyer")
   @@index([sellerId], name: "idx_orders_seller")
@@ -313,6 +316,32 @@ model Shipment {
   @@index([orderId], name: "idx_shipments_order")
   @@index([status], name: "idx_shipments_status")
   @@map("shipments")
+}
+
+/// Rating - User reputation feedback
+model Rating {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Info
+  score   Int    @db.SmallInt // 1-5
+  comment String? @db.Text
+
+  // Relations
+  orderId String @map("order_id") @db.Uuid
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  authorId String @map("author_id") @db.Uuid
+  author   User   @relation("RatingAuthor", fields: [authorId], references: [id])
+
+  targetId String @map("target_id") @db.Uuid
+  target   User   @relation("RatingTarget", fields: [targetId], references: [id])
+
+  @@index([orderId], name: "idx_ratings_order")
+  @@index([authorId], name: "idx_ratings_author")
+  @@index([targetId], name: "idx_ratings_target")
+  @@map("ratings")
 }
 
 // ===========================================

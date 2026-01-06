@@ -117,8 +117,8 @@ iron-loot/
 
 | Módulo | Descripción | Estado |
 |--------|-------------|--------|
-| `ShipmentsModule` | Tracking de envíos | ⏳ |
-| `RatingsModule` | Calificaciones | ⏳ |
+| `ShipmentsModule` | Tracking de envíos | ✅ |
+| `RatingsModule` | Calificaciones y reputación | ✅ |
 | `DisputesModule` | Resolución de disputas | ⏳ |
 | `NotificationsModule` | Notificaciones | ⏳ |
 
@@ -274,3 +274,7 @@ El endpoint `POST /payments/checkout` retorna un campo `isIntegrated` que indica
   "isIntegrated": false // false = MOCK, true = REAL
 }
 ```
+
+- **Sistemas de Calificación**:
+  - `RatingsModule`: Permite calificar transacciones una vez que el envío ha sido entregado (`DELIVERED`).
+  - Lógica de negocio: Un solo rating por rol (comprador/vendedor) por orden. Reputación pública.
