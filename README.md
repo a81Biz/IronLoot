@@ -111,6 +111,7 @@ iron-loot/
 | `AuctionsModule` | CRUD Subastas, Estados (Draft/Published) | ✅ |
 | `BidsModule` | Pujas, validaciones en tiempo real | ✅ |
 | `OrdersModule` | Órdenes post-subasta | ✅ |
+| `PaymentsModule` | Pagos (PayPal/Mercado Pago Sandbox) | ✅ |
 
 ### ⏳ Pendientes
 
@@ -235,3 +236,37 @@ npm run test:e2e test/e2e/auctions.e2e-spec.ts
 ## 📄 Licencia
 
 MIT
+
+## 💳 Integración de Pagos
+
+El módulo de pagos (`PaymentsModule`) soporta Mercado Pago y PayPal. Actualmente funciona en modo **MOCK** (simulación) por defecto.
+
+Para activar la integración real con los proveedores:
+
+### Mercado Pago
+1. Obtener `ACCESS_TOKEN` del panel de desarrolladores.
+2. Configurar en `.env`:
+   ```bash
+   MERCADO_PAGO_ACCESS_TOKEN=tu_access_token
+   ```
+3. Implementar la llamada al SDK en `src/modules/payments/providers/mercadopago.provider.ts`.
+
+### PayPal
+1. Obtener `CLIENT_ID` y `CLIENT_SECRET`.
+2. Configurar en `.env`:
+   ```bash
+   PAYPAL_CLIENT_ID=tu_client_id
+   PAYPAL_CLIENT_SECRET=tu_client_secret
+   ```
+3. Implementar la llamada al SDK en `src/modules/payments/providers/paypal.provider.ts`.
+
+### Verificación de Integración
+El endpoint `POST /payments/checkout` retorna un campo `isIntegrated` que indica si las credenciales están configuradas:
+
+```json
+{
+  "externalId": "...",
+  "redirectUrl": "...",
+  "isIntegrated": false // false = MOCK, true = REAL
+}
+```

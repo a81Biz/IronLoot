@@ -22,7 +22,7 @@ import { UsersModule } from './modules/users/users.module';
 import { AuctionsModule } from './modules/auctions/auctions.module';
 import { BidsModule } from './modules/bids/bids.module';
 import { OrdersModule } from './modules/orders/orders.module';
-// import { BidsModule } from './modules/bids/bids.module';
+import { PaymentsModule } from './modules/payments/payments.module';
 // import { OrdersModule } from './modules/orders/orders.module';
 // import { PaymentsModule } from './modules/payments/payments.module';
 // import { ShipmentsModule } from './modules/shipments/shipments.module';
@@ -78,10 +78,9 @@ import { OrdersModule } from './modules/orders/orders.module';
     UsersModule,
     AuctionsModule,
     BidsModule,
+    BidsModule,
     OrdersModule,
-    // BidsModule,
-    // OrdersModule,
-    // PaymentsModule,
+    PaymentsModule,
     // ShipmentsModule,
     // RatingsModule,
     // DisputesModule,

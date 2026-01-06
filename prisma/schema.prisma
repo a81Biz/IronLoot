@@ -219,10 +219,53 @@ model Order {
   sellerId  String  @map("seller_id") @db.Uuid
   seller    User    @relation("OrdersSeller", fields: [sellerId], references: [id])
 
+  payments  Payment[]
+
   @@index([buyerId], name: "idx_orders_buyer")
   @@index([sellerId], name: "idx_orders_seller")
   @@index([status], name: "idx_orders_status")
   @@map("orders")
+}
+
+/// Payment Provider enum
+enum PaymentProvider {
+  MERCADO_PAGO
+  PAYPAL
+}
+
+/// Payment Status enum
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+/// Payment - Transaction records
+model Payment {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Transaction Info
+  amount   Decimal @db.Decimal(10, 2)
+  currency String  @default("USD") @db.VarChar(3)
+  
+  provider PaymentProvider
+  status   PaymentStatus   @default(PENDING)
+
+  // External Ref
+  externalId String? @map("external_id") @db.VarChar(255)
+  metadata   Json    @default("{}") @db.JsonB
+
+  // Relations
+  orderId String @map("order_id") @db.Uuid
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  @@index([orderId], name: "idx_payments_order")
+  @@index([externalId], name: "idx_payments_external_id")
+  @@index([status], name: "idx_payments_status")
+  @@map("payments")
 }
 
 // ===========================================
