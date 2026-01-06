@@ -237,9 +237,13 @@ npm run test:e2e test/e2e/auctions.e2e-spec.ts
 
 MIT
 
-## 💳 Integración de Pagos
+## 💳
+- **Integración de Pagos**:
+  - `PaymentsModule`: Controladores y servicios para manejar pagos con MercadoPago y PayPal. Usa `PaymentProvider` interface para abstracción. Actualmente funciona en modo **MOCK** (simulación) por defecto.
 
-El módulo de pagos (`PaymentsModule`) soporta Mercado Pago y PayPal. Actualmente funciona en modo **MOCK** (simulación) por defecto.
+- **Logística y Envíos**:
+  - `ShipmentsModule`: Gestión de envíos para órdenes pagadas. Permite al vendedor crear envíos y a ambas partes ver el estado.
+  - Soporta múltiples proveedores (DHL, FedEx, etc.) y estados de envío.
 
 Para activar la integración real con los proveedores:
 

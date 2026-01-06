@@ -220,6 +220,7 @@ model Order {
   seller    User    @relation("OrdersSeller", fields: [sellerId], references: [id])
 
   payments  Payment[]
+  shipment  Shipment?
 
   @@index([buyerId], name: "idx_orders_buyer")
   @@index([sellerId], name: "idx_orders_seller")
@@ -266,6 +267,52 @@ model Payment {
   @@index([externalId], name: "idx_payments_external_id")
   @@index([status], name: "idx_payments_status")
   @@map("payments")
+}
+
+// ===========================================
+// LOGISTICS TABLES
+// ===========================================
+
+/// Shipment Status enum
+enum ShipmentStatus {
+  PENDING
+  SHIPPED
+  DELIVERED
+  RETURNED
+}
+
+/// Shipment Provider enum
+enum ShipmentProvider {
+  DHL
+  FEDEX
+  ESTAFETA
+  UPS
+  CUSTOM
+}
+
+/// Shipment - Logistics records
+model Shipment {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Tracking Info
+  provider       ShipmentProvider
+  trackingNumber String?          @map("tracking_number") @db.VarChar(100)
+  status         ShipmentStatus   @default(PENDING)
+
+  // Timestamps
+  estimatedDelivery DateTime? @map("estimated_delivery") @db.Timestamptz
+  shippedAt         DateTime? @map("shipped_at") @db.Timestamptz
+  deliveredAt       DateTime? @map("delivered_at") @db.Timestamptz
+
+  // Relations
+  orderId String @unique @map("order_id") @db.Uuid
+  order   Order  @relation(fields: [orderId], references: [id])
+
+  @@index([orderId], name: "idx_shipments_order")
+  @@index([status], name: "idx_shipments_status")
+  @@map("shipments")
 }
 
 // ===========================================

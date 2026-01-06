@@ -29,6 +29,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 // import { RatingsModule } from './modules/ratings/ratings.module';
 // import { DisputesModule } from './modules/disputes/disputes.module';
 // import { NotificationsModule } from './modules/notifications/notifications.module';
+import { ShipmentsModule } from './modules/shipments/shipments.module';
 
 @Module({
   imports: [
@@ -81,6 +82,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
     BidsModule,
     OrdersModule,
     PaymentsModule,
+    ShipmentsModule,
     // ShipmentsModule,
     // RatingsModule,
     // DisputesModule,
