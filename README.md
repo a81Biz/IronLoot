@@ -120,7 +120,7 @@ iron-loot/
 | `ShipmentsModule` | Tracking de envíos | ✅ |
 | `RatingsModule` | Calificaciones y reputación | ✅ |
 | `DisputesModule` | Resolución de disputas | ✅ |
-| `NotificationsModule` | Notificaciones | ⏳ |
+| `NotificationsModule` | Notificaciones (In-App) | ✅ |
 
 ---
 
