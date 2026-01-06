@@ -41,9 +41,9 @@ model User {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Authentication
-  email        String  @unique @db.VarChar(255)
-  username     String  @unique @db.VarChar(50)
-  passwordHash String  @map("password_hash") @db.VarChar(255)
+  email        String @unique @db.VarChar(255)
+  username     String @unique @db.VarChar(50)
+  passwordHash String @map("password_hash") @db.VarChar(255)
 
   // Profile
   displayName String? @map("display_name") @db.VarChar(100)
@@ -58,9 +58,12 @@ model User {
   isSeller        Boolean   @default(false) @map("is_seller")
   sellerEnabledAt DateTime? @map("seller_enabled_at") @db.Timestamptz
 
+  // Financial
+  wallet Wallet?
+
   // Email verification
-  emailVerifiedAt          DateTime? @map("email_verified_at") @db.Timestamptz
-  emailVerificationToken   String?   @map("email_verification_token") @db.VarChar(255)
+  emailVerifiedAt            DateTime? @map("email_verified_at") @db.Timestamptz
+  emailVerificationToken     String?   @map("email_verification_token") @db.VarChar(255)
   emailVerificationExpiresAt DateTime? @map("email_verification_expires_at") @db.Timestamptz
 
   // Password reset
@@ -68,16 +71,16 @@ model User {
   passwordResetExpiresAt DateTime? @map("password_reset_expires_at") @db.Timestamptz
 
   // Relations
-  sessions Session[]
-  profile  Profile?
-  auctions Auction[] // Relation as seller
-  bids     Bid[]     // Relation as bidder
-  ordersAsBuyer  Order[] @relation("OrdersBuyer")
-  ordersAsSeller Order[] @relation("OrdersSeller")
-  authoredRatings Rating[] @relation("RatingAuthor")
-  receivedRatings Rating[] @relation("RatingTarget")
-  createdDisputes Dispute[] @relation("DisputeCreator")
-  notifications Notification[]
+  sessions        Session[]
+  profile         Profile?
+  auctions        Auction[] // Relation as seller
+  bids            Bid[] // Relation as bidder
+  ordersAsBuyer   Order[]        @relation("OrdersBuyer")
+  ordersAsSeller  Order[]        @relation("OrdersSeller")
+  authoredRatings Rating[]       @relation("RatingAuthor")
+  receivedRatings Rating[]       @relation("RatingTarget")
+  createdDisputes Dispute[]      @relation("DisputeCreator")
+  notifications   Notification[]
 
   @@index([email], name: "idx_users_email")
   @@index([username], name: "idx_users_username")
@@ -144,26 +147,26 @@ model Auction {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Info
-  title         String  @db.VarChar(200)
-  description   String  @db.Text
-  slug          String  @unique @db.VarChar(255)
-  images        Json    @default("[]") @db.JsonB
+  title       String @db.VarChar(200)
+  description String @db.Text
+  slug        String @unique @db.VarChar(255)
+  images      Json   @default("[]") @db.JsonB
 
   // Pricing & Time
-  startingPrice Decimal   @map("starting_price") @db.Decimal(10, 2)
-  currentPrice  Decimal   @map("current_price") @db.Decimal(10, 2)
-  startsAt      DateTime  @map("starts_at") @db.Timestamptz
-  endsAt        DateTime  @map("ends_at") @db.Timestamptz
+  startingPrice Decimal  @map("starting_price") @db.Decimal(10, 2)
+  currentPrice  Decimal  @map("current_price") @db.Decimal(10, 2)
+  startsAt      DateTime @map("starts_at") @db.Timestamptz
+  endsAt        DateTime @map("ends_at") @db.Timestamptz
 
   // Status
-  status        AuctionStatus @default(DRAFT)
+  status AuctionStatus @default(DRAFT)
 
   // Relations
-  sellerId      String    @map("seller_id") @db.Uuid
-  seller        User      @relation(fields: [sellerId], references: [id])
-  bids          Bid[]
+  sellerId String @map("seller_id") @db.Uuid
+  seller   User   @relation(fields: [sellerId], references: [id])
+  bids     Bid[]
 
-  order         Order?   // One-to-One relation: Auction -> Order
+  order Order? // One-to-One relation: Auction -> Order
 
   @@index([sellerId], name: "idx_auctions_seller")
   @@index([status], name: "idx_auctions_status")
@@ -210,23 +213,23 @@ model Order {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Info
-  totalAmount Decimal @map("total_amount") @db.Decimal(10, 2)
+  totalAmount Decimal     @map("total_amount") @db.Decimal(10, 2)
   status      OrderStatus @default(PENDING_PAYMENT)
 
   // Relations
   auctionId String  @unique @map("auction_id") @db.Uuid
   auction   Auction @relation(fields: [auctionId], references: [id])
 
-  buyerId   String  @map("buyer_id") @db.Uuid
-  buyer     User    @relation("OrdersBuyer", fields: [buyerId], references: [id])
+  buyerId String @map("buyer_id") @db.Uuid
+  buyer   User   @relation("OrdersBuyer", fields: [buyerId], references: [id])
 
-  sellerId  String  @map("seller_id") @db.Uuid
-  seller    User    @relation("OrdersSeller", fields: [sellerId], references: [id])
+  sellerId String @map("seller_id") @db.Uuid
+  seller   User   @relation("OrdersSeller", fields: [sellerId], references: [id])
 
-  payments  Payment[]
-  shipment  Shipment?
-  ratings   Rating[]
-  dispute   Dispute?
+  payments Payment[]
+  shipment Shipment?
+  ratings  Rating[]
+  dispute  Dispute?
 
   @@index([buyerId], name: "idx_orders_buyer")
   @@index([sellerId], name: "idx_orders_seller")
@@ -257,7 +260,7 @@ model Payment {
   // Transaction Info
   amount   Decimal @db.Decimal(10, 2)
   currency String  @default("USD") @db.VarChar(3)
-  
+
   provider PaymentProvider
   status   PaymentStatus   @default(PENDING)
 
@@ -328,7 +331,7 @@ model Rating {
   updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
   // Info
-  score   Int    @db.SmallInt // 1-5
+  score   Int     @db.SmallInt // 1-5
   comment String? @db.Text
 
   // Relations
@@ -530,4 +533,68 @@ model RequestLog {
   @@index([httpStatus, timestamp(sort: Desc)], name: "idx_request_logs_status_time")
   @@index([actorUserId, timestamp(sort: Desc)], name: "idx_request_logs_actor_time")
   @@map("request_logs")
+}
+
+// ===========================================
+// WALLET & LEDGER TABLES
+// ===========================================
+
+/// Ledger entry type enum
+enum LedgerType {
+  DEPOSIT
+  WITHDRAWAL
+  HOLD
+  RELEASE
+  PURCHASE
+  REFUND
+  ADJUSTMENT
+}
+
+/// Wallet - User's financial account
+model Wallet {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Ownership
+  userId String @unique @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id])
+
+  // Balance
+  balance   Decimal @default(0) @db.Decimal(12, 2) // Available funds
+  heldFunds Decimal @default(0) @map("held_funds") @db.Decimal(12, 2) // Locked in active bids
+  currency  String  @default("USD") @db.VarChar(3)
+
+  // System State
+  isActive Boolean @default(false) @map("is_active") // Requires initial deposit
+
+  // Relations
+  ledgerEntries Ledger[]
+
+  @@map("wallets")
+}
+
+/// Ledger - Immutable financial history
+model Ledger {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relation
+  walletId String @map("wallet_id") @db.Uuid
+  wallet   Wallet @relation(fields: [walletId], references: [id])
+
+  // Movement details
+  type          LedgerType
+  amount        Decimal    @db.Decimal(12, 2)
+  balanceBefore Decimal    @map("balance_before") @db.Decimal(12, 2)
+  balanceAfter  Decimal    @map("balance_after") @db.Decimal(12, 2)
+
+  // Reference (Audit)
+  referenceId   String? @map("reference_id") @db.VarChar(100) // AuctionID, PaymentID, etc.
+  referenceType String? @map("reference_type") @db.VarChar(50) // "AUCTION", "PAYMENT"
+  description   String  @db.Text
+
+  @@index([walletId, createdAt(sort: Desc)], name: "idx_ledger_wallet_time")
+  @@index([referenceId], name: "idx_ledger_reference")
+  @@map("ledger")
 }
