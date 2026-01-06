@@ -3,6 +3,7 @@ import { DiagnosticsController } from './diagnostics.controller';
 import { PrismaService } from '../../database/prisma.service';
 import { AuditPersistenceService } from '../audit/audit-persistence.service';
 import { MetricsService, RequestContextService } from '../../common/observability';
+import { ConfigService } from '@nestjs/config';
 
 describe('DiagnosticsController', () => {
   let controller: DiagnosticsController;
@@ -43,6 +44,7 @@ describe('DiagnosticsController', () => {
         { provide: AuditPersistenceService, useValue: mockAuditService },
         { provide: MetricsService, useValue: mockMetricsService },
         { provide: RequestContextService, useValue: mockContextService },
+        { provide: ConfigService, useValue: { get: jest.fn().mockReturnValue('development') } },
       ],
     }).compile();
 

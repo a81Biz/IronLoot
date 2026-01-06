@@ -3,6 +3,9 @@ import { ApiTags, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { AuditPersistenceService } from '../audit/audit-persistence.service';
 import { PrismaService } from '../../database/prisma.service';
 import { MetricsService, RequestContextService } from '../../common/observability';
+import { EntityType } from '../../common/observability/constants';
+import { UseGuards } from '@nestjs/common';
+import { DevelopmentOnlyGuard } from '../../common/guards/development-only.guard';
 // import { Public } from '../auth/decorators';
 
 /**
@@ -13,6 +16,7 @@ import { MetricsService, RequestContextService } from '../../common/observabilit
  */
 @ApiTags('diagnostics')
 @Controller('diagnostics')
+@UseGuards(DevelopmentOnlyGuard)
 // @Public() // Diagnostics endpoints are public (TODO: restrict in production)
 export class DiagnosticsController {
   constructor(
@@ -27,7 +31,7 @@ export class DiagnosticsController {
    */
   @Get('ping')
   @ApiOperation({ summary: 'Simple ping' })
-  ping() {
+  ping(): { pong: boolean; timestamp: string; traceId: string } {
     return {
       pong: true,
       timestamp: new Date().toISOString(),
@@ -42,7 +46,10 @@ export class DiagnosticsController {
   @ApiOperation({ summary: 'Get recent errors' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'code', required: false, type: String })
-  async getErrors(@Query('limit') limit?: number, @Query('code') code?: string) {
+  async getErrors(
+    @Query('limit') limit?: number,
+    @Query('code') code?: string,
+  ): Promise<{ count: number; errors: object[] }> {
     const errors = await this.prisma.errorEvent.findMany({
       where: code ? { errorCode: code } : undefined,
       orderBy: { timestamp: 'desc' },
@@ -72,7 +79,9 @@ export class DiagnosticsController {
    */
   @Get('errors/trace/:traceId')
   @ApiOperation({ summary: 'Get errors by trace ID' })
-  async getErrorsByTrace(@Param('traceId') traceId: string) {
+  async getErrorsByTrace(
+    @Param('traceId') traceId: string,
+  ): Promise<{ traceId: string; count: number; errors: object[] }> {
     const errors = await this.audit.getErrorsByTrace(traceId);
     return {
       traceId,
@@ -88,7 +97,10 @@ export class DiagnosticsController {
   @ApiOperation({ summary: 'Get recent audit events' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'eventType', required: false, type: String })
-  async getAuditEvents(@Query('limit') limit?: number, @Query('eventType') eventType?: string) {
+  async getAuditEvents(
+    @Query('limit') limit?: number,
+    @Query('eventType') eventType?: string,
+  ): Promise<{ count: number; events: object[] }> {
     const events = await this.prisma.auditEvent.findMany({
       where: eventType ? { eventType } : undefined,
       orderBy: { timestamp: 'desc' },
@@ -122,8 +134,12 @@ export class DiagnosticsController {
     @Param('type') entityType: string,
     @Param('id') entityId: string,
     @Query('limit') limit?: number,
-  ) {
-    const events = await this.audit.getAuditHistory(entityType as any, entityId, limit || 50);
+  ): Promise<{ entityType: string; entityId: string; count: number; events: object[] }> {
+    const events = await this.audit.getAuditHistory(
+      entityType as EntityType,
+      entityId,
+      limit || 50,
+    );
     return {
       entityType,
       entityId,
@@ -139,7 +155,10 @@ export class DiagnosticsController {
   @ApiOperation({ summary: 'Get recent request logs' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, type: Number })
-  async getRequestLogs(@Query('limit') limit?: number, @Query('status') status?: number) {
+  async getRequestLogs(
+    @Query('limit') limit?: number,
+    @Query('status') status?: number,
+  ): Promise<{ count: number; logs: object[] }> {
     const logs = await this.prisma.requestLog.findMany({
       where: status ? { httpStatus: status } : undefined,
       orderBy: { timestamp: 'desc' },
@@ -169,7 +188,10 @@ export class DiagnosticsController {
   @ApiOperation({ summary: 'Get slow requests' })
   @ApiQuery({ name: 'minMs', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  async getSlowRequests(@Query('minMs') minMs?: number, @Query('limit') limit?: number) {
+  async getSlowRequests(
+    @Query('minMs') minMs?: number,
+    @Query('limit') limit?: number,
+  ): Promise<{ threshold: number; count: number; logs: object[] }> {
     const logs = await this.prisma.requestLog.findMany({
       where: {
         durationMs: { gte: minMs || 1000 },
@@ -198,7 +220,7 @@ export class DiagnosticsController {
    */
   @Get('metrics')
   @ApiOperation({ summary: 'Get metrics snapshot' })
-  getMetrics() {
+  getMetrics(): object {
     return this.metrics.getSnapshot();
   }
 
@@ -207,7 +229,11 @@ export class DiagnosticsController {
    */
   @Get('stats')
   @ApiOperation({ summary: 'Get database statistics' })
-  async getStats() {
+  async getStats(): Promise<{
+    totals: { errors: number; auditEvents: number; requestLogs: number };
+    lastHour: { errors: number };
+    timestamp: string;
+  }> {
     const [errorCount, auditCount, requestCount] = await Promise.all([
       this.prisma.errorEvent.count(),
       this.prisma.auditEvent.count(),

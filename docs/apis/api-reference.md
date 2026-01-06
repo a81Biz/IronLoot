@@ -62,11 +62,17 @@ This document provides a high-level overview of the available API endpoints in t
 - **PATCH** `/notifications/read-all`: Mark all notifications as read.
 - **PATCH** `/notifications/:id/read`: Mark a specific notification as read.
 
-## 11. Health (`/health`)
+## 11. Wallet (`/wallet`)
+- **GET** `/wallet/balance`: Get current available and held balance.
+- **POST** `/wallet/deposit`: Deposit funds into the wallet.
+- **POST** `/wallet/withdraw`: Withdraw funds from the wallet.
+- **GET** `/wallet/history`: Get transaction history (ledger).
+
+## 12. Health (`/health`)
 - **GET** `/health`: Basic health check (returns "OK" if service is up).
 - **GET** `/health/detailed`: Detailed health check including database and dependency status.
 
-## 12. Diagnostics (`/diagnostics`)
+## 13. Diagnostics (`/diagnostics`)
 - **GET** `/diagnostics/ping`: Simple ping for latency checks.
 - **GET** `/diagnostics/errors`: Retrieve recent system errors from the database.
 - **GET** `/diagnostics/errors/trace/:traceId`: Get errors associated with a specific trace ID.

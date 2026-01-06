@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { DiagnosticsController } from './diagnostics.controller';
+import { DevelopmentOnlyGuard } from '../../common/guards/development-only.guard';
 
 /**
  * DiagnosticsModule
@@ -9,5 +10,6 @@ import { DiagnosticsController } from './diagnostics.controller';
  */
 @Module({
   controllers: [DiagnosticsController],
+  providers: [DevelopmentOnlyGuard],
 })
 export class DiagnosticsModule {}
