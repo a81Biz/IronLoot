@@ -23,6 +23,8 @@ import {
   VerificationStatusDto,
   UserStatsDto,
 } from './dto';
+import { Log, AuditedAction } from '../../common/observability/decorators';
+import { AuditEventType, EntityType } from '../../common/observability/constants';
 
 @ApiTags('users')
 @Controller('users')
@@ -45,6 +47,7 @@ export class UsersController {
     type: UserResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @Log()
   async getOwnProfile(@CurrentUser() user: AuthenticatedUser): Promise<UserResponseDto> {
     const profile = await this.usersService.getOwnProfile(user.id);
     return {
@@ -88,6 +91,7 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Invalid input data' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'User is not active' })
+  @AuditedAction(AuditEventType.USER_PROFILE_UPDATED, EntityType.USER, (args) => args[0].id)
   async updateProfile(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateProfileDto,
@@ -132,6 +136,7 @@ export class UsersController {
     type: UserStatsDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @Log()
   async getStats(@CurrentUser() user: AuthenticatedUser): Promise<UserStatsDto> {
     const stats = await this.usersService.getUserStats(user.id);
     return stats;
@@ -153,6 +158,7 @@ export class UsersController {
     type: VerificationStatusDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @Log()
   async getVerificationStatus(
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<VerificationStatusDto> {
@@ -182,6 +188,7 @@ export class UsersController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 409, description: 'Email already verified' })
+  @Log()
   async resendVerification(@CurrentUser() user: AuthenticatedUser): Promise<{ message: string }> {
     return this.usersService.resendVerificationEmail(user.id);
   }
@@ -205,6 +212,7 @@ export class UsersController {
   @ApiResponse({ status: 400, description: 'Requirements not met or terms not accepted' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 409, description: 'Already a seller' })
+  @AuditedAction(AuditEventType.USER_SELLER_ENABLED, EntityType.USER, (args) => args[0].id)
   async enableSeller(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: EnableSellerDto,
@@ -239,6 +247,7 @@ export class UsersController {
     type: PublicUserResponseDto,
   })
   @ApiResponse({ status: 404, description: 'User not found' })
+  @Log()
   async getPublicProfile(@Param('id', ParseUUIDPipe) id: string): Promise<PublicUserResponseDto> {
     const profile = await this.usersService.getPublicProfile(id);
     return {

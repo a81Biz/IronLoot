@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../../modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '../../modules/auth/decorators';
 import { NotificationsService } from './notifications.service';
 import { Notification } from '@prisma/client';
+import { Log } from '../../common/observability/decorators';
 
 @ApiTags('notifications')
 @Controller('notifications')
@@ -15,6 +16,7 @@ export class NotificationsController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'List my notifications' })
   @ApiResponse({ status: 200, description: 'List of notifications' })
+  @Log()
   findAll(@CurrentUser() user: AuthenticatedUser): Promise<Notification[]> {
     return this.notificationsService.findAllByUser(user.id);
   }
@@ -24,6 +26,7 @@ export class NotificationsController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Get unread count' })
   @ApiResponse({ status: 200, description: 'Unread count' })
+  @Log()
   getUnreadCount(@CurrentUser() user: AuthenticatedUser): Promise<{ count: number }> {
     return this.notificationsService.getUnreadCount(user.id).then((count) => ({ count }));
   }
@@ -33,6 +36,7 @@ export class NotificationsController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Mark all as read' })
   @ApiResponse({ status: 200, description: 'Updated count' })
+  @Log()
   markAllAsRead(@CurrentUser() user: AuthenticatedUser) {
     return this.notificationsService.markAllAsRead(user.id);
   }
@@ -42,6 +46,7 @@ export class NotificationsController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Mark specific notification as read' })
   @ApiResponse({ status: 200, description: 'Updated notification' })
+  @Log()
   markAsRead(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,

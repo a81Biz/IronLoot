@@ -17,6 +17,8 @@ import {
 } from './dto';
 import { Public, CurrentUser, AuthenticatedUser } from './decorators';
 import { JwtAuthGuard } from './guards';
+import { Log, AuditedAction } from '../../common/observability/decorators';
+import { AuditEventType, EntityType } from '../../common/observability/constants';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -42,6 +44,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 400, description: 'Validation error' })
   @ApiResponse({ status: 409, description: 'Email or username already exists' })
+  @Log()
   async register(@Body() dto: RegisterDto): Promise<AuthResponseDto> {
     return this.authService.register(dto);
   }
@@ -65,6 +68,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @ApiResponse({ status: 403, description: 'Account not verified, suspended or banned' })
+  @Log()
   async login(@Body() dto: LoginDto, @Req() req: Request): Promise<AuthResponseDto> {
     const ipAddress = req.ip || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
@@ -215,6 +219,7 @@ export class AuthController {
     type: MessageResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Invalid current password' })
+  @AuditedAction(AuditEventType.USER_PASSWORD_CHANGED, EntityType.USER, (args) => args[0].id)
   async changePassword(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: ChangePasswordDto,

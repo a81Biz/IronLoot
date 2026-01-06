@@ -5,6 +5,8 @@ import { CurrentUser, AuthenticatedUser } from '../../modules/auth/decorators';
 import { PaymentsService } from './payments.service';
 import { CreateCheckoutDto } from './dto';
 import { CreatePaymentResult } from './interfaces';
+import { Log, AuditedAction } from '../../common/observability/decorators';
+import { AuditEventType, EntityType } from '../../common/observability/constants';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -19,6 +21,7 @@ export class PaymentsController {
     description: 'Create a payment session for an order',
   })
   @ApiResponse({ status: 201, description: 'Redirect URL generated' })
+  @AuditedAction(AuditEventType.PAYMENT_INITIATED, EntityType.ORDER, (args) => args[1].orderId)
   async createCheckout(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateCheckoutDto,
@@ -28,6 +31,7 @@ export class PaymentsController {
 
   @Post('webhook/:provider')
   @ApiOperation({ summary: 'Webhook endpoint', description: 'Receive payment updates' })
+  @Log()
   async webhook(
     @Param('provider') provider: string,
     @Body() payload: Record<string, unknown>,

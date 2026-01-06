@@ -14,6 +14,8 @@ import { JwtAuthGuard } from '../../modules/auth/guards'; // Adjust path if need
 import { CurrentUser, AuthenticatedUser } from '../../modules/auth/decorators'; // Adjust path if needed
 import { ShipmentsService } from './shipments.service';
 import { CreateShipmentDto, UpdateShipmentStatusDto } from './dto';
+import { Log, AuditedAction } from '../../common/observability/decorators';
+import { AuditEventType, EntityType } from '../../common/observability/constants';
 
 @ApiTags('shipments')
 @ApiBearerAuth('access-token')
@@ -27,6 +29,13 @@ export class ShipmentsController {
   @ApiResponse({ status: 201, description: 'Shipment created successfully' })
   @ApiResponse({ status: 400, description: 'Invalid input or order not paid' })
   @ApiResponse({ status: 403, description: 'Only seller can create shipment' })
+  @ApiResponse({ status: 403, description: 'Only seller can create shipment' })
+  @AuditedAction(
+    AuditEventType.SHIPMENT_REGISTERED,
+    EntityType.SHIPMENT,
+    (args, result) => result.id,
+    ['carrier', 'trackingNumber'],
+  )
   create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateShipmentDto,
@@ -39,6 +48,7 @@ export class ShipmentsController {
   @ApiResponse({ status: 200, description: 'Return shipment details' })
   @ApiResponse({ status: 403, description: 'Unauthorized access' })
   @ApiResponse({ status: 404, description: 'Shipment not found' })
+  @Log()
   findOne(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -50,6 +60,9 @@ export class ShipmentsController {
   @ApiOperation({ summary: 'Update shipment status' })
   @ApiResponse({ status: 200, description: 'Status updated successfully' })
   @ApiResponse({ status: 403, description: 'Only seller can update status' })
+  @AuditedAction(AuditEventType.SHIPMENT_UPDATED, EntityType.SHIPMENT, (args) => args[1], [
+    'status',
+  ])
   updateStatus(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,

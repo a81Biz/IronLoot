@@ -5,6 +5,8 @@ import { CurrentUser, AuthenticatedUser } from '../../modules/auth/decorators';
 import { RatingsService } from './ratings.service';
 import { CreateRatingDto } from './dto';
 import { Rating } from '@prisma/client';
+import { Log, AuditedAction } from '../../common/observability/decorators';
+import { AuditEventType, EntityType } from '../../common/observability/constants';
 
 @ApiTags('ratings')
 @Controller()
@@ -16,6 +18,9 @@ export class RatingsController {
   @ApiBearerAuth('access-token')
   @ApiOperation({ summary: 'Rate a transaction' })
   @ApiResponse({ status: 201, description: 'Rating created successfully' })
+  @AuditedAction(AuditEventType.RATING_SUBMITTED, EntityType.RATING, (args, result) => result.id, [
+    'score',
+  ])
   create(@CurrentUser() user: AuthenticatedUser, @Body() dto: CreateRatingDto): Promise<Rating> {
     return this.ratingsService.create(user.id, dto);
   }
@@ -23,6 +28,7 @@ export class RatingsController {
   @Get('users/:userId/ratings')
   @ApiOperation({ summary: 'Get ratings for a user' })
   @ApiResponse({ status: 200, description: 'List of ratings' })
+  @Log()
   findAllByTarget(@Param('userId', ParseUUIDPipe) userId: string): Promise<Rating[]> {
     return this.ratingsService.findAllByTarget(userId);
   }

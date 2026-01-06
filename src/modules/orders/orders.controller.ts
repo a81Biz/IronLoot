@@ -5,6 +5,8 @@ import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/modules/auth/decorators';
 import { OrdersService } from './orders.service';
 import { CreateOrderDto } from './dto';
+import { Log, AuditedAction } from '../../common/observability/decorators';
+import { AuditEventType, EntityType } from '../../common/observability/constants';
 
 @ApiTags('orders')
 @ApiBearerAuth('access-token')
@@ -19,6 +21,9 @@ export class OrdersController {
     description: 'Create an order from a won auction (Checkout trigger)',
   })
   @ApiResponse({ status: 201, description: 'Order created' })
+  @AuditedAction(AuditEventType.ORDER_CREATED, EntityType.ORDER, (args, result) => result.id, [
+    'auctionId',
+  ])
   async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateOrderDto,
@@ -28,6 +33,7 @@ export class OrdersController {
 
   @Get()
   @ApiOperation({ summary: 'List my orders', description: 'Get all orders where I am the buyer' })
+  @Log()
   async findAll(@CurrentUser() user: AuthenticatedUser): Promise<Order[]> {
     return this.ordersService.findAllForUser(user.id);
   }
@@ -35,6 +41,7 @@ export class OrdersController {
   @Get(':id')
   @ApiOperation({ summary: 'Get order details' })
   @ApiParam({ name: 'id', description: 'Order ID' })
+  @Log()
   async findOne(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,

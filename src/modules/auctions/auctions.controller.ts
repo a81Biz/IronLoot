@@ -24,6 +24,8 @@ import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser, Public } from '@/modules/auth/decorators';
 import { AuctionsService } from './auctions.service';
 import { CreateAuctionDto, UpdateAuctionDto, AuctionResponseDto } from './dto';
+import { Log, AuditedAction } from '../../common/observability/decorators';
+import { AuditEventType, EntityType } from '../../common/observability/constants';
 
 @ApiTags('auctions')
 @Controller('auctions')
@@ -43,6 +45,10 @@ export class AuctionsController {
   @ApiResponse({ status: 201, description: 'Auction created', type: AuctionResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'User is not a seller' })
+  @AuditedAction(AuditEventType.AUCTION_CREATED, EntityType.AUCTION, (args, result) => result.id, [
+    'title',
+    'startingPrice',
+  ])
   async create(
     @CurrentUser() user: AuthenticatedUser,
     @Body() dto: CreateAuctionDto,
@@ -64,6 +70,7 @@ export class AuctionsController {
   })
   @ApiQuery({ name: 'sellerId', required: false, description: 'Filter by seller ID' })
   @ApiResponse({ status: 200, description: 'List of auctions', type: [AuctionResponseDto] })
+  @Log()
   async findAll(
     @Query('status') status?: AuctionStatus,
     @Query('sellerId') sellerId?: string,
@@ -80,6 +87,7 @@ export class AuctionsController {
   @ApiParam({ name: 'id', description: 'Auction ID' })
   @ApiResponse({ status: 200, description: 'Auction details', type: AuctionResponseDto })
   @ApiResponse({ status: 404, description: 'Auction not found' })
+  @Log()
   async findOne(@Param('id', ParseUUIDPipe) id: string): Promise<AuctionResponseDto> {
     return this.auctionsService.findOne(id);
   }
@@ -99,6 +107,7 @@ export class AuctionsController {
   @ApiResponse({ status: 200, description: 'Auction updated', type: AuctionResponseDto })
   @ApiResponse({ status: 403, description: 'Not owner or not in DRAFT state' })
   @ApiResponse({ status: 404, description: 'Auction not found' })
+  @AuditedAction(AuditEventType.AUCTION_UPDATED, EntityType.AUCTION, (args) => args[1])
   async update(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
@@ -122,6 +131,7 @@ export class AuctionsController {
   @ApiResponse({ status: 200, description: 'Auction published', type: AuctionResponseDto })
   @ApiResponse({ status: 403, description: 'Not owner or not in DRAFT state' })
   @ApiResponse({ status: 404, description: 'Auction not found' })
+  @AuditedAction(AuditEventType.AUCTION_PUBLISHED, EntityType.AUCTION, (args) => args[1])
   async publish(
     @CurrentUser() user: AuthenticatedUser,
     @Param('id', ParseUUIDPipe) id: string,
