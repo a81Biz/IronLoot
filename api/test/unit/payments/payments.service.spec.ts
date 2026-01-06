@@ -1,13 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { BadRequestException } from '@nestjs/common';
-import { PaymentsService } from '../../../api/src/modules/payments/payments.service';
+import { PaymentsService } from '../../../src/modules/payments/payments.service';
 // import { PaymentsController } from '../../../src/modules/payments/payments.controller';
-import { MercadoPagoProvider } from '../../../api/src/modules/payments/providers/mercadopago.provider';
-import { PaypalProvider } from '../../../api/src/modules/payments/providers/paypal.provider';
-import { PrismaService } from '../../../api/src/database/prisma.service';
-import { OrdersService } from '../../../api/src/modules/orders/orders.service';
-import { StructuredLogger } from '../../../api/src/common/observability';
-import { PaymentProviderEnum } from '../../../api/src/modules/payments/interfaces';
+import { MercadoPagoProvider } from '../../../src/modules/payments/providers/mercadopago.provider';
+import { PaypalProvider } from '../../../src/modules/payments/providers/paypal.provider';
+import { PrismaService } from '../../../src/database/prisma.service';
+import { OrdersService } from '../../../src/modules/orders/orders.service';
+import { StructuredLogger } from '../../../src/common/observability';
+import { PaymentProviderEnum } from '../../../src/modules/payments/interfaces';
 
 // Mock Dependencies
 const mockPrismaService = {

@@ -1,7 +1,7 @@
 import request = require('supertest');
 import { TestApp } from '../core/test-app';
 import { AuthHelper, TestUser } from '../core/auth-helper';
-import { CreateAuctionDto } from '../../api/src/modules/auctions/dto';
+import { CreateAuctionDto } from '../../src/modules/auctions/dto';
 
 describe('Bids Module (e2e)', () => {
   let testApp: TestApp;

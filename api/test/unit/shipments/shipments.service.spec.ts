@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ForbiddenException, BadRequestException } from '@nestjs/common';
-import { ShipmentsService } from '../../../api/src/modules/shipments/shipments.service';
-import { PrismaService } from '../../../api/src/database/prisma.service';
-import { OrdersService } from '../../../api/src/modules/orders/orders.service';
-import { StructuredLogger } from '../../../api/src/common/observability';
+import { ShipmentsService } from '../../../src/modules/shipments/shipments.service';
+import { PrismaService } from '../../../src/database/prisma.service';
+import { OrdersService } from '../../../src/modules/orders/orders.service';
+import { StructuredLogger } from '../../../src/common/observability';
 import { ShipmentStatus, ShipmentProvider } from '@prisma/client';
 
 const mockPrismaService = {

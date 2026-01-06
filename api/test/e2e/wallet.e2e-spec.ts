@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import request = require('supertest');
-import { AppModule } from '../../api/src/app.module';
-import { PrismaService } from '../../api/src/database/prisma.service';
+import { AppModule } from '../../src/app.module';
+import { PrismaService } from '../../src/database/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 
 describe('Wallet (e2e)', () => {

@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WalletController } from '../../../api/src/modules/wallet/wallet.controller';
-import { WalletService } from '../../../api/src/modules/wallet/wallet.service';
-import { PrismaService } from '../../../api/src/database/prisma.service';
-import { DepositDto } from '../../../api/src/modules/wallet/dto/wallet.dto';
-import { JwtAuthGuard } from '../../../api/src/modules/auth/guards/jwt-auth.guard';
+import { WalletController } from '../../../src/modules/wallet/wallet.controller';
+import { WalletService } from '../../../src/modules/wallet/wallet.service';
+import { PrismaService } from '../../../src/database/prisma.service';
+import { DepositDto } from '../../../src/modules/wallet/dto/wallet.dto';
+import { JwtAuthGuard } from '../../../src/modules/auth/guards/jwt-auth.guard';
 
 describe('WalletController', () => {
   let controller: WalletController;

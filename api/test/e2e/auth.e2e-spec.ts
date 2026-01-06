@@ -1,8 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
 import request = require('supertest');
-import { AppModule } from '../../api/src/app.module';
-import { PrismaService } from '../../api/src/database/prisma.service';
+import { AppModule } from '../../src/app.module';
+import { PrismaService } from '../../src/database/prisma.service';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;

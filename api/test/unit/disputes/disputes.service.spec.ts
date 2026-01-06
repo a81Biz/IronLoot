@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { DisputesService } from '../../../api/src/modules/disputes/disputes.service';
-import { PrismaService } from '../../../api/src/database/prisma.service';
-import { StructuredLogger } from '../../../api/src/common/observability';
+import { DisputesService } from '../../../src/modules/disputes/disputes.service';
+import { PrismaService } from '../../../src/database/prisma.service';
+import { StructuredLogger } from '../../../src/common/observability';
 import { BadRequestException, ForbiddenException, NotFoundException } from '@nestjs/common';
-import { CreateDisputeDto } from '../../../api/src/modules/disputes/dto';
+import { CreateDisputeDto } from '../../../src/modules/disputes/dto';
 
 describe('DisputesService', () => {
   let service: DisputesService;

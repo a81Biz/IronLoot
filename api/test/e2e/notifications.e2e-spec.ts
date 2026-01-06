@@ -1,7 +1,7 @@
 import request = require('supertest');
 import { TestApp } from '../core/test-app';
 import { AuthHelper, TestUser } from '../core/auth-helper';
-import { NotificationsService } from '../../api/src/modules/notifications/notifications.service';
+import { NotificationsService } from '../../src/modules/notifications/notifications.service';
 import { NotificationType } from '@prisma/client';
 
 describe('Notifications Module (e2e)', () => {

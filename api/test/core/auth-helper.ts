@@ -1,6 +1,6 @@
 import request = require('supertest');
 import { INestApplication } from '@nestjs/common';
-import { PrismaService } from '../../api/src/database/prisma.service';
+import { PrismaService } from '../../src/database/prisma.service';
 
 export interface TestUser {
   id: string;

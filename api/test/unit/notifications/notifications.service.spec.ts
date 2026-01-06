@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { NotificationsService } from '../../../api/src/modules/notifications/notifications.service';
-import { PrismaService } from '../../../api/src/database/prisma.service';
-import { StructuredLogger } from '../../../api/src/common/observability';
+import { NotificationsService } from '../../../src/modules/notifications/notifications.service';
+import { PrismaService } from '../../../src/database/prisma.service';
+import { StructuredLogger } from '../../../src/common/observability';
 import { NotFoundException } from '@nestjs/common';
 
 describe('NotificationsService', () => {

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common';
-import { AppModule } from '../../api/src/app.module';
-import { PrismaService } from '../../api/src/database/prisma.service';
+import { AppModule } from '../../src/app.module';
+import { PrismaService } from '../../src/database/prisma.service';
 
 export class TestApp {
   private app: INestApplication;

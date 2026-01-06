@@ -1,9 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { WalletService } from '../../../api/src/modules/wallet/wallet.service';
-import { PrismaService } from '../../../api/src/database/prisma.service';
+import { WalletService } from '../../../src/modules/wallet/wallet.service';
+import { PrismaService } from '../../../src/database/prisma.service';
 import { BadRequestException } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
-import { StructuredLogger } from '../../../api/src/common/observability';
+import { StructuredLogger } from '../../../src/common/observability';
 
 // Mock types
 const mockWallet = {
