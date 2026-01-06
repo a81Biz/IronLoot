@@ -76,6 +76,7 @@ model User {
   ordersAsSeller Order[] @relation("OrdersSeller")
   authoredRatings Rating[] @relation("RatingAuthor")
   receivedRatings Rating[] @relation("RatingTarget")
+  createdDisputes Dispute[] @relation("DisputeCreator")
 
   @@index([email], name: "idx_users_email")
   @@index([username], name: "idx_users_username")
@@ -224,6 +225,7 @@ model Order {
   payments  Payment[]
   shipment  Shipment?
   ratings   Rating[]
+  dispute   Dispute?
 
   @@index([buyerId], name: "idx_orders_buyer")
   @@index([sellerId], name: "idx_orders_seller")
@@ -342,6 +344,35 @@ model Rating {
   @@index([authorId], name: "idx_ratings_author")
   @@index([targetId], name: "idx_ratings_target")
   @@map("ratings")
+}
+
+/// Dispute Status enum
+enum DisputeStatus {
+  OPEN
+  IN_MEDIATION
+  RESOLVED
+  CLOSED
+}
+
+/// Dispute - Transaction conflict
+model Dispute {
+  id          String        @id @default(uuid()) @db.Uuid
+  orderId     String        @unique @map("order_id") @db.Uuid
+  creatorId   String        @map("creator_id") @db.Uuid
+  reason      String        @db.VarChar(100)
+  description String        @db.Text
+  status      DisputeStatus @default(OPEN)
+  resolution  String?       @db.Text
+  createdAt   DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  order   Order @relation(fields: [orderId], references: [id])
+  creator User  @relation("DisputeCreator", fields: [creatorId], references: [id])
+
+  @@index([orderId], name: "idx_disputes_order")
+  @@index([creatorId], name: "idx_disputes_creator")
+  @@index([status], name: "idx_disputes_status")
+  @@map("disputes")
 }
 
 // ===========================================
