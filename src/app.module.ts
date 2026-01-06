@@ -18,7 +18,7 @@ import { DiagnosticsModule } from './modules/diagnostics/diagnostics.module';
 
 // Feature modules
 import { AuthModule, JwtAuthGuard } from './modules/auth';
-// import { UsersModule } from './modules/users/users.module';
+import { UsersModule } from './modules/users/users.module';
 // import { AuctionsModule } from './modules/auctions/auctions.module';
 // import { BidsModule } from './modules/bids/bids.module';
 // import { OrdersModule } from './modules/orders/orders.module';
@@ -73,7 +73,7 @@ import { AuthModule, JwtAuthGuard } from './modules/auth';
     AuthModule,
 
     // Feature modules (uncomment as implemented)
-    // UsersModule,
+    UsersModule,
     // AuctionsModule,
     // BidsModule,
     // OrdersModule,

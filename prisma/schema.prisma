@@ -60,11 +60,35 @@ model User {
 
   // Relations
   sessions Session[]
+  profile  Profile?
 
   @@index([email], name: "idx_users_email")
   @@index([username], name: "idx_users_username")
   @@index([state], name: "idx_users_state")
   @@map("users")
+}
+
+/// Profile - Extended user profile data
+model Profile {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Relation
+  userId String @unique @map("user_id") @db.Uuid
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Contact info
+  phone String? @db.VarChar(20)
+
+  // Address
+  address    String? @db.Text
+  city       String? @db.VarChar(100)
+  country    String? @db.VarChar(100)
+  postalCode String? @map("postal_code") @db.VarChar(20)
+
+  @@index([userId], name: "idx_profiles_user")
+  @@map("profiles")
 }
 
 /// Session - User sessions for refresh tokens
