@@ -42,10 +42,7 @@ export class DiagnosticsController {
   @ApiOperation({ summary: 'Get recent errors' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'code', required: false, type: String })
-  async getErrors(
-    @Query('limit') limit?: number,
-    @Query('code') code?: string,
-  ) {
+  async getErrors(@Query('limit') limit?: number, @Query('code') code?: string) {
     const errors = await this.prisma.errorEvent.findMany({
       where: code ? { errorCode: code } : undefined,
       orderBy: { timestamp: 'desc' },
@@ -91,10 +88,7 @@ export class DiagnosticsController {
   @ApiOperation({ summary: 'Get recent audit events' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'eventType', required: false, type: String })
-  async getAuditEvents(
-    @Query('limit') limit?: number,
-    @Query('eventType') eventType?: string,
-  ) {
+  async getAuditEvents(@Query('limit') limit?: number, @Query('eventType') eventType?: string) {
     const events = await this.prisma.auditEvent.findMany({
       where: eventType ? { eventType } : undefined,
       orderBy: { timestamp: 'desc' },
@@ -145,10 +139,7 @@ export class DiagnosticsController {
   @ApiOperation({ summary: 'Get recent request logs' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'status', required: false, type: Number })
-  async getRequestLogs(
-    @Query('limit') limit?: number,
-    @Query('status') status?: number,
-  ) {
+  async getRequestLogs(@Query('limit') limit?: number, @Query('status') status?: number) {
     const logs = await this.prisma.requestLog.findMany({
       where: status ? { httpStatus: status } : undefined,
       orderBy: { timestamp: 'desc' },
@@ -178,10 +169,7 @@ export class DiagnosticsController {
   @ApiOperation({ summary: 'Get slow requests' })
   @ApiQuery({ name: 'minMs', required: false, type: Number })
   @ApiQuery({ name: 'limit', required: false, type: Number })
-  async getSlowRequests(
-    @Query('minMs') minMs?: number,
-    @Query('limit') limit?: number,
-  ) {
+  async getSlowRequests(@Query('minMs') minMs?: number, @Query('limit') limit?: number) {
     const logs = await this.prisma.requestLog.findMany({
       where: {
         durationMs: { gte: minMs || 1000 },

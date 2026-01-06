@@ -21,7 +21,6 @@ import {
   ValidationException,
   AuditEventType,
   EntityType,
-  ActorType,
   AuditResult,
 } from '../../common/observability';
 import { AuditPersistenceService } from '../audit/audit-persistence.service';
@@ -88,7 +87,11 @@ export class AuthService {
       where: { email: { equals: email, mode: 'insensitive' } },
     });
 
-    this.log.debug('Existing email check', { email, found: !!existingEmail, existingId: existingEmail?.id });
+    this.log.debug('Existing email check', {
+      email,
+      found: !!existingEmail,
+      existingId: existingEmail?.id,
+    });
 
     if (existingEmail) {
       this.log.warn('Registration failed: email already exists', { email });
@@ -101,7 +104,11 @@ export class AuthService {
       where: { username: { equals: username, mode: 'insensitive' } },
     });
 
-    this.log.debug('Existing username check', { username, found: !!existingUsername, existingId: existingUsername?.id });
+    this.log.debug('Existing username check', {
+      username,
+      found: !!existingUsername,
+      existingId: existingUsername?.id,
+    });
 
     if (existingUsername) {
       this.log.warn('Registration failed: username already exists', { username });
@@ -124,7 +131,10 @@ export class AuthService {
       `;
       const cnt = rawCount && rawCount[0] ? parseInt(Object.values(rawCount[0])[0] as any, 10) : 0;
       if (cnt > 0) {
-        this.log.warn('Registration failed: email already exists (raw-check)', { email, count: cnt });
+        this.log.warn('Registration failed: email already exists (raw-check)', {
+          email,
+          count: cnt,
+        });
         this.metrics.increment('auth_register_failed', 1, { reason: 'email_exists' });
         throw new EmailAlreadyExistsException();
       }
@@ -151,7 +161,11 @@ export class AuthService {
     } catch (e) {
       // Log Prisma error details for debugging and instrumentation
       const err = e as any;
-      this.log.error('Prisma create user error', { message: err?.message, code: (err as any)?.code, meta: (err as any)?.meta } as any);
+      this.log.error('Prisma create user error', {
+        message: err?.message,
+        code: (err as any)?.code,
+        meta: (err as any)?.meta,
+      } as any);
 
       // Prisma unique constraint error
       if ((err as Prisma.PrismaClientKnownRequestError)?.code === 'P2002') {
@@ -162,7 +176,9 @@ export class AuthService {
           throw new EmailAlreadyExistsException();
         }
         if (Array.isArray(target) && target.includes('username')) {
-          this.log.warn('Registration failed: username already exists (db)', { username: dto.username });
+          this.log.warn('Registration failed: username already exists (db)', {
+            username: dto.username,
+          });
           throw new ValidationException('Username already taken');
         }
       }
@@ -222,7 +238,7 @@ export class AuthService {
     if (!isValidPassword) {
       this.log.warn('Login failed: invalid password', { userId: user.id });
       this.metrics.increment('auth_login_failed', 1, { reason: 'invalid_password' });
-      
+
       await this.audit.recordAudit(
         traceId,
         AuditEventType.USER_LOGGED_IN,
@@ -268,7 +284,7 @@ export class AuthService {
   // ===========================================
 
   async refreshToken(refreshToken: string): Promise<AuthTokensResponseDto> {
-    const traceId = this.ctx.getTraceId();
+    this.ctx.getTraceId();
     this.log.debug('Refreshing token');
 
     // Find session
@@ -513,7 +529,11 @@ export class AuthService {
   // CHANGE PASSWORD
   // ===========================================
 
-  async changePassword(userId: string, currentPassword: string, newPassword: string): Promise<void> {
+  async changePassword(
+    userId: string,
+    currentPassword: string,
+    newPassword: string,
+  ): Promise<void> {
     const traceId = this.ctx.getTraceId();
     this.log.info('Changing password', { userId });
 
@@ -642,11 +662,16 @@ export class AuthService {
     const unit = match[2];
 
     switch (unit) {
-      case 's': return value;
-      case 'm': return value * 60;
-      case 'h': return value * 60 * 60;
-      case 'd': return value * 60 * 60 * 24;
-      default: return 3600;
+      case 's':
+        return value;
+      case 'm':
+        return value * 60;
+      case 'h':
+        return value * 60 * 60;
+      case 'd':
+        return value * 60 * 60 * 24;
+      default:
+        return 3600;
     }
   }
 

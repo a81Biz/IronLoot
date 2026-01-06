@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { StructuredLogger } from './logger.service';
-import { MetricPoint } from './constants';
 
 /**
  * Metric Types
@@ -16,7 +15,10 @@ export enum MetricType {
 /**
  * Histogram buckets for response times (ms)
  */
-const DEFAULT_TIMING_BUCKETS = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
+/**
+ * Histogram buckets for response times (ms)
+ */
+// const DEFAULT_TIMING_BUCKETS = [10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000];
 
 /**
  * MetricsService
@@ -116,19 +118,22 @@ export class MetricsService {
     const key = this.buildKey(name, tags);
     const values = this.histograms.get(key) || [];
     values.push(value);
-    
+
     // Keep only last 1000 values to prevent memory issues
     if (values.length > 1000) {
       values.shift();
     }
-    
+
     this.histograms.set(key, values);
   }
 
   /**
    * Get histogram statistics
    */
-  getHistogramStats(name: string, tags?: Record<string, string>): {
+  getHistogramStats(
+    name: string,
+    tags?: Record<string, string>,
+  ): {
     count: number;
     min: number;
     max: number;
@@ -139,7 +144,7 @@ export class MetricsService {
   } | null {
     const key = this.buildKey(name, tags);
     const values = this.histograms.get(key);
-    
+
     if (!values || values.length === 0) {
       return null;
     }
@@ -218,7 +223,7 @@ export class MetricsService {
    */
   recordRequest(method: string, path: string, status: number, durationMs: number): void {
     const tags = { method, path: this.normalizePath(path), status: String(status) };
-    
+
     this.increment('http_requests_total', 1, tags);
     this.histogram('http_request_duration_ms', durationMs, tags);
 
@@ -252,7 +257,12 @@ export class MetricsService {
   /**
    * Record external service call
    */
-  recordExternalCall(service: string, operation: string, success: boolean, durationMs: number): void {
+  recordExternalCall(
+    service: string,
+    operation: string,
+    success: boolean,
+    durationMs: number,
+  ): void {
     this.increment('external_calls_total', 1, { service, operation, success: String(success) });
     this.histogram('external_call_duration_ms', durationMs, { service, operation });
   }

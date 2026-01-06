@@ -137,13 +137,7 @@ export class UserSuspendedException extends BusinessException {
 
 export class UserBannedException extends BusinessException {
   constructor(userId: string, reason?: string) {
-    super(
-      ErrorCode.USER_BANNED,
-      'Account banned',
-      { userId, reason },
-      EntityType.USER,
-      userId,
-    );
+    super(ErrorCode.USER_BANNED, 'Account banned', { userId, reason }, EntityType.USER, userId);
   }
 }
 
@@ -291,13 +285,7 @@ export class PaymentAlreadyProcessedException extends BusinessException {
 
 export class OrderNotFoundException extends BusinessException {
   constructor(orderId: string) {
-    super(
-      ErrorCode.ORDER_NOT_FOUND,
-      'Order not found',
-      { orderId },
-      EntityType.ORDER,
-      orderId,
-    );
+    super(ErrorCode.ORDER_NOT_FOUND, 'Order not found', { orderId }, EntityType.ORDER, orderId);
   }
 }
 
@@ -331,11 +319,7 @@ export class ShipmentNotFoundException extends BusinessException {
 
 export class InvalidTrackingNumberException extends BusinessException {
   constructor(trackingNumber: string) {
-    super(
-      ErrorCode.INVALID_TRACKING_NUMBER,
-      'Invalid tracking number format',
-      { trackingNumber },
-    );
+    super(ErrorCode.INVALID_TRACKING_NUMBER, 'Invalid tracking number format', { trackingNumber });
   }
 }
 

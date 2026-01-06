@@ -1,5 +1,5 @@
-import { Global, Module, OnModuleInit } from '@nestjs/common';
-import { APP_FILTER, APP_INTERCEPTOR, ModuleRef, Reflector } from '@nestjs/core';
+import { Global, Module } from '@nestjs/common';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 
 // Services
 import { RequestContextService } from './request-context.service';

@@ -33,20 +33,7 @@ import { JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard } from './guards';
     }),
   ],
   controllers: [AuthController],
-  providers: [
-    AuthService,
-    JwtStrategy,
-    JwtAuthGuard,
-    RolesGuard,
-    OptionalJwtAuthGuard,
-  ],
-  exports: [
-    AuthService,
-    JwtAuthGuard,
-    RolesGuard,
-    JwtModule,
-    PassportModule,
-    OptionalJwtAuthGuard,
-  ],
+  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, OptionalJwtAuthGuard],
+  exports: [AuthService, JwtAuthGuard, RolesGuard, JwtModule, PassportModule, OptionalJwtAuthGuard],
 })
 export class AuthModule {}

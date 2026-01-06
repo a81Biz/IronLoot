@@ -10,6 +10,7 @@ const TRACE_ID_HEADER = 'x-trace-id';
  * Extend Express Request to include our properties
  */
 declare global {
+  // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
       traceId?: string;
@@ -65,7 +66,7 @@ export class ContextMiddleware implements NestMiddleware {
    */
   private getOrCreateTraceId(req: Request): string {
     const headerValue = req.headers[TRACE_ID_HEADER];
-    
+
     if (headerValue && typeof headerValue === 'string' && this.isValidTraceId(headerValue)) {
       return headerValue;
     }

@@ -72,7 +72,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
-    
+
     const traceId = this.requestContext.getTraceId();
     const userId = this.requestContext.getUserId();
 
@@ -89,9 +89,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
         timestamp: new Date().toISOString(),
         traceId,
         path: request.path,
-        ...(errorDetails.details && Object.keys(errorDetails.details).length > 0 && {
-          details: errorDetails.details,
-        }),
+        ...(errorDetails.details &&
+          Object.keys(errorDetails.details).length > 0 && {
+            details: errorDetails.details,
+          }),
       },
     };
 

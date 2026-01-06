@@ -10,15 +10,9 @@ import {
   HttpStatus,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiParam,
-} from '@nestjs/swagger';
-import { JwtAuthGuard , OptionalJwtAuthGuard} from '@/modules/auth/guards/jwt-auth.guard';
-import { CurrentUser } from '@/modules/auth/decorators/current-user.decorator';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '@/modules/auth/guards';
+import { CurrentUser, AuthenticatedUser } from '@/modules/auth/decorators';
 import { UsersService } from './users.service';
 import {
   UpdateProfileDto,
@@ -29,12 +23,6 @@ import {
   VerificationStatusDto,
   UserStatsDto,
 } from './dto';
-
-interface JwtPayload {
-  sub: string;
-  email: string;
-  sessionId: string;
-}
 
 @ApiTags('Users')
 @Controller('users')
@@ -49,7 +37,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get own profile',
-    description: 'Returns the authenticated user\'s complete profile including private data',
+    description: "Returns the authenticated user's complete profile including private data",
   })
   @ApiResponse({
     status: 200,
@@ -57,8 +45,8 @@ export class UsersController {
     type: UserResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getOwnProfile(@CurrentUser() user: JwtPayload): Promise<UserResponseDto> {
-    const profile = await this.usersService.getOwnProfile(user.sub);
+  async getOwnProfile(@CurrentUser() user: AuthenticatedUser): Promise<UserResponseDto> {
+    const profile = await this.usersService.getOwnProfile(user.id);
     return {
       id: profile.id,
       email: profile.email,
@@ -90,7 +78,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Update own profile',
-    description: 'Update the authenticated user\'s profile information',
+    description: "Update the authenticated user's profile information",
   })
   @ApiResponse({
     status: 200,
@@ -101,10 +89,10 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'User is not active' })
   async updateProfile(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: AuthenticatedUser,
     @Body() dto: UpdateProfileDto,
   ): Promise<UserResponseDto> {
-    const profile = await this.usersService.updateProfile(user.sub, dto);
+    const profile = await this.usersService.updateProfile(user.id, dto);
     return {
       id: profile.id,
       email: profile.email,
@@ -136,7 +124,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get user statistics',
-    description: 'Returns statistics about the user\'s activity on the platform',
+    description: "Returns statistics about the user's activity on the platform",
   })
   @ApiResponse({
     status: 200,
@@ -144,8 +132,8 @@ export class UsersController {
     type: UserStatsDto,
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async getStats(@CurrentUser() user: JwtPayload): Promise<UserStatsDto> {
-    const stats = await this.usersService.getUserStats(user.sub);
+  async getStats(@CurrentUser() user: AuthenticatedUser): Promise<UserStatsDto> {
+    const stats = await this.usersService.getUserStats(user.id);
     return stats;
   }
 
@@ -157,7 +145,7 @@ export class UsersController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get verification status',
-    description: 'Check the user\'s verification status and seller eligibility',
+    description: "Check the user's verification status and seller eligibility",
   })
   @ApiResponse({
     status: 200,
@@ -166,9 +154,9 @@ export class UsersController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getVerificationStatus(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: AuthenticatedUser,
   ): Promise<VerificationStatusDto> {
-    return this.usersService.getVerificationStatus(user.sub);
+    return this.usersService.getVerificationStatus(user.id);
   }
 
   /**
@@ -194,10 +182,8 @@ export class UsersController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 409, description: 'Email already verified' })
-  async resendVerification(
-    @CurrentUser() user: JwtPayload,
-  ): Promise<{ message: string }> {
-    return this.usersService.resendVerificationEmail(user.sub);
+  async resendVerification(@CurrentUser() user: AuthenticatedUser): Promise<{ message: string }> {
+    return this.usersService.resendVerificationEmail(user.id);
   }
 
   /**
@@ -220,10 +206,10 @@ export class UsersController {
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 409, description: 'Already a seller' })
   async enableSeller(
-    @CurrentUser() user: JwtPayload,
+    @CurrentUser() user: AuthenticatedUser,
     @Body() dto: EnableSellerDto,
   ): Promise<EnableSellerResponseDto> {
-    const result = await this.usersService.enableSeller(user.sub, dto);
+    const result = await this.usersService.enableSeller(user.id, dto);
     return {
       success: true,
       isSeller: result.isSeller,
@@ -253,9 +239,7 @@ export class UsersController {
     type: PublicUserResponseDto,
   })
   @ApiResponse({ status: 404, description: 'User not found' })
-  async getPublicProfile(
-    @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<PublicUserResponseDto> {
+  async getPublicProfile(@Param('id', ParseUUIDPipe) id: string): Promise<PublicUserResponseDto> {
     const profile = await this.usersService.getPublicProfile(id);
     return {
       id: profile.id,

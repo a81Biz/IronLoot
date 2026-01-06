@@ -221,7 +221,10 @@ export class UserResponseDto {
   @ApiPropertyOptional({ example: 'https://example.com/avatar.jpg' })
   avatarUrl?: string;
 
-  @ApiProperty({ example: 'ACTIVE', enum: ['PENDING_VERIFICATION', 'ACTIVE', 'SUSPENDED', 'BANNED'] })
+  @ApiProperty({
+    example: 'ACTIVE',
+    enum: ['PENDING_VERIFICATION', 'ACTIVE', 'SUSPENDED', 'BANNED'],
+  })
   state: string;
 
   @ApiProperty({ example: false })

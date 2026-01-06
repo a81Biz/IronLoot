@@ -291,11 +291,19 @@ export class AuditPersistenceService implements OnModuleInit {
   }
 
   private sanitizeDetails(details: Record<string, unknown>): Record<string, unknown> {
-    const sensitiveKeys = ['password', 'token', 'secret', 'authorization', 'cookie', 'cardNumber', 'cvv'];
+    const sensitiveKeys = [
+      'password',
+      'token',
+      'secret',
+      'authorization',
+      'cookie',
+      'cardNumber',
+      'cvv',
+    ];
     const sanitized: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(details)) {
-      if (sensitiveKeys.some(sk => key.toLowerCase().includes(sk))) {
+      if (sensitiveKeys.some((sk) => key.toLowerCase().includes(sk))) {
         sanitized[key] = '[REDACTED]';
       } else {
         sanitized[key] = value;

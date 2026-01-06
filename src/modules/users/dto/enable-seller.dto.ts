@@ -11,7 +11,7 @@ export class EnableSellerDto {
 
   @ApiPropertyOptional({
     description: 'Optional business name for seller profile',
-    example: 'John\'s Collectibles',
+    example: "John's Collectibles",
     maxLength: 100,
   })
   @IsOptional()

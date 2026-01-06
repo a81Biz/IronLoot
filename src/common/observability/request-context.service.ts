@@ -120,7 +120,10 @@ export class RequestContextService {
   /**
    * Create a new context object
    */
-  createContext(traceId: string, options?: Partial<Omit<RequestContext, 'traceId' | 'metadata'>>): RequestContext {
+  createContext(
+    traceId: string,
+    options?: Partial<Omit<RequestContext, 'traceId' | 'metadata'>>,
+  ): RequestContext {
     return {
       traceId,
       startTime: options?.startTime || Date.now(),

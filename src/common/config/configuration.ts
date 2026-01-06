@@ -38,7 +38,10 @@ export default () => ({
   security: {
     jwtSecret: process.env.JWT_SECRET,
     jwtExpiration:
-      process.env.JWT_ACCESS_EXPIRY || process.env.JWT_EXPIRATION || process.env.JWT_EXPIRES_IN || '1h',
+      process.env.JWT_ACCESS_EXPIRY ||
+      process.env.JWT_EXPIRATION ||
+      process.env.JWT_EXPIRES_IN ||
+      '1h',
     jwtRefreshExpiration:
       process.env.JWT_REFRESH_EXPIRY || process.env.JWT_REFRESH_EXPIRATION || '7d',
     sessionSecret: process.env.SESSION_SECRET,

@@ -20,7 +20,7 @@ export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
  * JWT Payload interface
  */
 export interface JwtPayload {
-  sub: string;      // User ID
+  sub: string; // User ID
   email: string;
   username: string;
   state: UserState;

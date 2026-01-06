@@ -4,7 +4,6 @@ import { HealthService } from '../../../src/modules/health/health.service';
 
 describe('HealthController', () => {
   let controller: HealthController;
-  let healthService: HealthService;
 
   const mockHealthService = {
     // Mock común para health checks - ajustar según tu implementación real
@@ -25,7 +24,6 @@ describe('HealthController', () => {
     }).compile();
 
     controller = module.get<HealthController>(HealthController);
-    healthService = module.get<HealthService>(HealthService);
   });
 
   afterEach(() => {

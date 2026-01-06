@@ -1,19 +1,5 @@
-import {
-  Controller,
-  Post,
-  Body,
-  HttpCode,
-  HttpStatus,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
-import {
-  ApiTags,
-  ApiOperation,
-  ApiResponse,
-  ApiBearerAuth,
-  ApiBody,
-} from '@nestjs/swagger';
+import { Controller, Post, Body, HttpCode, HttpStatus, Req, UseGuards } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
 import {
@@ -45,7 +31,8 @@ export class AuthController {
   @Public()
   @ApiOperation({
     summary: 'Register new user',
-    description: 'Creates a new user account. Email verification is required to activate the account.',
+    description:
+      'Creates a new user account. Email verification is required to activate the account.',
   })
   @ApiBody({ type: RegisterDto })
   @ApiResponse({
@@ -124,7 +111,8 @@ export class AuthController {
       properties: {
         refreshToken: {
           type: 'string',
-          description: 'Optional: specific refresh token to revoke. If not provided, all sessions are revoked.',
+          description:
+            'Optional: specific refresh token to revoke. If not provided, all sessions are revoked.',
         },
       },
     },
@@ -171,7 +159,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Request password reset',
-    description: 'Sends password reset email if user exists. Always returns success to prevent email enumeration.',
+    description:
+      'Sends password reset email if user exists. Always returns success to prevent email enumeration.',
   })
   @ApiBody({ type: ForgotPasswordDto })
   @ApiResponse({

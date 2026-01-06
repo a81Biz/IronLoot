@@ -9,13 +9,14 @@ describe('UsersController', () => {
   let usersService: jest.Mocked<UsersService>;
 
   const mockUser = {
-    sub: '123e4567-e89b-12d3-a456-426614174000',
+    id: '123e4567-e89b-12d3-a456-426614174000',
     email: 'test@example.com',
-    sessionId: 'session-123',
+    username: 'testuser',
+    state: UserState.ACTIVE,
   };
 
   const mockUserProfile = {
-    id: mockUser.sub,
+    id: mockUser.id,
     email: mockUser.email,
     displayName: 'Test User',
     avatarUrl: 'https://example.com/avatar.jpg',
@@ -35,7 +36,7 @@ describe('UsersController', () => {
   };
 
   const mockPublicProfile = {
-    id: mockUser.sub,
+    id: mockUser.id,
     displayName: 'Test User',
     avatarUrl: 'https://example.com/avatar.jpg',
     isSeller: false,
@@ -89,7 +90,7 @@ describe('UsersController', () => {
       expect(result.email).toBe(mockUserProfile.email);
       expect(result.displayName).toBe(mockUserProfile.displayName);
       expect(result.profile).toBeDefined();
-      expect(usersService.getOwnProfile).toHaveBeenCalledWith(mockUser.sub);
+      expect(usersService.getOwnProfile).toHaveBeenCalledWith(mockUser.id);
     });
 
     it('should handle null profile gracefully', async () => {
@@ -115,10 +116,7 @@ describe('UsersController', () => {
       const result = await controller.updateProfile(mockUser, updateDto);
 
       expect(result.displayName).toBe('New Name');
-      expect(usersService.updateProfile).toHaveBeenCalledWith(
-        mockUser.sub,
-        updateDto,
-      );
+      expect(usersService.updateProfile).toHaveBeenCalledWith(mockUser.id, updateDto);
     });
   });
 
@@ -136,7 +134,7 @@ describe('UsersController', () => {
       const result = await controller.getStats(mockUser);
 
       expect(result).toEqual(mockStats);
-      expect(usersService.getUserStats).toHaveBeenCalledWith(mockUser.sub);
+      expect(usersService.getUserStats).toHaveBeenCalledWith(mockUser.id);
     });
   });
 
@@ -153,9 +151,7 @@ describe('UsersController', () => {
       const result = await controller.getVerificationStatus(mockUser);
 
       expect(result).toEqual(mockStatus);
-      expect(usersService.getVerificationStatus).toHaveBeenCalledWith(
-        mockUser.sub,
-      );
+      expect(usersService.getVerificationStatus).toHaveBeenCalledWith(mockUser.id);
     });
   });
 
@@ -168,9 +164,7 @@ describe('UsersController', () => {
       const result = await controller.resendVerification(mockUser);
 
       expect(result.message).toBe('Verification email sent');
-      expect(usersService.resendVerificationEmail).toHaveBeenCalledWith(
-        mockUser.sub,
-      );
+      expect(usersService.resendVerificationEmail).toHaveBeenCalledWith(mockUser.id);
     });
   });
 
@@ -189,10 +183,7 @@ describe('UsersController', () => {
       expect(result.success).toBe(true);
       expect(result.isSeller).toBe(true);
       expect(result.sellerEnabledAt).toBe(now);
-      expect(usersService.enableSeller).toHaveBeenCalledWith(
-        mockUser.sub,
-        enableDto,
-      );
+      expect(usersService.enableSeller).toHaveBeenCalledWith(mockUser.id, enableDto);
     });
   });
 
@@ -200,14 +191,14 @@ describe('UsersController', () => {
     it('should return public profile', async () => {
       mockUsersService.getPublicProfile.mockResolvedValue(mockPublicProfile);
 
-      const result = await controller.getPublicProfile(mockUser.sub);
+      const result = await controller.getPublicProfile(mockUser.id);
 
       expect(result.id).toBe(mockPublicProfile.id);
       expect(result.displayName).toBe(mockPublicProfile.displayName);
       expect(result.stats).toBeDefined();
       // Should not include email
       expect((result as any).email).toBeUndefined();
-      expect(usersService.getPublicProfile).toHaveBeenCalledWith(mockUser.sub);
+      expect(usersService.getPublicProfile).toHaveBeenCalledWith(mockUser.id);
     });
   });
 });

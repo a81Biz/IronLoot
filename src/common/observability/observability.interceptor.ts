@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  NestInterceptor,
-  ExecutionContext,
-  CallHandler,
-} from '@nestjs/common';
+import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { Observable, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
@@ -107,8 +102,8 @@ export class ObservabilityInterceptor implements NestInterceptor {
     const logMeta = this.reflector.get<LogMetadata>(LOG_METADATA_KEY, handler);
     const auditMeta = this.reflector.get<AuditMetadata>(AUDIT_METADATA_KEY, handler);
     const entityMeta = this.reflector.get<EntityMetadata>(ENTITY_METADATA_KEY, handler);
-    const slowThreshold = this.reflector.get<number>(SLOW_THRESHOLD_METADATA_KEY, handler) 
-      || this.defaultSlowThreshold;
+    const slowThreshold =
+      this.reflector.get<number>(SLOW_THRESHOLD_METADATA_KEY, handler) || this.defaultSlowThreshold;
 
     const controllerName = controller.name;
     const handlerName = handler.name;
@@ -150,7 +145,7 @@ export class ObservabilityInterceptor implements NestInterceptor {
         this.persistRequestLog(request, statusCode, duration, entityInfo);
       }),
       catchError((error) => {
-        const duration = Date.now() - startTime;
+        // const duration = Date.now() - startTime;
 
         // Record failed audit event if configured
         if (auditMeta && auditMeta.logOnFailure) {
@@ -173,14 +168,9 @@ export class ObservabilityInterceptor implements NestInterceptor {
   // LOGGING
   // ===========================================
 
-  private logMethodEntry(
-    controller: string,
-    method: string,
-    meta: LogMetadata,
-    args: any[],
-  ): void {
+  private logMethodEntry(controller: string, method: string, meta: LogMetadata, args: any[]): void {
     const message = meta.message || `${controller}.${method}() called`;
-    
+
     let data: Record<string, unknown> | undefined;
     if (meta.includeArgs && args.length > 0) {
       data = { args: this.sanitizeArgs(args, meta.sensitiveArgs || []) };
@@ -200,8 +190,8 @@ export class ObservabilityInterceptor implements NestInterceptor {
     result: any,
   ): void {
     const message = `${controller}.${method}() completed`;
-    
-    let data: Record<string, unknown> = {};
+
+    const data: Record<string, unknown> = {};
     if (meta.includeResult && result !== undefined) {
       data.result = this.summarizeResult(result);
     }
@@ -237,7 +227,9 @@ export class ObservabilityInterceptor implements NestInterceptor {
       // Return shallow copy with sensitive fields redacted
       const copy: Record<string, unknown> = {};
       for (const key of keys) {
-        if (['password', 'token', 'secret', 'cardNumber'].some(s => key.toLowerCase().includes(s))) {
+        if (
+          ['password', 'token', 'secret', 'cardNumber'].some((s) => key.toLowerCase().includes(s))
+        ) {
           copy[key] = '[REDACTED]';
         } else {
           copy[key] = result[key];
@@ -308,7 +300,7 @@ export class ObservabilityInterceptor implements NestInterceptor {
     }
 
     // Extract payload
-    let payload: Record<string, unknown> = {};
+    const payload: Record<string, unknown> = {};
     if (meta.payloadFields && args[0] && typeof args[0] === 'object') {
       const dto = args[0];
       for (const field of meta.payloadFields) {

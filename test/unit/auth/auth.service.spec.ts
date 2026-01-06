@@ -17,8 +17,6 @@ import { AuditPersistenceService } from '@modules/audit/audit-persistence.servic
 describe('AuthService', () => {
   let service: AuthService;
   let prismaService: jest.Mocked<PrismaService>;
-  let jwtService: jest.Mocked<JwtService>;
-  let configService: jest.Mocked<ConfigService>;
 
   const mockUser = {
     id: '123e4567-e89b-12d3-a456-426614174000',
@@ -125,10 +123,7 @@ describe('AuthService', () => {
 
     service = module.get<AuthService>(AuthService);
     prismaService = module.get(PrismaService);
-    jwtService = module.get(JwtService);
-    configService = module.get(ConfigService);
   });
-
   afterEach(() => {
     jest.clearAllMocks();
   });

@@ -135,10 +135,7 @@ export function SlowThreshold(ms: number): MethodDecorator {
  * Applies logging and entity tracking
  */
 export function LoggedEndpoint(entityType: EntityType, idParam: number = 0): MethodDecorator {
-  return applyDecorators(
-    Log({ includeArgs: false }),
-    Entity({ type: entityType, idParam }),
-  );
+  return applyDecorators(Log({ includeArgs: false }), Entity({ type: entityType, idParam }));
 }
 
 /**

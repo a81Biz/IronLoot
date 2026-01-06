@@ -1,7 +1,7 @@
 import { Injectable, CanActivate, ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY, Role, AuthenticatedUser } from '../decorators';
-import { ForbiddenException } from '../../../common/observability';
+import { ForbiddenException } from '@common/observability';
 
 /**
  * RolesGuard

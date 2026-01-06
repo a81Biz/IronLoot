@@ -40,7 +40,7 @@ export class StructuredLogger implements NestLoggerService {
   ) {
     this.env = this.config.get<string>('NODE_ENV', 'development');
     this.isProd = this.env === 'production';
-    
+
     const configLevel = this.config.get<string>('LOG_LEVEL', 'debug');
     this.minLevel = (configLevel as LogLevel) || (this.isProd ? LogLevel.INFO : LogLevel.DEBUG);
   }
@@ -149,7 +149,7 @@ export class StructuredLogger implements NestLoggerService {
 
   private output(level: LogLevel, entry: LogEntry): void {
     const json = JSON.stringify(entry);
-    
+
     switch (level) {
       case LogLevel.DEBUG:
         console.debug(json);
@@ -175,28 +175,41 @@ export class StructuredLogger implements NestLoggerService {
 
     const msg = typeof message === 'string' ? message : JSON.stringify(message);
 
-    return msg
-      // Emails
-      .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[EMAIL]')
-      // Tokens/Keys (32+ chars)
-      .replace(/[a-zA-Z0-9_-]{32,}/g, '[TOKEN]')
-      // Credit cards
-      .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[CARD]');
+    return (
+      msg
+        // Emails
+        .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[EMAIL]')
+        // Tokens/Keys (32+ chars)
+        .replace(/[a-zA-Z0-9_-]{32,}/g, '[TOKEN]')
+        // Credit cards
+        .replace(/\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/g, '[CARD]')
+    );
   }
 
   private sanitizeData(data: Record<string, unknown>): Record<string, unknown> {
     const sensitiveKeys = [
-      'password', 'passwordHash', 'token', 'accessToken', 'refreshToken',
-      'secret', 'apiKey', 'authorization', 'cookie', 'creditCard',
-      'cardNumber', 'cvv', 'ssn', 'pin',
+      'password',
+      'passwordHash',
+      'token',
+      'accessToken',
+      'refreshToken',
+      'secret',
+      'apiKey',
+      'authorization',
+      'cookie',
+      'creditCard',
+      'cardNumber',
+      'cvv',
+      'ssn',
+      'pin',
     ];
 
     const sanitized: Record<string, unknown> = {};
 
     for (const [key, value] of Object.entries(data)) {
       const lowerKey = key.toLowerCase();
-      
-      if (sensitiveKeys.some(sk => lowerKey.includes(sk.toLowerCase()))) {
+
+      if (sensitiveKeys.some((sk) => lowerKey.includes(sk.toLowerCase()))) {
         sanitized[key] = '[REDACTED]';
       } else if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         sanitized[key] = this.sanitizeData(value as Record<string, unknown>);

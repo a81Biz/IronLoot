@@ -3,7 +3,6 @@ import { INestApplication, ValidationPipe, VersioningType } from '@nestjs/common
 import * as request from 'supertest';
 import { AppModule } from '../../src/app.module';
 import { PrismaService } from '../../src/database/prisma.service';
-import { ConfigModule } from '@nestjs/config';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;
@@ -25,14 +24,14 @@ describe('Auth (e2e)', () => {
     }).compile();
 
     app = moduleFixture.createNestApplication();
-    
+
     app.enableVersioning({
       type: VersioningType.URI,
       defaultVersion: '1',
     });
     // Match production global prefix
     app.setGlobalPrefix('api');
-    
+
     app.useGlobalPipes(
       new ValidationPipe({
         whitelist: true,
@@ -88,11 +87,7 @@ describe('Auth (e2e)', () => {
 
     it('should fail with duplicate email', async () => {
       // First registration
-      await request(app.getHttpServer())
-        .post('/api/v1/auth/register')
-        .send(testUser);
-
-      
+      await request(app.getHttpServer()).post('/api/v1/auth/register').send(testUser);
 
       // Duplicate registration
       const response = await request(app.getHttpServer())
@@ -132,21 +127,17 @@ describe('Auth (e2e)', () => {
     beforeAll(async () => {
       // Create user for login tests
       try {
-        await request(app.getHttpServer())
-          .post('/api/v1/auth/register')
-          .send(testUser);
+        await request(app.getHttpServer()).post('/api/v1/auth/register').send(testUser);
       } catch (e) {
         // User might already exist
       }
     });
 
     it('should fail login for unverified user', async () => {
-      const response = await request(app.getHttpServer())
-        .post('/api/v1/auth/login')
-        .send({
-          email: testUser.email,
-          password: testUser.password,
-        });
+      const response = await request(app.getHttpServer()).post('/api/v1/auth/login').send({
+        email: testUser.email,
+        password: testUser.password,
+      });
       // Expect either 401/403 (unverified) or 200 (if verification not required)
       expect([200, 401, 403]).toContain(response.status);
     });
@@ -178,9 +169,7 @@ describe('Auth (e2e)', () => {
 
   describe('/api/v1/health (GET)', () => {
     it('should return health status', async () => {
-      const response = await request(app.getHttpServer())
-        .get('/api/v1/health')
-        .expect(200);
+      const response = await request(app.getHttpServer()).get('/api/v1/health').expect(200);
 
       expect(response.body).toHaveProperty('status');
     });

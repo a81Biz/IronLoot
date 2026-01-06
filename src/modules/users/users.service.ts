@@ -21,7 +21,7 @@ import {
   UserProfileResponseDto,
   PublicUserResponseDto,
   UserStatsDto,
-  VerificationStatusResponseDto,
+  VerificationStatusDto,
 } from './dto';
 
 /**
@@ -149,7 +149,9 @@ export class UsersService {
       {
         actorUserId: userId,
         payload: {
-          updatedFields: Object.keys(dto).filter((k) => dto[k as keyof UpdateProfileDto] !== undefined),
+          updatedFields: Object.keys(dto).filter(
+            (k) => dto[k as keyof UpdateProfileDto] !== undefined,
+          ),
         },
       },
     );
@@ -219,7 +221,7 @@ export class UsersService {
   // GET VERIFICATION STATUS
   // ===========================================
 
-  async getVerificationStatus(userId: string): Promise<VerificationStatusResponseDto> {
+  async getVerificationStatus(userId: string): Promise<VerificationStatusDto> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { profile: true },
@@ -431,28 +433,26 @@ export class UsersService {
     return token;
   }
 
-  private mapToUserProfileResponse(
-    user: {
-      id: string;
-      email: string;
-      username: string;
-      displayName: string | null;
-      avatarUrl: string | null;
-      state: UserState;
-      emailVerifiedAt: Date | null;
-      isSeller: boolean;
-      sellerEnabledAt: Date | null;
-      createdAt: Date;
-      updatedAt: Date;
-      profile: {
-        phone: string | null;
-        address: string | null;
-        city: string | null;
-        country: string | null;
-        postalCode: string | null;
-      } | null;
-    },
-  ): UserProfileResponseDto {
+  private mapToUserProfileResponse(user: {
+    id: string;
+    email: string;
+    username: string;
+    displayName: string | null;
+    avatarUrl: string | null;
+    state: UserState;
+    emailVerifiedAt: Date | null;
+    isSeller: boolean;
+    sellerEnabledAt: Date | null;
+    createdAt: Date;
+    updatedAt: Date;
+    profile: {
+      phone: string | null;
+      address: string | null;
+      city: string | null;
+      country: string | null;
+      postalCode: string | null;
+    } | null;
+  }): UserProfileResponseDto {
     return {
       id: user.id,
       email: user.email,

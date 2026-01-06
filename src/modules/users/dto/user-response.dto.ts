@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Exclude, Expose, Type } from 'class-transformer';
+import { Expose, Type } from 'class-transformer';
 import { UserState } from '@prisma/client';
 
 export class ProfileResponseDto {
@@ -134,7 +134,6 @@ export class UserProfileResponseDto {
   updatedAt: Date;
 }
 
-
 /**
  * Public user response - for viewing other users' profiles
  */
@@ -204,19 +203,5 @@ export class VerificationStatusDto {
 
   @ApiPropertyOptional({ description: 'Requirements missing to become seller' })
   @Expose()
-  missingRequirements?: string[];
-}
-
-export class VerificationStatusResponseDto {
-  @ApiProperty({ description: 'Email verified status' })
-  emailVerified: boolean;
-
-  @ApiProperty({ description: 'Current user state', enum: UserState })
-  state: UserState;
-
-  @ApiProperty({ description: 'Whether user can become a seller' })
-  canEnableSeller: boolean;
-
-  @ApiPropertyOptional({ description: 'Requirements missing to become seller', type: [String] })
   missingRequirements?: string[];
 }
