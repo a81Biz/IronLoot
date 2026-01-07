@@ -203,10 +203,105 @@ const Utils = {
    * Show toast notification
    * @param {string} message 
    * @param {string} type - 'success' | 'error' | 'warning' | 'info'
+   * @param {number} duration - Duration in ms (default 5000)
    */
-  toast(message, type = 'info') {
-    // TODO: Implement toast notification system
-    console.log(`[${type.toUpperCase()}] ${message}`);
+  toast(message, type = 'info', duration = 5000) {
+    // Get or create toast container
+    let container = document.getElementById('toastContainer');
+    if (!container) {
+      container = document.createElement('div');
+      container.id = 'toastContainer';
+      container.className = 'toast-container';
+      container.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        max-width: 400px;
+      `;
+      document.body.appendChild(container);
+    }
+
+    // Create toast element
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    
+    // Icon based on type
+    const icons = {
+      success: 'check_circle',
+      error: 'error',
+      warning: 'warning',
+      info: 'info'
+    };
+    
+    // Colors based on type
+    const colors = {
+      success: { bg: '#10b981', text: '#ffffff' },
+      error: { bg: '#ef4444', text: '#ffffff' },
+      warning: { bg: '#f59e0b', text: '#1f2937' },
+      info: { bg: '#3b82f6', text: '#ffffff' }
+    };
+    
+    const color = colors[type] || colors.info;
+    
+    toast.style.cssText = `
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: ${color.bg};
+      color: ${color.text};
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      animation: slideIn 0.3s ease-out;
+      font-size: 14px;
+    `;
+    
+    toast.innerHTML = `
+      <span class="material-symbols-outlined" style="font-size: 20px;">${icons[type] || icons.info}</span>
+      <span style="flex: 1;">${message}</span>
+      <button style="background: none; border: none; color: inherit; cursor: pointer; padding: 4px; display: flex; align-items: center;">
+        <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
+      </button>
+    `;
+
+    // Add CSS animation if not exists
+    if (!document.getElementById('toastStyles')) {
+      const style = document.createElement('style');
+      style.id = 'toastStyles';
+      style.textContent = `
+        @keyframes slideIn {
+          from { transform: translateX(100%); opacity: 0; }
+          to { transform: translateX(0); opacity: 1; }
+        }
+        @keyframes slideOut {
+          from { transform: translateX(0); opacity: 1; }
+          to { transform: translateX(100%); opacity: 0; }
+        }
+      `;
+      document.head.appendChild(style);
+    }
+
+    // Close button handler
+    const closeBtn = toast.querySelector('button');
+    closeBtn.addEventListener('click', () => {
+      toast.style.animation = 'slideOut 0.3s ease-in forwards';
+      setTimeout(() => toast.remove(), 300);
+    });
+
+    // Add to container
+    container.appendChild(toast);
+
+    // Auto remove
+    setTimeout(() => {
+      if (toast.parentElement) {
+        toast.style.animation = 'slideOut 0.3s ease-in forwards';
+        setTimeout(() => toast.remove(), 300);
+      }
+    }, duration);
   },
 };
 

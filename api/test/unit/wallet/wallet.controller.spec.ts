@@ -8,13 +8,13 @@ import { JwtAuthGuard } from '../../../src/modules/auth/guards/jwt-auth.guard';
 describe('WalletController', () => {
   let controller: WalletController;
   let service: WalletService;
-  let prisma: PrismaService;
 
   const mockWalletService = {
     getBalance: jest.fn(),
     getWallet: jest.fn(),
     deposit: jest.fn(),
     withdraw: jest.fn(),
+    getHistory: jest.fn(),
   };
 
   const mockPrismaService = {
@@ -23,7 +23,7 @@ describe('WalletController', () => {
     },
   };
 
-  const mockRequest = { user: { id: 'user-123' } };
+  const mockRequest = { user: { id: 'user-123' } } as any;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -39,7 +39,6 @@ describe('WalletController', () => {
 
     controller = module.get<WalletController>(WalletController);
     service = module.get<WalletService>(WalletService);
-    prisma = module.get<PrismaService>(PrismaService);
   });
 
   describe('getBalance', () => {
@@ -61,12 +60,20 @@ describe('WalletController', () => {
 
   describe('getHistory', () => {
     it('should return history', async () => {
-      mockWalletService.getWallet.mockResolvedValue({ id: 'wallet-123' });
-      mockPrismaService.ledger.findMany.mockResolvedValue([]);
+      // Mock getWallet to return a wallet (impl detail, but verified via service)
+      // Actually controller calls service.getHistory directly now.
+      // And the service.getHistory returns an array of Ledgers.
+      // The controller returns { transactions: [...] }
+
+      const mockHistory = [
+        { id: 'tx-1', type: 'DEPOSIT', amount: 100, createdAt: new Date(), referenceId: 'ref-1' },
+      ];
+      mockWalletService.getHistory.mockResolvedValue(mockHistory);
 
       const result = await controller.getHistory(mockRequest);
-      expect(result.walletId).toBe('wallet-123');
-      expect(prisma.ledger.findMany).toHaveBeenCalled();
+      expect(result.transactions).toBeDefined();
+      expect(result.transactions[0].id).toBe('tx-1');
+      expect(service.getHistory).toHaveBeenCalledWith('user-123', undefined);
     });
   });
 });

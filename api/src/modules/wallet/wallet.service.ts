@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { LedgerType, Wallet } from '@prisma/client';
+import { LedgerType, Wallet, Ledger } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import { StructuredLogger, ChildLogger } from '../../common/observability';
 
@@ -58,7 +58,7 @@ export class WalletService {
     amount: number,
     referenceId: string,
     referenceType = 'PAYMENT',
-  ): Promise<{ wallet: Wallet; ledger: any }> {
+  ): Promise<{ wallet: Wallet; ledger: Ledger }> {
     if (amount <= 0) throw new BadRequestException('Amount must be positive');
 
     return this.prisma.$transaction(async (tx) => {
@@ -106,7 +106,7 @@ export class WalletService {
     userId: string,
     amount: number,
     referenceId: string,
-  ): Promise<{ wallet: Wallet; ledger: any }> {
+  ): Promise<{ wallet: Wallet; ledger: Ledger }> {
     if (amount <= 0) throw new BadRequestException('Amount must be positive');
 
     return this.prisma.$transaction(async (tx) => {
@@ -325,6 +325,15 @@ export class WalletService {
         where: { id: wallet.id },
         data: { heldFunds: newHeld },
       });
+    });
+  }
+
+  async getHistory(userId: string, limit = 10): Promise<Ledger[]> {
+    const wallet = await this.getWallet(userId);
+    return this.prisma.ledger.findMany({
+      where: { walletId: wallet.id },
+      orderBy: { createdAt: 'desc' },
+      take: limit,
     });
   }
 }

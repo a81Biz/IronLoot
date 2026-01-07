@@ -24,3 +24,45 @@ export class WithdrawDto {
   @IsString()
   referenceId: string;
 }
+
+export class WalletBalanceDto {
+  @ApiProperty()
+  available: number;
+
+  @ApiProperty()
+  held: number;
+
+  @ApiProperty()
+  currency: string;
+
+  @ApiProperty()
+  isActive: boolean;
+}
+
+export class TransactionDto {
+  @ApiProperty()
+  id: string;
+
+  @ApiProperty()
+  type: string;
+
+  @ApiProperty()
+  amount: number;
+
+  @ApiProperty()
+  currency: string;
+
+  @ApiProperty()
+  status: string;
+
+  @ApiProperty()
+  createdAt: Date;
+
+  @ApiProperty()
+  referenceId: string;
+}
+
+export class TransactionHistoryDto {
+  @ApiProperty({ type: [TransactionDto] })
+  transactions: TransactionDto[];
+}

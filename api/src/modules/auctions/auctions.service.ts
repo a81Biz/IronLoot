@@ -11,6 +11,7 @@ import {
   AuctionNotFoundException,
 } from '../../common/observability';
 import { CreateAuctionDto, UpdateAuctionDto, AuctionResponseDto } from './dto';
+import { nanoid } from 'nanoid';
 
 @Injectable()
 export class AuctionsService {
@@ -44,6 +45,19 @@ export class AuctionsService {
       throw new ForbiddenException('User is not a registered seller');
     }
 
+    const startsAt = new Date(dto.startsAt);
+    const endsAt = new Date(dto.endsAt);
+    const now = new Date();
+
+    if (endsAt <= startsAt) {
+      throw new ValidationException('End date must be after start date');
+    }
+
+    // Allow a small buffer (e.g. 1 minute) for network latency
+    if (startsAt.getTime() < now.getTime() - 60000) {
+      throw new ValidationException('Start date cannot be in the past');
+    }
+
     // Create auction
     const auction = await this.prisma.auction.create({
       data: {
@@ -52,8 +66,8 @@ export class AuctionsService {
         slug: this.generateSlug(dto.title),
         startingPrice: dto.startingPrice,
         currentPrice: dto.startingPrice,
-        startsAt: new Date(dto.startsAt),
-        endsAt: new Date(dto.endsAt),
+        startsAt,
+        endsAt,
         images: dto.images || [],
         sellerId: userId,
         status: AuctionStatus.DRAFT,
@@ -192,15 +206,13 @@ export class AuctionsService {
   }
 
   private generateSlug(title: string): string {
-    return (
-      title
-        .toLowerCase()
-        .trim()
-        .replace(/[^\w\s-]/g, '')
-        .replace(/[\s_-]+/g, '-')
-        .replace(/^-+|-+$/g, '') +
-      '-' +
-      Math.random().toString(36).substring(2, 7)
-    );
+    const slugBase = title
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_-]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+
+    return `${slugBase}-${nanoid(8)}`;
   }
 }

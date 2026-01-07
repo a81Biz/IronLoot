@@ -92,6 +92,7 @@ export class OrdersService {
       include: {
         auction: true,
         seller: { select: { displayName: true, email: true } },
+        buyer: { select: { displayName: true, email: true } },
       },
     });
 
@@ -99,7 +100,8 @@ export class OrdersService {
       throw new OrderNotFoundException(orderId);
     }
 
-    if (order.buyerId !== userId) {
+    // Allow access for both buyer and seller
+    if (order.buyerId !== userId && order.sellerId !== userId) {
       throw new ForbiddenException('Access denied');
     }
 

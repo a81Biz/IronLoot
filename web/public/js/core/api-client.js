@@ -246,7 +246,7 @@ const ApiClient = (function() {
       },
 
       async me() {
-        const { data } = await request('POST', '/auth/me');
+        const { data } = await request('GET', '/auth/me');
         return data;
       },
 
@@ -259,7 +259,23 @@ const ApiClient = (function() {
       },
 
       async verifyEmail(token) {
-        await request('POST', 'auth/verify-email', null, { params: { token } });
+        await request('POST', '/auth/verify-email', null, { params: { token } });
+      },
+    },
+
+    // --- Bids API ---
+    bids: {
+      async getMyActiveBids() {
+        const { data } = await request('GET', '/bids/my-active');
+        return data;
+      },
+      async getBidsForAuction(auctionId) {
+        const { data } = await request('GET', `/auctions/${auctionId}/bids`);
+        return data;
+      },
+      async placeBid(auctionId, amount) {
+        const { data } = await request('POST', `/auctions/${auctionId}/bids`, { amount });
+        return data;
       },
     },
 

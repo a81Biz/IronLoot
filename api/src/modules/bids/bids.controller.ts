@@ -41,3 +41,21 @@ export class BidsController {
     return this.bidsService.getBidsForAuction(auctionId);
   }
 }
+
+@ApiTags('bids')
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard)
+@Controller('bids')
+export class UserBidsController {
+  constructor(private readonly bidsService: BidsService) {}
+
+  @Get('my-active')
+  @ApiOperation({
+    summary: 'Get my active bids',
+    description: 'Get list of active auctions user has bid on',
+  })
+  @ApiResponse({ status: 200, description: 'List of active bids' })
+  async getMyActiveBids(@CurrentUser() user: AuthenticatedUser): Promise<Bid[]> {
+    return this.bidsService.getUserActiveBids(user.id);
+  }
+}

@@ -470,8 +470,8 @@ export class AuthService {
       { actorUserId: user.id },
     );
 
-    // TODO: Send password reset email
-    // await this.emailService.sendPasswordResetEmail(user.email, resetToken);
+    // Send password reset email
+    await this.emailService.sendPasswordResetEmail(user.email, resetToken);
   }
 
   // ===========================================

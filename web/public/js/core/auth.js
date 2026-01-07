@@ -69,7 +69,6 @@
       console.error('Login failed:', error);
       
       if (errorEl) {
-      if (errorEl) {
         let message = error.message || 'Credenciales inválidas';
         
         // Handle specific error codes
@@ -83,7 +82,6 @@
 
         errorEl.textContent = message;
         errorEl.style.display = 'block';
-      }
       }
     } finally {
       submitBtn.disabled = false;
@@ -143,7 +141,6 @@
       console.error('Registration failed:', error);
       
       if (errorEl) {
-      if (errorEl) {
         let message = error.message || 'Error al registrarse';
 
         // Parse detailed validation errors
@@ -155,7 +152,6 @@
 
         errorEl.textContent = message;
         errorEl.style.display = 'block';
-      }
       }
     } finally {
       submitBtn.disabled = false;

@@ -1,11 +1,11 @@
 import { Module } from '@nestjs/common';
-import { BidsController } from './bids.controller';
+import { BidsController, UserBidsController } from './bids.controller';
 import { BidsService } from './bids.service';
-import { DatabaseModule } from '../../database/database.module';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
-  imports: [DatabaseModule],
-  controllers: [BidsController],
+  imports: [WalletModule],
+  controllers: [BidsController, UserBidsController],
   providers: [BidsService],
   exports: [BidsService],
 })

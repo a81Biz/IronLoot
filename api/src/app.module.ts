@@ -15,6 +15,7 @@ import { DatabaseModule } from './database/database.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { HealthModule } from './modules/health/health.module';
 import { DiagnosticsModule } from './modules/diagnostics/diagnostics.module';
+import { SchedulerModule } from './modules/scheduler/scheduler.module';
 
 // Feature modules
 import { AuthModule, JwtAuthGuard } from './modules/auth';
@@ -41,7 +42,6 @@ import { WalletModule } from './modules/wallet/wallet.module';
 
     // Rate limiting (global)
     ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         throttlers: [
@@ -69,6 +69,9 @@ import { WalletModule } from './modules/wallet/wallet.module';
 
     // Diagnostics (logs, errors, metrics - dev only)
     DiagnosticsModule,
+
+    // Background tasks scheduler (auction lifecycle)
+    SchedulerModule,
 
     // Authentication & Authorization
     AuthModule,

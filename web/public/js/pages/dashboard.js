@@ -98,31 +98,14 @@
    * Load active bids
    */
   async function loadActiveBids() {
-    const tbody = Utils.$('#activeBidsTable');
-    if (!tbody) return;
+    const activeBidsList = Utils.$('#activeBidsTable');
+    if (!activeBidsList) return;
 
     try {
-      // TODO: Replace with actual API call when endpoint is ready
-      // const bids = await Api.bids.getMyActive();
+      const bids = await Api.bids.getMyActiveBids();
       
-      // Mock data for now
-      const bids = [
-        {
-          auction: { title: 'PlayStation 5', slug: 'playstation-5', endsAt: new Date(Date.now() + 7200000) },
-          amount: 450,
-          currentPrice: 480,
-          isWinning: false,
-        },
-        {
-          auction: { title: 'iPhone 15 Pro', slug: 'iphone-15-pro', endsAt: new Date(Date.now() + 86400000) },
-          amount: 1100,
-          currentPrice: 1100,
-          isWinning: true,
-        },
-      ];
-
-      if (bids.length === 0) {
-        tbody.innerHTML = `
+      if (!bids || bids.length === 0) {
+        activeBidsList.innerHTML = `
           <tr>
             <td colspan="5" class="text-center text-secondary">No tienes pujas activas</td>
           </tr>
@@ -130,26 +113,28 @@
         return;
       }
 
-      tbody.innerHTML = bids.map(bid => `
+      activeBidsList.innerHTML = bids.map(bid => `
         <tr>
           <td>
-            <a href="/auctions/${bid.auction.slug}" class="font-medium link">${bid.auction.title}</a>
+            <a href="/auctions/${bid.auction?.slug || '#'}" class="fw-bold text-decoration-none">
+              ${bid.auction?.title || 'Unknown Item'}
+            </a>
           </td>
-          <td class="font-bold">${Utils.formatCurrency(bid.amount)}</td>
-          <td class="font-bold text-primary">${Utils.formatCurrency(bid.currentPrice)}</td>
+          <td>${Utils.formatCurrency(bid.amount)}</td>
+          <td>${Utils.formatCurrency(bid.currentPrice || bid.amount)}</td>
+          <td>${bid.auction?.endsAt ? Utils.formatRelativeTime(bid.auction.endsAt) : '-'}</td>
           <td>
-            <span class="table-status ${bid.isWinning ? 'table-status-success' : 'table-status-warning'}">
-              ${bid.isWinning ? 'Ganando' : 'Superado'}
+            <span class="badge ${bid.status === 'WINNING' ? 'bg-success' : 'bg-warning text-dark'}">
+              ${bid.status === 'WINNING' ? 'Ganando' : 'Superado'}
             </span>
           </td>
-          <td class="text-secondary">${Utils.formatCountdown(bid.auction.endsAt)}</td>
         </tr>
       `).join('');
     } catch (error) {
-      console.error('Failed to load bids:', error);
-      tbody.innerHTML = `
+      console.error('Failed to load active bids:', error);
+      activeBidsList.innerHTML = `
         <tr>
-          <td colspan="5" class="text-center text-secondary">Error al cargar las pujas</td>
+          <td colspan="5" class="text-center text-danger">Error al cargar las pujas</td>
         </tr>
       `;
     }

@@ -12,6 +12,8 @@ import {
 } from '../../common/observability';
 import { CreateBidDto } from './dto';
 
+import { WalletService } from '../wallet/wallet.service';
+
 @Injectable()
 export class BidsService {
   private readonly log: ChildLogger;
@@ -20,6 +22,7 @@ export class BidsService {
     private readonly prisma: PrismaService,
     private readonly logger: StructuredLogger,
     private readonly ctx: RequestContextService,
+    private readonly walletService: WalletService,
   ) {
     this.log = this.logger.child('BidsService');
   }
@@ -27,101 +30,148 @@ export class BidsService {
   async placeBid(userId: string, auctionId: string, dto: CreateBidDto): Promise<Bid> {
     this.log.debug('Placing bid', { userId, auctionId, amount: dto.amount });
 
-    return this.prisma.$transaction(async (tx) => {
-      // 1. Fetch auction with optimistic locking (future) or just lock checking
-      // For now, simple fetch
-      const auction = await tx.auction.findUnique({
-        where: { id: auctionId },
-      });
+    // 1. Funds Check & Hold (Must happen before transaction to prevent locking issues or external calls inside tx if possible)
+    // However, for consistency, we might want it inside. But WalletService uses its own transactions.
+    // NestJS transactions via Prisma: If we pass `tx` to WalletService methods, we can compose them.
+    // But WalletService methods create their own transactions using `this.prisma.$transaction`.
+    // Prisma doesn't support nested transactions easily unless we pass the tx client.
+    // For now, let's do it optimistically OUTSIDE the main auction lock, OR accept that we first Hold, then Bid.
+    // If Bid fails, we must Release.
 
-      if (!auction) {
-        throw new AuctionNotFoundException(auctionId);
-      }
+    // Step 1: Hold Funds
+    try {
+      await this.walletService.holdFunds(
+        userId,
+        dto.amount,
+        auctionId,
+        `Bid for auction ${auctionId}`,
+      );
+    } catch (error) {
+      this.log.warn('Failed to hold funds for bid', { userId, auctionId, error: error.message });
+      throw error; // Rethrow (likely BadRequestException for insufficient funds)
+    }
 
-      // 2. Validate Auction Status
-      const now = new Date();
-      if (
-        auction.status !== AuctionStatus.ACTIVE &&
-        !(auction.status === AuctionStatus.PUBLISHED && auction.startsAt <= now)
-      ) {
-        // If it's published and time has passed, we theoretically treat it as active
-        // But better to enforce strict statuses. Let's assume a background job activates them,
-        // OR we allow bidding if Published + StartsAt passed.
-        // For strictness: must be Active.
-        // Or simplified MVP: Published AND started is OK.
-        // Let's go with: Must be PUBLISHED or ACTIVE, and within time range.
-        // Let's go with: Must be PUBLISHED or ACTIVE, and within time range.
-        const isActive =
-          ((auction.status as string) === AuctionStatus.ACTIVE ||
-            auction.status === AuctionStatus.PUBLISHED) &&
-          auction.startsAt <= now &&
-          auction.endsAt > now;
+    try {
+      return await this.prisma
+        .$transaction(async (tx) => {
+          // ... (Existing validations: auction, time, status, owner, min bid)
+          const auction = await tx.auction.findUnique({
+            where: { id: auctionId },
+            include: { bids: { orderBy: { amount: 'desc' }, take: 1 } }, // Fetch highest bid
+          });
 
-        if (!isActive) {
-          throw new AuctionNotActiveException(auctionId, auction.status);
-        }
-      }
+          if (!auction) throw new AuctionNotFoundException(auctionId);
 
-      // 3. User validations
-      // Prevent bidding on own auction
-      if (auction.sellerId === userId) {
-        throw new BidOnOwnAuctionException(auctionId);
-      }
+          // ... (validations)
+          const now = new Date();
+          if (auction.startsAt > now || auction.endsAt <= now) {
+            throw new AuctionNotActiveException(auctionId, auction.status);
+          }
+          if (
+            auction.status !== AuctionStatus.ACTIVE &&
+            auction.status !== AuctionStatus.PUBLISHED
+          ) {
+            throw new AuctionNotActiveException(auctionId, auction.status);
+          }
+          if (auction.sellerId === userId) {
+            throw new BidOnOwnAuctionException(auctionId);
+          }
 
-      // 4. Amount validations
-      // Must be > currentPrice
-      // In a real app, we'd check increment rules (e.g. +$1 minimum)
-      const minimumBid = Number(auction.currentPrice) + 1.0; // Simple rule: +1
-      if (dto.amount < minimumBid) {
-        throw new BidTooLowException(auctionId, dto.amount, minimumBid);
-      }
+          const currentPrice = Number(auction.currentPrice);
+          const minimumBid = currentPrice + 1.0;
 
-      // 5. Create Bid
-      const bid = await tx.bid.create({
-        data: {
-          amount: dto.amount,
-          auctionId,
-          bidderId: userId,
-        },
-      });
+          // Check against DTO
+          if (dto.amount < minimumBid) {
+            throw new BidTooLowException(auctionId, dto.amount, minimumBid);
+          }
 
-      // 6. Update Auction
-      // Check for extension (Soft Close)
-      // If within last 5 mins (300000 ms)
-      const timeRemaining = auction.endsAt.getTime() - now.getTime();
-      let newEndsAt = auction.endsAt;
-      const EXTENSION_MS = 5 * 60 * 1000; // 5 mins
+          // Create Bid
+          const bid = await tx.bid.create({
+            data: {
+              amount: dto.amount,
+              auctionId,
+              bidderId: userId,
+            },
+          });
 
-      if (timeRemaining < EXTENSION_MS) {
-        newEndsAt = new Date(auction.endsAt.getTime() + EXTENSION_MS);
-        this.log.info('Auction extended', { auctionId, oldEndsAt: auction.endsAt, newEndsAt });
-      }
+          // Update Auction
+          const timeRemaining = auction.endsAt.getTime() - now.getTime();
+          let newEndsAt = auction.endsAt;
+          const EXTENSION_MS = 5 * 60 * 1000;
+          if (timeRemaining < EXTENSION_MS) {
+            newEndsAt = new Date(auction.endsAt.getTime() + EXTENSION_MS);
+          }
 
-      await tx.auction.update({
-        where: { id: auctionId },
-        data: {
-          currentPrice: dto.amount,
-          status: AuctionStatus.ACTIVE, // Ensure it's marked active if it was Published
-          endsAt: newEndsAt,
-        },
-      });
+          await tx.auction.update({
+            where: { id: auctionId },
+            data: {
+              currentPrice: dto.amount,
+              status: AuctionStatus.ACTIVE,
+              endsAt: newEndsAt,
+            },
+          });
 
-      this.log.info('Bid placed successfully', { bidId: bid.id, newPrice: dto.amount });
-
-      return bid;
-    });
+          return { bid, previousTopBid: auction.bids[0] };
+        })
+        .then(async ({ bid, previousTopBid }) => {
+          // Success!
+          // If there was a previous bidder, release their funds
+          if (previousTopBid) {
+            try {
+              await this.walletService.releaseFunds(
+                previousTopBid.bidderId,
+                Number(previousTopBid.amount),
+                auctionId,
+                `Outbid on auction ${auctionId}`,
+              );
+            } catch (e) {
+              this.log.error('Failed to release funds for outbid user', e as Error, {
+                userId: previousTopBid.bidderId,
+                auctionId,
+              });
+              // Don't fail the current bid, but this needs admin attention
+            }
+          }
+          this.log.info('Bid placed successfully', { bidId: bid.id });
+          return bid;
+        });
+    } catch (e) {
+      // If main logic fails, Release the held funds for current user
+      await this.walletService.releaseFunds(
+        userId,
+        dto.amount,
+        auctionId,
+        `Rollback failed bid ${auctionId}`,
+      );
+      throw e;
+    }
   }
 
   async getBidsForAuction(auctionId: string): Promise<Bid[]> {
     return this.prisma.bid.findMany({
       where: { auctionId },
       orderBy: { createdAt: 'desc' },
+      include: { bidder: { select: { id: true, username: true, avatarUrl: true } } },
+    });
+  }
+
+  async getUserActiveBids(userId: string): Promise<Bid[]> {
+    return this.prisma.bid.findMany({
+      where: {
+        bidderId: userId,
+        auction: { status: AuctionStatus.ACTIVE },
+      },
+      orderBy: { createdAt: 'desc' },
       include: {
-        bidder: {
+        auction: {
           select: {
             id: true,
-            username: true,
-            displayName: true,
+            title: true,
+            slug: true,
+            currentPrice: true,
+            endsAt: true,
+            images: true,
+            status: true,
           },
         },
       },
