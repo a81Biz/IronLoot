@@ -1,0 +1,70 @@
+<!-- Navigation Bar -->
+<nav class="navbar">
+    <div class="navbar-container">
+        <!-- Left: Logo + Search -->
+        <div class="navbar-left">
+            <a href="/" class="navbar-brand">
+                <div class="navbar-brand-icon">
+                    <span class="material-symbols-outlined">gavel</span>
+                </div>
+                <span class="navbar-brand-text">Iron Loot</span>
+            </a>
+
+            <!-- Search -->
+            <div class="navbar-search">
+                <div class="form-search">
+                    <div class="form-search-icon">
+                        <span class="material-symbols-outlined">search</span>
+                    </div>
+                    <input 
+                        type="text" 
+                        class="form-input" 
+                        placeholder="Buscar subastas..."
+                        id="navSearchInput"
+                    >
+                </div>
+            </div>
+        </div>
+
+        <!-- Right: Nav Links + Auth -->
+        <div class="navbar-right">
+            <!-- Nav Links (Desktop) -->
+            <div class="navbar-nav">
+                <a href="/auctions" class="navbar-link">Subastas</a>
+                <a href="/dashboard" class="navbar-link" data-auth="required">Dashboard</a>
+                <a href="/wallet" class="navbar-link" data-auth="required">Wallet</a>
+            </div>
+
+            <!-- Auth Section (when logged out) -->
+            <div class="navbar-auth" id="navAuthButtons">
+                <a href="/login" class="btn btn-ghost">Iniciar Sesión</a>
+                <a href="/register" class="btn btn-primary">Registrarse</a>
+            </div>
+
+            <!-- User Section (when logged in) -->
+            <div class="navbar-auth" id="navUserMenu" style="display: none;">
+                <!-- Notifications -->
+                <button class="btn btn-icon btn-ghost navbar-notifications">
+                    <span class="material-symbols-outlined">notifications</span>
+                    <span class="navbar-notifications-badge" id="notificationCount" style="display: none;">0</span>
+                </button>
+
+                <!-- User Menu -->
+                <a href="/profile" class="navbar-user">
+                    <div class="navbar-user-avatar">
+                        <span class="material-symbols-outlined">person</span>
+                    </div>
+                    <span class="navbar-user-name" id="navUserName">Usuario</span>
+                </a>
+
+                <!-- Logout -->
+                <button class="btn btn-ghost" id="navLogoutBtn">Salir</button>
+            </div>
+
+            <!-- Mobile Menu Toggle -->
+            <button class="navbar-toggle" id="navMenuToggle">
+                <span class="material-symbols-outlined">menu</span>
+            </button>
+        </div>
+    </div>
+</nav>

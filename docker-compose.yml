@@ -14,9 +14,8 @@ services:
     volumes:
       - ./web/src:/app/src
       - ./web/public:/app/public
-      - ./web/index.html:/app/index.html
-      - ./web/vite.config.ts:/app/vite.config.ts
-      - ./web/tailwind.config.ts:/app/tailwind.config.ts
+      - ./web/views:/app/views
+      - ./web/package.json:/app/package.json
       - ./web/tsconfig.json:/app/tsconfig.json
       # Exclude node_modules
       - /app/node_modules
@@ -41,7 +40,13 @@ services:
       - DATABASE_URL=postgresql://${DB_USER:-ironloot}:${DB_PASSWORD:-ironloot_dev}@db:5432/${DB_NAME:-ironloot_db}
       - REDIS_URL=redis://redis:6379
       - LOG_LEVEL=${LOG_LEVEL:-debug}
+      - LOG_LEVEL=${LOG_LEVEL:-debug}
       - TRACE_ENABLED=true
+      - MAIL_HOST=mailhog
+      - MAIL_PORT=1025
+      - MAIL_USER=test
+      - MAIL_PASSWORD=test
+      - MAIL_FROM="Iron Loot <noreply@ironloot.com>"
     # Load additional env vars from project .env into the container
     env_file:
       - .env
@@ -100,6 +105,19 @@ services:
     networks:
       - ironloot-network
     command: redis-server --appendonly yes
+    restart: unless-stopped
+
+  # ===========================================
+  # Mailhog (Local Email Testing)
+  # ===========================================
+  mailhog:
+    image: mailhog/mailhog
+    container_name: ironloot-mailhog
+    ports:
+      - "1025:1025" # SMTP server
+      - "8025:8025" # Web UI
+    networks:
+      - ironloot-network
     restart: unless-stopped
 
   # ===========================================

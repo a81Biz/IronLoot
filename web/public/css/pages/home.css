@@ -1,0 +1,163 @@
+/* ===========================================
+   Iron Loot - Home Page
+   =========================================== */
+
+/* Hero Section */
+.hero {
+  position: relative;
+  padding: var(--spacing-16) var(--spacing-4);
+  background: linear-gradient(135deg, var(--color-primary-light), rgba(19, 127, 236, 0.05));
+}
+
+.hero-container {
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+  text-align: center;
+}
+
+.hero-title {
+  font-size: var(--font-size-4xl);
+  font-weight: var(--font-weight-black);
+  margin-bottom: var(--spacing-6);
+}
+
+@media (min-width: 768px) {
+  .hero-title {
+    font-size: 3.75rem;
+  }
+}
+
+.hero-subtitle {
+  font-size: var(--font-size-lg);
+  color: var(--text-secondary);
+  max-width: 640px;
+  margin: 0 auto var(--spacing-8);
+}
+
+@media (min-width: 768px) {
+  .hero-subtitle {
+    font-size: var(--font-size-xl);
+  }
+}
+
+.hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-4);
+  justify-content: center;
+  align-items: center;
+}
+
+@media (min-width: 640px) {
+  .hero-actions {
+    flex-direction: row;
+  }
+}
+
+/* Featured Auctions Section */
+.featured-section {
+  padding: var(--spacing-16) var(--spacing-4);
+}
+
+.featured-container {
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--spacing-8);
+}
+
+.section-title {
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+}
+
+.section-link {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.section-link:hover {
+  text-decoration: underline;
+}
+
+/* Auction Grid */
+.auctions-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-6);
+}
+
+@media (min-width: 768px) {
+  .auctions-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .auctions-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+/* How It Works Section */
+.how-it-works {
+  padding: var(--spacing-16) var(--spacing-4);
+  background-color: var(--bg-main);
+}
+
+.how-it-works-container {
+  max-width: var(--max-content-width);
+  margin: 0 auto;
+}
+
+.how-it-works-title {
+  text-align: center;
+  margin-bottom: var(--spacing-12);
+}
+
+.steps-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-8);
+}
+
+@media (min-width: 768px) {
+  .steps-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.step {
+  text-align: center;
+}
+
+.step-icon {
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto var(--spacing-4);
+  background-color: var(--color-primary-light);
+  border-radius: var(--radius-full);
+  color: var(--color-primary);
+}
+
+.step-icon .material-symbols-outlined {
+  font-size: 32px;
+}
+
+.step-title {
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-2);
+}
+
+.step-description {
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+}

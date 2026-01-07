@@ -301,6 +301,25 @@ npm run test:e2e test/e2e/auctions.e2e-spec.ts
 
 Este proyecto está bajo la licencia [MIT](./LICENSE).
 
+
+## Mailhog (Local Email Testing)
+
+This project uses **Mailhog** to capture emails sent by the API during development. This prevents spamming real email addresses and allows you to test email contents easily.
+
+### Accessing Mailhog
+Once the Docker containers are running (`docker-compose up`), you can access the Mailhog Web UI at:
+
+**[http://localhost:8025](http://localhost:8025)**
+
+### How to use
+1. Trigger an action in the application that sends an email (e.g., Register a new user, Request password reset).
+2. Go to the Mailhog UI URL above.
+3. You will see the email in the inbox immediately.
+4. Click on the email to view its headers, plain text content, and HTML content.
+
+### Configuration
+The API connects to Mailhog using the hostname `mailhog` on port `1025` (SMTP). This is configured in `docker-compose.yml`.
+
 ## 💳 Integraciones de Pago y Logística
 - **Integración de Pagos**:
   - `PaymentsModule`: Controladores y servicios para manejar pagos con MercadoPago y PayPal. Usa `PaymentProvider` interface para abstracción. Actualmente funciona en modo **MOCK** (simulación) por defecto.

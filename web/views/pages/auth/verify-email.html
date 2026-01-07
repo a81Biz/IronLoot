@@ -1,0 +1,72 @@
+{% extends "layouts/auth.html" %}
+
+{% block content %}
+<style>
+    .hidden { display: none !important; }
+</style>
+<div class="text-center">
+    <h2 class="text-2xl font-bold text-white mb-6">Verificando tu cuenta...</h2>
+    
+    <div id="loading" class="animate-pulse">
+        <div class="h-4 bg-slate-700 rounded w-3/4 mx-auto mb-4"></div>
+        <p class="text-slate-400">Por favor espera un momento.</p>
+    </div>
+
+    <div id="success" class="hidden">
+        <div class="w-16 h-16 bg-green-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">¡Cuenta Verificada!</h3>
+        <p class="text-slate-400 mb-6">Tu correo ha sido confirmado exitosamente.</p>
+        <a href="/login" class="btn btn-primary w-full">Iniciar Sesión</a>
+    </div>
+
+    <div id="error" class="hidden">
+        <div class="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+            <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+        </div>
+        <h3 class="text-xl font-bold text-white mb-2">Error de Verificación</h3>
+        <p id="error-message" class="text-slate-400 mb-6">El enlace es inválido o ha expirado.</p>
+        <a href="/login" class="btn btn-outline w-full">Volver al Login</a>
+    </div>
+</div>
+
+<script type="module">
+    import { Auth } from '/js/core/auth.js';
+
+    async function verify() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (!token) {
+            showError('Token no encontrado');
+            return;
+        }
+
+        try {
+            await Auth.verifyEmail(token);
+            showSuccess();
+        } catch (error) {
+            console.error(error);
+            showError(error.message || 'Error al verificar el correo');
+        }
+    }
+
+    function showSuccess() {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('success').classList.remove('hidden');
+    }
+
+    function showError(msg) {
+        document.getElementById('loading').classList.add('hidden');
+        document.getElementById('error').classList.remove('hidden');
+        document.getElementById('error-message').textContent = msg;
+    }
+
+    verify();
+</script>
+{% endblock %}

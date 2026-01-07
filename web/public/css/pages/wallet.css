@@ -1,0 +1,138 @@
+/* ===========================================
+   Iron Loot - Wallet Page
+   =========================================== */
+
+.wallet-header {
+  margin-bottom: var(--spacing-8);
+}
+
+.wallet-title {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-black);
+}
+
+/* Balance Card */
+.wallet-balance-card {
+  padding: var(--spacing-8);
+  margin-bottom: var(--spacing-8);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: white;
+  border-radius: var(--radius-xl);
+}
+
+.wallet-balance-label {
+  font-size: var(--font-size-sm);
+  opacity: 0.8;
+  margin-bottom: var(--spacing-1);
+}
+
+.wallet-balance-value {
+  font-size: 3rem;
+  font-weight: var(--font-weight-black);
+  margin-bottom: var(--spacing-4);
+}
+
+.wallet-balance-held {
+  font-size: var(--font-size-sm);
+  opacity: 0.8;
+}
+
+.wallet-balance-held-value {
+  font-weight: var(--font-weight-bold);
+}
+
+.wallet-actions {
+  display: flex;
+  gap: var(--spacing-3);
+  margin-top: var(--spacing-6);
+}
+
+.wallet-action-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  padding: var(--spacing-3) var(--spacing-4);
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-bold);
+  transition: background-color var(--transition-fast);
+}
+
+.wallet-action-btn:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Transaction History */
+.wallet-history {
+  margin-top: var(--spacing-8);
+}
+
+.wallet-history-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-4);
+}
+
+.transaction-item {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding: var(--spacing-4);
+  border-bottom: 1px solid var(--border-main);
+}
+
+.transaction-item:last-child {
+  border-bottom: none;
+}
+
+.transaction-icon {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+}
+
+.transaction-icon.deposit {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+}
+
+.transaction-icon.withdrawal {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+}
+
+.transaction-icon.hold {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.transaction-info {
+  flex: 1;
+}
+
+.transaction-description {
+  font-weight: var(--font-weight-medium);
+}
+
+.transaction-date {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.transaction-amount {
+  font-weight: var(--font-weight-bold);
+}
+
+.transaction-amount.positive {
+  color: var(--color-success);
+}
+
+.transaction-amount.negative {
+  color: var(--color-error);
+}

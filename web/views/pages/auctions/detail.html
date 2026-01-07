@@ -1,0 +1,113 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}{{ auction.title if auction else 'Subasta' }} - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/pages/auction-detail.css">
+{% endblock %}
+
+{% block content %}
+<div class="auction-detail">
+    <!-- Gallery -->
+    <div class="auction-gallery">
+        <div class="auction-main-image" id="mainImage">
+            <img src="https://via.placeholder.com/800x600?text=Cargando..." alt="Imagen principal">
+        </div>
+        <div class="auction-thumbnails" id="thumbnails">
+            <!-- Thumbnails loaded dynamically -->
+        </div>
+
+        <!-- Description -->
+        <div class="card" style="margin-top: var(--spacing-6);">
+            <div class="card-header">
+                <h3 class="card-header-title">Descripción</h3>
+            </div>
+            <div class="card-body">
+                <p id="auctionDescription">Cargando...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Info Panel -->
+    <div class="auction-info">
+        <div class="card auction-info-card">
+            <!-- Status Badge -->
+            <span class="auction-status-badge active" id="auctionStatus">
+                <span class="material-symbols-outlined" style="font-size: 16px;">schedule</span>
+                Activa
+            </span>
+
+            <!-- Title -->
+            <h1 class="auction-title" id="auctionTitle">Cargando...</h1>
+
+            <!-- Price & Timer -->
+            <div class="auction-price-section">
+                <div>
+                    <p class="auction-price-label">Precio actual</p>
+                    <p class="auction-price-value" id="currentPrice">$0.00</p>
+                </div>
+                <div>
+                    <p class="auction-price-label">Termina en</p>
+                    <p class="auction-timer-value" id="timeLeft">--:--:--</p>
+                </div>
+            </div>
+
+            <!-- Bid Form -->
+            <div class="bid-form" id="bidForm">
+                <div class="bid-input-group">
+                    <input 
+                        type="number" 
+                        id="bidAmount" 
+                        class="form-input" 
+                        placeholder="Tu puja"
+                        min="0"
+                        step="1"
+                    >
+                    <button class="btn btn-primary" id="btnPlaceBid">Pujar</button>
+                </div>
+                <div class="bid-suggestions" id="bidSuggestions">
+                    <!-- Suggestions loaded dynamically -->
+                </div>
+                <p class="form-help" id="bidHelp">Mínimo: <span id="minBid">$0.00</span></p>
+            </div>
+
+            <!-- Auth Required Message -->
+            <div id="authRequired" style="display: none;">
+                <p class="text-secondary text-center" style="margin-bottom: var(--spacing-4);">
+                    Inicia sesión para pujar en esta subasta
+                </p>
+                <a href="/login" class="btn btn-primary btn-block">Iniciar Sesión</a>
+            </div>
+
+            <!-- Seller Info -->
+            <div style="margin-top: var(--spacing-6); padding-top: var(--spacing-6); border-top: 1px solid var(--border-main);">
+                <p class="text-sm text-secondary">Vendedor</p>
+                <div style="display: flex; align-items: center; gap: var(--spacing-3); margin-top: var(--spacing-2);">
+                    <div class="sidebar-user-avatar" style="width: 36px; height: 36px;">
+                        <span class="material-symbols-outlined">person</span>
+                    </div>
+                    <div>
+                        <p class="font-medium" id="sellerName">Vendedor</p>
+                        <p class="text-sm text-secondary">
+                            <span class="material-symbols-outlined" style="font-size: 14px;">star</span>
+                            <span id="sellerRating">4.8</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bid History -->
+            <div class="bid-history">
+                <h3 class="bid-history-title">Historial de Pujas</h3>
+                <div class="bid-list" id="bidHistory">
+                    <p class="text-secondary text-center">Cargando...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/auction-detail.js"></script>
+{% endblock %}

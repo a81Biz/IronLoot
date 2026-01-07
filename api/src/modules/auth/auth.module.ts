@@ -6,6 +6,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies';
 import { JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard } from './guards';
+import { NotificationsModule } from '../notifications/notifications.module';
 
 /**
  * AuthModule
@@ -31,6 +32,7 @@ import { JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard } from './guards';
         },
       }),
     }),
+    NotificationsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, OptionalJwtAuthGuard],

@@ -1,0 +1,87 @@
+{% extends "layouts/base.html" %}
+
+{% block title %}Iron Loot - Plataforma de Subastas{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/pages/home.css">
+{% endblock %}
+
+{% block body %}
+<!-- Navigation -->
+{% include "partials/navigation.html" %}
+
+<!-- Hero Section -->
+<section class="hero">
+    <div class="hero-container">
+        <h1 class="hero-title">Subastas en tiempo real</h1>
+        <p class="hero-subtitle">
+            Encuentra productos únicos, puja y gana. La plataforma de subastas más transparente y segura.
+        </p>
+        <div class="hero-actions">
+            <a href="/auctions" class="btn btn-primary btn-lg">Ver subastas</a>
+            <a href="/register" class="btn btn-secondary btn-lg" data-auth="guest">Comenzar a vender</a>
+        </div>
+    </div>
+</section>
+
+<!-- Featured Auctions -->
+<section class="featured-section">
+    <div class="featured-container">
+        <div class="section-header">
+            <h2 class="section-title">Subastas destacadas</h2>
+            <a href="/auctions" class="section-link">Ver todas →</a>
+        </div>
+
+        <div class="auctions-grid" id="featuredAuctions">
+            <!-- Auctions will be loaded dynamically -->
+            <p class="text-secondary text-center" style="grid-column: 1/-1;">Cargando subastas...</p>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works -->
+<section class="how-it-works">
+    <div class="how-it-works-container">
+        <h2 class="how-it-works-title section-title">¿Cómo funciona?</h2>
+        
+        <div class="steps-grid">
+            <div class="step">
+                <div class="step-icon">
+                    <span class="material-symbols-outlined">person_add</span>
+                </div>
+                <h3 class="step-title">1. Regístrate</h3>
+                <p class="step-description">
+                    Crea tu cuenta en segundos y activa tu wallet con un depósito inicial.
+                </p>
+            </div>
+            
+            <div class="step">
+                <div class="step-icon">
+                    <span class="material-symbols-outlined">gavel</span>
+                </div>
+                <h3 class="step-title">2. Puja</h3>
+                <p class="step-description">
+                    Encuentra productos que te interesen y haz tus ofertas en tiempo real.
+                </p>
+            </div>
+            
+            <div class="step">
+                <div class="step-icon">
+                    <span class="material-symbols-outlined">emoji_events</span>
+                </div>
+                <h3 class="step-title">3. Gana</h3>
+                <p class="step-description">
+                    Si tu puja es la más alta, el producto es tuyo. Pago seguro y envío rastreado.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+{% include "partials/footer.html" %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/home.js"></script>
+{% endblock %}

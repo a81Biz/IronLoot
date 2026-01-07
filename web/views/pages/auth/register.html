@@ -1,0 +1,102 @@
+{% extends "layouts/auth.html" %}
+
+{% block title %}Crear Cuenta - Iron Loot{% endblock %}
+
+{% block content %}
+<div class="auth-header">
+    <h1 class="auth-title">Crear cuenta</h1>
+</div>
+
+<!-- Error Alert -->
+<div class="auth-error" id="registerError" style="display: none;"></div>
+
+<form class="auth-form" id="registerForm">
+    <!-- Email -->
+    <div class="form-group">
+        <label class="form-label" for="email">Correo electrónico</label>
+        <div class="form-input-wrapper">
+            <span class="material-symbols-outlined form-input-icon">mail</span>
+            <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                class="form-input" 
+                placeholder="ejemplo@correo.com"
+                required
+                autocomplete="email"
+            >
+        </div>
+    </div>
+
+    <!-- Username -->
+    <div class="form-group">
+        <label class="form-label" for="username">Nombre de usuario</label>
+        <div class="form-input-wrapper">
+            <span class="material-symbols-outlined form-input-icon">person</span>
+            <input 
+                type="text" 
+                id="username" 
+                name="username" 
+                class="form-input" 
+                placeholder="usuario123"
+                required
+                autocomplete="username"
+                minlength="3"
+                maxlength="30"
+            >
+        </div>
+    </div>
+
+    <!-- Password -->
+    <div class="form-group">
+        <label class="form-label" for="password">Contraseña</label>
+        <div class="form-input-wrapper">
+            <span class="material-symbols-outlined form-input-icon">lock</span>
+            <input 
+                type="password" 
+                id="password" 
+                name="password" 
+                class="form-input has-icon-right" 
+                placeholder="Mínimo 8 caracteres"
+                required
+                autocomplete="new-password"
+                minlength="8"
+            >
+            <button type="button" class="form-input-icon-right password-toggle">
+                <span class="material-symbols-outlined">visibility</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Confirm Password -->
+    <div class="form-group">
+        <label class="form-label" for="confirmPassword">Confirmar contraseña</label>
+        <div class="form-input-wrapper">
+            <span class="material-symbols-outlined form-input-icon">lock</span>
+            <input 
+                type="password" 
+                id="confirmPassword" 
+                name="confirmPassword" 
+                class="form-input has-icon-right" 
+                placeholder="Repite tu contraseña"
+                required
+                autocomplete="new-password"
+            >
+            <button type="button" class="form-input-icon-right password-toggle">
+                <span class="material-symbols-outlined">visibility</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Submit -->
+    <button type="submit" class="btn btn-primary btn-block btn-lg">
+        Crear cuenta
+    </button>
+</form>
+
+<!-- Footer -->
+<div class="auth-footer">
+    <span class="auth-footer-text">¿Ya tienes cuenta?</span>
+    <a href="/login" class="auth-footer-link">Iniciar sesión</a>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Subastas Activas - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/pages/auctions.css">
+{% endblock %}
+
+{% block content %}
+<div class="auctions-header">
+    <h1 class="auctions-title">Subastas Activas</h1>
+    <a href="/auction/create" class="btn btn-primary" id="btnCreateAuction" style="display: none;">
+        <span class="material-symbols-outlined">add</span>
+        Crear Subasta
+    </a>
+</div>
+
+<!-- Filters -->
+<div class="auctions-filters">
+    <div class="filter-group">
+        <label class="filter-label">Buscar</label>
+        <div class="form-search" style="width: 200px;">
+            <div class="form-search-icon">
+                <span class="material-symbols-outlined">search</span>
+            </div>
+            <input type="text" class="form-input" placeholder="Buscar..." id="filterSearch">
+        </div>
+    </div>
+
+    <div class="filter-group">
+        <label class="filter-label">Estado</label>
+        <select class="form-select" id="filterStatus" style="width: 150px; height: 40px;">
+            <option value="">Todos</option>
+            <option value="ACTIVE" selected>Activas</option>
+            <option value="CLOSED">Finalizadas</option>
+        </select>
+    </div>
+
+    <div class="filter-group">
+        <label class="filter-label">Ordenar por</label>
+        <select class="form-select" id="filterSort" style="width: 180px; height: 40px;">
+            <option value="endsAt:asc">Termina pronto</option>
+            <option value="endsAt:desc">Termina después</option>
+            <option value="currentPrice:asc">Menor precio</option>
+            <option value="currentPrice:desc">Mayor precio</option>
+            <option value="createdAt:desc">Más recientes</option>
+        </select>
+    </div>
+
+    <div class="filter-group" style="align-self: flex-end;">
+        <button class="btn btn-secondary" id="btnApplyFilters">
+            <span class="material-symbols-outlined">filter_list</span>
+            Aplicar
+        </button>
+    </div>
+</div>
+
+<!-- Results Info -->
+<div class="auctions-info">
+    <span id="auctionsCount">Cargando...</span>
+    <span id="auctionsPage"></span>
+</div>
+
+<!-- Auctions Grid -->
+<div class="auctions-grid" id="auctionsGrid">
+    <p class="text-secondary text-center" style="grid-column: 1/-1; padding: var(--spacing-8);">
+        Cargando subastas...
+    </p>
+</div>
+
+<!-- Pagination -->
+<div class="pagination" id="pagination" style="display: none;">
+    <button class="pagination-btn" id="prevPage">
+        <span class="material-symbols-outlined">chevron_left</span>
+    </button>
+    <div id="paginationNumbers"></div>
+    <button class="pagination-btn" id="nextPage">
+        <span class="material-symbols-outlined">chevron_right</span>
+    </button>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/auctions.js"></script>
+{% endblock %}

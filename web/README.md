@@ -1,73 +1,152 @@
-# React + TypeScript + Vite
+# Iron Loot - Web Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Frontend de la plataforma de subastas Iron Loot.
 
-Currently, two official plugins are available:
+## Estructura
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```
+web/
+├── public/                          # Archivos estáticos
+│   ├── css/
+│   │   ├── base/                    # Estilos base
+│   │   │   ├── variables.css        # Variables CSS (colores, spacing, etc.)
+│   │   │   ├── reset.css            # CSS Reset
+│   │   │   └── typography.css       # Tipografía
+│   │   │
+│   │   ├── components/              # Componentes reutilizables
+│   │   │   ├── buttons.css
+│   │   │   ├── forms.css
+│   │   │   ├── cards.css
+│   │   │   ├── tables.css
+│   │   │   └── modals.css
+│   │   │
+│   │   ├── layout/                  # Layout
+│   │   │   ├── navigation.css
+│   │   │   ├── sidebar.css
+│   │   │   └── footer.css
+│   │   │
+│   │   └── pages/                   # Estilos por página
+│   │       ├── auth.css
+│   │       ├── home.css
+│   │       ├── dashboard.css
+│   │       ├── auctions.css
+│   │       ├── auction-detail.css
+│   │       └── wallet.css
+│   │
+│   ├── js/
+│   │   ├── core/                    # Core scripts
+│   │   │   ├── utils.js             # Utilidades
+│   │   │   ├── api-client.js        # Cliente API
+│   │   │   └── auth.js              # Gestión de autenticación
+│   │   │
+│   │   ├── components/              # Componentes JS
+│   │   │   ├── navigation.js
+│   │   │   ├── sidebar.js
+│   │   │   └── modals.js
+│   │   │
+│   │   └── pages/                   # Scripts por página
+│   │       ├── auth.js
+│   │       ├── home.js
+│   │       ├── dashboard.js
+│   │       ├── auctions.js
+│   │       ├── auction-detail.js
+│   │       └── wallet.js
+│   │
+│   └── assets/
+│       ├── images/
+│       └── fonts/
+│
+├── views/                           # Templates HTML
+│   ├── layouts/                     # Layouts base
+│   │   ├── base.html                # Layout raíz
+│   │   ├── main.html                # Layout con nav + sidebar
+│   │   └── auth.html                # Layout para autenticación
+│   │
+│   ├── partials/                    # Componentes reutilizables
+│   │   ├── navigation.html
+│   │   ├── sidebar.html
+│   │   ├── sidebar-content.html
+│   │   └── footer.html
+│   │
+│   └── pages/                       # Páginas
+│       ├── auth/
+│       │   ├── login.html
+│       │   ├── register.html
+│       │   └── recovery.html
+│       ├── home.html
+│       ├── dashboard.html
+│       ├── wallet.html
+│       └── auctions/
+│           ├── list.html
+│           └── detail.html
+│
+└── README.md
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Sistema de Layouts
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+### base.html
+Layout raíz con:
+- `<head>` común (CSS, fonts, icons)
+- Scripts comunes al final
+- Blocks: `title`, `styles`, `body`, `scripts`
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### main.html (extiende base.html)
+Para páginas autenticadas con:
+- Navegación superior
+- Sidebar lateral
+- Footer
+
+### auth.html (extiende base.html)
+Para páginas de autenticación con:
+- Panel decorativo izquierdo
+- Formulario derecho
+- Sin navegación
+
+## API Client
+
+```javascript
+// Autenticación
+await Api.auth.login(email, password);
+await Api.auth.logout();
+
+// Subastas
+const auctions = await Api.auctions.list({ status: 'ACTIVE' });
+await Api.auctions.placeBid(auctionId, amount);
+
+// Wallet
+const balance = await Api.wallet.getBalance();
+await Api.wallet.deposit(amount, referenceId);
 ```
+
+## Páginas Implementadas
+
+| Página | Ruta | Layout |
+|--------|------|--------|
+| Home | `/` | base + nav |
+| Login | `/login` | auth |
+| Register | `/register` | auth |
+| Recovery | `/recovery` | auth |
+| Dashboard | `/dashboard` | main |
+| Subastas | `/auctions` | main |
+| Detalle Subasta | `/auctions/:id` | main |
+| Wallet | `/wallet` | main |
+
+## CSS Variables
+
+Ver `public/css/base/variables.css` para:
+- Colores (primary, success, error, etc.)
+- Tipografía (tamaños, pesos)
+- Espaciado
+- Border radius
+- Sombras
+- Z-index
+- Transiciones
+
+## Integración con Backend
+
+El API Client (`public/js/core/api-client.js`) se comunica con el backend NestJS:
+- Gestión automática de tokens JWT
+- Auto-refresh cuando expira
+- Queue de requests durante refresh
+- Manejo centralizado de errores

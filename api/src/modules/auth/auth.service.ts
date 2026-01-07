@@ -24,6 +24,7 @@ import {
   AuditResult,
 } from '../../common/observability';
 import { AuditPersistenceService } from '../audit/audit-persistence.service';
+import { EmailService } from '../notifications/email.service';
 import {
   RegisterDto,
   LoginDto,
@@ -60,6 +61,7 @@ export class AuthService {
     private readonly ctx: RequestContextService,
     private readonly metrics: MetricsService,
     private readonly audit: AuditPersistenceService,
+    private readonly emailService: EmailService,
   ) {
     // Initialize log AFTER logger is injected
     this.log = this.logger.child('AuthService');
@@ -204,8 +206,8 @@ export class AuthService {
     // Generate tokens
     const tokens = await this.generateTokens(user);
 
-    // TODO: Send verification email
-    // await this.emailService.sendVerificationEmail(user.email, emailVerificationToken);
+    // Send verification email
+    await this.emailService.sendVerificationEmail(user.email, emailVerificationToken);
 
     return {
       user: this.mapUserToResponse(user),

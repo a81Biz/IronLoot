@@ -1,0 +1,115 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Dashboard - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/pages/dashboard.css">
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+    <h1 class="dashboard-title">Dashboard</h1>
+    <p class="dashboard-subtitle">Bienvenido de nuevo, <span id="dashboardUserName">Usuario</span></p>
+</div>
+
+<!-- Stats Grid -->
+<div class="stats-grid">
+    <div class="card stat-card">
+        <div class="stat-card-icon">
+            <span class="material-symbols-outlined">gavel</span>
+        </div>
+        <div class="stat-card-value" id="statActiveBids">-</div>
+        <div class="stat-card-label">Pujas Activas</div>
+    </div>
+
+    <div class="card stat-card">
+        <div class="stat-card-icon">
+            <span class="material-symbols-outlined">emoji_events</span>
+        </div>
+        <div class="stat-card-value" id="statWonAuctions">-</div>
+        <div class="stat-card-label">Subastas Ganadas</div>
+    </div>
+
+    <div class="card stat-card">
+        <div class="stat-card-icon">
+            <span class="material-symbols-outlined">account_balance_wallet</span>
+        </div>
+        <div class="stat-card-value" id="statBalance">-</div>
+        <div class="stat-card-label">Saldo Disponible</div>
+    </div>
+
+    <div class="card stat-card">
+        <div class="stat-card-icon">
+            <span class="material-symbols-outlined">visibility</span>
+        </div>
+        <div class="stat-card-value" id="statWatchlist">-</div>
+        <div class="stat-card-label">En Seguimiento</div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="recent-section">
+    <div class="recent-header">
+        <h2 class="recent-title">Acciones Rápidas</h2>
+    </div>
+    <div class="quick-actions">
+        <a href="/auctions" class="btn btn-primary">
+            <span class="material-symbols-outlined">search</span>
+            Explorar Subastas
+        </a>
+        <a href="/wallet" class="btn btn-secondary">
+            <span class="material-symbols-outlined">add</span>
+            Depositar Fondos
+        </a>
+        <a href="/auction/create" class="btn btn-secondary" id="btnCreateAuction" style="display: none;">
+            <span class="material-symbols-outlined">add_circle</span>
+            Crear Subasta
+        </a>
+    </div>
+</div>
+
+<!-- Recent Activity -->
+<div class="recent-section">
+    <div class="recent-header">
+        <h2 class="recent-title">Actividad Reciente</h2>
+        <a href="/notifications" class="link text-sm">Ver todo</a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body" id="recentActivity">
+            <p class="text-secondary text-center">Cargando actividad...</p>
+        </div>
+    </div>
+</div>
+
+<!-- My Active Bids -->
+<div class="recent-section">
+    <div class="recent-header">
+        <h2 class="recent-title">Mis Pujas Activas</h2>
+        <a href="/my-bids" class="link text-sm">Ver todas</a>
+    </div>
+    
+    <div class="table-container">
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Subasta</th>
+                    <th>Mi Puja</th>
+                    <th>Precio Actual</th>
+                    <th>Estado</th>
+                    <th>Termina</th>
+                </tr>
+            </thead>
+            <tbody id="activeBidsTable">
+                <tr>
+                    <td colspan="5" class="text-center text-secondary">Cargando...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/dashboard.js"></script>
+{% endblock %}

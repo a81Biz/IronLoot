@@ -1,0 +1,179 @@
+/* ===========================================
+   Iron Loot - Cards
+   =========================================== */
+
+.card {
+  background-color: var(--surface-main);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-xl);
+  overflow: hidden;
+}
+
+.card-shadow {
+  box-shadow: var(--shadow-sm);
+}
+
+.card-hover {
+  transition: all var(--transition-normal);
+}
+
+.card-hover:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-2px);
+}
+
+/* --- Card Header --- */
+.card-header {
+  padding: var(--spacing-4) var(--spacing-6);
+  border-bottom: 1px solid var(--border-main);
+}
+
+.card-header-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* --- Card Body --- */
+.card-body {
+  padding: var(--spacing-6);
+}
+
+.card-body-sm {
+  padding: var(--spacing-4);
+}
+
+/* --- Card Footer --- */
+.card-footer {
+  padding: var(--spacing-4) var(--spacing-6);
+  border-top: 1px solid var(--border-main);
+  background-color: var(--bg-main);
+}
+
+/* --- Card Image --- */
+.card-image {
+  position: relative;
+  overflow: hidden;
+}
+
+.card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform var(--transition-slow);
+}
+
+.card-hover:hover .card-image img {
+  transform: scale(1.05);
+}
+
+.card-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
+}
+
+/* --- Auction Card --- */
+.auction-card {
+  display: flex;
+  flex-direction: column;
+}
+
+.auction-card .card-image {
+  aspect-ratio: 16/9;
+}
+
+.auction-card-content {
+  padding: var(--spacing-4);
+}
+
+.auction-card-title {
+  font-weight: var(--font-weight-semibold);
+  margin-bottom: var(--spacing-2);
+  transition: color var(--transition-fast);
+}
+
+.auction-card:hover .auction-card-title {
+  color: var(--color-primary);
+}
+
+.auction-card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+}
+
+.auction-card-price {
+  font-size: var(--font-size-xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+}
+
+.auction-card-price-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.auction-card-time {
+  text-align: right;
+}
+
+.auction-card-time-value {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-warning);
+}
+
+.auction-card-time-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.auction-card-bids {
+  margin-top: var(--spacing-2);
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+/* --- Stat Card --- */
+.stat-card {
+  padding: var(--spacing-6);
+}
+
+.stat-card-icon {
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--color-primary-light);
+  border-radius: var(--radius-lg);
+  color: var(--color-primary);
+  margin-bottom: var(--spacing-4);
+}
+
+.stat-card-value {
+  font-size: var(--font-size-3xl);
+  font-weight: var(--font-weight-bold);
+  margin-bottom: var(--spacing-1);
+}
+
+.stat-card-label {
+  font-size: var(--font-size-sm);
+  color: var(--text-secondary);
+}
+
+.stat-card-change {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  margin-top: var(--spacing-2);
+}
+
+.stat-card-change.positive {
+  color: var(--color-success);
+}
+
+.stat-card-change.negative {
+  color: var(--color-error);
+}

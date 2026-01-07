@@ -1,0 +1,134 @@
+/* ===========================================
+   Iron Loot - Tables
+   =========================================== */
+
+.table-container {
+  overflow-x: auto;
+  background-color: var(--surface-main);
+  border: 1px solid var(--border-main);
+  border-radius: var(--radius-xl);
+}
+
+.table {
+  width: 100%;
+  text-align: left;
+}
+
+/* --- Header --- */
+.table thead {
+  background-color: var(--bg-main);
+}
+
+.table th {
+  padding: var(--spacing-4);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* --- Body --- */
+.table tbody tr {
+  border-top: 1px solid var(--border-main);
+  transition: background-color var(--transition-fast);
+}
+
+.table tbody tr:first-child {
+  border-top: none;
+}
+
+.table tbody tr:hover {
+  background-color: var(--bg-main);
+}
+
+.table td {
+  padding: var(--spacing-4);
+  vertical-align: middle;
+}
+
+/* --- Cell Variants --- */
+.table-cell-bold {
+  font-weight: var(--font-weight-semibold);
+}
+
+.table-cell-primary {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-bold);
+}
+
+.table-cell-muted {
+  color: var(--text-secondary);
+}
+
+/* --- Sortable Header --- */
+.table-sortable th {
+  cursor: pointer;
+  user-select: none;
+}
+
+.table-sortable th:hover {
+  color: var(--text-main);
+}
+
+.table-sort-icon {
+  margin-left: var(--spacing-1);
+  opacity: 0.5;
+}
+
+.table-sortable th.sorted .table-sort-icon {
+  opacity: 1;
+  color: var(--color-primary);
+}
+
+/* --- Status Badge in Table --- */
+.table-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-1);
+  padding: var(--spacing-1) var(--spacing-2);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  border-radius: var(--radius-full);
+}
+
+.table-status-success {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+}
+
+.table-status-warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.table-status-error {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--color-error);
+}
+
+.table-status-info {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--color-info);
+}
+
+/* --- Empty State --- */
+.table-empty {
+  padding: var(--spacing-12);
+  text-align: center;
+  color: var(--text-secondary);
+}
+
+.table-empty-icon {
+  font-size: 48px;
+  margin-bottom: var(--spacing-4);
+  opacity: 0.5;
+}
+
+/* --- Actions Column --- */
+.table-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+}

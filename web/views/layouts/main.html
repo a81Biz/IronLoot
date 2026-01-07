@@ -1,0 +1,40 @@
+{% extends "layouts/base.html" %}
+
+{% block body %}
+<!-- Navigation -->
+{% include "partials/navigation.html" %}
+
+<div class="layout-with-sidebar">
+    <!-- Sidebar (Desktop) -->
+    {% include "partials/sidebar.html" %}
+
+    <!-- Sidebar (Mobile) -->
+    <div class="sidebar-mobile-backdrop" id="sidebarBackdrop"></div>
+    <aside class="sidebar-mobile" id="sidebarMobile">
+        <div class="sidebar-mobile-header">
+            <a href="/" class="navbar-brand">
+                <div class="navbar-brand-icon">
+                    <span class="material-symbols-outlined">gavel</span>
+                </div>
+                <span class="navbar-brand-text">Iron Loot</span>
+            </a>
+            <button class="sidebar-mobile-close" id="sidebarClose">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="sidebar-content">
+            {% include "partials/sidebar-content.html" %}
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="main-content-container">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+</div>
+
+<!-- Footer -->
+{% include "partials/footer.html" %}
+{% endblock %}

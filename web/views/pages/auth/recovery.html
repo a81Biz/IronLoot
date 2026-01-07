@@ -1,0 +1,47 @@
+{% extends "layouts/auth.html" %}
+
+{% block title %}Recuperar Contraseña - Iron Loot{% endblock %}
+
+{% block content %}
+<div class="auth-header">
+    <h1 class="auth-title">Recuperar contraseña</h1>
+    <p class="auth-subtitle">
+        Ingresa tu correo electrónico y te enviaremos un enlace para restablecer tu contraseña.
+    </p>
+</div>
+
+<!-- Error Alert -->
+<div class="auth-error" id="recoveryError" style="display: none;"></div>
+
+<!-- Success Alert -->
+<div class="auth-error" id="recoverySuccess" style="display: none; background-color: rgba(16, 185, 129, 0.1); border-color: rgba(16, 185, 129, 0.2); color: var(--color-success);"></div>
+
+<form class="auth-form" id="recoveryForm">
+    <!-- Email -->
+    <div class="form-group">
+        <label class="form-label" for="email">Correo electrónico</label>
+        <div class="form-input-wrapper">
+            <span class="material-symbols-outlined form-input-icon">mail</span>
+            <input 
+                type="email" 
+                id="email" 
+                name="email" 
+                class="form-input" 
+                placeholder="ejemplo@correo.com"
+                required
+                autocomplete="email"
+            >
+        </div>
+    </div>
+
+    <!-- Submit -->
+    <button type="submit" class="btn btn-primary btn-block btn-lg">
+        Enviar enlace
+    </button>
+</form>
+
+<!-- Footer -->
+<div class="auth-footer">
+    <a href="/login" class="link">Volver a iniciar sesión</a>
+</div>
+{% endblock %}

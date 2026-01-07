@@ -1,0 +1,48 @@
+{% extends "layouts/base.html" %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/pages/auth.css">
+{% endblock %}
+
+{% block body %}
+<div class="auth-layout">
+    <!-- Left Panel - Decorative -->
+    <div class="auth-panel-left">
+        <img 
+            src="https://images.unsplash.com/photo-1614028674026-a65e31bfd27c?w=1200" 
+            alt="Background" 
+            class="auth-panel-bg"
+        >
+        <div class="auth-panel-content">
+            <a href="/" class="auth-panel-logo">
+                <span class="material-symbols-outlined">gavel</span>
+                <span class="auth-panel-logo-text">Iron Loot</span>
+            </a>
+            <p class="auth-panel-quote">
+                "La transparencia es la base de cada oferta ganadora."
+            </p>
+        </div>
+    </div>
+
+    <!-- Right Panel - Form -->
+    <div class="auth-panel-right">
+        <div class="auth-form-container">
+            <!-- Mobile Logo -->
+            <div class="auth-mobile-logo">
+                <a href="/" class="auth-mobile-logo-inner">
+                    <div class="auth-mobile-logo-icon">
+                        <span class="material-symbols-outlined">gavel</span>
+                    </div>
+                    <span class="auth-mobile-logo-text">Iron Loot</span>
+                </a>
+            </div>
+
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/auth.js"></script>
+{% endblock %}
