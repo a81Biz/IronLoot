@@ -82,16 +82,24 @@ export class AuctionsService {
   // ===========================================
   // FIND ALL (Public)
   // ===========================================
+  // ===========================================
+  // FIND ALL (Public)
+  // ===========================================
   async findAll(query: {
     status?: AuctionStatus;
     sellerId?: string;
-  }): Promise<AuctionResponseDto[]> {
+    page?: number;
+    limit?: number;
+  }): Promise<{ data: AuctionResponseDto[]; total: number; page: number; limit: number }> {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * limit;
+
     const where: Prisma.AuctionWhereInput = {};
 
     if (query.status) {
       where.status = query.status;
     } else {
-      // Default to active/published for public lists if not specified
       where.status = { in: [AuctionStatus.ACTIVE, AuctionStatus.PUBLISHED] };
     }
 
@@ -99,26 +107,40 @@ export class AuctionsService {
       where.sellerId = query.sellerId;
     }
 
-    const auctions = await this.prisma.auction.findMany({
-      where,
-      orderBy: { createdAt: 'desc' },
-      include: { seller: { select: { displayName: true } } }, // Optimistic include
-    });
+    const [auctions, total] = await Promise.all([
+      this.prisma.auction.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        include: { seller: { select: { displayName: true } } },
+        skip,
+        take: limit,
+      }),
+      this.prisma.auction.count({ where }),
+    ]);
 
-    return auctions.map((a) => this.mapToResponse(a, a.seller?.displayName || undefined));
+    return {
+      data: auctions.map((a) => this.mapToResponse(a, a.seller?.displayName || undefined)),
+      total,
+      page,
+      limit,
+    };
   }
 
   // ===========================================
   // FIND ONE
   // ===========================================
-  async findOne(id: string): Promise<AuctionResponseDto> {
+  async findOne(idOrSlug: string): Promise<AuctionResponseDto> {
+    // Check if valid UUID, otherwise treat as slug
+    const isUuid = /^[0-9a-fA-F-]{36}$/.test(idOrSlug);
+    const where: Prisma.AuctionWhereUniqueInput = isUuid ? { id: idOrSlug } : { slug: idOrSlug };
+
     const auction = await this.prisma.auction.findUnique({
-      where: { id },
+      where,
       include: { seller: { select: { displayName: true } } },
     });
 
     if (!auction) {
-      throw new AuctionNotFoundException(id);
+      throw new AuctionNotFoundException(idOrSlug);
     }
 
     return this.mapToResponse(auction, auction.seller?.displayName || undefined);

@@ -2,7 +2,7 @@ import { Bid } from '@prisma/client';
 import { Controller, Post, Get, Param, Body, UseGuards, ParseUUIDPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/guards';
-import { CurrentUser, AuthenticatedUser } from '@/modules/auth/decorators';
+import { CurrentUser, AuthenticatedUser, Public } from '@/modules/auth/decorators';
 import { BidsService } from './bids.service';
 import { CreateBidDto } from './dto';
 import { Log, AuditedAction } from '../../common/observability/decorators';
@@ -34,6 +34,7 @@ export class BidsController {
   }
 
   @Get()
+  @Public() // Audit #20: Public access to bids
   @ApiOperation({ summary: 'Get auction bids', description: 'Get history of bids for an auction' })
   @ApiParam({ name: 'auctionId', description: 'Auction ID' })
   @Log()
@@ -57,5 +58,15 @@ export class UserBidsController {
   @ApiResponse({ status: 200, description: 'List of active bids' })
   async getMyActiveBids(@CurrentUser() user: AuthenticatedUser): Promise<Bid[]> {
     return this.bidsService.getUserActiveBids(user.id);
+  }
+
+  @Get('my-history')
+  @ApiOperation({
+    summary: 'Get my bid history',
+    description: 'Get list of all auctions user has bid on',
+  })
+  @ApiResponse({ status: 200, description: 'List of all bids' })
+  async getMyBids(@CurrentUser() user: AuthenticatedUser): Promise<Bid[]> {
+    return this.bidsService.getUserBids(user.id);
   }
 }

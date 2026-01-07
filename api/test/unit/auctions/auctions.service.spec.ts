@@ -136,11 +136,13 @@ describe('AuctionsService', () => {
   describe('findAll', () => {
     it('should return list of auctions', async () => {
       mockPrismaService.auction.findMany.mockResolvedValue([mockAuction]);
+      mockPrismaService.auction.count.mockResolvedValue(1);
 
       const result = await service.findAll({});
 
-      expect(result.length).toBe(1);
-      expect(result[0].id).toBe(mockAuction.id);
+      expect(result.data.length).toBe(1);
+      expect(result.data[0].id).toBe(mockAuction.id);
+      expect(result.total).toBe(1);
     });
   });
 

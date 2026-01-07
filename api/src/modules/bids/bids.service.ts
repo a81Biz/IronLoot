@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { Bid, AuctionStatus } from '@prisma/client';
+import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
+import { Bid, AuctionStatus, NotificationType } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import {
   StructuredLogger,
@@ -9,10 +9,15 @@ import {
   BidTooLowException,
   BidOnOwnAuctionException,
   RequestContextService,
+  AuditEventType,
+  EntityType,
+  AuditResult,
+  ValidationException,
 } from '../../common/observability';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateBidDto } from './dto';
-
 import { WalletService } from '../wallet/wallet.service';
+import { AuditPersistenceService } from '../audit/audit-persistence.service';
 
 @Injectable()
 export class BidsService {
@@ -23,127 +28,165 @@ export class BidsService {
     private readonly logger: StructuredLogger,
     private readonly ctx: RequestContextService,
     private readonly walletService: WalletService,
+    private readonly notificationsService: NotificationsService,
+    private readonly audit: AuditPersistenceService,
   ) {
     this.log = this.logger.child('BidsService');
   }
 
   async placeBid(userId: string, auctionId: string, dto: CreateBidDto): Promise<Bid> {
+    const traceId = this.ctx.getTraceId();
     this.log.debug('Placing bid', { userId, auctionId, amount: dto.amount });
 
-    // 1. Funds Check & Hold (Must happen before transaction to prevent locking issues or external calls inside tx if possible)
-    // However, for consistency, we might want it inside. But WalletService uses its own transactions.
-    // NestJS transactions via Prisma: If we pass `tx` to WalletService methods, we can compose them.
-    // But WalletService methods create their own transactions using `this.prisma.$transaction`.
-    // Prisma doesn't support nested transactions easily unless we pass the tx client.
-    // For now, let's do it optimistically OUTSIDE the main auction lock, OR accept that we first Hold, then Bid.
-    // If Bid fails, we must Release.
-
-    // Step 1: Hold Funds
     try {
+      // 1. Fetch Auction and Validation Check
+      const auction = await this.prisma.auction.findUnique({
+        where: { id: auctionId },
+        include: { bids: { orderBy: { amount: 'desc' }, take: 1 } },
+      });
+
+      if (!auction) {
+        throw new AuctionNotFoundException(auctionId);
+      }
+
+      const now = new Date();
+      if (auction.status !== AuctionStatus.ACTIVE && auction.status !== AuctionStatus.PUBLISHED) {
+        throw new AuctionNotActiveException(auctionId, auction.status);
+      }
+
+      if (auction.endsAt < now) {
+        throw new AuctionNotActiveException(auctionId, auction.status);
+      }
+
+      if (auction.sellerId === userId) {
+        throw new BidOnOwnAuctionException(auctionId);
+      }
+
+      // Check if user is outbidding themselves
+      const previousTopBid = auction.bids[0];
+      if (previousTopBid && previousTopBid.bidderId === userId) {
+        throw new BidOnOwnAuctionException(auctionId);
+      }
+
+      const currentPrice = Number(auction.currentPrice);
+      const minimumBid = currentPrice + 1.0;
+
+      if (dto.amount < minimumBid) {
+        throw new BidTooLowException(auctionId, dto.amount, minimumBid);
+      }
+
+      // 2. Hold Funds (Optimistic lock approach - hold first, then try to bid)
       await this.walletService.holdFunds(
         userId,
         dto.amount,
         auctionId,
-        `Bid for auction ${auctionId}`,
+        `Bid on auction ${auction.title}`,
       );
-    } catch (error) {
-      this.log.warn('Failed to hold funds for bid', { userId, auctionId, error: error.message });
-      throw error; // Rethrow (likely BadRequestException for insufficient funds)
-    }
 
-    try {
-      return await this.prisma
-        .$transaction(async (tx) => {
-          // ... (Existing validations: auction, time, status, owner, min bid)
-          const auction = await tx.auction.findUnique({
-            where: { id: auctionId },
-            include: { bids: { orderBy: { amount: 'desc' }, take: 1 } }, // Fetch highest bid
-          });
-
-          if (!auction) throw new AuctionNotFoundException(auctionId);
-
-          // ... (validations)
-          const now = new Date();
-          if (auction.startsAt > now || auction.endsAt <= now) {
-            throw new AuctionNotActiveException(auctionId, auction.status);
-          }
-          if (
-            auction.status !== AuctionStatus.ACTIVE &&
-            auction.status !== AuctionStatus.PUBLISHED
-          ) {
-            throw new AuctionNotActiveException(auctionId, auction.status);
-          }
-          if (auction.sellerId === userId) {
-            throw new BidOnOwnAuctionException(auctionId);
-          }
-
-          const currentPrice = Number(auction.currentPrice);
-          const minimumBid = currentPrice + 1.0;
-
-          // Check against DTO
-          if (dto.amount < minimumBid) {
-            throw new BidTooLowException(auctionId, dto.amount, minimumBid);
-          }
-
-          // Create Bid
-          const bid = await tx.bid.create({
-            data: {
-              amount: dto.amount,
-              auctionId,
-              bidderId: userId,
-            },
-          });
-
-          // Update Auction
-          const timeRemaining = auction.endsAt.getTime() - now.getTime();
-          let newEndsAt = auction.endsAt;
-          const EXTENSION_MS = 5 * 60 * 1000;
-          if (timeRemaining < EXTENSION_MS) {
-            newEndsAt = new Date(auction.endsAt.getTime() + EXTENSION_MS);
-          }
-
-          await tx.auction.update({
-            where: { id: auctionId },
-            data: {
-              currentPrice: dto.amount,
-              status: AuctionStatus.ACTIVE,
-              endsAt: newEndsAt,
-            },
-          });
-
-          return { bid, previousTopBid: auction.bids[0] };
-        })
-        .then(async ({ bid, previousTopBid }) => {
-          // Success!
-          // If there was a previous bidder, release their funds
-          if (previousTopBid) {
-            try {
-              await this.walletService.releaseFunds(
-                previousTopBid.bidderId,
-                Number(previousTopBid.amount),
-                auctionId,
-                `Outbid on auction ${auctionId}`,
-              );
-            } catch (e) {
-              this.log.error('Failed to release funds for outbid user', e as Error, {
-                userId: previousTopBid.bidderId,
-                auctionId,
-              });
-              // Don't fail the current bid, but this needs admin attention
-            }
-          }
-          this.log.info('Bid placed successfully', { bidId: bid.id });
-          return bid;
+      // 3. Database Transaction
+      const result = await this.prisma.$transaction(async (tx) => {
+        // Create Bid
+        const newBid = await tx.bid.create({
+          data: {
+            amount: dto.amount,
+            auctionId,
+            bidderId: userId,
+          },
         });
-    } catch (e) {
-      // If main logic fails, Release the held funds for current user
-      await this.walletService.releaseFunds(
-        userId,
-        dto.amount,
-        auctionId,
-        `Rollback failed bid ${auctionId}`,
-      );
-      throw e;
+
+        // Update Auction
+        const timeRemaining = auction.endsAt.getTime() - now.getTime();
+        let newEndsAt = auction.endsAt;
+        const EXTENSION_MS = 5 * 60 * 1000;
+        if (timeRemaining < EXTENSION_MS) {
+          newEndsAt = new Date(auction.endsAt.getTime() + EXTENSION_MS);
+        }
+
+        await tx.auction.update({
+          where: { id: auctionId },
+          data: {
+            currentPrice: dto.amount,
+            status: AuctionStatus.ACTIVE,
+            endsAt: newEndsAt,
+          },
+        });
+
+        return newBid;
+      });
+
+      // 4. Side Effects (Post-Transaction)
+
+      // Release Previous Bidder Funds
+      if (previousTopBid) {
+        try {
+          // Release funds and notify
+          await this.walletService.releaseFunds(
+            previousTopBid.bidderId,
+            Number(previousTopBid.amount),
+            auctionId,
+            `Outbid on auction ${auctionId}`,
+          );
+
+          this.notificationsService
+            .create(
+              previousTopBid.bidderId,
+              NotificationType.BID_OUTBID,
+              'You have been outbid!',
+              `A higher bid of $${dto.amount} has been placed on "${auction.title}".`,
+              { auctionId, newBidAmount: Number(dto.amount) },
+            )
+            .catch((e) => this.log.error('Failed to send outbid notification', e));
+        } catch (e) {
+          this.log.error('Failed to release funds/notify outbid user', e as Error, {
+            userId: previousTopBid.bidderId,
+            auctionId,
+          });
+        }
+      }
+
+      this.log.info(`Bid placed successfully`, { bidId: result.id });
+
+      // Audit
+      this.audit
+        .recordAudit(
+          traceId,
+          AuditEventType.BID_PLACED,
+          EntityType.BID,
+          result.id,
+          AuditResult.SUCCESS,
+          { actorUserId: userId, payload: { auctionId, amount: dto.amount } },
+        )
+        .catch((e) => this.log.error('Failed to audit bid placement', e));
+
+      return result;
+    } catch (error) {
+      // Compensation: Release held funds if main logic fails
+      try {
+        await this.walletService.releaseFunds(
+          userId,
+          dto.amount,
+          auctionId,
+          `Rollback failed bid ${auctionId}`,
+        );
+      } catch (e) {
+        // Ignore if funds weren't held
+      }
+
+      // Re-throw known exceptions
+      if (
+        error instanceof NotFoundException ||
+        error instanceof ValidationException ||
+        error instanceof ForbiddenException ||
+        error instanceof AuctionNotFoundException ||
+        error instanceof AuctionNotActiveException ||
+        error instanceof BidTooLowException ||
+        error instanceof BidOnOwnAuctionException
+      ) {
+        throw error;
+      }
+
+      this.log.error('Failed to place bid', error);
+      throw error;
     }
   }
 
@@ -161,6 +204,26 @@ export class BidsService {
         bidderId: userId,
         auction: { status: AuctionStatus.ACTIVE },
       },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        auction: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            currentPrice: true,
+            endsAt: true,
+            images: true,
+            status: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getUserBids(userId: string): Promise<Bid[]> {
+    return this.prisma.bid.findMany({
+      where: { bidderId: userId },
       orderBy: { createdAt: 'desc' },
       include: {
         auction: {

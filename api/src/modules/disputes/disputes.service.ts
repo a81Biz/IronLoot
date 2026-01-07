@@ -39,8 +39,16 @@ export class DisputesService {
       throw new BadRequestException('A dispute already exists for this order');
     }
 
-    // Optional: Validar estado de la orden (e.g. solo si es PAID o SHIPPED)
-    // if (order.status === 'PENDING_PAYMENT') ...
+    // Audit #24: Dispute validation
+    if (order.status !== 'DELIVERED' && order.status !== 'PAID' && order.status !== 'SHIPPED') {
+      throw new BadRequestException('Order must be PAID, SHIPPED or DELIVERED to open a dispute');
+    }
+
+    // Time limit: 30 days after update (delivery/payment)
+    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
+    if (new Date().getTime() - order.updatedAt.getTime() > thirtyDays) {
+      throw new BadRequestException('Dispute period has expired (30 days)');
+    }
 
     const dispute = await this.prisma.dispute.create({
       data: {

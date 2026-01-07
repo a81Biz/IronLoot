@@ -68,14 +68,25 @@ export class AuctionsController {
     required: false,
     description: 'Filter by status',
   })
-  @ApiQuery({ name: 'sellerId', required: false, description: 'Filter by seller ID' })
-  @ApiResponse({ status: 200, description: 'List of auctions', type: [AuctionResponseDto] })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    description: 'Page number (default 1)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    description: 'Items per page (default 10)',
+  })
+  @ApiResponse({ status: 200, description: 'Paginated list of auctions' })
   @Log()
   async findAll(
     @Query('status') status?: AuctionStatus,
     @Query('sellerId') sellerId?: string,
-  ): Promise<AuctionResponseDto[]> {
-    return this.auctionsService.findAll({ status, sellerId });
+    @Query('page') page?: number,
+    @Query('limit') limit?: number,
+  ): Promise<{ data: AuctionResponseDto[]; total: number; page: number; limit: number }> {
+    return this.auctionsService.findAll({ status, sellerId, page, limit });
   }
 
   /**

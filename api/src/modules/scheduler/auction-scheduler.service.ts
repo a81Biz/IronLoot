@@ -3,7 +3,8 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../database/prisma.service';
 
 import { WalletService } from '../wallet/wallet.service';
-import { AuctionStatus, OrderStatus } from '@prisma/client';
+import { AuctionStatus, OrderStatus, NotificationType } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuctionSchedulerService {
@@ -13,6 +14,7 @@ export class AuctionSchedulerService {
     private readonly prisma: PrismaService,
 
     private readonly walletService: WalletService,
+    private readonly notificationsService: NotificationsService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -112,7 +114,7 @@ export class AuctionSchedulerService {
           }
         });
 
-        // Post-transaction handling (Funds Capture)
+        // Post-transaction handling (Funds Capture & Notification)
         const winnerBid = auction.bids[0];
         if (winnerBid) {
           try {
@@ -122,6 +124,17 @@ export class AuctionSchedulerService {
               auction.id,
               `Auction Won: ${auction.title}`,
             );
+
+            // Notify Winner
+            this.notificationsService
+              .create(
+                winnerBid.bidderId,
+                NotificationType.AUCTION_WON,
+                'You won the auction!',
+                `Congratulations! You have won "${auction.title}" for $${winnerBid.amount}.`,
+                { auctionId: auction.id, amount: Number(winnerBid.amount) },
+              )
+              .catch((e) => this.logger.error('Failed to notify winner', e));
           } catch (e) {
             this.logger.error(`CRITICAL: Failed to capture funds for auction ${auction.id}`, e);
             // TODO: Admin alert mechanism
