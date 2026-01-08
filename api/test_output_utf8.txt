@@ -1,0 +1,826 @@
+﻿
+> iron-loot-api@0.2.3 test:e2e
+> jest --config ./test/jest-e2e.json test/e2e/auth.e2e-spec.ts
+
+  console.info
+    {"timestamp":"2026-01-08T06:13:26.560Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Error persistence connected","context":"AuditPersistence"}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+          at Function.from (<anonymous>)
+
+  console.info
+    {"timestamp":"2026-01-08T06:13:26.585Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Audit persistence connected","context":"AuditPersistence"}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+          at Function.from (<anonymous>)
+
+  console.debug
+    {"timestamp":"2026-01-08T06:13:26.650Z","level":"debug","service":"ironloot-api","env":"test","traceId":"a64af4ff-eb84-4ea9-a99c-6fdb73ffab2f","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+  console.info
+    {"timestamp":"2026-01-08T06:13:26.660Z","level":"info","service":"ironloot-api","env":"test","traceId":"a64af4ff-eb84-4ea9-a99c-6fdb73ffab2f","message":"Attempting user registration","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","username":"testuser"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.user.findFirst()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\auth\auth.service.ts:90:50
+    
+      87 this.log.info('Attempting user registration', { email, username });
+      88 
+      89 // Check if email already exists (use findFirst for robustness)
+    ÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(
+    The table `public.users` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.error
+    {"timestamp":"2026-01-08T06:13:26.687Z","level":"error","service":"ironloot-api","env":"test","traceId":"a64af4ff-eb84-4ea9-a99c-6fdb73ffab2f","message":"\nInvalid `this.prisma.user.findFirst()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:50\n\n  87 this.log.info('Attempting user registration', { email, username });\n  88 \n  89 // Check if email already exists (use findFirst for robustness)\nÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(\nThe table `public.users` does not exist in the current database.","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":500,"isBusinessError":false},"error":{"code":"INTERNAL_ERROR","message":"\nInvalid `this.prisma.user.findFirst()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:50\n\n  87 this.log.info('Attempting user registration', { email, username });\n  88 \n  89 // Check if email already exists (use findFirst for robustness)\nÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(\nThe table `public.users` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.user.findFirst()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:50\n\n  87 this.log.info('Attempting user registration', { email, username });\n  88 \n  89 // Check if email already exists (use findFirst for robustness)\nÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(\nThe table `public.users` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuthService.register (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:27)"}}
+
+    [0m [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 164 |[39m         console[33m.[39merror(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 165 |[39m         [36mbreak[39m[33m;[39m
+     [90m 166 |[39m     }
+     [90m 167 |[39m   }[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:101:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.errorEvent.create()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\audit\audit-persistence.service.ts:171:36
+    
+      168   stack?: string;
+      169 }): Promise<void> {
+      170   try {
+    ÔåÆ 171     await this.prisma.errorEvent.create(
+    The table `public.error_events` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.warn
+    {"timestamp":"2026-01-08T06:13:26.702Z","level":"warn","service":"ironloot-api","env":"test","traceId":"a64af4ff-eb84-4ea9-a99c-6fdb73ffab2f","message":"Failed to persist error event","context":"AuditPersistence","http":{"method":"POST","path":"/"},"data":{"errorCode":"INTERNAL_ERROR"},"error":{"message":"\nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuditPersistenceService.persistError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:7)"}}
+
+    [0m [90m 159 |[39m         [36mbreak[39m[33m;[39m
+     [90m 160 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mWARN[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 161 |[39m         console[33m.[39mwarn(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+     [90m 164 |[39m         console[33m.[39merror(json)[33m;[39m[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.warn (../src/common/observability/logger.service.ts:61:10)
+      at AuditPersistenceService.persistError (../src/modules/audit/audit-persistence.service.ts:191:19)
+
+  console.log
+    prisma:error 
+    Invalid `prisma.user.deleteMany()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\test\e2e\auth.e2e-spec.ts:69:29
+    
+      66 // Clean up after each test
+      67 if (prisma?.user) {
+      68   try {
+    ÔåÆ 69     await prisma.user.deleteMany(
+    The table `public.users` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.debug
+    {"timestamp":"2026-01-08T06:13:26.711Z","level":"debug","service":"ironloot-api","env":"test","traceId":"fd818f5e-bd2c-45ae-a5e0-5ee53a93c0fd","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+  console.info
+    {"timestamp":"2026-01-08T06:13:26.713Z","level":"info","service":"ironloot-api","env":"test","traceId":"fd818f5e-bd2c-45ae-a5e0-5ee53a93c0fd","message":"Attempting user registration","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","username":"testuser"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.user.findFirst()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\auth\auth.service.ts:90:50
+    
+      87 this.log.info('Attempting user registration', { email, username });
+      88 
+      89 // Check if email already exists (use findFirst for robustness)
+    ÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(
+    The table `public.users` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.error
+    {"timestamp":"2026-01-08T06:13:26.718Z","level":"error","service":"ironloot-api","env":"test","traceId":"fd818f5e-bd2c-45ae-a5e0-5ee53a93c0fd","message":"\nInvalid `this.prisma.user.findFirst()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:50\n\n  87 this.log.info('Attempting user registration', { email, username });\n  88 \n  89 // Check if email already exists (use findFirst for robustness)\nÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(\nThe table `public.users` does not exist in the current database.","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":500,"isBusinessError":false},"error":{"code":"INTERNAL_ERROR","message":"\nInvalid `this.prisma.user.findFirst()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:50\n\n  87 this.log.info('Attempting user registration', { email, username });\n  88 \n  89 // Check if email already exists (use findFirst for robustness)\nÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(\nThe table `public.users` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.user.findFirst()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:50\n\n  87 this.log.info('Attempting user registration', { email, username });\n  88 \n  89 // Check if email already exists (use findFirst for robustness)\nÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(\nThe table `public.users` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuthService.register (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:27)"}}
+
+    [0m [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 164 |[39m         console[33m.[39merror(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 165 |[39m         [36mbreak[39m[33m;[39m
+     [90m 166 |[39m     }
+     [90m 167 |[39m   }[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:101:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.errorEvent.create()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\audit\audit-persistence.service.ts:171:36
+    
+      168   stack?: string;
+      169 }): Promise<void> {
+      170   try {
+    ÔåÆ 171     await this.prisma.errorEvent.create(
+    The table `public.error_events` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.warn
+    {"timestamp":"2026-01-08T06:13:26.724Z","level":"warn","service":"ironloot-api","env":"test","traceId":"fd818f5e-bd2c-45ae-a5e0-5ee53a93c0fd","message":"Failed to persist error event","context":"AuditPersistence","http":{"method":"POST","path":"/"},"data":{"errorCode":"INTERNAL_ERROR"},"error":{"message":"\nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuditPersistenceService.persistError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:7)"}}
+
+    [0m [90m 159 |[39m         [36mbreak[39m[33m;[39m
+     [90m 160 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mWARN[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 161 |[39m         console[33m.[39mwarn(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+     [90m 164 |[39m         console[33m.[39merror(json)[33m;[39m[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.warn (../src/common/observability/logger.service.ts:61:10)
+      at AuditPersistenceService.persistError (../src/modules/audit/audit-persistence.service.ts:191:19)
+
+  console.debug
+    {"timestamp":"2026-01-08T06:13:26.727Z","level":"debug","service":"ironloot-api","env":"test","traceId":"8d80096f-bb53-4531-b54c-edd8dce7a672","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+  console.info
+    {"timestamp":"2026-01-08T06:13:26.729Z","level":"info","service":"ironloot-api","env":"test","traceId":"8d80096f-bb53-4531-b54c-edd8dce7a672","message":"Attempting user registration","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","username":"testuser"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.user.findFirst()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\auth\auth.service.ts:90:50
+    
+      87 this.log.info('Attempting user registration', { email, username });
+      88 
+      89 // Check if email already exists (use findFirst for robustness)
+    ÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(
+    The table `public.users` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.error
+    {"timestamp":"2026-01-08T06:13:26.732Z","level":"error","service":"ironloot-api","env":"test","traceId":"8d80096f-bb53-4531-b54c-edd8dce7a672","message":"\nInvalid `this.prisma.user.findFirst()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:50\n\n  87 this.log.info('Attempting user registration', { email, username });\n  88 \n  89 // Check if email already exists (use findFirst for robustness)\nÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(\nThe table `public.users` does not exist in the current database.","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":500,"isBusinessError":false},"error":{"code":"INTERNAL_ERROR","message":"\nInvalid `this.prisma.user.findFirst()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:50\n\n  87 this.log.info('Attempting user registration', { email, username });\n  88 \n  89 // Check if email already exists (use findFirst for robustness)\nÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(\nThe table `public.users` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.user.findFirst()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:50\n\n  87 this.log.info('Attempting user registration', { email, username });\n  88 \n  89 // Check if email already exists (use findFirst for robustness)\nÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(\nThe table `public.users` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuthService.register (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:27)"}}
+
+    [0m [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 164 |[39m         console[33m.[39merror(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 165 |[39m         [36mbreak[39m[33m;[39m
+     [90m 166 |[39m     }
+     [90m 167 |[39m   }[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:101:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.errorEvent.create()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\audit\audit-persistence.service.ts:171:36
+    
+      168   stack?: string;
+      169 }): Promise<void> {
+      170   try {
+    ÔåÆ 171     await this.prisma.errorEvent.create(
+    The table `public.error_events` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.warn
+    {"timestamp":"2026-01-08T06:13:26.737Z","level":"warn","service":"ironloot-api","env":"test","traceId":"8d80096f-bb53-4531-b54c-edd8dce7a672","message":"Failed to persist error event","context":"AuditPersistence","http":{"method":"POST","path":"/"},"data":{"errorCode":"INTERNAL_ERROR"},"error":{"message":"\nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuditPersistenceService.persistError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:7)"}}
+
+    [0m [90m 159 |[39m         [36mbreak[39m[33m;[39m
+     [90m 160 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mWARN[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 161 |[39m         console[33m.[39mwarn(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+     [90m 164 |[39m         console[33m.[39merror(json)[33m;[39m[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.warn (../src/common/observability/logger.service.ts:61:10)
+      at AuditPersistenceService.persistError (../src/modules/audit/audit-persistence.service.ts:191:19)
+
+  console.log
+    prisma:error 
+    Invalid `prisma.user.deleteMany()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\test\e2e\auth.e2e-spec.ts:69:29
+    
+      66 // Clean up after each test
+      67 if (prisma?.user) {
+      68   try {
+    ÔåÆ 69     await prisma.user.deleteMany(
+    The table `public.users` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.debug
+    {"timestamp":"2026-01-08T06:13:26.742Z","level":"debug","service":"ironloot-api","env":"test","traceId":"e3288ee2-dd06-4ee7-ad8a-e646e8f2249c","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+  console.warn
+    {"timestamp":"2026-01-08T06:13:26.745Z","level":"warn","service":"ironloot-api","env":"test","traceId":"e3288ee2-dd06-4ee7-ad8a-e646e8f2249c","message":"[\"Invalid email format\"]","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":400,"isBusinessError":true},"error":{"code":"VALIDATION_ERROR","message":"Bad Request Exception","stack":"BadRequestException: Bad Request Exception\n    at ValidationPipe.exceptionFactory (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@nestjs\\common\\pipes\\validation.pipe.js:101:20)\n    at ValidationPipe.transform (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@nestjs\\common\\pipes\\validation.pipe.js:74:30)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at resolveParamValue (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:148:23)\n    at async Promise.all (index 0)\n    at pipesFn (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:151:13)\n    at C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:37:30"}}
+
+    [0m [90m 159 |[39m         [36mbreak[39m[33m;[39m
+     [90m 160 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mWARN[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 161 |[39m         console[33m.[39mwarn(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+     [90m 164 |[39m         console[33m.[39merror(json)[33m;[39m[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:101:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.errorEvent.create()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\audit\audit-persistence.service.ts:171:36
+    
+      168   stack?: string;
+      169 }): Promise<void> {
+      170   try {
+    ÔåÆ 171     await this.prisma.errorEvent.create(
+    The table `public.error_events` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.warn
+    {"timestamp":"2026-01-08T06:13:26.751Z","level":"warn","service":"ironloot-api","env":"test","traceId":"e3288ee2-dd06-4ee7-ad8a-e646e8f2249c","message":"Failed to persist error event","context":"AuditPersistence","http":{"method":"POST","path":"/"},"data":{"errorCode":"VALIDATION_ERROR"},"error":{"message":"\nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuditPersistenceService.persistError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:7)"}}
+
+    [0m [90m 159 |[39m         [36mbreak[39m[33m;[39m
+     [90m 160 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mWARN[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 161 |[39m         console[33m.[39mwarn(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+     [90m 164 |[39m         console[33m.[39merror(json)[33m;[39m[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.warn (../src/common/observability/logger.service.ts:61:10)
+      at AuditPersistenceService.persistError (../src/modules/audit/audit-persistence.service.ts:191:19)
+
+  console.log
+    prisma:error 
+    Invalid `prisma.user.deleteMany()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\test\e2e\auth.e2e-spec.ts:69:29
+    
+      66 // Clean up after each test
+      67 if (prisma?.user) {
+      68   try {
+    ÔåÆ 69     await prisma.user.deleteMany(
+    The table `public.users` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.debug
+    {"timestamp":"2026-01-08T06:13:26.760Z","level":"debug","service":"ironloot-api","env":"test","traceId":"9cebab5d-83ab-4705-a4f8-dd67e6205348","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+  console.warn
+    {"timestamp":"2026-01-08T06:13:26.763Z","level":"warn","service":"ironloot-api","env":"test","traceId":"9cebab5d-83ab-4705-a4f8-dd67e6205348","message":"[\"Password must include uppercase, lowercase and number\",\"Password must be at least 8 characters\"]","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":400,"isBusinessError":true},"error":{"code":"VALIDATION_ERROR","message":"Bad Request Exception","stack":"BadRequestException: Bad Request Exception\n    at ValidationPipe.exceptionFactory (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@nestjs\\common\\pipes\\validation.pipe.js:101:20)\n    at ValidationPipe.transform (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@nestjs\\common\\pipes\\validation.pipe.js:74:30)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at resolveParamValue (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:148:23)\n    at async Promise.all (index 0)\n    at pipesFn (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:151:13)\n    at C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:37:30"}}
+
+    [0m [90m 159 |[39m         [36mbreak[39m[33m;[39m
+     [90m 160 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mWARN[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 161 |[39m         console[33m.[39mwarn(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+     [90m 164 |[39m         console[33m.[39merror(json)[33m;[39m[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:101:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.errorEvent.create()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\audit\audit-persistence.service.ts:171:36
+    
+      168   stack?: string;
+      169 }): Promise<void> {
+      170   try {
+    ÔåÆ 171     await this.prisma.errorEvent.create(
+    The table `public.error_events` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.warn
+    {"timestamp":"2026-01-08T06:13:26.768Z","level":"warn","service":"ironloot-api","env":"test","traceId":"9cebab5d-83ab-4705-a4f8-dd67e6205348","message":"Failed to persist error event","context":"AuditPersistence","http":{"method":"POST","path":"/"},"data":{"errorCode":"VALIDATION_ERROR"},"error":{"message":"\nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuditPersistenceService.persistError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:7)"}}
+
+    [0m [90m 159 |[39m         [36mbreak[39m[33m;[39m
+     [90m 160 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mWARN[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 161 |[39m         console[33m.[39mwarn(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+     [90m 164 |[39m         console[33m.[39merror(json)[33m;[39m[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.warn (../src/common/observability/logger.service.ts:61:10)
+      at AuditPersistenceService.persistError (../src/modules/audit/audit-persistence.service.ts:191:19)
+
+  console.log
+    prisma:error 
+    Invalid `prisma.user.deleteMany()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\test\e2e\auth.e2e-spec.ts:69:29
+    
+      66 // Clean up after each test
+      67 if (prisma?.user) {
+      68   try {
+    ÔåÆ 69     await prisma.user.deleteMany(
+    The table `public.users` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.debug
+    {"timestamp":"2026-01-08T06:13:26.774Z","level":"debug","service":"ironloot-api","env":"test","traceId":"66b9c302-6bbc-4a62-bc4d-05e7bf57dce8","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+  console.info
+    {"timestamp":"2026-01-08T06:13:26.775Z","level":"info","service":"ironloot-api","env":"test","traceId":"66b9c302-6bbc-4a62-bc4d-05e7bf57dce8","message":"Attempting user registration","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","username":"testuser"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.user.findFirst()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\auth\auth.service.ts:90:50
+    
+      87 this.log.info('Attempting user registration', { email, username });
+      88 
+      89 // Check if email already exists (use findFirst for robustness)
+    ÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(
+    The table `public.users` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.error
+    {"timestamp":"2026-01-08T06:13:26.777Z","level":"error","service":"ironloot-api","env":"test","traceId":"66b9c302-6bbc-4a62-bc4d-05e7bf57dce8","message":"\nInvalid `this.prisma.user.findFirst()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:50\n\n  87 this.log.info('Attempting user registration', { email, username });\n  88 \n  89 // Check if email already exists (use findFirst for robustness)\nÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(\nThe table `public.users` does not exist in the current database.","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":500,"isBusinessError":false},"error":{"code":"INTERNAL_ERROR","message":"\nInvalid `this.prisma.user.findFirst()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:50\n\n  87 this.log.info('Attempting user registration', { email, username });\n  88 \n  89 // Check if email already exists (use findFirst for robustness)\nÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(\nThe table `public.users` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.user.findFirst()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:50\n\n  87 this.log.info('Attempting user registration', { email, username });\n  88 \n  89 // Check if email already exists (use findFirst for robustness)\nÔåÆ 90 const existingEmail = await this.prisma.user.findFirst(\nThe table `public.users` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuthService.register (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:90:27)"}}
+
+    [0m [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 164 |[39m         console[33m.[39merror(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 165 |[39m         [36mbreak[39m[33m;[39m
+     [90m 166 |[39m     }
+     [90m 167 |[39m   }[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:101:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.errorEvent.create()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\audit\audit-persistence.service.ts:171:36
+    
+      168   stack?: string;
+      169 }): Promise<void> {
+      170   try {
+    ÔåÆ 171     await this.prisma.errorEvent.create(
+    The table `public.error_events` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.warn
+    {"timestamp":"2026-01-08T06:13:26.782Z","level":"warn","service":"ironloot-api","env":"test","traceId":"66b9c302-6bbc-4a62-bc4d-05e7bf57dce8","message":"Failed to persist error event","context":"AuditPersistence","http":{"method":"POST","path":"/"},"data":{"errorCode":"INTERNAL_ERROR"},"error":{"message":"\nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuditPersistenceService.persistError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:7)"}}
+
+    [0m [90m 159 |[39m         [36mbreak[39m[33m;[39m
+     [90m 160 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mWARN[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 161 |[39m         console[33m.[39mwarn(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+     [90m 164 |[39m         console[33m.[39merror(json)[33m;[39m[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.warn (../src/common/observability/logger.service.ts:61:10)
+      at AuditPersistenceService.persistError (../src/modules/audit/audit-persistence.service.ts:191:19)
+
+  console.debug
+    {"timestamp":"2026-01-08T06:13:26.784Z","level":"debug","service":"ironloot-api","env":"test","traceId":"932f9ea6-07f6-42bf-8b5f-0f8623f3785b","message":"AuthController.login() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+  console.info
+    {"timestamp":"2026-01-08T06:13:26.786Z","level":"info","service":"ironloot-api","env":"test","traceId":"932f9ea6-07f6-42bf-8b5f-0f8623f3785b","message":"Login attempt","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.user.findUnique()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\auth\auth.service.ts:229:41
+    
+      226 this.log.info('Login attempt', { email: dto.email });
+      227 
+      228 // Find user
+    ÔåÆ 229 const user = await this.prisma.user.findUnique(
+    The table `public.users` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.error
+    {"timestamp":"2026-01-08T06:13:26.789Z","level":"error","service":"ironloot-api","env":"test","traceId":"932f9ea6-07f6-42bf-8b5f-0f8623f3785b","message":"\nInvalid `this.prisma.user.findUnique()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:229:41\n\n  226 this.log.info('Login attempt', { email: dto.email });\n  227 \n  228 // Find user\nÔåÆ 229 const user = await this.prisma.user.findUnique(\nThe table `public.users` does not exist in the current database.","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":500,"isBusinessError":false},"error":{"code":"INTERNAL_ERROR","message":"\nInvalid `this.prisma.user.findUnique()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:229:41\n\n  226 this.log.info('Login attempt', { email: dto.email });\n  227 \n  228 // Find user\nÔåÆ 229 const user = await this.prisma.user.findUnique(\nThe table `public.users` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.user.findUnique()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:229:41\n\n  226 this.log.info('Login attempt', { email: dto.email });\n  227 \n  228 // Find user\nÔåÆ 229 const user = await this.prisma.user.findUnique(\nThe table `public.users` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuthService.login (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:229:18)"}}
+
+    [0m [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 164 |[39m         console[33m.[39merror(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 165 |[39m         [36mbreak[39m[33m;[39m
+     [90m 166 |[39m     }
+     [90m 167 |[39m   }[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:101:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.errorEvent.create()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\audit\audit-persistence.service.ts:171:36
+    
+      168   stack?: string;
+      169 }): Promise<void> {
+      170   try {
+    ÔåÆ 171     await this.prisma.errorEvent.create(
+    The table `public.error_events` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.warn
+    {"timestamp":"2026-01-08T06:13:26.797Z","level":"warn","service":"ironloot-api","env":"test","traceId":"932f9ea6-07f6-42bf-8b5f-0f8623f3785b","message":"Failed to persist error event","context":"AuditPersistence","http":{"method":"POST","path":"/"},"data":{"errorCode":"INTERNAL_ERROR"},"error":{"message":"\nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuditPersistenceService.persistError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:7)"}}
+
+    [0m [90m 159 |[39m         [36mbreak[39m[33m;[39m
+     [90m 160 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mWARN[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 161 |[39m         console[33m.[39mwarn(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+     [90m 164 |[39m         console[33m.[39merror(json)[33m;[39m[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.warn (../src/common/observability/logger.service.ts:61:10)
+      at AuditPersistenceService.persistError (../src/modules/audit/audit-persistence.service.ts:191:19)
+
+  console.debug
+    {"timestamp":"2026-01-08T06:13:26.799Z","level":"debug","service":"ironloot-api","env":"test","traceId":"65dcc018-2ff2-47c8-85e4-237d4ff4ff99","message":"AuthController.login() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+  console.info
+    {"timestamp":"2026-01-08T06:13:26.801Z","level":"info","service":"ironloot-api","env":"test","traceId":"65dcc018-2ff2-47c8-85e4-237d4ff4ff99","message":"Login attempt","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.user.findUnique()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\auth\auth.service.ts:229:41
+    
+      226 this.log.info('Login attempt', { email: dto.email });
+      227 
+      228 // Find user
+    ÔåÆ 229 const user = await this.prisma.user.findUnique(
+    The table `public.users` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.error
+    {"timestamp":"2026-01-08T06:13:26.804Z","level":"error","service":"ironloot-api","env":"test","traceId":"65dcc018-2ff2-47c8-85e4-237d4ff4ff99","message":"\nInvalid `this.prisma.user.findUnique()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:229:41\n\n  226 this.log.info('Login attempt', { email: dto.email });\n  227 \n  228 // Find user\nÔåÆ 229 const user = await this.prisma.user.findUnique(\nThe table `public.users` does not exist in the current database.","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":500,"isBusinessError":false},"error":{"code":"INTERNAL_ERROR","message":"\nInvalid `this.prisma.user.findUnique()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:229:41\n\n  226 this.log.info('Login attempt', { email: dto.email });\n  227 \n  228 // Find user\nÔåÆ 229 const user = await this.prisma.user.findUnique(\nThe table `public.users` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.user.findUnique()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:229:41\n\n  226 this.log.info('Login attempt', { email: dto.email });\n  227 \n  228 // Find user\nÔåÆ 229 const user = await this.prisma.user.findUnique(\nThe table `public.users` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuthService.login (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:229:18)"}}
+
+    [0m [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 164 |[39m         console[33m.[39merror(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 165 |[39m         [36mbreak[39m[33m;[39m
+     [90m 166 |[39m     }
+     [90m 167 |[39m   }[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:101:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.errorEvent.create()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\audit\audit-persistence.service.ts:171:36
+    
+      168   stack?: string;
+      169 }): Promise<void> {
+      170   try {
+    ÔåÆ 171     await this.prisma.errorEvent.create(
+    The table `public.error_events` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.warn
+    {"timestamp":"2026-01-08T06:13:26.810Z","level":"warn","service":"ironloot-api","env":"test","traceId":"65dcc018-2ff2-47c8-85e4-237d4ff4ff99","message":"Failed to persist error event","context":"AuditPersistence","http":{"method":"POST","path":"/"},"data":{"errorCode":"INTERNAL_ERROR"},"error":{"message":"\nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuditPersistenceService.persistError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:7)"}}
+
+    [0m [90m 159 |[39m         [36mbreak[39m[33m;[39m
+     [90m 160 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mWARN[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 161 |[39m         console[33m.[39mwarn(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+     [90m 164 |[39m         console[33m.[39merror(json)[33m;[39m[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.warn (../src/common/observability/logger.service.ts:61:10)
+      at AuditPersistenceService.persistError (../src/modules/audit/audit-persistence.service.ts:191:19)
+
+  console.debug
+    {"timestamp":"2026-01-08T06:13:26.813Z","level":"debug","service":"ironloot-api","env":"test","traceId":"60575e8d-b4e9-4d81-9256-5b51448a3950","message":"AuthController.login() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+  console.info
+    {"timestamp":"2026-01-08T06:13:26.814Z","level":"info","service":"ironloot-api","env":"test","traceId":"60575e8d-b4e9-4d81-9256-5b51448a3950","message":"Login attempt","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"nonexistent@test-e2e.com"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.user.findUnique()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\auth\auth.service.ts:229:41
+    
+      226 this.log.info('Login attempt', { email: dto.email });
+      227 
+      228 // Find user
+    ÔåÆ 229 const user = await this.prisma.user.findUnique(
+    The table `public.users` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.error
+    {"timestamp":"2026-01-08T06:13:26.817Z","level":"error","service":"ironloot-api","env":"test","traceId":"60575e8d-b4e9-4d81-9256-5b51448a3950","message":"\nInvalid `this.prisma.user.findUnique()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:229:41\n\n  226 this.log.info('Login attempt', { email: dto.email });\n  227 \n  228 // Find user\nÔåÆ 229 const user = await this.prisma.user.findUnique(\nThe table `public.users` does not exist in the current database.","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":500,"isBusinessError":false},"error":{"code":"INTERNAL_ERROR","message":"\nInvalid `this.prisma.user.findUnique()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:229:41\n\n  226 this.log.info('Login attempt', { email: dto.email });\n  227 \n  228 // Find user\nÔåÆ 229 const user = await this.prisma.user.findUnique(\nThe table `public.users` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.user.findUnique()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:229:41\n\n  226 this.log.info('Login attempt', { email: dto.email });\n  227 \n  228 // Find user\nÔåÆ 229 const user = await this.prisma.user.findUnique(\nThe table `public.users` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuthService.login (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\auth\\auth.service.ts:229:18)"}}
+
+    [0m [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 164 |[39m         console[33m.[39merror(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 165 |[39m         [36mbreak[39m[33m;[39m
+     [90m 166 |[39m     }
+     [90m 167 |[39m   }[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:101:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.errorEvent.create()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\audit\audit-persistence.service.ts:171:36
+    
+      168   stack?: string;
+      169 }): Promise<void> {
+      170   try {
+    ÔåÆ 171     await this.prisma.errorEvent.create(
+    The table `public.error_events` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.warn
+    {"timestamp":"2026-01-08T06:13:26.823Z","level":"warn","service":"ironloot-api","env":"test","traceId":"60575e8d-b4e9-4d81-9256-5b51448a3950","message":"Failed to persist error event","context":"AuditPersistence","http":{"method":"POST","path":"/"},"data":{"errorCode":"INTERNAL_ERROR"},"error":{"message":"\nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.","stack":"PrismaClientKnownRequestError: \nInvalid `this.prisma.errorEvent.create()` invocation in\nC:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:36\n\n  168   stack?: string;\n  169 }): Promise<void> {\n  170   try {\nÔåÆ 171     await this.prisma.errorEvent.create(\nThe table `public.error_events` does not exist in the current database.\n    at $n.handleRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:7315)\n    at $n.handleAndLogRequestError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6623)\n    at $n.request (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:121:6307)\n    at l (C:\\DevOps\\Desarrollos\\IronLoot\\api\\node_modules\\@prisma\\client\\runtime\\library.js:130:9633)\n    at AuditPersistenceService.persistError (C:\\DevOps\\Desarrollos\\IronLoot\\api\\src\\modules\\audit\\audit-persistence.service.ts:171:7)"}}
+
+    [0m [90m 159 |[39m         [36mbreak[39m[33m;[39m
+     [90m 160 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mWARN[39m[33m:[39m
+    [31m[1m>[22m[39m[90m 161 |[39m         console[33m.[39mwarn(json)[33m;[39m
+     [90m     |[39m                 [31m[1m^[22m[39m
+     [90m 162 |[39m         [36mbreak[39m[33m;[39m
+     [90m 163 |[39m       [36mcase[39m [33mLogLevel[39m[33m.[39m[33mERROR[39m[33m:[39m
+     [90m 164 |[39m         console[33m.[39merror(json)[33m;[39m[0m
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.warn (../src/common/observability/logger.service.ts:61:10)
+      at AuditPersistenceService.persistError (../src/modules/audit/audit-persistence.service.ts:191:19)
+
+  console.log
+    prisma:error 
+    Invalid `this.prisma.requestLog.create()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\src\modules\audit\audit-persistence.service.ts:223:36
+    
+      220 }
+      221 
+      222 try {
+    ÔåÆ 223   await this.prisma.requestLog.create(
+    The table `public.request_logs` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+  console.log
+    prisma:error 
+    Invalid `prisma.session?.deleteMany()` invocation in
+    C:\DevOps\Desarrollos\IronLoot\api\test\e2e\auth.e2e-spec.ts:51:31
+    
+      48 // Cleanup test data
+      49 if (prisma) {
+      50   try {
+    ÔåÆ 51     await prisma.session?.deleteMany(
+    The table `public.sessions` does not exist in the current database.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+node.exe : FAIL test/e2e/auth.e2e-spec.ts (5.742 s)
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (FAIL test/e2e/auth.e2e-spec.ts (5.742 s):String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+  Auth (e2e)
+    /api/v1/auth/register (POST)
+      ├ù should register a new user (89 ms)
+      ├ù should fail with duplicate email (32 ms)
+      ÔêÜ should fail with invalid email format (15 ms)
+      ÔêÜ should fail with weak password (17 ms)
+    /api/v1/auth/login (POST)
+      ├ù should fail login for unverified user (13 ms)
+      ├ù should fail with invalid credentials (13 ms)
+      ├ù should fail with non-existent user (13 ms)
+    /api/v1/health (GET)
+      ÔêÜ should return health status (7 ms)
+
+  ÔùÅ Auth (e2e) ÔÇ║ /api/v1/auth/register (POST) ÔÇ║ should register a new user
+
+    expected 201 "Created", got 500 "Internal Server Error"
+
+    [0m [90m 80 |[39m         [33m.[39mpost([32m'/api/v1/auth/register'[39m)
+     [90m 81 |[39m         [33m.[39msend(testUser)
+    [31m[1m>[22m[39m[90m 82 |[39m         [33m.[39mexpect([35m201[39m)[33m;[39m
+     [90m    |[39m          [31m[1m^[22m[39m
+     [90m 83 |[39m
+     [90m 84 |[39m       
+expect(response[33m.[39mbody[33m.[39muser)[33m.[39mtoHaveProperty([32m'id'[39m)[33m;[39m
+     [90m 85 |[39m       
+expect(response[33m.[39mbody[33m.[39muser[33m.[39memail)[33m.[39mtoBe(testUser[33m.[39memail)[33m;[39m[0m
+
+      at Object.<anonymous> (e2e/auth.e2e-spec.ts:82:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:252:14)
+      at ../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../node_modules/supertest/lib/test.js:120:14)
+
+  ÔùÅ Auth (e2e) ÔÇ║ /api/v1/auth/register (POST) ÔÇ║ should fail with duplicate email
+
+    expected 409 "Conflict", got 500 "Internal Server Error"
+
+    [0m [90m 94 |[39m         [33m.[39mpost([32m'/api/v1/auth/register'[39m)
+     [90m 95 |[39m         [33m.[39msend(testUser)
+    [31m[1m>[22m[39m[90m 96 |[39m         [33m.[39mexpect([35m409[39m)[33m;[39m
+     [90m    |[39m          [31m[1m^[22m[39m
+     [90m 97 |[39m
+     [90m 98 |[39m       expect(response[33m.[39mbody[33m.[39merror[33m.[39mmessage[33m.[39mtoLowerCase())[33m
+.[39mtoContain([32m'email'[39m)[33m;[39m
+     [90m 99 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (e2e/auth.e2e-spec.ts:96:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:252:14)
+      at ../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../node_modules/supertest/lib/test.js:120:14)
+
+  ÔùÅ Auth (e2e) ÔÇ║ /api/v1/auth/login (POST) ÔÇ║ should fail login for unverified user
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: 500
+    Received array: [200, 401, 403]
+
+    [0m [90m 140 |[39m       })[33m;[39m
+     [90m 141 |[39m       [90m// Expect either 401/403 (unverified) or 200 (if verification not required)[39m
+    [31m[1m>[22m[39m[90m 142 |[39m       expect([[35m200[39m[33m,[39m [35m401[39m[33m,[39m 
+[35m403[39m])[33m.[39mtoContain(response[33m.[39mstatus)[33m;[39m
+     [90m     |[39m                               [31m[1m^[22m[39m
+     [90m 143 |[39m     })[33m;[39m
+     [90m 144 |[39m
+     [90m 145 |[39m     it([32m'should fail with invalid credentials'[39m[33m,[39m [36masync[39m () [33m=>[39m 
+{[0m
+
+      at Object.<anonymous> (e2e/auth.e2e-spec.ts:142:31)
+
+  ÔùÅ Auth (e2e) ÔÇ║ /api/v1/auth/login (POST) ÔÇ║ should fail with invalid credentials
+
+    expected 401 "Unauthorized", got 500 "Internal Server Error"
+
+    [0m [90m 150 |[39m           password[33m:[39m [32m'WrongPassword123!'[39m[33m,[39m
+     [90m 151 |[39m         })
+    [31m[1m>[22m[39m[90m 152 |[39m         [33m.[39mexpect([35m401[39m)[33m;[39m
+     [90m     |[39m          [31m[1m^[22m[39m
+     [90m 153 |[39m
+     [90m 154 |[39m       
+expect(response[33m.[39mbody[33m.[39merror[33m.[39mmessage)[33m.[39mtoBeDefined()[33m;[39m
+     [90m 155 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (e2e/auth.e2e-spec.ts:152:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:252:14)
+      at ../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../node_modules/supertest/lib/test.js:120:14)
+
+  ÔùÅ Auth (e2e) ÔÇ║ /api/v1/auth/login (POST) ÔÇ║ should fail with non-existent user
+
+    expected 401 "Unauthorized", got 500 "Internal Server Error"
+
+    [0m [90m 162 |[39m           password[33m:[39m [32m'TestPassword123!'[39m[33m,[39m
+     [90m 163 |[39m         })
+    [31m[1m>[22m[39m[90m 164 |[39m         [33m.[39mexpect([35m401[39m)[33m;[39m
+     [90m     |[39m          [31m[1m^[22m[39m
+     [90m 165 |[39m
+     [90m 166 |[39m       
+expect(response[33m.[39mbody[33m.[39merror[33m.[39mmessage)[33m.[39mtoBeDefined()[33m;[39m
+     [90m 167 |[39m     })[33m;[39m[0m
+
+      at Object.<anonymous> (e2e/auth.e2e-spec.ts:164:10)
+      ----
+      at Test._assertStatus (../node_modules/supertest/lib/test.js:252:14)
+      at ../node_modules/supertest/lib/test.js:308:13
+      at Test._assertFunction (../node_modules/supertest/lib/test.js:285:13)
+      at Test.assert (../node_modules/supertest/lib/test.js:164:23)
+      at Server.localAssert (../node_modules/supertest/lib/test.js:120:14)
+
+Test Suites: 1 failed, 1 total
+Tests:       5 failed, 3 passed, 8 total
+Snapshots:   0 total
+Time:        5.944 s, estimated 6 s
+Ran all test suites matching /test\\e2e\\auth.e2e-spec.ts/i.

@@ -9,6 +9,7 @@ import {
   ParseIntPipe,
   BadRequestException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { PaymentsService } from '../payments/payments.service';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { DepositDto, WithdrawDto, WalletBalanceDto, TransactionHistoryDto } from './dto/wallet.dto';
@@ -81,6 +82,7 @@ export class WalletController {
 
   @Post('deposit')
   // @Throttle({ default: { limit: 10, ttl: 60000 } }) // TODO: Install ThrottlerModule
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @AuditedAction(
     AuditEventType.PAYMENT_CONFIRMED,
     EntityType.PAYMENT,
@@ -111,6 +113,7 @@ export class WalletController {
 
   @Post('withdraw')
   // @Throttle({ default: { limit: 5, ttl: 60000 } }) // TODO: Install ThrottlerModule
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
   @AuditedAction(
     AuditEventType.PAYMENT_INITIATED,
     EntityType.USER,

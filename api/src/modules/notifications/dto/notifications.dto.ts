@@ -14,7 +14,7 @@ export class NotificationDto {
   message: string;
 
   @ApiProperty({ example: false, description: 'Read status' })
-  read: boolean;
+  isRead: boolean;
 
   @ApiProperty({ description: 'Creation timestamp' })
   createdAt: Date;

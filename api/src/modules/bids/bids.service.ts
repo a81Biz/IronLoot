@@ -18,6 +18,7 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { CreateBidDto } from './dto';
 import { WalletService } from '../wallet/wallet.service';
 import { AuditPersistenceService } from '../audit/audit-persistence.service';
+import { AuctionsGateway } from '../auctions/auctions.gateway';
 
 @Injectable()
 export class BidsService {
@@ -30,6 +31,7 @@ export class BidsService {
     private readonly walletService: WalletService,
     private readonly notificationsService: NotificationsService,
     private readonly audit: AuditPersistenceService,
+    private readonly auctionsGateway: AuctionsGateway,
   ) {
     this.log = this.logger.child('BidsService');
   }
@@ -83,6 +85,19 @@ export class BidsService {
         `Bid on auction ${auction.title}`,
       );
 
+      // Variables for WebSocket (needs to be available outside tx)
+      const EXTENSION_MS = 5 * 60 * 1000;
+      let timeRemaining = 0;
+      let newEndsAt = auction.endsAt;
+
+      // Calculate extension before tx/inside tx logic if needed, but for logging/events we need it out here.
+      // But `auction.endsAt` is fixed snapshot. `now` is fixed.
+      // So we can calculate it here safely since we hold the optimistic lock or just assume standard flow.
+      timeRemaining = auction.endsAt.getTime() - now.getTime();
+      if (timeRemaining < EXTENSION_MS) {
+        newEndsAt = new Date(auction.endsAt.getTime() + EXTENSION_MS);
+      }
+
       // 3. Database Transaction
       const result = await this.prisma.$transaction(async (tx) => {
         // Create Bid
@@ -95,19 +110,12 @@ export class BidsService {
         });
 
         // Update Auction
-        const timeRemaining = auction.endsAt.getTime() - now.getTime();
-        let newEndsAt = auction.endsAt;
-        const EXTENSION_MS = 5 * 60 * 1000;
-        if (timeRemaining < EXTENSION_MS) {
-          newEndsAt = new Date(auction.endsAt.getTime() + EXTENSION_MS);
-        }
-
         await tx.auction.update({
           where: { id: auctionId },
           data: {
             currentPrice: dto.amount,
             status: AuctionStatus.ACTIVE,
-            endsAt: newEndsAt,
+            endsAt: newEndsAt, // Using outer variable
           },
         });
 
@@ -145,6 +153,18 @@ export class BidsService {
       }
 
       this.log.info(`Bid placed successfully`, { bidId: result.id });
+
+      // 5. Emit WebSocket Events
+      this.auctionsGateway.emitNewBid(auctionId, {
+        id: result.id,
+        amount: Number(result.amount),
+        bidderName: userId, // ideally username
+        createdAt: result.createdAt,
+      });
+
+      if (timeRemaining < EXTENSION_MS) {
+        this.auctionsGateway.emitAuctionExtended(auctionId, newEndsAt);
+      }
 
       // Audit
       this.audit

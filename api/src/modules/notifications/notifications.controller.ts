@@ -1,4 +1,14 @@
-import { Controller, Get, Patch, Param, UseGuards, ParseUUIDPipe } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Patch,
+  Param,
+  UseGuards,
+  ParseUUIDPipe,
+  Query,
+  DefaultValuePipe,
+  ParseIntPipe,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards';
 import { CurrentUser, AuthenticatedUser } from '../auth/decorators';
@@ -17,8 +27,12 @@ export class NotificationsController {
   @ApiOperation({ summary: 'List my notifications' })
   @ApiResponse({ status: 200, description: 'List of notifications', type: [NotificationDto] })
   @Log()
-  async findAll(@CurrentUser() user: AuthenticatedUser): Promise<NotificationDto[]> {
-    const notifications = await this.notificationsService.findAllByUser(user.id);
+  async findAll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('limit', new DefaultValuePipe(20), ParseIntPipe) limit: number,
+    @Query('offset', new DefaultValuePipe(0), ParseIntPipe) offset: number,
+  ): Promise<NotificationDto[]> {
+    const notifications = await this.notificationsService.findAllByUser(user.id, limit, offset);
     // Simple mapper if needed, otherwise rely on structural compatibility
     return notifications as any;
   }

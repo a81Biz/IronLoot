@@ -43,8 +43,8 @@ describe('NotificationsController', () => {
       const result = [{ id: 'notif-1' }];
       mockNotificationsService.findAllByUser.mockResolvedValue(result);
 
-      expect(await controller.findAll(mockUser)).toBe(result);
-      expect(mockNotificationsService.findAllByUser).toHaveBeenCalledWith(mockUser.id);
+      expect(await controller.findAll(mockUser, 20, 0)).toBe(result);
+      expect(mockNotificationsService.findAllByUser).toHaveBeenCalledWith(mockUser.id, 20, 0);
     });
   });
 

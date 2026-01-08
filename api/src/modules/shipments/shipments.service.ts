@@ -111,6 +111,19 @@ export class ShipmentsService {
       data: updateData,
     });
 
+    // Update Order status based on Shipment status
+    if (dto.status === ShipmentStatus.SHIPPED) {
+      await this.prisma.order.update({
+        where: { id: shipment.orderId },
+        data: { status: 'SHIPPED' },
+      });
+    } else if (dto.status === ShipmentStatus.DELIVERED) {
+      await this.prisma.order.update({
+        where: { id: shipment.orderId },
+        data: { status: 'DELIVERED' },
+      });
+    }
+
     this.logger.info(`Shipment ${id} status updated to ${dto.status}`, {
       userId,
       location: dto.location,

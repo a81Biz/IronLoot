@@ -28,7 +28,7 @@ import {
   MessageResponseDto,
 } from './dto';
 import { Public, CurrentUser, AuthenticatedUser } from './decorators';
-import { JwtAuthGuard } from './guards';
+import { JwtAuthGuard, RecaptchaGuard } from './guards';
 import { Log, AuditedAction } from '../../common/observability/decorators';
 import { AuditEventType, EntityType } from '../../common/observability/constants';
 
@@ -48,6 +48,7 @@ export class AuthController {
 
   @Post('register')
   @Public()
+  @UseGuards(RecaptchaGuard)
   @Throttle({ default: { limit: THROTTLE_LIMIT, ttl: 60000 } }) // Dynamic limit based on env
   @ApiOperation({
     summary: 'Register new user',

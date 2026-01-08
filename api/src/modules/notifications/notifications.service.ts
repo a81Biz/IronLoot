@@ -39,11 +39,12 @@ export class NotificationsService {
     return notification;
   }
 
-  async findAllByUser(userId: string): Promise<Notification[]> {
+  async findAllByUser(userId: string, limit = 50, offset = 0): Promise<Notification[]> {
     return this.prisma.notification.findMany({
       where: { userId },
       orderBy: { createdAt: 'desc' },
-      take: 50, // Limit to recent 50
+      take: limit,
+      skip: offset,
     });
   }
 

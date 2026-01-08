@@ -34,6 +34,7 @@ import { WalletModule } from './modules/wallet/wallet.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { WebViewsModule } from './modules/web-views/web-views.module';
 import { WatchlistModule } from './modules/watchlist/watchlist.module';
+import { SystemCleanupModule } from './modules/system-cleanup/system-cleanup.module';
 
 @Module({
   imports: [
@@ -95,6 +96,7 @@ import { WatchlistModule } from './modules/watchlist/watchlist.module';
     UploadModule,
     WebViewsModule,
     WatchlistModule,
+    SystemCleanupModule,
 
     // Serve Static Uploads
     ServeStaticModule.forRoot({

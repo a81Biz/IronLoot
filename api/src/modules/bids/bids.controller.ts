@@ -4,7 +4,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiParam } from '@ne
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser, Public } from '@/modules/auth/decorators';
 import { BidsService } from './bids.service';
-import { CreateBidDto } from './dto';
+import { CreateBidDto, BidResponseDto } from './dto';
 import { Log, AuditedAction } from '../../common/observability/decorators';
 import { AuditEventType, EntityType } from '../../common/observability/constants';
 
@@ -18,7 +18,7 @@ export class BidsController {
   @Post()
   @ApiOperation({ summary: 'Place a bid', description: 'Place a bid on an active auction' })
   @ApiParam({ name: 'auctionId', description: 'Auction ID' })
-  @ApiResponse({ status: 201, description: 'Bid placed successfully' })
+  @ApiResponse({ status: 201, description: 'Bid placed successfully', type: BidResponseDto })
   @AuditedAction(
     AuditEventType.BID_PLACED,
     EntityType.AUCTION,
@@ -37,6 +37,7 @@ export class BidsController {
   @Public() // Audit #20: Public access to bids
   @ApiOperation({ summary: 'Get auction bids', description: 'Get history of bids for an auction' })
   @ApiParam({ name: 'auctionId', description: 'Auction ID' })
+  @ApiResponse({ status: 200, description: 'List of bids', type: [BidResponseDto] })
   @Log()
   async getBids(@Param('auctionId', ParseUUIDPipe) auctionId: string): Promise<Bid[]> {
     return this.bidsService.getBidsForAuction(auctionId);
@@ -55,7 +56,7 @@ export class UserBidsController {
     summary: 'Get my active bids',
     description: 'Get list of active auctions user has bid on',
   })
-  @ApiResponse({ status: 200, description: 'List of active bids' })
+  @ApiResponse({ status: 200, description: 'List of active bids', type: [BidResponseDto] })
   @Log({ message: 'Get my active bids' })
   async getMyActiveBids(@CurrentUser() user: AuthenticatedUser): Promise<Bid[]> {
     return this.bidsService.getUserActiveBids(user.id);
@@ -66,7 +67,7 @@ export class UserBidsController {
     summary: 'Get my bid history',
     description: 'Get list of all auctions user has bid on',
   })
-  @ApiResponse({ status: 200, description: 'List of all bids' })
+  @ApiResponse({ status: 200, description: 'List of all bids', type: [BidResponseDto] })
   @Log({ message: 'Get my bid history' })
   async getMyBids(@CurrentUser() user: AuthenticatedUser): Promise<Bid[]> {
     return this.bidsService.getUserBids(user.id);

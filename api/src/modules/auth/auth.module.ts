@@ -5,21 +5,10 @@ import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies';
-import { JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard } from './guards';
+import { JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard, RecaptchaGuard } from './guards';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { TwoFactorAuthService } from './two-factor-auth.service';
 
-/**
- * AuthModule
- *
- * Provides authentication functionality:
- * - User registration
- * - Login/Logout
- * - JWT token management
- * - Password reset
- * - Email verification
- * - Guards for route protection
- */
 @Module({
   imports: [
     PassportModule.register({ defaultStrategy: 'jwt' }),
@@ -42,15 +31,17 @@ import { TwoFactorAuthService } from './two-factor-auth.service';
     JwtAuthGuard,
     RolesGuard,
     OptionalJwtAuthGuard,
+    RecaptchaGuard,
     TwoFactorAuthService,
   ],
   exports: [
     AuthService,
     JwtAuthGuard,
     RolesGuard,
+    OptionalJwtAuthGuard,
+    RecaptchaGuard,
     JwtModule,
     PassportModule,
-    OptionalJwtAuthGuard,
     TwoFactorAuthService,
   ],
 })

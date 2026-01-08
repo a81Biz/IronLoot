@@ -25,6 +25,7 @@ import {
 } from '../../common/observability';
 import { AuditPersistenceService } from '../audit/audit-persistence.service';
 import { EmailService } from '../notifications/email.service';
+import { TwoFactorAuthService } from './two-factor-auth.service';
 import {
   RegisterDto,
   LoginDto,
@@ -62,6 +63,7 @@ export class AuthService {
     private readonly metrics: MetricsService,
     private readonly audit: AuditPersistenceService,
     private readonly emailService: EmailService,
+    private readonly twoFactorAuthService: TwoFactorAuthService,
   ) {
     // Initialize log AFTER logger is injected
     this.log = this.logger.child('AuthService');
@@ -251,6 +253,22 @@ export class AuthService {
       );
 
       throw new InvalidCredentialsException();
+    }
+
+    // Check 2FA
+    if (user.isTwoFactorEnabled) {
+      if (!dto.twoFactorCode) {
+        // We could throw a specific exception here that clients interpret as "Please ask for 2FA"
+        // For now, simpler approach:
+        throw new ValidationException('2FA code required');
+      }
+
+      const is2faValid = await this.twoFactorAuthService.validateToken(user.id, dto.twoFactorCode);
+      if (!is2faValid) {
+        this.log.warn('Login failed: invalid 2FA code', { userId: user.id });
+        this.metrics.increment('auth_login_failed', 1, { reason: 'invalid_2fa' });
+        throw new InvalidCredentialsException();
+      }
     }
 
     // Check user state

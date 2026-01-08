@@ -81,6 +81,14 @@ export class LoginDto {
   @IsString()
   @IsNotEmpty({ message: 'Password is required' })
   password: string;
+
+  @ApiPropertyOptional({
+    description: '2FA code (required if 2FA is enabled)',
+    example: '123456',
+  })
+  @IsOptional()
+  @IsString()
+  twoFactorCode?: string;
 }
 
 // ===========================================
