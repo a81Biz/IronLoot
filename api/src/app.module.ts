@@ -32,6 +32,8 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { WebViewsModule } from './modules/web-views/web-views.module';
+import { WatchlistModule } from './modules/watchlist/watchlist.module';
 
 @Module({
   imports: [
@@ -91,6 +93,8 @@ import { UploadModule } from './modules/upload/upload.module';
     NotificationsModule,
     WalletModule,
     UploadModule,
+    WebViewsModule,
+    WatchlistModule,
 
     // Serve Static Uploads
     ServeStaticModule.forRoot({

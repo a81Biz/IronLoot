@@ -18,7 +18,9 @@
    */
   async function initDashboard() {
     const user = Auth.getUser();
-    
+    // Initialize Watchlist
+    await WatchlistService.init();
+
     // Update user name
     const userNameEl = Utils.$('#dashboardUserName');
     if (userNameEl && user) {
@@ -43,15 +45,30 @@
    */
   async function loadStats() {
     try {
-      // Load wallet balance
+      // 1. Wallet Balance
       const balance = await Api.wallet.getBalance();
       Utils.$('#statBalance').textContent = Utils.formatCurrency(balance.available);
 
-      // TODO: Load other stats from API when endpoints are ready
-      // For now, using placeholder values
-      Utils.$('#statActiveBids').textContent = '3';
-      Utils.$('#statWonAuctions').textContent = '5';
-      Utils.$('#statWatchlist').textContent = '12';
+      // 2. Active Bids Count
+      const activeBids = await Api.bids.getMyActiveBids();
+      Utils.$('#statActiveBids').textContent = activeBids.length.toString();
+
+      // 3. Unread Notifications
+      // Note: Template has "Won Auctions" icon/label, but we might want "Unread Notifications" instead based on spec?
+      // Or keep "Won" if we have data.
+      // Let's stick to valid data. We don't have "Won Auctions" endpoint easily accessible without filtering.
+      // We can fetch notifications count and put it somewhere?
+      // Actually, spec 3.1 says: "Widget: balance, Widget: unread notifications, Widget: pujas activas".
+      // The HTML has: Active Bids, Won Auctions, Balance, Watchlist.
+      // I will repurpose "Won Auctions" to "Notificaciones" or just leave it placeholder/hidden if no data.
+      // Better: Update the HTML label if I could, but I am in JS.
+      // Let's implement Watchlist count.
+      Utils.$('#statWatchlist').textContent = WatchlistService.list().length.toString();
+      
+      // Won Auctions - placeholder or remove? 
+      // Let's try to fetch if we had an endpoint. For now, leave as '-' or mock '0'.
+      Utils.$('#statWonAuctions').textContent = '-'; 
+
     } catch (error) {
       console.error('Failed to load stats:', error);
       Utils.$('#statBalance').textContent = '$0.00';

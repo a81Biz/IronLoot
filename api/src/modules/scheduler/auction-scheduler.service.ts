@@ -120,6 +120,7 @@ export class AuctionSchedulerService {
           try {
             await this.walletService.captureHeldFunds(
               winnerBid.bidderId,
+              auction.sellerId, // Pass sellerId for credit
               Number(winnerBid.amount),
               auction.id,
               `Auction Won: ${auction.title}`,
@@ -132,9 +133,20 @@ export class AuctionSchedulerService {
                 NotificationType.AUCTION_WON,
                 'You won the auction!',
                 `Congratulations! You have won "${auction.title}" for $${winnerBid.amount}.`,
-                { auctionId: auction.id, amount: Number(winnerBid.amount) },
+                { entityType: 'ORDER', entityId: auction.id, amount: Number(winnerBid.amount) }, // Strict payload
               )
               .catch((e) => this.logger.error('Failed to notify winner', e));
+
+            // Notify Seller
+            this.notificationsService
+              .create(
+                auction.sellerId,
+                NotificationType.AUCTION_WON, // Reuse type or add AUCTION_SOLD if exists, for now WON implies completion
+                'Auction Sold!',
+                `Your auction "${auction.title}" has been sold for $${winnerBid.amount}.`,
+                { entityType: 'ORDER', entityId: auction.id },
+              )
+              .catch((e) => this.logger.error('Failed to notify seller', e));
 
             // RELEASE FUNDS FOR LOSING BIDDERS
             // Only release the highest bid for each unique losing bidder

@@ -149,6 +149,8 @@ await Api.wallet.deposit(amount, referenceId);
 | Subastas | `/auctions` | main |
 | Detalle Subasta | `/auctions/:id` | main |
 | Wallet | `/wallet` | main |
+| Watchlist | `/watchlist` | main |
+| Settings | `/settings` | main |
 
 ## CSS Variables
 
@@ -164,7 +166,7 @@ Ver `public/css/base/variables.css` para:
 ## Integración con Backend
 
 El API Client (`public/js/core/api-client.js`) se comunica con el backend NestJS:
-- Gestión automática de tokens JWT
+- Gestión automática de tokens JWT (LocalStorage + Cookie para SSR)
 - Auto-refresh cuando expira
 - Queue de requests durante refresh
 - Manejo centralizado de errores

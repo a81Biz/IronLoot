@@ -19,6 +19,26 @@ const ApiClient = (function() {
   let refreshQueue = [];
 
   /**
+   * Helper to set cookie
+   */
+  function setCookie(name, value, days) {
+      let expires = "";
+      if (days) {
+          const date = new Date();
+          date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+          expires = "; expires=" + date.toUTCString();
+      }
+      document.cookie = name + "=" + (value || "")  + expires + "; path=/; SameSite=Lax";
+  }
+
+  /**
+   * Helper to delete cookie
+   */
+  function deleteCookie(name) {
+      document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+  }
+
+  /**
    * Set authentication tokens
    */
   function setTokens(access, refresh) {
@@ -26,6 +46,9 @@ const ApiClient = (function() {
     refreshToken = refresh;
     localStorage.setItem(ACCESS_TOKEN_KEY, access);
     localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
+    
+    // Set cookie for SSR
+    setCookie('access_token', access, 7); // 7 days matching refresh approx or generic
   }
 
   /**
@@ -36,6 +59,9 @@ const ApiClient = (function() {
     refreshToken = null;
     localStorage.removeItem(ACCESS_TOKEN_KEY);
     localStorage.removeItem(REFRESH_TOKEN_KEY);
+    
+    // Clear cookie
+    deleteCookie('access_token');
   }
 
   /**
@@ -360,6 +386,56 @@ const ApiClient = (function() {
         await request('PATCH', '/notifications/read-all');
       },
     },
+
+    // --- Watchlist API ---
+    watchlist: {
+      async list() {
+        const { data } = await request('GET', '/watchlist');
+        return data;
+      },
+      async add(auctionId) {
+        await request('POST', '/watchlist', { auctionId });
+      },
+      async remove(auctionId) {
+        await request('DELETE', `/watchlist/${auctionId}`);
+      }
+    },
+
+    // --- Users API ---
+    users: {
+      async enableSeller() {
+        const { data } = await request('POST', '/users/me/enable-seller');
+        return data;
+      },
+      async getStats() {
+          const { data } = await request('GET', '/users/me/stats');
+          return data;
+      },
+      async getSettings() {
+          const { data } = await request('GET', '/users/me/settings');
+          return data;
+      },
+      async updateSettings(settings) {
+          const { data } = await request('PATCH', '/users/me/settings', settings);
+          return data;
+      }
+    },
+
+    // --- Disputes API ---
+    disputes: {
+      async list() {
+        const { data } = await request('GET', '/disputes');
+        return data;
+      },
+      async getById(id) {
+        const { data } = await request('GET', `/disputes/${id}`);
+        return data;
+      },
+      async create(data) {
+        const response = await request('POST', '/disputes', data);
+        return response.data;
+      }
+    }
   };
 })();
 

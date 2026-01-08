@@ -1,0 +1,61 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Retirar Fondos - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/pages/wallet.css">
+{% endblock %}
+
+{% block content %}
+<div class="wallet-header">
+    <h1 class="wallet-title">Retirar Fondos</h1>
+    <a href="/wallet" class="btn btn-ghost">
+        <span class="material-symbols-outlined">arrow_back</span>
+        Volver
+    </a>
+</div>
+
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <div class="card-body">
+        <form id="withdrawForm">
+            <div class="form-group">
+                <label class="form-label" for="withdrawAmount">Monto a retirar</label>
+                <div class="form-input-wrapper">
+                    <span class="form-input-icon" style="font-weight: bold;">$</span>
+                    <input 
+                        type="number" 
+                        id="withdrawAmount" 
+                        name="amount" 
+                        class="form-input" 
+                        placeholder="0.00"
+                        min="10"
+                        step="0.01"
+                        required
+                    >
+                </div>
+                <p class="form-help">Disponible para retiro: <span id="withdrawAvailable" class="fw-bold">$0.00</span></p>
+            </div>
+            
+            <div class="alert alert-info" style="margin-top: var(--spacing-4);">
+                <div class="alert-icon">
+                    <span class="material-symbols-outlined">info</span>
+                </div>
+                <div class="alert-content">
+                    El retiro se procesará a su método de pago original o cuenta bancaria vinculada.
+                </div>
+            </div>
+
+            <div style="margin-top: var(--spacing-6);">
+                <button type="submit" class="btn btn-primary btn-block" id="btnWithdraw">
+                    <span class="material-symbols-outlined">payments</span>
+                    Solicitar Retiro
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/wallet/withdraw.js"></script>
+{% endblock %}

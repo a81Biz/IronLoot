@@ -1,0 +1,52 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Detalle de Disputa - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/components/cards.css">
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 0 auto; padding: var(--spacing-8) 0;">
+    <div style="margin-bottom: var(--spacing-6);">
+        <a href="/disputes" class="text-secondary text-sm text-decoration-none">← Mis Disputas</a>
+        <h1 style="margin-top: var(--spacing-2);">Disputa #<span id="disputeId">...</span></h1>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- Header -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6);">
+                <span class="badge" id="disputeStatus">Cargando...</span>
+                <span class="text-secondary text-sm" id="disputeDate">...</span>
+            </div>
+            
+            <div class="alert alert-warning" id="disputeReasonBox">
+                <strong>Motivo:</strong> <span id="disputeReason">...</span>
+            </div>
+
+            <div style="margin-top: var(--spacing-6);">
+                <h3 class="text-lg font-bold mb-2">Descripción</h3>
+                <p class="text-secondary" id="disputeDescription">...</p>
+            </div>
+            
+            <hr style="margin: var(--spacing-6) 0; border: 0; border-top: 1px solid var(--border-main);">
+            
+            <h3 class="text-lg font-bold mb-4">Detalles de la Orden</h3>
+            <div class="bg-secondary p-4 rounded" style="background: var(--bg-secondary); padding: var(--spacing-4); border-radius: 8px;">
+                <p><strong>Orden ID:</strong> <a href="#" id="orderLink" class="text-primary">...</a></p>
+            </div>
+            
+            <!-- Resolution Info (if resolved) -->
+             <div id="resolutionSection" style="display: none; margin-top: var(--spacing-6); border-top: 1px solid var(--border-main); padding-top: var(--spacing-6);">
+                <h3 class="text-lg font-bold mb-2 text-success">Resolución</h3>
+                <p id="resolutionNotes">...</p>
+             </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/disputes/detail.js"></script>
+{% endblock %}

@@ -74,6 +74,10 @@ export {
   PaymentExpiredException,
   PaymentAlreadyProcessedException,
 
+  // Financial
+  InsufficientBalanceException,
+  PaymentMismatchException,
+
   // Order
   OrderNotFoundException,
   OrderCannotCancelException,

@@ -324,6 +324,28 @@ export class InvalidTrackingNumberException extends BusinessException {
 }
 
 // ===========================================
+// FINANCIAL EXCEPTIONS
+// ===========================================
+
+export class InsufficientBalanceException extends BusinessException {
+  constructor(userId: string, required: number, available: number) {
+    super(
+      ErrorCode.INSUFFICIENT_BALANCE,
+      'Insufficient balance for transaction',
+      { userId, required, available },
+      EntityType.USER,
+      userId,
+    );
+  }
+}
+
+export class PaymentMismatchException extends BusinessException {
+  constructor(expected: number, received: number) {
+    super(ErrorCode.PAYMENT_MISMATCH, 'Payment amount mismatch', { expected, received });
+  }
+}
+
+// ===========================================
 // DISPUTE EXCEPTIONS
 // ===========================================
 

@@ -1,0 +1,34 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Mi Reputación - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/components/cards.css">
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 0 auto; padding: var(--spacing-8) 0;">
+    <h1 style="margin-bottom: var(--spacing-6);">Mi Reputación</h1>
+
+    <div class="card mb-4" style="margin-bottom: var(--spacing-6);">
+        <div class="card-body text-center">
+            <h2 class="h4" id="userScore">...</h2>
+            <p class="text-secondary">Puntuación Promedio</p>
+            <div id="starsContainer" class="text-warning" style="font-size: 1.5rem; letter-spacing: 2px;">
+                <!-- Stars rendered via JS -->
+            </div>
+            <p class="text-sm mt-2 text-secondary" id="totalRatings">Cargando...</p>
+        </div>
+    </div>
+
+    <h3 class="h5 mb-4" style="margin-bottom: var(--spacing-4);">Reseñas Recientes</h3>
+    
+    <div id="ratingsList">
+        <p class="text-center text-secondary">Cargando reseñas...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/reputation.js"></script>
+{% endblock %}

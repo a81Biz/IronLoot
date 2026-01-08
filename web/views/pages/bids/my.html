@@ -1,0 +1,51 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Mis Pujas - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/components/tables.css">
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px; margin: 0 auto; padding: var(--spacing-8) 0;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6);">
+        <h1>Mis Pujas</h1>
+        <a href="/auctions" class="btn btn-primary">
+             <span class="material-symbols-outlined">search</span>
+             Explorar Subastas
+        </a>
+    </div>
+
+    <!-- Active Bids -->
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-header-title">Pujas Activas</h3>
+        </div>
+        <div class="card-body">
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Subasta</th>
+                            <th>Mi Puja</th>
+                            <th>Precio Actual</th>
+                            <th>Termina</th>
+                            <th>Estado</th>
+                            <th>Acción</th>
+                        </tr>
+                    </thead>
+                    <tbody id="activeBidsTable">
+                        <tr>
+                            <td colspan="6" class="text-center text-secondary">Cargando pujas...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/bids/my.js"></script>
+{% endblock %}

@@ -54,9 +54,13 @@ model User {
   avatarUrl   String? @map("avatar_url") @db.Text
 
   // State
+  // State
   state           UserState @default(PENDING_VERIFICATION)
   suspendedReason String?   @map("suspended_reason") @db.Text
   bannedReason    String?   @map("banned_reason") @db.Text
+
+  // Preferences (Spec v0.2.3)
+  settings Json @default("{\"language\": \"es\", \"notifications\": {\"email\": true, \"inApp\": true}}") @db.JsonB
 
   // Seller status
   isSeller        Boolean   @default(false) @map("is_seller")
@@ -79,6 +83,7 @@ model User {
   profile         Profile?
   auctions        Auction[] // Relation as seller
   bids            Bid[] // Relation as bidder
+  watchlist       Watchlist[]
   ordersAsBuyer   Order[]        @relation("OrdersBuyer")
   ordersAsSeller  Order[]        @relation("OrdersSeller")
   authoredRatings Rating[]       @relation("RatingAuthor")
@@ -169,6 +174,7 @@ model Auction {
   sellerId String @map("seller_id") @db.Uuid
   seller   User   @relation(fields: [sellerId], references: [id])
   bids     Bid[]
+  watchlist Watchlist[]
 
   order Order? // One-to-One relation: Auction -> Order
 
@@ -199,6 +205,23 @@ model Bid {
   @@index([amount], name: "idx_bids_amount")
   @@index([auctionId, amount(sort: Desc)], name: "idx_bids_auction_amount")
   @@map("bids")
+}
+
+/// Watchlist - User watched auctions (Spec v0.2.3)
+model Watchlist {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  // Relations
+  userId    String   @map("user_id") @db.Uuid
+  user      User     @relation(fields: [userId], references: [id])
+
+  auctionId String   @map("auction_id") @db.Uuid
+  auction   Auction  @relation(fields: [auctionId], references: [id])
+
+  @@unique([userId, auctionId])
+  @@index([userId], name: "idx_watchlist_user")
+  @@map("watchlist")
 }
 
 /// Order Status enum
@@ -550,9 +573,12 @@ model RequestLog {
 enum LedgerType {
   DEPOSIT
   WITHDRAWAL
-  HOLD
-  RELEASE
-  PURCHASE
+  HOLD_BID
+  RELEASE_BID
+  PURCHASE        // Keep for backward compatibility or alias to DEBIT_ORDER if needed, but Spec says DEBIT_ORDER
+  DEBIT_ORDER     // New
+  CREDIT_SALE     // New
+  FEE_PLATFORM    // New
   REFUND
   ADJUSTMENT
 }

@@ -1,0 +1,60 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Nueva Disputa - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/components/forms.css">
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 0 auto; padding: var(--spacing-8) 0;">
+    <div style="margin-bottom: var(--spacing-6);">
+        <a href="/orders" class="text-secondary text-sm text-decoration-none">← Volver a Órdenes</a>
+        <h1 style="margin-top: var(--spacing-2);">Abrir Disputa</h1>
+        <p class="text-secondary">Orden ID: <span id="displayOrderId" class="font-mono font-bold">...</span></p>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <form id="createDisputeForm">
+                <input type="hidden" id="orderId" name="orderId">
+                
+                <div class="form-group">
+                    <label class="form-label" for="reason">Motivo de la disputa</label>
+                    <select id="reason" name="reason" class="form-select" required>
+                        <option value="" disabled selected>Selecciona un motivo</option>
+                        <option value="NOT_RECEIVED">No recibí el producto</option>
+                        <option value="DAMAGED">Producto dañado</option>
+                        <option value="NOT_AS_DESCRIBED">No coincide con la descripción</option>
+                        <option value="OTHER">Otro</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="description">Descripción detallada</label>
+                    <textarea id="description" name="description" class="form-textarea" rows="5" required minlength="20" placeholder="Explica el problema claramente..."></textarea>
+                </div>
+
+                <div class="alert alert-info">
+                    <span class="material-symbols-outlined" style="font-size: 20px;">info</span>
+                    <div>
+                        Al abrir una disputa, el pago quedará retenido hasta que se resuelva el caso.
+                    </div>
+                </div>
+
+                <div style="margin-top: var(--spacing-6); display: flex; justify-content: flex-end; gap: var(--spacing-4);">
+                    <a href="#" onclick="history.back(); return false;" class="btn btn-secondary">Cancelar</a>
+                    <button type="submit" class="btn btn-primary" id="btnCreate">
+                        <span class="material-symbols-outlined">gavel</span>
+                        Abrir Disputa
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/disputes/create.js"></script>
+{% endblock %}

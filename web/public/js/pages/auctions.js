@@ -8,18 +8,26 @@
   let totalPages = 1;
   const limit = 12;
 
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', async () => {
     // Show create button for sellers
     if (Auth.isSeller()) {
       Utils.show('#btnCreateAuction');
     }
 
     // Load initial auctions
+    await WatchlistService.init();
     loadAuctions();
 
     // Setup event listeners
     setupFilters();
     setupPagination();
+    
+    // Listen for watchlist updates (re-render or just update icons? Re-render is safer/easier)
+    window.addEventListener('watchlist:updated', () => {
+        // Optimally, just update icons. For MVP, re-render is fine or we can toggle classes.
+        // Let's toggle classes for better UX without reload.
+        updateWatchlistIcons();
+    });
   });
 
   /**
@@ -132,6 +140,19 @@
 
       // Render auctions
       grid.innerHTML = auctions.map(auction => createAuctionCard(auction)).join('');
+      
+      // Hook up Watchlist buttons
+      grid.querySelectorAll('.btn-watchlist').forEach(btn => {
+          btn.addEventListener('click', (e) => {
+              e.preventDefault();
+              e.stopPropagation(); // Prevent navigation
+              const id = btn.dataset.id;
+              WatchlistService.toggle(id);
+              // Icon update handled by event listener 'watchlist:updated' -> updateWatchlistIcons
+              // But we should also visually update immediately for feedback
+              updateWatchlistButtonState(btn, WatchlistService.isWatched(id));
+          });
+      });
 
       // Update pagination
       if (pagination && totalPages > 1) {
@@ -161,11 +182,18 @@
     const currentPrice = Utils.formatCurrency(auction.currentPrice || auction.startingPrice);
     const timeLeft = Utils.formatCountdown(auction.endsAt);
     const isEnding = new Date(auction.endsAt) - new Date() < 3600000;
+    
+    const isWatched = WatchlistService.isWatched(auction.id);
+    const watchIcon = isWatched ? 'favorite' : 'favorite_border'; // filled vs outline
+    const watchClass = isWatched ? 'active' : '';
 
     return `
       <a href="/auctions/${auction.slug || auction.id}" class="card card-hover auction-card">
         <div class="card-image">
           <img src="${imageUrl}" alt="${auction.title}" loading="lazy">
+          <button class="btn btn-icon btn-watchlist ${watchClass}" data-id="${auction.id}" title="Añadir a favoritos">
+              <span class="material-symbols-outlined">${watchIcon}</span>
+          </button>
         </div>
         <div class="auction-card-content">
           <h3 class="auction-card-title">${auction.title}</h3>
@@ -184,7 +212,76 @@
       </a>
     `;
   }
+  
+  function updateWatchlistIcons() {
+      Utils.$$('.btn-watchlist').forEach(btn => {
+          const id = btn.dataset.id;
+          updateWatchlistButtonState(btn, WatchlistService.isWatched(id));
+      });
+  }
+  
+  function updateWatchlistButtonState(btn, isWatched) {
+      const icon = btn.querySelector('span');
+      if (isWatched) {
+          icon.textContent = 'favorite'; // Filled
+          btn.classList.add('active'); // Optional for color styling
+          // In buttons.css we might need a .btn-watchlist.active { color: var(--color-error); }
+          // Assuming we can use inline style or existing class if needed.
+          // Let's trust Utils.addClass works if styling exists.
+          btn.style.color = 'var(--color-error)'; 
+          btn.style.backgroundColor = 'white'; // Make it pop
+          btn.style.borderRadius = '50%';
+      } else {
+          icon.textContent = 'favorite_border';
+          btn.classList.remove('active');
+          btn.style.color = '';
+          btn.style.backgroundColor = 'white'; 
+          btn.style.borderRadius = '50%';
+      }
+      
+      // Ensure positioning stays absolute top-right (usually handled by CSS)
+      // I'll add inline styles to the button in createAuctionCard template to be safe if CSS missing.
+      // Modifying createAuctionCard above to add inline styles for positioning.
+  }
+  
+  // Re-define createAuctionCard with positioning styles
+  function createAuctionCard(auction) {
+    const imageUrl = auction.images?.[0] || 'https://via.placeholder.com/400x300?text=Sin+imagen';
+    const currentPrice = Utils.formatCurrency(auction.currentPrice || auction.startingPrice);
+    const timeLeft = Utils.formatCountdown(auction.endsAt);
+    const isEnding = new Date(auction.endsAt) - new Date() < 3600000;
+    
+    const isWatched = WatchlistService.isWatched(auction.id);
+    const watchIcon = isWatched ? 'favorite' : 'favorite_border';
+    const watchColor = isWatched ? 'var(--color-error)' : 'var(--text-secondary)';
 
+    return `
+      <a href="/auctions/${auction.slug || auction.id}" class="card card-hover auction-card" style="position: relative;">
+        <div class="card-image" style="position: relative;">
+          <img src="${imageUrl}" alt="${auction.title}" loading="lazy">
+          <button class="btn btn-icon btn-watchlist" data-id="${auction.id}" title="Añadir a favoritos"
+            style="position: absolute; top: 8px; right: 8px; background: white; border-radius: 50%; width: 32px; height: 32px; min-width: 32px; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); color: ${watchColor}; z-index: 2;">
+              <span class="material-symbols-outlined" style="font-size: 20px;">${watchIcon}</span>
+          </button>
+        </div>
+        <div class="auction-card-content">
+          <h3 class="auction-card-title">${auction.title}</h3>
+          <div class="auction-card-meta">
+            <div>
+              <p class="auction-card-price-label">Precio actual</p>
+              <p class="auction-card-price">${currentPrice}</p>
+            </div>
+            <div class="auction-card-time">
+              <p class="auction-card-time-label">Termina en</p>
+              <p class="auction-card-time-value ${isEnding ? 'text-error' : ''}">${timeLeft}</p>
+            </div>
+          </div>
+          <p class="auction-card-bids">${auction.bidCount || 0} pujas</p>
+        </div>
+      </a>
+    `;
+  }
+  
   /**
    * Render pagination numbers
    */
@@ -224,3 +321,4 @@
     Utils.$('#nextPage').disabled = currentPage === totalPages;
   }
 })();
+

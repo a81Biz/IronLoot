@@ -1,5 +1,6 @@
-import { Controller, Get, Render } from '@nestjs/common';
+import { Controller, Get, Render, UseGuards } from '@nestjs/common';
 import { AppService } from './app.service';
+import { RequireAuth } from './common/guards/require-auth.guard';
 
 @Controller()
 export class AppController {
@@ -30,14 +31,179 @@ export class AppController {
   }
 
   @Get('dashboard')
+  @UseGuards(RequireAuth)
   @Render('pages/dashboard')
   dashboard() {
     return { title: 'Dashboard' };
   }
 
   @Get('wallet')
+  @UseGuards(RequireAuth)
   @Render('pages/wallet')
   wallet() {
     return { title: 'Mi Billetera' };
+  }
+
+  @Get('wallet/deposit')
+  @UseGuards(RequireAuth)
+  @Render('pages/wallet/deposit')
+  walletDeposit() {
+    return { title: 'Depositar Fondos' };
+  }
+
+  @Get('wallet/withdraw')
+  @UseGuards(RequireAuth)
+  @Render('pages/wallet/withdraw')
+  walletWithdraw() {
+    return { title: 'Retirar Fondos' };
+  }
+
+  @Get('wallet/history')
+  @UseGuards(RequireAuth)
+  @Render('pages/wallet/history')
+  walletHistory() {
+    return { title: 'Historial de Transacciones' };
+  }
+
+  @Get('profile')
+  @UseGuards(RequireAuth)
+  @Render('pages/profile')
+  profile() {
+    return { title: 'Mi Perfil' };
+  }
+
+  @Get('my-bids')
+  @UseGuards(RequireAuth)
+  @Render('pages/bids/my')
+  myBids() {
+    return { title: 'Mis Pujas' };
+  }
+
+  @Get('orders/:id')
+  @UseGuards(RequireAuth)
+  @Render('pages/orders/detail')
+  orderDetail() {
+    return { title: 'Detalle de Orden' };
+  }
+
+  @Get('orders')
+  @UseGuards(RequireAuth)
+  @Render('pages/orders/list')
+  ordersList() {
+    return { title: 'Mis Órdenes' };
+  }
+
+  @Get('seller/auctions')
+  @UseGuards(RequireAuth)
+  @Render('pages/seller/auctions')
+  sellerAuctions() {
+    return { title: 'Mis Subastas' };
+  }
+
+  @Get('seller/orders')
+  @UseGuards(RequireAuth)
+  @Render('pages/seller/orders')
+  sellerOrders() {
+    return { title: 'Gestión de Envíos' };
+  }
+
+  @Get('auction/create')
+  @UseGuards(RequireAuth)
+  @Render('pages/auction/create')
+  createAuction() {
+    return { title: 'Crear Subasta' };
+  }
+
+  @Get('notifications')
+  @UseGuards(RequireAuth)
+  @Render('pages/notifications/list')
+  notifications() {
+    return { title: 'Notificaciones' };
+  }
+
+  @Get('disputes')
+  @UseGuards(RequireAuth)
+  @Render('pages/disputes/list')
+  disputesList() {
+    return { title: 'Disputas' };
+  }
+
+  @Get('disputes/new')
+  @UseGuards(RequireAuth)
+  @Render('pages/disputes/create')
+  createDispute() {
+    return { title: 'Nueva Disputa' };
+  }
+
+  @Get('disputes/:id')
+  @UseGuards(RequireAuth)
+  @Render('pages/disputes/detail')
+  disputeDetail() {
+    return { title: 'Detalle de Disputa' };
+  }
+
+  @Get('about')
+  @Render('pages/static/about')
+  about() {
+    return { title: 'Sobre Nosotros' };
+  }
+
+  @Get('terms')
+  @Render('pages/static/terms')
+  terms() {
+    return { title: 'Términos y Condiciones' };
+  }
+
+  @Get('privacy')
+  @Render('pages/static/privacy')
+  privacy() {
+    return { title: 'Política de Privacidad' };
+  }
+
+  @Get('auctions')
+  @Render('pages/auctions/list')
+  auctions() {
+    return { title: 'Subastas Activas' };
+  }
+
+  @Get('auctions/:id')
+  @Render('pages/auctions/detail')
+  auctionDetail() {
+    return { title: 'Detalle de Subasta' };
+  }
+
+  @Get('won-auctions')
+  @UseGuards(RequireAuth)
+  @Render('pages/won-auctions')
+  wonAuctions() {
+    return { title: 'Subastas Ganadas' };
+  }
+
+  @Get('watchlist')
+  @UseGuards(RequireAuth)
+  @Render('pages/watchlist')
+  watchlist() {
+    return { title: 'Mi Watchlist' };
+  }
+
+  @Get('payments')
+  @UseGuards(RequireAuth)
+  @Render('pages/payments')
+  payments() {
+    return { title: 'Mis Pagos' };
+  }
+
+  @Get('reputation')
+  @UseGuards(RequireAuth)
+  @Render('pages/reputation')
+  reputation() {
+    return { title: 'Mi Reputación' };
+  }
+
+  @Get('settings')
+  @UseGuards(RequireAuth)
+  @Render('pages/settings')
+  settings() {
+    return { title: 'Configuración' };
   }
 }

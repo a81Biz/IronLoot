@@ -22,6 +22,8 @@ import {
   EnableSellerResponseDto,
   VerificationStatusDto,
   UserStatsDto,
+  UserSettingsDto,
+  UpdateSettingsDto,
 } from './dto';
 import { Log, AuditedAction } from '../../common/observability/decorators';
 import { AuditEventType, EntityType } from '../../common/observability/constants';
@@ -163,6 +165,35 @@ export class UsersController {
     @CurrentUser() user: AuthenticatedUser,
   ): Promise<VerificationStatusDto> {
     return this.usersService.getVerificationStatus(user.id);
+  }
+
+  /**
+   * Get user settings (Spec v0.2.3)
+   */
+  @Get('me/settings')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Get user settings' })
+  @ApiResponse({ status: 200, type: UserSettingsDto })
+  @Log()
+  async getSettings(@CurrentUser() user: AuthenticatedUser): Promise<UserSettingsDto> {
+    return this.usersService.getSettings(user.id);
+  }
+
+  /**
+   * Update user settings (Spec v0.2.3)
+   */
+  @Patch('me/settings')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth('access-token')
+  @ApiOperation({ summary: 'Update user settings (partial merge)' })
+  @ApiResponse({ status: 200, type: UserSettingsDto })
+  @AuditedAction(AuditEventType.USER_SETTINGS_UPDATE, EntityType.USER, (args) => args[0].user?.id)
+  async updateSettings(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: UpdateSettingsDto,
+  ): Promise<UserSettingsDto> {
+    return this.usersService.updateSettings(user.id, dto);
   }
 
   /**

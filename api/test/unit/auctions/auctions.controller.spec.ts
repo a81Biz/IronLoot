@@ -84,12 +84,16 @@ describe('AuctionsController', () => {
     it('should return list of auctions', async () => {
       mockAuctionsService.findAll.mockResolvedValue([mockAuction]);
 
-      const result = await controller.findAll(AuctionStatus.ACTIVE);
+      const result = await controller.findAll(undefined, AuctionStatus.ACTIVE);
 
       expect(result).toHaveLength(1);
       expect(mockAuctionsService.findAll).toHaveBeenCalledWith({
         status: AuctionStatus.ACTIVE,
         sellerId: undefined,
+        mine: false,
+        currentUserId: undefined,
+        page: undefined,
+        limit: undefined,
       });
     });
   });

@@ -1,12 +1,10 @@
 import { Order } from '@prisma/client';
-import { Controller, Post, Get, Body, Param, UseGuards, ParseUUIDPipe } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { Controller, Get, Param, UseGuards, ParseUUIDPipe, Query } from '@nestjs/common';
+import { ApiTags, ApiBearerAuth, ApiOperation, ApiParam, ApiQuery } from '@nestjs/swagger';
 import { JwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser } from '@/modules/auth/decorators';
 import { OrdersService } from './orders.service';
-import { CreateOrderDto } from './dto';
-import { Log, AuditedAction } from '../../common/observability/decorators';
-import { AuditEventType, EntityType } from '../../common/observability/constants';
+import { Log } from '../../common/observability/decorators';
 
 @ApiTags('orders')
 @ApiBearerAuth('access-token')
@@ -15,26 +13,29 @@ import { AuditEventType, EntityType } from '../../common/observability/constants
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
+  /*
   @Post()
   @ApiOperation({
-    summary: 'Create order',
-    description: 'Create an order from a won auction (Checkout trigger)',
+    summary: 'Create order (DISABLED)',
+    description: 'Order creation is now handled automatically by the backend scheduler.',
   })
-  @ApiResponse({ status: 201, description: 'Order created' })
-  @AuditedAction(AuditEventType.ORDER_CREATED, EntityType.ORDER, (args, result) => result.id, [
-    'auctionId',
-  ])
-  async create(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CreateOrderDto,
-  ): Promise<Order> {
-    return this.ordersService.createFromAuction(user.id, dto);
+  @ApiResponse({ status: 410, description: 'Endpoint disabled' })
+  async create(): Promise<void> {
+    throw new ForbiddenException('Order creation is handled automatically');
   }
+  */
 
   @Get()
-  @ApiOperation({ summary: 'List my orders', description: 'Get all orders where I am the buyer' })
+  @ApiOperation({ summary: 'List orders', description: 'Get orders by role (buyer|seller)' })
+  @ApiQuery({ name: 'role', required: false, enum: ['buyer', 'seller'] })
   @Log()
-  async findAll(@CurrentUser() user: AuthenticatedUser): Promise<Order[]> {
+  async findAll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('role') role: 'buyer' | 'seller' = 'buyer',
+  ): Promise<Order[]> {
+    if (role === 'seller') {
+      return this.ordersService.findAllForSeller(user.id);
+    }
     return this.ordersService.findAllForUser(user.id);
   }
 

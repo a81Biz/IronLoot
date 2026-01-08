@@ -36,13 +36,16 @@
             </div>
 
             <!-- Auth Section (when logged out) -->
+            {% if not user %}
             <div class="navbar-auth" id="navAuthButtons">
                 <a href="/login" class="btn btn-ghost">Iniciar Sesión</a>
                 <a href="/register" class="btn btn-primary">Registrarse</a>
             </div>
+            {% endif %}
 
             <!-- User Section (when logged in) -->
-            <div class="navbar-auth" id="navUserMenu" style="display: none;">
+            {% if user %}
+            <div class="navbar-auth" id="navUserMenu">
                 <!-- Notifications -->
                 <a href="/notifications" class="navbar-notifications">
                     <button class="btn btn-icon btn-ghost navbar-notifications">
@@ -56,12 +59,18 @@
                     <div class="navbar-user-avatar">
                         <span class="material-symbols-outlined">person</span>
                     </div>
-                    <span class="navbar-user-name" id="navUserName">Usuario</span>
+                    <span class="navbar-user-name" id="navUserName">{{ user.username or 'Usuario' }}</span>
+                </a>
+
+                <!-- Settings Link (New) -->
+                <a href="/settings" class="btn btn-ghost btn-icon" title="Configuración">
+                    <span class="material-symbols-outlined">settings</span>
                 </a>
 
                 <!-- Logout -->
                 <button class="btn btn-ghost" id="navLogoutBtn">Salir</button>
             </div>
+            {% endif %}
 
             <!-- Mobile Menu Toggle -->
             <button class="navbar-toggle" id="navMenuToggle">

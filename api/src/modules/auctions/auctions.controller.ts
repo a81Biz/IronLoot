@@ -20,12 +20,13 @@ import {
   ApiQuery,
 } from '@nestjs/swagger';
 import { AuctionStatus } from '@prisma/client';
-import { JwtAuthGuard } from '@/modules/auth/guards';
+import { JwtAuthGuard, OptionalJwtAuthGuard } from '@/modules/auth/guards';
 import { CurrentUser, AuthenticatedUser, Public } from '@/modules/auth/decorators';
 import { AuctionsService } from './auctions.service';
 import { CreateAuctionDto, UpdateAuctionDto, AuctionResponseDto } from './dto';
 import { Log, AuditedAction } from '../../common/observability/decorators';
 import { AuditEventType, EntityType } from '../../common/observability/constants';
+import { UnauthorizedException } from '../../common/observability';
 
 @ApiTags('auctions')
 @Controller('auctions')
@@ -61,13 +62,24 @@ export class AuctionsController {
    * List auctions (Public)
    */
   @Get()
-  @Public()
+  @UseGuards(OptionalJwtAuthGuard) // Allow user context if token present, but don't require it
   @ApiOperation({ summary: 'List auctions', description: 'Get a list of auctions with filtering' })
   @ApiQuery({
     name: 'status',
     enum: AuctionStatus,
     required: false,
-    description: 'Filter by status',
+    description: 'Filter by status (Public view allows ACTIVE/PUBLISHED only)',
+  })
+  @ApiQuery({
+    name: 'sellerId',
+    required: false,
+    description: 'Filter by seller ID',
+  })
+  @ApiQuery({
+    name: 'mine',
+    required: false,
+    type: Boolean,
+    description: 'Show only my auctions (Requires Auth). Overrides sellerId.',
   })
   @ApiQuery({
     name: 'page',
@@ -80,14 +92,30 @@ export class AuctionsController {
     description: 'Items per page (default 10)',
   })
   @ApiResponse({ status: 200, description: 'Paginated list of auctions' })
+  @ApiResponse({ status: 401, description: 'Unauthorized (if mine=true and no auth)' })
   @Log()
   async findAll(
+    @CurrentUser() user: AuthenticatedUser | undefined,
     @Query('status') status?: AuctionStatus,
     @Query('sellerId') sellerId?: string,
+    @Query('mine') mine?: string, // Boolean query params often come as strings
     @Query('page') page?: number,
     @Query('limit') limit?: number,
   ): Promise<{ data: AuctionResponseDto[]; total: number; page: number; limit: number }> {
-    return this.auctionsService.findAll({ status, sellerId, page, limit });
+    const isMine = mine === 'true';
+
+    if (isMine && !user) {
+      throw new UnauthorizedException('Authentication required for mine=true');
+    }
+
+    return this.auctionsService.findAll({
+      status,
+      sellerId,
+      page,
+      limit,
+      mine: isMine,
+      currentUserId: user?.id,
+    });
   }
 
   /**

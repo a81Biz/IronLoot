@@ -56,6 +56,7 @@ export class UserBidsController {
     description: 'Get list of active auctions user has bid on',
   })
   @ApiResponse({ status: 200, description: 'List of active bids' })
+  @Log({ message: 'Get my active bids' })
   async getMyActiveBids(@CurrentUser() user: AuthenticatedUser): Promise<Bid[]> {
     return this.bidsService.getUserActiveBids(user.id);
   }
@@ -66,6 +67,7 @@ export class UserBidsController {
     description: 'Get list of all auctions user has bid on',
   })
   @ApiResponse({ status: 200, description: 'List of all bids' })
+  @Log({ message: 'Get my bid history' })
   async getMyBids(@CurrentUser() user: AuthenticatedUser): Promise<Bid[]> {
     return this.bidsService.getUserBids(user.id);
   }

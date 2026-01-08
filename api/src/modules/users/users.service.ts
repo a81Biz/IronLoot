@@ -22,6 +22,8 @@ import {
   PublicUserResponseDto,
   UserStatsDto,
   VerificationStatusDto,
+  UserSettingsDto,
+  UpdateSettingsDto,
 } from './dto';
 
 /**
@@ -438,6 +440,90 @@ export class UsersService {
       totalRatings: ratings._count.score,
       memberSince: user?.createdAt || new Date(),
     };
+  }
+
+  // ===========================================
+  // USER SETTINGS (Spec v0.2.3)
+  // ===========================================
+
+  async getSettings(userId: string): Promise<UserSettingsDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { settings: true },
+    });
+
+    if (!user) {
+      throw new UserNotFoundException(userId);
+    }
+
+    // Prisma returns JSON object. Cast to DTO.
+    return user.settings as unknown as UserSettingsDto;
+  }
+
+  async updateSettings(userId: string, dto: UpdateSettingsDto): Promise<UserSettingsDto> {
+    const traceId = this.ctx.getTraceId();
+    this.log.debug('Updating user settings', { userId });
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { settings: true },
+    });
+
+    if (!user) {
+      throw new UserNotFoundException(userId);
+    }
+
+    // Ensure currentSettings is a plain object
+    const rawSettings = (user.settings as unknown as UserSettingsDto) || {};
+    const currentSettings = JSON.parse(JSON.stringify(rawSettings));
+    const newSettings = this.deepMerge(currentSettings, dto);
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { settings: newSettings as any },
+    });
+
+    this.log.info('User settings updated', { userId });
+
+    // Audit event
+    await this.audit.recordAudit(
+      traceId,
+      AuditEventType.USER_SETTINGS_UPDATE,
+      EntityType.USER,
+      userId,
+      AuditResult.SUCCESS,
+      {
+        actorUserId: userId,
+        payload: { updatedKeys: Object.keys(dto) },
+      },
+    );
+
+    return newSettings;
+  }
+
+  private deepMerge(target: any, source: any): any {
+    const isObject = (obj: any) => obj && typeof obj === 'object';
+
+    if (!isObject(target) || !isObject(source)) {
+      return source;
+    }
+
+    const output = { ...target };
+
+    Object.keys(source).forEach((key) => {
+      const targetValue = output[key];
+      const sourceValue = source[key];
+
+      if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
+        output[key] = sourceValue; // Arrays overwrite
+      } else if (isObject(targetValue) && isObject(sourceValue)) {
+        output[key] = this.deepMerge(targetValue, sourceValue);
+      } else {
+        output[key] = sourceValue;
+      }
+    });
+
+    return output;
   }
 
   private generateSecureToken(): string {

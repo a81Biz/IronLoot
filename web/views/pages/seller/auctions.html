@@ -1,0 +1,47 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Mis Subastas - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/components/tables.css">
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 1000px; margin: 0 auto; padding: var(--spacing-8) 0;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6);">
+        <h1>Mis Subastas</h1>
+        <a href="/auction/create" class="btn btn-primary">
+             <span class="material-symbols-outlined">add</span>
+             Nueva Subasta
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-container">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Subasta</th>
+                            <th>Precio Actual</th>
+                            <th>Pujas</th>
+                            <th>Termina</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sellerAuctionsTable">
+                        <tr>
+                            <td colspan="6" class="text-center text-secondary">Cargando subastas...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/seller/auctions.js"></script>
+{% endblock %}

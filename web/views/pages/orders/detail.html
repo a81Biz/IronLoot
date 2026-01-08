@@ -1,0 +1,76 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Detalle de Orden - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/components/cards.css">
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 0 auto; padding: var(--spacing-8) 0;">
+    <div style="margin-bottom: var(--spacing-6);">
+        <a href="/dashboard" class="text-secondary text-sm text-decoration-none">← Volver al Dashboard</a>
+        <h1 style="margin-top: var(--spacing-2);">Orden #<span id="orderNumber">...</span></h1>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <!-- Status -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6);">
+                <span class="badge" id="orderStatus">Cargando...</span>
+                <span class="text-secondary text-sm" id="orderDate">...</span>
+            </div>
+
+            <!-- Item -->
+            <div style="display: flex; gap: var(--spacing-4); margin-bottom: var(--spacing-6);">
+                <img id="orderImage" src="https://via.placeholder.com/100x100" style="width: 100px; height: 100px; object-fit: cover; border-radius: 8px;">
+                <div>
+                    <h3 class="text-lg font-bold" id="orderTitle">...</h3>
+                    <p class="text-secondary" id="orderSeller">Vendedor: ...</p>
+                    <p class="font-bold text-xl mt-2" id="orderTotal">...</p>
+                </div>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid var(--border-main); margin: var(--spacing-6) 0;">
+
+            <!-- Actions -->
+            <div id="actionSection">
+                <!-- Dynamic actions based on status -->
+                <p class="text-center text-secondary">Cargando acciones...</p>
+            </div>
+            
+            <!-- Shipping Info (if paid) -->
+            <div id="shippingSection" style="display: none; margin-top: var(--spacing-6); background: var(--bg-secondary); padding: var(--spacing-4); border-radius: 8px;">
+                <h4 class="font-bold mb-2">Información de Envío</h4>
+                <p class="text-sm">Dirección: <span id="shippingAddress">...</span></p>
+                <p class="text-sm">Tracking: <span id="shippingTracking" class="font-mono">Pendiente</span></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mock Payment Modal -->
+<div class="modal-backdrop" id="paymentModalBackdrop"></div>
+<div class="modal" id="paymentModal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3 class="modal-title">Simular Pago</h3>
+            <button class="modal-close" data-modal-close="paymentModal">
+                <span class="material-symbols-outlined">close</span>
+            </button>
+        </div>
+        <div class="modal-body">
+            <p>En el entorno de desarrollo, el pago se simula.</p>
+            <p>Monto: <strong id="paymentAmount">...</strong></p>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-modal-close="paymentModal">Cancelar</button>
+            <button class="btn btn-primary" id="btnConfirmPayment">Confirmar Pago</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/orders/detail.js"></script>
+{% endblock %}

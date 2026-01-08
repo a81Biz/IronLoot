@@ -8,8 +8,11 @@ import { AppModule } from './app.module';
 import * as nunjucks from 'nunjucks';
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
+import * as cookieParser from 'cookie-parser';
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  app.use(cookieParser());
 
   const viewsPath = join(__dirname, '..', 'views');
   

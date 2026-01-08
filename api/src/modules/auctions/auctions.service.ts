@@ -80,16 +80,15 @@ export class AuctionsService {
   }
 
   // ===========================================
-  // FIND ALL (Public)
-  // ===========================================
-  // ===========================================
-  // FIND ALL (Public)
+  // FIND ALL (Public / Mine)
   // ===========================================
   async findAll(query: {
     status?: AuctionStatus;
     sellerId?: string;
     page?: number;
     limit?: number;
+    mine?: boolean;
+    currentUserId?: string;
   }): Promise<{ data: AuctionResponseDto[]; total: number; page: number; limit: number }> {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
@@ -97,14 +96,39 @@ export class AuctionsService {
 
     const where: Prisma.AuctionWhereInput = {};
 
-    if (query.status) {
-      where.status = query.status;
-    } else {
-      where.status = { in: [AuctionStatus.ACTIVE, AuctionStatus.PUBLISHED] };
-    }
+    if (query.mine) {
+      // "Mine" mode: Strict filtering by current user
+      if (!query.currentUserId) {
+        // Should have been caught by controller, but safety check
+        throw new ForbiddenException('Authentication required to view own auctions');
+      }
+      where.sellerId = query.currentUserId;
 
-    if (query.sellerId) {
-      where.sellerId = query.sellerId;
+      // Allow owner to filter by any status
+      if (query.status) {
+        where.status = query.status;
+      }
+    } else {
+      // Public mode: Strict visibility requirements
+      if (query.sellerId) {
+        where.sellerId = query.sellerId;
+      }
+
+      // Strict status filter: Only ACTIVE or PUBLISHED allowed
+      const publicStatuses: AuctionStatus[] = [AuctionStatus.ACTIVE, AuctionStatus.PUBLISHED];
+
+      if (query.status) {
+        if (publicStatuses.includes(query.status)) {
+          where.status = query.status;
+        } else {
+          // Logic: Requesting a non-public status in public mode -> Return nothing
+          // Using a "never match" condition
+          where.status = { in: [] };
+        }
+      } else {
+        // Default: Show all public statuses
+        where.status = { in: publicStatuses };
+      }
     }
 
     const [auctions, total] = await Promise.all([
@@ -208,7 +232,7 @@ export class AuctionsService {
   // ===========================================
   // HELPERS
   // ===========================================
-  private mapToResponse(auction: Auction, sellerName?: string): AuctionResponseDto {
+  public mapToResponse(auction: Auction, sellerName?: string): AuctionResponseDto {
     return {
       id: auction.id,
       title: auction.title,

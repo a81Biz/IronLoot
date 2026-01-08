@@ -2,7 +2,11 @@ import { Injectable, BadRequestException, NotFoundException } from '@nestjs/comm
 import { PrismaService } from '../../database/prisma.service';
 import { LedgerType, Wallet, Ledger } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
-import { StructuredLogger, ChildLogger } from '../../common/observability';
+import {
+  StructuredLogger,
+  ChildLogger,
+  InsufficientBalanceException,
+} from '../../common/observability';
 
 @Injectable()
 export class WalletService {
@@ -14,6 +18,10 @@ export class WalletService {
   ) {
     this.log = this.logger.child('WalletService');
   }
+
+  // ... (keeping existing methods until we hit the captureHeldFunds or others if we are replacing whole file, but replace_file_content targets chunks)
+  // Wait, I can't replace scattered chunks easily with one call if they are far apart unless using multi_replace.
+  // I will use replace_file_content for IMPORTS first.
 
   /**
    * Get or create a user's wallet
@@ -83,7 +91,7 @@ export class WalletService {
         },
       });
 
-      // 3. Update Wallet
+      // Update Wallet
       const updatedWallet = await tx.wallet.update({
         where: { id: wallet.id },
         data: {
@@ -117,7 +125,11 @@ export class WalletService {
       const currentBalance = new Decimal(wallet.balance);
 
       if (currentBalance.lessThan(amountDecimal)) {
-        throw new BadRequestException('Insufficient available funds');
+        throw new InsufficientBalanceException(
+          userId,
+          amountDecimal.toNumber(),
+          currentBalance.toNumber(),
+        );
       }
 
       const newBalance = currentBalance.minus(amountDecimal);
@@ -169,7 +181,11 @@ export class WalletService {
       const currentBalance = new Decimal(wallet.balance);
 
       if (currentBalance.lessThan(amountDecimal)) {
-        throw new BadRequestException('Insufficient available funds for hold');
+        throw new InsufficientBalanceException(
+          userId,
+          amountDecimal.toNumber(),
+          currentBalance.toNumber(),
+        );
       }
 
       const newBalance = currentBalance.minus(amountDecimal);
@@ -179,7 +195,7 @@ export class WalletService {
       await tx.ledger.create({
         data: {
           walletId: wallet.id,
-          type: LedgerType.HOLD,
+          type: LedgerType.HOLD_BID,
           amount: amountDecimal,
           balanceBefore: wallet.balance,
           balanceAfter: newBalance,
@@ -218,13 +234,7 @@ export class WalletService {
       const amountDecimal = new Decimal(amount);
       const currentHeld = new Decimal(wallet.heldFunds);
 
-      // Only release what is held? Or allow correction?
-      // Strict: Held funds > amount.
-      // But in race conditions or partials, maybe we just do best effort?
-      // Let's enforce strictness for now.
       if (currentHeld.lessThan(amountDecimal)) {
-        // This might happen if data is inconsistent. Log error but try to recover?
-        // For now, throw to detect bugs.
         throw new BadRequestException('Cannot release more than is held');
       }
 
@@ -235,7 +245,7 @@ export class WalletService {
       await tx.ledger.create({
         data: {
           walletId: wallet.id,
-          type: LedgerType.RELEASE,
+          type: LedgerType.RELEASE_BID,
           amount: amountDecimal,
           balanceBefore: wallet.balance,
           balanceAfter: newBalance,
@@ -257,81 +267,129 @@ export class WalletService {
   }
 
   /**
-   * Capture held funds (Purchase from Hold)
+   * Capture held funds and Credit Seller (Atomic)
+   * Flows:
+   * 1. Debit Buyer (Release Hold -> DEBIT_ORDER)
+   * 2. Credit Seller (CREDIT_SALE)
+   * 3. Debit Platform Fee from Seller (FEE_PLATFORM)
    */
   async captureHeldFunds(
-    userId: string,
+    buyerId: string,
+    sellerId: string,
     amount: number,
-    referenceId: string,
+    referenceId: string, // AuctionId/OrderId
     description: string,
-  ): Promise<Wallet> {
+  ): Promise<void> {
     return this.prisma.$transaction(async (tx) => {
-      const wallet = await tx.wallet.findUnique({ where: { userId } });
-      if (!wallet) throw new NotFoundException('Wallet not found');
-
       const amountDecimal = new Decimal(amount);
-      const currentHeld = new Decimal(wallet.heldFunds);
+      const feePercentage = new Decimal(0.1); // 10% Platform Fee
+      const feeAmount = amountDecimal.mul(feePercentage);
+      // const sellerNet = amountDecimal.minus(feeAmount); // Unused
 
+      // --- 1. BUYER SIDE (Debit) ---
+      const buyerWallet = await tx.wallet.findUnique({ where: { userId: buyerId } });
+      if (!buyerWallet) throw new NotFoundException('Buyer wallet not found');
+
+      const currentHeld = new Decimal(buyerWallet.heldFunds);
       if (currentHeld.lessThan(amountDecimal)) {
-        throw new BadRequestException('Insufficient active hold to capture');
+        throw new InsufficientBalanceException(
+          buyerId,
+          amountDecimal.toNumber(),
+          currentHeld.toNumber(),
+        );
       }
 
       const newHeld = currentHeld.minus(amountDecimal);
-      // Balance does not change (it was already deducted from available),
-      // but held funds decrease (consumed).
-      // Wait, "Held" is not "Spent". "Held" is "Reserved".
-      // When we capture, we remove from "Held" and it disappears from the wallet entirely (goes to system/seller).
-      // So balance remains reduced (it was reduced at Hold time).
-      // But we need to record a PURCHASE in ledger to explain where the money went finally?
-      // Actually, HOLD reduced "balance" (Available).
-      // So effectively the money is already "gone" from Available.
-      // PURCHASE should just confirm it.
-      // But wait, if I check Ledger logic:
-      // Hold: Balance - X, Held + X.
-      // Release: Balance + X, Held - X.
-      // Purchase (from Hold): Held - X. (Balance stays same).
-
-      // Ledger entry for Purchase:
-      // What is "balanceBefore"?
-      // If we only track "Available Balance" in Ledger entries 'balanceBefore'/'balanceAfter',
-      // then Purchase from Hold doesn't change Available Balance.
-      // But it MUST look like money left.
-      // Maybe Ledger should record "Held" change too? Or just focused on main balance?
-      // Let's keep it simple: Ledger tracks "Available Balance".
-      // But this operation is significant.
-      // Let's say Purchase entry shows 0 change in balance? No, that's confusing.
-      // The money left the user's possession.
-
-      // Refinement: The PURCHASE event finalized the exit.
-      // Technically the Ledger logic "BalanceBefore -> BalanceAfter" tracks Available.
-      // So indeed, Purchase from Hold doesn't change Available.
-      // But we should record it.
+      // Balance was already reduced during HOLD. We update heldFunds.
+      // We record DEBIT_ORDER to allow tracking expense in history.
+      // Note: Balance doesn't change here, but we record it for Statement.
 
       await tx.ledger.create({
         data: {
-          walletId: wallet.id,
-          type: LedgerType.PURCHASE,
+          walletId: buyerWallet.id,
+          type: LedgerType.DEBIT_ORDER,
           amount: amountDecimal,
-          balanceBefore: wallet.balance, // Unchanged
-          balanceAfter: wallet.balance, // Unchanged
+          balanceBefore: buyerWallet.balance,
+          balanceAfter: buyerWallet.balance, // Unchanged active balance
           referenceId,
-          referenceType: 'AUCTION_WIN',
-          description: description || `Purchase for ${referenceId}`,
+          referenceType: 'ORDER',
+          description: description || `Payment for ${referenceId}`,
         },
       });
 
-      // Update Wallet
-      return tx.wallet.update({
-        where: { id: wallet.id },
+      await tx.wallet.update({
+        where: { id: buyerWallet.id },
         data: { heldFunds: newHeld },
+      });
+
+      // --- 2. SELLER SIDE (Credit) ---
+      // Ensure seller wallet exists
+      let sellerWallet = await tx.wallet.findUnique({ where: { userId: sellerId } });
+      if (!sellerWallet) {
+        // Auto-create wallet for seller if not exists (should explicitly exist, but safe fallback)
+        sellerWallet = await tx.wallet.create({
+          data: { userId: sellerId, balance: 0, isActive: true },
+        });
+      }
+
+      const sellerBalanceBefore = new Decimal(sellerWallet.balance);
+      const sellerBalanceAfterSale = sellerBalanceBefore.plus(amountDecimal);
+
+      // Credit Sale
+      await tx.ledger.create({
+        data: {
+          walletId: sellerWallet.id,
+          type: LedgerType.CREDIT_SALE,
+          amount: amountDecimal,
+          balanceBefore: sellerBalanceBefore,
+          balanceAfter: sellerBalanceAfterSale,
+          referenceId,
+          referenceType: 'ORDER',
+          description: `Sale proceeds for ${referenceId}`,
+        },
+      });
+
+      // Use intermediate balance
+      const sellerBalanceAfterFee = sellerBalanceAfterSale.minus(feeAmount);
+
+      // Debit Fee
+      await tx.ledger.create({
+        data: {
+          walletId: sellerWallet.id,
+          type: LedgerType.FEE_PLATFORM,
+          amount: feeAmount,
+          balanceBefore: sellerBalanceAfterSale,
+          balanceAfter: sellerBalanceAfterFee,
+          referenceId,
+          referenceType: 'FEE',
+          description: `Platform fee (10%) for ${referenceId}`,
+        },
+      });
+
+      // Update Seller Wallet
+      await tx.wallet.update({
+        where: { id: sellerWallet.id },
+        data: { balance: sellerBalanceAfterFee },
+      });
+
+      this.log.info(`Captured funds: Buyer ${buyerId} -> Seller ${sellerId} (Fee: ${feeAmount})`, {
+        referenceId,
+        amount: amount,
+        fee: feeAmount.toNumber(),
       });
     });
   }
 
-  async getHistory(userId: string, limit = 10): Promise<Ledger[]> {
+  async getHistory(userId: string, limit = 10, types?: LedgerType[]): Promise<Ledger[]> {
     const wallet = await this.getWallet(userId);
+    const whereClause: any = { walletId: wallet.id };
+
+    if (types && types.length > 0) {
+      whereClause.type = { in: types };
+    }
+
     return this.prisma.ledger.findMany({
-      where: { walletId: wallet.id },
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
       take: limit,
     });

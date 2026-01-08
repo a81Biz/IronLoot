@@ -66,6 +66,8 @@ export enum ErrorCode {
   PAYMENT_EXPIRED = 'PAYMENT_EXPIRED',
   PAYMENT_ALREADY_PROCESSED = 'PAYMENT_ALREADY_PROCESSED',
   INSUFFICIENT_FUNDS = 'INSUFFICIENT_FUNDS',
+  INSUFFICIENT_BALANCE = 'INSUFFICIENT_BALANCE', // Audit: Spec v0.2.2
+  PAYMENT_MISMATCH = 'PAYMENT_MISMATCH', // Audit: Spec v0.2.2
 
   // Order errors
   ORDER_NOT_FOUND = 'ORDER_NOT_FOUND',
@@ -121,6 +123,8 @@ export const ERROR_CODE_HTTP_STATUS: Record<ErrorCode, number> = {
   [ErrorCode.PAYMENT_EXPIRED]: 400,
   [ErrorCode.PAYMENT_ALREADY_PROCESSED]: 409,
   [ErrorCode.INSUFFICIENT_FUNDS]: 402,
+  [ErrorCode.INSUFFICIENT_BALANCE]: 400,
+  [ErrorCode.PAYMENT_MISMATCH]: 400,
 
   [ErrorCode.ORDER_NOT_FOUND]: 404,
   [ErrorCode.ORDER_ALREADY_CANCELLED]: 409,
@@ -153,6 +157,7 @@ export enum AuditEventType {
   // User events
   USER_VERIFIED = 'USER_VERIFIED',
   USER_PROFILE_UPDATED = 'USER_PROFILE_UPDATED',
+  USER_SETTINGS_UPDATE = 'USER_SETTINGS_UPDATE',
   USER_SELLER_ENABLED = 'USER_SELLER_ENABLED',
   USER_SUSPENDED = 'USER_SUSPENDED',
   USER_BANNED = 'USER_BANNED',
@@ -196,6 +201,10 @@ export enum AuditEventType {
   DISPUTE_MESSAGE_SENT = 'DISPUTE_MESSAGE_SENT',
   DISPUTE_ESCALATED = 'DISPUTE_ESCALATED',
   DISPUTE_RESOLVED = 'DISPUTE_RESOLVED',
+
+  // Watchlist events
+  WATCHLIST_ADD = 'WATCHLIST_ADD',
+  WATCHLIST_REMOVE = 'WATCHLIST_REMOVE',
 }
 
 // ===========================================
@@ -212,6 +221,7 @@ export enum EntityType {
   RATING = 'Rating',
   DISPUTE = 'Dispute',
   SESSION = 'Session',
+  WATCHLIST = 'Watchlist',
 }
 
 // ===========================================

@@ -1,0 +1,72 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Notificaciones - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/components/cards.css">
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 0 auto; padding: var(--spacing-8) 0;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--spacing-6);">
+        <h1>Notificaciones</h1>
+        <button class="btn btn-secondary btn-sm" id="btnMarkAllRead">
+             <span class="material-symbols-outlined">done_all</span>
+             Marcar todo como leído
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div id="notificationsList" class="notification-list">
+                <p class="text-secondary text-center">Cargando notificaciones...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.notification-item {
+    padding: var(--spacing-4);
+    border-bottom: 1px solid var(--border-main);
+    display: flex;
+    gap: var(--spacing-4);
+    align-items: start;
+    cursor: pointer;
+    transition: background var(--transition-fast);
+}
+.notification-item:hover {
+    background: var(--bg-hover);
+}
+.notification-item.unread {
+    background: rgba(255, 126, 95, 0.05); /* very light primary */
+    border-left: 3px solid var(--color-primary);
+}
+.notification-item:last-child {
+    border-bottom: none;
+}
+.notification-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+.notification-icon.active {
+    background: var(--bg-primary-light);
+    color: var(--color-primary);
+}
+.notification-time {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    margin-top: var(--spacing-1);
+}
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/notifications/list.js"></script>
+{% endblock %}

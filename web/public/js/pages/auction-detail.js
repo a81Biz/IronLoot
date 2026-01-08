@@ -79,6 +79,96 @@
     Utils.$('#minBid').textContent = Utils.formatCurrency(minBid);
     Utils.$('#bidAmount').min = minBid;
     Utils.$('#bidAmount').placeholder = Utils.formatCurrency(minBid);
+
+    // Watch Button Setup
+    if (Auth.isLoggedIn()) {
+        setupWatchButton(auction.id);
+    }
+  }
+
+  // State for Watchlist
+  let isWatched = false;
+
+  async function setupWatchButton(auctionId) {
+      // 1. Create Button Element if not exists (or hook into existing)
+      const titleEl = Utils.$('#auctionTitle');
+      if (!titleEl) return;
+
+      // Check if button already exists
+      let btnWatch = document.getElementById('btnWatch');
+      if (!btnWatch) {
+          btnWatch = document.createElement('button');
+          btnWatch.id = 'btnWatch';
+          btnWatch.className = 'btn btn-icon btn-sm ml-2';
+          btnWatch.style.verticalAlign = 'middle';
+          btnWatch.title = 'Añadir a Watchlist';
+          // Insert after title
+          titleEl.appendChild(btnWatch);
+      }
+
+      // 2. Fetch Initial State (GET /watchlist)
+      // Note: Idealmente el backend nos diría "isWatched" en el getById del auction.
+      // Como v0.2.3 no lo incluye, debemos fetchear la lista completa.
+      try {
+          // Disable while checking
+          btnWatch.disabled = true;
+          btnWatch.innerHTML = '<span class="material-symbols-outlined">hourglass_empty</span>';
+
+          const response = await fetch('/api/v1/watchlist');
+          if (response.ok) {
+              const list = await response.json();
+              if (list && Array.isArray(list)) {
+                   const found = list.find(item => item.auctionId === auctionId);
+                   isWatched = !!found;
+                   updateWatchButtonUI(btnWatch);
+              }
+          }
+      } catch (e) {
+          console.error('Error checking watchlist status', e);
+      } finally {
+          btnWatch.disabled = false;
+          // Add click listener
+          btnWatch.onclick = () => toggleWatchlist(auctionId, btnWatch);
+      }
+  }
+
+  function updateWatchButtonUI(btn) {
+      if (isWatched) {
+          btn.innerHTML = '<span class="material-symbols-outlined text-error">favorite</span>';
+          btn.title = 'Eliminar de Watchlist';
+      } else {
+          btn.innerHTML = '<span class="material-symbols-outlined">favorite_border</span>';
+          btn.title = 'Añadir a Watchlist';
+      }
+  }
+
+  async function toggleWatchlist(auctionId, btn) {
+      btn.disabled = true;
+      try {
+          if (isWatched) {
+              // DELETE
+              const res = await fetch(`/api/v1/watchlist/${auctionId}`, { method: 'DELETE' });
+              if (!res.ok) throw new Error('Delete failed');
+              isWatched = false;
+              Utils.toast('Eliminado de watchlist', 'success');
+          } else {
+              // POST
+              const res = await fetch(`/api/v1/watchlist`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ auctionId }) 
+              });
+              if (!res.ok) throw new Error('Add failed');
+              isWatched = true; // Only update on success
+              Utils.toast('Añadido a watchlist', 'success');
+          }
+          updateWatchButtonUI(btn);
+      } catch (error) {
+          console.error(error);
+          Utils.toast('Error al actualizar watchlist', 'error');
+      } finally {
+          btn.disabled = false;
+      }
   }
 
   /**
@@ -206,7 +296,8 @@
    */
   async function handlePlaceBid() {
     if (!Auth.isLoggedIn()) {
-      window.location.href = `/login?return=${window.location.pathname}`;
+      const returnUrl = encodeURIComponent(window.location.pathname);
+      window.location.href = `/login?return=${returnUrl}`;
       return;
     }
 
@@ -238,6 +329,20 @@
       amountInput.value = '';
     } catch (error) {
       console.error('Bid failed:', error);
+      
+      // Check for Insufficient Balance
+      // Assuming Backend returns 400/402 or message contains specific text
+      // We check multiple possibilities strictly
+      const msg = error.message?.toLowerCase() || '';
+      if (error.statusCode === 402 || msg.includes('balance') || msg.includes('saldo') || msg.includes('funds')) {
+          Utils.toast('Saldo insuficiente. Redirigiendo a depósito...', 'warning');
+          setTimeout(() => {
+              const returnUrl = encodeURIComponent(window.location.pathname);
+              window.location.href = `/wallet/deposit?return=${returnUrl}`;
+          }, 1500);
+          return;
+      }
+
       Utils.toast(error.message || 'Error al realizar la puja', 'error');
     } finally {
       btn.disabled = false;

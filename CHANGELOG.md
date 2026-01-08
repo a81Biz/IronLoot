@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2026-01-08
+
+### Added
+-   **Frontend**: Implemented strictly server-side rendered `RequireAuth` guard for protected routes.
+-   **Frontend**: Added fully functional **Watchlist** system (`/watchlist` and `GET/POST/DELETE /api/v1/watchlist`).
+-   **Frontend**: Added **User Settings** page (`/settings`) for profile, notifications, and language preferences.
+-   **Frontend**: Implemented `UserMiddleware` to inject session data into server-side templates.
+-   **API**: Added Watchlist Module (`WatchlistController`, `WatchlistService`).
+-   **API**: Added User Settings endpoints (`GET/PATCH /users/me/settings`).
+
+### Fixed
+-   **Frontend**: Resolved login loop and auth inconsistency issues by synchronizing cookies for SSR interactions.
+-   **Frontend**: Enforced strict route protection rules according to Spec v0.2.3.
+-   **Frontend**: Fixed `api-client.js` to correctly propagate `Authorization` headers for Watchlist and Settings API calls.
+
 ## [0.2.0] - 2026-01-07
 
 ### Added

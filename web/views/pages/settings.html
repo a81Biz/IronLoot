@@ -1,0 +1,55 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Configuración - Iron Loot{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 600px; margin: 0 auto; padding: var(--spacing-8) 0;">
+    <h1 style="margin-bottom: var(--spacing-6);">Configuración</h1>
+
+    <!-- Alert Container -->
+    <div id="settingsAlert" class="alert hidden" style="margin-bottom: var(--spacing-6);"></div>
+
+    <div class="card">
+        <div class="card-body">
+            <form id="settingsForm">
+                <!-- Language -->
+                <div class="form-group" style="margin-bottom: var(--spacing-4);">
+                    <label class="form-label" for="language">Idioma</label>
+                    <select id="language" name="language" class="form-select">
+                        <option value="es">Español</option>
+                        <option value="en">English</option>
+                    </select>
+                </div>
+
+                <hr style="border: 0; border-top: 1px solid var(--border-subtle); margin: var(--spacing-6) 0;">
+
+                <!-- Notifications -->
+                <h3 class="h5" style="margin-bottom: var(--spacing-4);">Notificaciones</h3>
+                
+                <div class="form-group" style="margin-bottom: var(--spacing-2);">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" id="notifyEmail" name="notifications.email">
+                        <span>Recibir correos electrónicos</span>
+                    </label>
+                </div>
+
+                <div class="form-group" style="margin-bottom: var(--spacing-6);">
+                    <label class="flex items-center gap-2">
+                        <input type="checkbox" id="notifyInApp" name="notifications.inApp">
+                        <span>Recibir notificaciones en la aplicación</span>
+                    </label>
+                </div>
+
+                <!-- Submit -->
+                <button type="submit" class="btn btn-primary w-full" id="btnSave">
+                    Guardar Cambios
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/settings.js"></script>
+{% endblock %}

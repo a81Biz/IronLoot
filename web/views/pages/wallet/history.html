@@ -1,0 +1,50 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Historial - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/pages/wallet.css">
+{% endblock %}
+
+{% block content %}
+<div class="wallet-header">
+    <h1 class="wallet-title">Historial de Transacciones</h1>
+    <div class="wallet-actions">
+         <a href="/wallet" class="btn btn-ghost">
+            <span class="material-symbols-outlined">arrow_back</span>
+            Volver
+        </a>
+        <a href="/wallet/deposit" class="btn btn-primary">
+            <span class="material-symbols-outlined">add</span>
+            Depositar
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Fecha</th>
+                        <th>Tipo</th>
+                        <th>Monto</th>
+                        <th>Estado</th>
+                        <th>Referencia</th>
+                    </tr>
+                </thead>
+                <tbody id="historyTable">
+                    <tr>
+                        <td colspan="5" class="text-center text-secondary">Cargando...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/wallet/history.js"></script>
+{% endblock %}

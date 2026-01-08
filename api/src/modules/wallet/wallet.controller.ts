@@ -15,6 +15,13 @@ import { DepositDto, WithdrawDto, WalletBalanceDto, TransactionHistoryDto } from
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WalletService } from './wallet.service';
 import { PrismaService } from '../../database/prisma.service';
+import {
+  Log,
+  AuditedAction,
+  AuditEventType,
+  EntityType,
+  PaymentMismatchException,
+} from '../../common/observability';
 
 export interface AuthenticatedRequest extends Request {
   user: {
@@ -36,6 +43,7 @@ export class WalletController {
   // ... (existing methods)
 
   @Get('balance')
+  @Log({ message: 'Get wallet balance' })
   @ApiOperation({ summary: 'Get current wallet balance' })
   @ApiResponse({ status: 200, type: WalletBalanceDto })
   async getBalance(@Request() req: AuthenticatedRequest): Promise<WalletBalanceDto> {
@@ -49,6 +57,7 @@ export class WalletController {
   }
 
   @Get('history')
+  @Log({ message: 'Get wallet history' })
   @ApiOperation({ summary: 'Get wallet transaction history' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiResponse({ status: 200, type: TransactionHistoryDto })
@@ -72,6 +81,12 @@ export class WalletController {
 
   @Post('deposit')
   // @Throttle({ default: { limit: 10, ttl: 60000 } }) // TODO: Install ThrottlerModule
+  @AuditedAction(
+    AuditEventType.PAYMENT_CONFIRMED,
+    EntityType.PAYMENT,
+    (args) => args[1].referenceId, // dto is 2nd arg
+    ['amount', 'referenceId'], // payload
+  )
   @ApiOperation({ summary: 'Deposit funds' })
   @ApiResponse({ status: 201, description: 'Deposit successful' })
   @ApiResponse({ status: 400, description: 'Invalid payment' })
@@ -88,7 +103,7 @@ export class WalletController {
     if (payment.amount !== dto.amount) {
       // Optionally throw or just use the real amount.
       // Throwing is safer to alert the user of mismatch
-      throw new BadRequestException('Payment amount mismatch');
+      throw new PaymentMismatchException(Number(payment.amount), dto.amount);
     }
 
     return this.walletService.deposit(req.user.id, payment.amount, dto.referenceId);
@@ -96,6 +111,12 @@ export class WalletController {
 
   @Post('withdraw')
   // @Throttle({ default: { limit: 5, ttl: 60000 } }) // TODO: Install ThrottlerModule
+  @AuditedAction(
+    AuditEventType.PAYMENT_INITIATED,
+    EntityType.USER,
+    (args) => args[0].user.id, // req is 1st arg
+    ['amount'],
+  )
   @ApiOperation({ summary: 'Withdraw funds' })
   @ApiResponse({ status: 201, description: 'Withdrawal successful' })
   @ApiResponse({ status: 400, description: 'Invalid amount or payment method' })

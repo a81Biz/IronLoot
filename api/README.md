@@ -2,7 +2,7 @@
 
 ![CI Status](https://img.shields.io/badge/CI-Success-brightgreen)
 ![Coverage](https://img.shields.io/badge/Coverage-41%25-yellow)
-![Version](https://img.shields.io/badge/version-0.2.0-blue)
+![Version](https://img.shields.io/badge/version-0.2.3-blue)
 
 ...
 
@@ -129,6 +129,8 @@ iron-loot/
 | `DisputesModule` | Resolución de disputas | ✅ |
 | `NotificationsModule` | Notificaciones (In-App) | ✅ |
 | `WalletModule` | Cuenta de usuario, saldo, retenciones | ✅ |
+| `WatchlistModule` | Lista de seguimiento de subastas | ✅ |
+| `UsersModule (Settings)` | Configuración de usuario (idioma, notificaciones) | ✅ |
 
 ---
 

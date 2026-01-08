@@ -22,6 +22,29 @@ export class OrdersService {
     this.log = this.logger.child('OrdersService');
   }
 
+  private async enrichOrder(order: Order): Promise<Order & { walletTransactionId?: string }> {
+    // Find the DEBIT (Buyer) or CREDIT (Seller) ledger entry associated with this order
+    // We look for referenceId === order.id (or order.auctionId depending on how we stored it)
+    // WalletService captured funds using "referenceId" which was passed as "referenceId" (AuctionId or OrderId).
+    // In captureHeldFunds, we used "referenceId".
+    // Let's check where captureHeldFunds is called. In AuctionScheduler it passed "auction.id".
+    // So referenceId in Ledger is AuctionId.
+    // But Order also has auctionId.
+
+    const ledger = await this.prisma.ledger.findFirst({
+      where: {
+        referenceId: order.auctionId, // We link via AuctionId currently
+        type: { in: ['DEBIT_ORDER', 'CREDIT_SALE'] as any[] },
+      },
+      select: { id: true },
+    });
+
+    return {
+      ...order,
+      walletTransactionId: ledger?.id,
+    };
+  }
+
   async createFromAuction(userId: string, dto: CreateOrderDto): Promise<Order> {
     this.log.info('Creating order from auction', { userId, auctionId: dto.auctionId });
 
@@ -78,12 +101,32 @@ export class OrdersService {
     });
   }
 
-  async findAllForUser(userId: string): Promise<Order[]> {
-    return this.prisma.order.findMany({
+  async findAllForUser(userId: string): Promise<(Order & { walletTransactionId?: string })[]> {
+    const orders = await this.prisma.order.findMany({
       where: { buyerId: userId },
-      include: { auction: true },
+      include: {
+        auction: true,
+        // Include shipment status if needed
+        shipment: { select: { status: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
+
+    return Promise.all(orders.map((order) => this.enrichOrder(order)));
+  }
+
+  async findAllForSeller(userId: string): Promise<(Order & { walletTransactionId?: string })[]> {
+    const orders = await this.prisma.order.findMany({
+      where: { sellerId: userId },
+      include: {
+        auction: true,
+        buyer: { select: { displayName: true, email: true } },
+        shipment: true,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return Promise.all(orders.map((order) => this.enrichOrder(order)));
   }
 
   async findOne(userId: string, orderId: string): Promise<Order> {
@@ -105,6 +148,6 @@ export class OrdersService {
       throw new ForbiddenException('Access denied');
     }
 
-    return order;
+    return this.enrichOrder(order);
   }
 }
