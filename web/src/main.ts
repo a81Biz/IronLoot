@@ -1,41 +1,44 @@
+import * as dotenv from 'dotenv';
+dotenv.config();
+
 import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { AppModule } from './app.module';
 import * as nunjucks from 'nunjucks';
-
 import { createProxyMiddleware } from 'http-proxy-middleware';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
-  // Serve Static Files
-  app.useStaticAssets(join(__dirname, '..', 'public'));
+  const viewsPath = join(__dirname, '..', 'views');
   
-  // Setup Nunjucks (View Engine)
-  app.setBaseViewsDir(join(__dirname, '..', 'views'));
-  app.setViewEngine('html');
-
-  nunjucks.configure(join(__dirname, '..', 'views'), {
+  // Conf Nunjucks
+  const env = nunjucks.configure(viewsPath, {
     autoescape: true,
-    express: app,
+    express: app.getHttpAdapter().getInstance(),
     watch: true,
   });
 
-  // Proxy API requests in development
+  app.useStaticAssets(join(__dirname, '..', 'public'));
+  app.setBaseViewsDir(viewsPath);
+  app.setViewEngine('html');
+
+  // Proxy /api requests to backend
+  // Proxy /api and /v1 requests to backend
   app.use(
-    '/api',
+    ['/api', '/v1'],
     createProxyMiddleware({
-      target: process.env.API_URL || 'http://localhost:3000',
+      target: process.env.VITE_API_URL || 'http://api:3000',
       changeOrigin: true,
       pathRewrite: {
-        '^/': '/api/', // Add /api/ back because Express strips it
+        '^/v1': '/api/v1', // rewrite /v1 -> /api/v1
+        '^/api': '/api',   // keep /api as is
       },
     }),
   );
 
-  const port = process.env.WEB_PORT || 5173;
-  await app.listen(port);
-  console.log(`Frontend (SSR) running on http://localhost:${port}`);
+  await app.listen(5173);
+  console.log(`Web Application is running on: ${await app.getUrl()}`);
 }
 bootstrap();

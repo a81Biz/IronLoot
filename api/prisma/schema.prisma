@@ -45,6 +45,10 @@ model User {
   username     String @unique @db.VarChar(50)
   passwordHash String @map("password_hash") @db.VarChar(255)
 
+  // 2FA
+  twoFactorSecret    String?   @map("two_factor_secret") @db.VarChar(100)
+  isTwoFactorEnabled Boolean   @default(false) @map("is_two_factor_enabled")
+
   // Profile
   displayName String? @map("display_name") @db.VarChar(100)
   avatarUrl   String? @map("avatar_url") @db.Text
@@ -193,6 +197,7 @@ model Bid {
   @@index([auctionId], name: "idx_bids_auction")
   @@index([bidderId], name: "idx_bids_bidder")
   @@index([amount], name: "idx_bids_amount")
+  @@index([auctionId, amount(sort: Desc)], name: "idx_bids_auction_amount")
   @@map("bids")
 }
 
@@ -241,6 +246,7 @@ model Order {
 enum PaymentProvider {
   MERCADO_PAGO
   PAYPAL
+  STRIPE
 }
 
 /// Payment Status enum
@@ -382,6 +388,7 @@ model Dispute {
 /// Notification Type enum
 enum NotificationType {
   AUCTION_WON
+  AUCTION_LOST
   BID_OUTBID
   ORDER_PAID
   ORDER_SHIPPED

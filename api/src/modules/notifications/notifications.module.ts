@@ -5,6 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { EmailService } from './email.service';
+import { EventsGateway } from './events.gateway';
 
 @Module({
   imports: [
@@ -36,7 +37,7 @@ import { EmailService } from './email.service';
     }),
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService, EmailService],
-  exports: [NotificationsService, EmailService],
+  providers: [NotificationsService, EmailService, EventsGateway],
+  exports: [NotificationsService, EmailService, EventsGateway],
 })
 export class NotificationsModule {}

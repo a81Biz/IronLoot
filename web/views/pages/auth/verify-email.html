@@ -35,8 +35,10 @@
     </div>
 </div>
 
-<script type="module">
-    import { Auth } from '/js/core/auth.js';
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        verify();
+    });
 
     async function verify() {
         const urlParams = new URLSearchParams(window.location.search);
@@ -48,8 +50,14 @@
         }
 
         try {
-            await Auth.verifyEmail(token);
+            // Use the global Api object defined in api-client.js
+            await Api.auth.verifyEmail(token);
             showSuccess();
+            
+            // Redirect to login after 2 seconds
+            setTimeout(() => {
+                window.location.href = '/login?verified=true';
+            }, 2000);
         } catch (error) {
             console.error(error);
             showError(error.message || 'Error al verificar el correo');
@@ -66,7 +74,5 @@
         document.getElementById('error').classList.remove('hidden');
         document.getElementById('error-message').textContent = msg;
     }
-
-    verify();
 </script>
 {% endblock %}

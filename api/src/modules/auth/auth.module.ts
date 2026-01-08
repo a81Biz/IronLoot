@@ -7,6 +7,7 @@ import { AuthService } from './auth.service';
 import { JwtStrategy } from './strategies';
 import { JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard } from './guards';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { TwoFactorAuthService } from './two-factor-auth.service';
 
 /**
  * AuthModule
@@ -35,7 +36,22 @@ import { NotificationsModule } from '../notifications/notifications.module';
     NotificationsModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, JwtAuthGuard, RolesGuard, OptionalJwtAuthGuard],
-  exports: [AuthService, JwtAuthGuard, RolesGuard, JwtModule, PassportModule, OptionalJwtAuthGuard],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    JwtAuthGuard,
+    RolesGuard,
+    OptionalJwtAuthGuard,
+    TwoFactorAuthService,
+  ],
+  exports: [
+    AuthService,
+    JwtAuthGuard,
+    RolesGuard,
+    JwtModule,
+    PassportModule,
+    OptionalJwtAuthGuard,
+    TwoFactorAuthService,
+  ],
 })
 export class AuthModule {}

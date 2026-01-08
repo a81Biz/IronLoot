@@ -1,65 +1,43 @@
-import { Controller, Get, Render, Param } from '@nestjs/common';
+import { Controller, Get, Render } from '@nestjs/common';
+import { AppService } from './app.service';
 
 @Controller()
 export class AppController {
-  
+  constructor(private readonly appService: AppService) {}
+
   @Get()
-  @Render('pages/home.html')
-  home() {
-    return { title: 'Iron Loot - Home' };
+  @Render('pages/home') // Assuming home.html exists
+  root() {
+    return { message: 'Welcome to Iron Loot' };
   }
 
   @Get('login')
-  @Render('pages/auth/login.html')
+  @Render('pages/auth/login')
   login() {
     return { title: 'Login' };
   }
 
   @Get('register')
-  @Render('pages/auth/register.html')
+  @Render('pages/auth/register')
   register() {
     return { title: 'Register' };
   }
 
-  @Get('recovery')
-  @Render('pages/auth/recovery.html')
-  recovery() {
-    return { title: 'Recover Password' };
-  }
-
   @Get('auth/verify-email')
-  @Render('pages/auth/verify-email.html')
+  @Render('pages/auth/verify-email') // Assuming this view exists or we create a generic one
   verifyEmail() {
     return { title: 'Verifying Email' };
   }
 
-  @Get('auth/reset-password')
-  @Render('pages/auth/reset-password.html')
-  resetPassword() {
-    return { title: 'Reset Password' };
-  }
-
   @Get('dashboard')
-  @Render('pages/dashboard.html')
+  @Render('pages/dashboard')
   dashboard() {
     return { title: 'Dashboard' };
   }
 
   @Get('wallet')
-  @Render('pages/wallet.html')
+  @Render('pages/wallet')
   wallet() {
-    return { title: 'My Wallet' };
-  }
-
-  @Get('auctions')
-  @Render('pages/auctions/list.html')
-  auctions() {
-    return { title: 'Auctions' };
-  }
-
-  @Get('auctions/:id')
-  @Render('pages/auctions/detail.html')
-  auctionDetail(@Param('id') id: string) {
-    return { title: 'Auction Detail', id };
+    return { title: 'Mi Billetera' };
   }
 }

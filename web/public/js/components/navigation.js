@@ -45,5 +45,33 @@
         Utils.addClass(link, 'active');
       }
     });
+
+    // --- Update Auth UI ---
+    updateAuthUI();
+
+    // Listen for login/logout events
+    window.addEventListener('auth:login', updateAuthUI);
+    window.addEventListener('auth:logout', updateAuthUI);
+
+    function updateAuthUI() {
+      const isAuthenticated = Api.isAuthenticated();
+      const authButtons = Utils.$('#navAuthButtons');
+      const userMenu = Utils.$('#navUserMenu');
+      const authLinks = Utils.$$('[data-auth="required"]');
+
+      if (isAuthenticated) {
+        if (authButtons) authButtons.style.display = 'none';
+        if (userMenu) userMenu.style.display = 'flex';
+        
+        // Show protected links
+        authLinks.forEach(link => link.style.display = 'block');
+      } else {
+        if (authButtons) authButtons.style.display = 'flex';
+        if (userMenu) userMenu.style.display = 'none';
+        
+        // Hide protected links
+        authLinks.forEach(link => link.style.display = 'none');
+      }
+    }
   });
 })();

@@ -71,7 +71,10 @@ export class WalletController {
   }
 
   @Post('deposit')
+  // @Throttle({ default: { limit: 10, ttl: 60000 } }) // TODO: Install ThrottlerModule
   @ApiOperation({ summary: 'Deposit funds' })
+  @ApiResponse({ status: 201, description: 'Deposit successful' })
+  @ApiResponse({ status: 400, description: 'Invalid payment' })
   async deposit(@Request() req: AuthenticatedRequest, @Body() dto: DepositDto) {
     // 1. Verify that the payment reference is valid and completed
     const payment = await this.paymentsService.verifyPayment(dto.referenceId);
@@ -92,8 +95,22 @@ export class WalletController {
   }
 
   @Post('withdraw')
+  // @Throttle({ default: { limit: 5, ttl: 60000 } }) // TODO: Install ThrottlerModule
   @ApiOperation({ summary: 'Withdraw funds' })
+  @ApiResponse({ status: 201, description: 'Withdrawal successful' })
+  @ApiResponse({ status: 400, description: 'Invalid amount or payment method' })
   async withdraw(@Request() req: AuthenticatedRequest, @Body() dto: WithdrawDto) {
+    // 1. Validate Payment Method (Mock for now, should verify if user has this method registered)
+    // const method = await this.paymentsService.getUserPaymentMethod(req.user.id, dto.referenceId);
+    // if (!method) throw new BadRequestException('Invalid payment method');
+
+    // 2. Verify Limits
+    const DAILY_LIMIT = 5000;
+    const dailyWithdrawn = await this.walletService.getDailyWithdrawals(req.user.id);
+    if (dailyWithdrawn + dto.amount > DAILY_LIMIT) {
+      throw new BadRequestException('Daily withdrawal limit exceeded');
+    }
+
     return this.walletService.withdraw(req.user.id, dto.amount, dto.referenceId);
   }
 }

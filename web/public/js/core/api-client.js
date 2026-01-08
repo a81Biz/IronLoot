@@ -259,7 +259,7 @@ const ApiClient = (function() {
       },
 
       async verifyEmail(token) {
-        await request('POST', '/auth/verify-email', null, { params: { token } });
+        await request('POST', '/auth/verify-email', { token });
       },
     },
 

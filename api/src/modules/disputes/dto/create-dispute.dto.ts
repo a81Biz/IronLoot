@@ -26,5 +26,6 @@ export class CreateDisputeDto {
   })
   @IsString()
   @IsNotEmpty()
+  @MaxLength(1000)
   description: string;
 }

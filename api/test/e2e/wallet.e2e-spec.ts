@@ -77,7 +77,7 @@ describe('Wallet (e2e)', () => {
     const res = await request(app.getHttpServer())
       .post('/wallet/deposit')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ amount: depositAmount, referenceId: 'e2e-dep-1' })
+      .send({ amount: depositAmount, referenceId: `PAY-${depositAmount}` })
       .expect(201);
 
     expect(res.body.wallet).toBeDefined();

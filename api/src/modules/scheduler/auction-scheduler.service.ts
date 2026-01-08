@@ -135,6 +135,49 @@ export class AuctionSchedulerService {
                 { auctionId: auction.id, amount: Number(winnerBid.amount) },
               )
               .catch((e) => this.logger.error('Failed to notify winner', e));
+
+            // RELEASE FUNDS FOR LOSING BIDDERS
+            // Only release the highest bid for each unique losing bidder
+            const highestBidPerUser = await this.prisma.bid.groupBy({
+              by: ['bidderId'],
+              where: {
+                auctionId: auction.id,
+                bidderId: { not: winnerBid.bidderId }, // Exclude winner
+              },
+              _max: { amount: true },
+            });
+
+            for (const loserBid of highestBidPerUser) {
+              const amountToRelease = loserBid._max.amount;
+              if (amountToRelease) {
+                try {
+                  await this.walletService.releaseFunds(
+                    loserBid.bidderId,
+                    Number(amountToRelease),
+                    auction.id,
+                    `Auction ended - releasing hold for ${auction.title}`,
+                  );
+
+                  // Notify Loser
+                  this.notificationsService
+                    .create(
+                      loserBid.bidderId,
+                      NotificationType.AUCTION_LOST,
+                      'Auction ended',
+                      `The auction "${auction.title}" has ended. Your funds ($${amountToRelease}) have been released.`,
+                      { auctionId: auction.id },
+                    )
+                    .catch((e) =>
+                      this.logger.error(`Failed to notify loser ${loserBid.bidderId}`, e),
+                    );
+                } catch (e) {
+                  this.logger.error(
+                    `Failed to release funds for loser ${loserBid.bidderId} in auction ${auction.id}`,
+                    e,
+                  );
+                }
+              }
+            }
           } catch (e) {
             this.logger.error(`CRITICAL: Failed to capture funds for auction ${auction.id}`, e);
             // TODO: Admin alert mechanism

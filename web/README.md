@@ -2,7 +2,25 @@
 
 Frontend de la plataforma de subastas Iron Loot.
 
+## 🛠️ Desarrollo Local
+
+Para desarrollar el frontend localmente pero conectándose a la API en Docker/Cloud:
+
+1.  **Crear archivo `.env`**:
+    ```bash
+    VITE_API_URL=http://localhost:3000  # URL de la API (Docker host)
+    PORT=5173                          # Puerto local del frontend
+    ```
+
+2.  **Iniciar en modo desarrollo**:
+    ```bash
+    npm run start:dev
+    ```
+
+    Esto levanta el servidor NestJS con un **Proxy configurado** para redirigir llamadas `/api/*` y `/v1/*` hacia la `VITE_API_URL` definida.
+
 ## Estructura
+...
 
 ```
 web/

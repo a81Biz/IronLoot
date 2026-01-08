@@ -28,7 +28,10 @@ import { RatingsModule } from './modules/ratings/ratings.module';
 import { DisputesModule } from './modules/disputes/disputes.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { ShipmentsModule } from './modules/shipments/shipments.module';
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
 import { WalletModule } from './modules/wallet/wallet.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
@@ -87,6 +90,13 @@ import { WalletModule } from './modules/wallet/wallet.module';
     DisputesModule,
     NotificationsModule,
     WalletModule,
+    UploadModule,
+
+    // Serve Static Uploads
+    ServeStaticModule.forRoot({
+      rootPath: join(process.cwd(), 'uploads'),
+      serveRoot: '/uploads',
+    }),
   ],
   providers: [
     // Global rate limiting guard

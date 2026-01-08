@@ -2,7 +2,14 @@
 
 ![CI Status](https://img.shields.io/badge/CI-Success-brightgreen)
 ![Coverage](https://img.shields.io/badge/Coverage-41%25-yellow)
-![Version](https://img.shields.io/badge/version-0.1.0-blue)
+![Version](https://img.shields.io/badge/version-0.2.0-blue)
+
+...
+
+| `NODE_ENV` | Entorno (development, production) | ❌ | development |
+| `PORT` | Puerto de la API | ❌ | 3000 |
+| `RATE_LIMIT_TTL` | Ventana de tiempo en segundos | ❌ | 60 |
+| `RATE_LIMIT_MAX` | Max requests por ventana. **Nota**: En `development` esto se ignora y se usa 60 req/min por defecto para facilitar pruebas. En `production` es más estricto (5 req/min). | ❌ | 100 |
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 Backend de la plataforma de subastas Iron Loot. Construido con NestJS, Prisma y PostgreSQL. y Redis.

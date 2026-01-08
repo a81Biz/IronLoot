@@ -10,7 +10,7 @@ services:
     ports:
       - "${WEB_PORT:-5173}:5173"
     environment:
-      - VITE_API_URL=http://localhost:${API_PORT:-3000}
+      - VITE_API_URL=
     volumes:
       - ./web/src:/app/src
       - ./web/public:/app/public
@@ -40,7 +40,7 @@ services:
       - DATABASE_URL=postgresql://${DB_USER:-ironloot}:${DB_PASSWORD:-ironloot_dev}@db:5432/${DB_NAME:-ironloot_db}
       - REDIS_URL=redis://redis:6379
       - LOG_LEVEL=${LOG_LEVEL:-debug}
-      - LOG_LEVEL=${LOG_LEVEL:-debug}
+
       - TRACE_ENABLED=true
       - MAIL_HOST=mailhog
       - MAIL_PORT=1025

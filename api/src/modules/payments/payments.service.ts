@@ -1,4 +1,5 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { StripeProvider } from './providers/stripe.provider';
 
 export interface PaymentVerification {
   status: 'COMPLETED' | 'PENDING' | 'FAILED';
@@ -9,17 +10,32 @@ export interface PaymentVerification {
 
 @Injectable()
 export class PaymentsService {
+  constructor(private readonly stripeProvider: StripeProvider) {}
+
   /**
-   * Mocks payment verification.
-   * In a real app, this would call Stripe/PayPal API.
-   *
-   * Mock Logic:
-   * - If referenceId starts with 'PAY-', it's valid.
-   * - Amount is extracted from reference if possible (e.g. PAY-100-USD), else default 100.
-   * - If referenceId starts with 'FAIL-', it returns FAILED.
+   * Payment verification
    */
   async verifyPayment(referenceId: string): Promise<PaymentVerification> {
-    // Simulate API delay
+    // Stripe Logic
+    if (referenceId.startsWith('cs_')) {
+      const result = await this.stripeProvider.verifyPayment(referenceId);
+
+      // Amount in cents from Stripe metadata or session
+      const amount = result.metadata?.amountTotal ? Number(result.metadata.amountTotal) / 100 : 0;
+      const currency = String(result.metadata?.currency || 'USD').toUpperCase();
+
+      return {
+        status:
+          result.status === 'COMPLETED' || result.status === 'REFUNDED'
+            ? (result.status as any)
+            : 'FAILED', // simplified mapping
+        amount,
+        currency,
+        provider: 'STRIPE',
+      };
+    }
+
+    // Mock Logic (simulated delay)
     await new Promise((resolve) => setTimeout(resolve, 500));
 
     if (referenceId.startsWith('FAIL-')) {
@@ -32,9 +48,8 @@ export class PaymentsService {
     }
 
     if (referenceId.startsWith('PAY-')) {
-      // Try to parse amount from ID for testing flexibility: PAY-500 -> 500.00
       const parts = referenceId.split('-');
-      let amount = 100; // Default
+      let amount = 100;
       if (parts[1] && !isNaN(parseFloat(parts[1]))) {
         amount = parseFloat(parts[1]);
       }
@@ -47,22 +62,35 @@ export class PaymentsService {
       };
     }
 
-    // Default to invalid for unknown formats in production,
-    // but for this dev stage we might want to be strict or lenient.
-    // Audit requires verification, so let's reject unknown IDs.
     throw new BadRequestException('Invalid payment reference format');
   }
 
-  async createCheckoutSession(_userId: string, _dto: any): Promise<any> {
-    // Mock implementation for checkout
+  async createCheckoutSession(
+    userId: string,
+    dto: { amount: number; description?: string },
+  ): Promise<any> {
+    if (this.stripeProvider.checkStatus()) {
+      return this.stripeProvider.createPayment(
+        `DEP-${userId}-${Date.now()}`,
+        dto.amount,
+        'usd',
+        dto.description || 'Wallet Deposit',
+        'user@example.com', // TODO: Pass user email
+      );
+    }
+
+    // Mock implementation
     return {
       paymentUrl: 'https://mock-payment-provider.com/pay',
       paymentId: 'mock-payment-id',
     };
   }
 
-  async handleWebhook(_provider: string, _payload: any): Promise<{ received: boolean }> {
-    // Mock implementation for webhook
+  async handleWebhook(provider: string, payload: any): Promise<{ received: boolean }> {
+    if (provider === 'STRIPE') {
+      await this.stripeProvider.handleWebhook(payload);
+      return { received: true };
+    }
     return { received: true };
   }
 }

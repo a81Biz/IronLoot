@@ -1,8 +1,19 @@
-import { Controller, Get, Post, Body, HttpCode, HttpStatus, Req, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+  Req,
+  UseGuards,
+  BadRequestException,
+} from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Request } from 'express';
 import { AuthService } from './auth.service';
+import { TwoFactorAuthService } from './two-factor-auth.service';
 import {
   RegisterDto,
   LoginDto,
@@ -21,10 +32,15 @@ import { JwtAuthGuard } from './guards';
 import { Log, AuditedAction } from '../../common/observability/decorators';
 import { AuditEventType, EntityType } from '../../common/observability/constants';
 
+const THROTTLE_LIMIT = process.env.NODE_ENV === 'production' ? 5 : 60;
+
 @ApiTags('auth')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly twoFactorAuthService: TwoFactorAuthService,
+  ) {}
 
   // ===========================================
   // REGISTER
@@ -32,7 +48,7 @@ export class AuthController {
 
   @Post('register')
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+  @Throttle({ default: { limit: THROTTLE_LIMIT, ttl: 60000 } }) // Dynamic limit based on env
   @ApiOperation({
     summary: 'Register new user',
     description:
@@ -57,7 +73,7 @@ export class AuthController {
 
   @Post('login')
   @Public()
-  @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
+  @Throttle({ default: { limit: THROTTLE_LIMIT, ttl: 60000 } }) // Dynamic limit based on env
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'User login',
@@ -229,6 +245,56 @@ export class AuthController {
   ): Promise<MessageResponseDto> {
     await this.authService.changePassword(user.id, dto.currentPassword, dto.newPassword);
     return { message: 'Password changed successfully' };
+  }
+
+  // ===========================================
+  // GET CURRENT USER
+  // ===========================================
+
+  // ===========================================
+  // 2FA
+  // ===========================================
+
+  @Post('2fa/generate')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generate 2FA secret and QR code' })
+  @ApiResponse({ status: 200, description: 'QR code URL generated' })
+  async generateTwoFactorSecret(@CurrentUser() user: AuthenticatedUser) {
+    const { qrCodeUrl } = await this.twoFactorAuthService.generateSecret(user.id, user.email);
+    return { qrCodeUrl };
+  }
+
+  @Post('2fa/enable')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Verify and enable 2FA' })
+  @ApiBody({
+    schema: { type: 'object', properties: { token: { type: 'string' } }, required: ['token'] },
+  })
+  @ApiResponse({ status: 200, description: '2FA enabled successfully' })
+  async enableTwoFactorAuth(@CurrentUser() user: AuthenticatedUser, @Body('token') token: string) {
+    const verified = await this.twoFactorAuthService.verifyAndEnable(user.id, token);
+    if (!verified) {
+      throw new BadRequestException('Invalid token');
+    }
+    return { message: '2FA enabled successfully' };
+  }
+
+  @Post('2fa/disable')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Disable 2FA' })
+  @ApiBody({
+    schema: { type: 'object', properties: { token: { type: 'string' } }, required: ['token'] },
+  })
+  @ApiResponse({ status: 200, description: '2FA disabled successfully' })
+  async disableTwoFactorAuth(@CurrentUser() user: AuthenticatedUser, @Body('token') token: string) {
+    const disabled = await this.twoFactorAuthService.disable(user.id, token);
+    if (!disabled) {
+      throw new BadRequestException('Invalid token');
+    }
+    return { message: '2FA disabled successfully' };
   }
 
   // ===========================================

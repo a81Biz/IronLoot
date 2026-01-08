@@ -11,6 +11,7 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface,
   ValidationArguments,
+  ArrayMaxSize,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
@@ -75,7 +76,8 @@ export class CreateAuctionDto {
 
   @ApiProperty({ example: ['https://example.com/image1.jpg'], required: false })
   @IsArray()
-  @IsUrl({}, { each: true })
+  @ArrayMaxSize(10, { message: 'Maximum 10 images allowed' })
+  @IsUrl({ protocols: ['https'], require_protocol: true }, { each: true })
   @IsOptional()
   images?: string[];
 }

@@ -414,12 +414,28 @@ export class UsersService {
       select: { createdAt: true },
     });
 
-    // TODO: Implement real stats when Auctions and Ratings modules are ready
+    const [sold, won, ratings] = await Promise.all([
+      // Sold: Auctions where user is seller and order exists (item actually sold)
+      this.prisma.order.count({
+        where: { sellerId: userId, status: { not: 'CANCELLED' } },
+      }),
+      // Won: Auctions where user is buyer
+      this.prisma.order.count({
+        where: { buyerId: userId, status: { not: 'CANCELLED' } },
+      }),
+      // Ratings: Received by user
+      this.prisma.rating.aggregate({
+        where: { targetId: userId },
+        _avg: { score: true },
+        _count: { score: true },
+      }),
+    ]);
+
     return {
-      totalAuctionsSold: 0,
-      totalAuctionsWon: 0,
-      averageRating: 0,
-      totalRatings: 0,
+      totalAuctionsSold: sold,
+      totalAuctionsWon: won,
+      averageRating: ratings._avg.score ? Number(ratings._avg.score) : 0,
+      totalRatings: ratings._count.score,
       memberSince: user?.createdAt || new Date(),
     };
   }

@@ -43,6 +43,7 @@ export class AuctionsController {
     description: 'Create a new auction in DRAFT state. **Requires authentication** (Seller only).',
   })
   @ApiResponse({ status: 201, description: 'Auction created', type: AuctionResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   @ApiResponse({ status: 403, description: 'User is not a seller' })
   @AuditedAction(AuditEventType.AUCTION_CREATED, EntityType.AUCTION, (args, result) => result.id, [
@@ -116,6 +117,7 @@ export class AuctionsController {
   })
   @ApiParam({ name: 'id', description: 'Auction ID' })
   @ApiResponse({ status: 200, description: 'Auction updated', type: AuctionResponseDto })
+  @ApiResponse({ status: 400, description: 'Bad Request' })
   @ApiResponse({ status: 403, description: 'Not owner or not in DRAFT state' })
   @ApiResponse({ status: 404, description: 'Auction not found' })
   @AuditedAction(AuditEventType.AUCTION_UPDATED, EntityType.AUCTION, (args) => args[1])

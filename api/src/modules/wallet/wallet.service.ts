@@ -336,4 +336,26 @@ export class WalletService {
       take: limit,
     });
   }
+
+  /**
+   * Calculate total withdrawals for the last 24 hours
+   */
+  async getDailyWithdrawals(userId: string): Promise<number> {
+    const wallet = await this.getWallet(userId);
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const result = await this.prisma.ledger.aggregate({
+      where: {
+        walletId: wallet.id,
+        type: LedgerType.WITHDRAWAL,
+        createdAt: { gte: yesterday },
+      },
+      _sum: {
+        amount: true,
+      },
+    });
+
+    return result._sum.amount ? Number(result._sum.amount) : 0;
+  }
 }
