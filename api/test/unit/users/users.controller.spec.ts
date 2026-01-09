@@ -13,6 +13,10 @@ describe('UsersController', () => {
     email: 'test@example.com',
     username: 'testuser',
     state: UserState.ACTIVE,
+    isSeller: false,
+    emailVerified: true,
+    displayName: 'testuser',
+    avatarUrl: undefined,
   };
 
   const mockUserProfile = {

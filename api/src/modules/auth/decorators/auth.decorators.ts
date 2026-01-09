@@ -24,6 +24,20 @@ export interface JwtPayload {
   email: string;
   username: string;
   state: UserState;
+  // Expanded fields matching UserResponseDto
+  displayName?: string;
+  avatarUrl?: string;
+  isSeller: boolean;
+  emailVerified: boolean;
+  profile?: {
+    phone?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+    postalCode?: string;
+    legalName?: string;
+  };
+
   iat?: number;
   exp?: number;
 }
@@ -36,6 +50,19 @@ export interface AuthenticatedUser {
   email: string;
   username: string;
   state: UserState;
+
+  displayName?: string;
+  avatarUrl?: string;
+  isSeller: boolean;
+  emailVerified: boolean;
+  profile?: {
+    phone?: string;
+    address?: string;
+    city?: string;
+    country?: string;
+    postalCode?: string;
+    legalName?: string;
+  };
 }
 
 /**

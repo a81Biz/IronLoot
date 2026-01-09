@@ -3,36 +3,94 @@
  */
 
 (function() {
+    let currentPage = 1;
+    const limit = 10;
+
     document.addEventListener('DOMContentLoaded', () => {
         if (!Auth.isSeller()) {
              window.location.href = '/profile';
              return;
         }
+
         loadAuctions();
+        setupFilters();
     });
+
+    function setupFilters() {
+        const searchInput = Utils.$('#filterSearch');
+        const statusSelect = Utils.$('#filterStatus');
+        const sortSelect = Utils.$('#filterSort');
+
+        const inputs = [searchInput, statusSelect, sortSelect];
+
+        inputs.forEach(input => {
+            if (input) {
+                input.addEventListener('change', () => {
+                    currentPage = 1;
+                    loadAuctions();
+                });
+                if (input.tagName === 'INPUT') {
+                     input.addEventListener('keypress', (e) => {
+                        if (e.key === 'Enter') {
+                            currentPage = 1;
+                            loadAuctions();
+                        }
+                    });
+                }
+            }
+        });
+    }
+
+    function getFilters() {
+        return {
+            search: Utils.$('#filterSearch')?.value || undefined,
+            status: Utils.$('#filterStatus')?.value || undefined,
+            sort: Utils.$('#filterSort')?.value || undefined,
+            mine: true,
+            page: currentPage,
+            limit: limit
+        };
+    }
 
     async function loadAuctions() {
         const tbody = Utils.$('#sellerAuctionsTable');
         if (!tbody) return;
 
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-secondary">Cargando subastas...</td></tr>`;
+
         try {
-            // Note: Api.seller.getMyAuctions implementation depends on backend.
-            // Assuming it returns list.
-            const auctions = await Api.auctions.list({ sellerId: 'me' }); 
-            // If API client doesn't support 'me' alias, we might need user ID.
+            const filters = getFilters();
+            // Validate mine=true is present as per user requirement
+            if (!filters.mine) filters.mine = true;
+
+            const response = await Api.auctions.list(filters);
+            const data = response.data || response;
             
-            const data = auctions.data || auctions;
-            
+            // Check for empty array
             if (!data || data.length === 0) {
                 tbody.innerHTML = `
                     <tr>
-                        <td colspan="6" class="text-center text-secondary">No tienes subastas creadas</td>
+                        <td colspan="7" class="text-center" style="padding: var(--spacing-8);">
+                            <div style="display: flex; flex-direction: column; align-items: center; gap: var(--spacing-4);">
+                                <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.5;">storefront</span>
+                                <p class="text-secondary">No has creado subastas aún</p>
+                                <a href="/auction/create" class="btn btn-primary">
+                                    <span class="material-symbols-outlined">add</span>
+                                    Crear Subasta
+                                </a>
+                            </div>
+                        </td>
                     </tr>
                 `;
                 return;
             }
 
-            tbody.innerHTML = data.map(auction => `
+            tbody.innerHTML = data.map(auction => {
+                const isDraft = auction.status === 'DRAFT';
+                const isPublished = auction.status === 'PUBLISHED' || auction.status === 'ACTIVE';
+                const isVisible = isPublished ? 'Sí' : 'No';
+                
+                return `
                 <tr>
                     <td>
                         <div style="display: flex; align-items: center; gap: var(--spacing-3);">
@@ -47,18 +105,61 @@
                     <td>${Utils.formatRelativeTime(auction.endsAt)}</td>
                     <td>${formatStatus(auction.status)}</td>
                     <td>
-                        <a href="/auctions/${auction.slug || auction.id}" class="btn btn-secondary btn-sm">
-                            Ver
-                        </a>
+                        <span class="badge ${isPublished ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}">
+                            ${isVisible}
+                        </span>
+                    </td>
+                    <td>
+                        <div style="display: flex; gap: var(--spacing-2);">
+                            ${isDraft ? `
+                                <a href="/auction/${auction.id}/edit" class="btn btn-secondary btn-sm" title="Editar">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">edit</span>
+                                </a>
+                                <button class="btn btn-success btn-sm btn-publish" data-id="${auction.id}" title="Publicar">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">publish</span>
+                                </button>
+                            ` : `
+                                <a href="/auctions/${auction.slug || auction.id}" class="btn btn-secondary btn-sm" title="Ver Detalle">
+                                    <span class="material-symbols-outlined" style="font-size: 16px;">visibility</span>
+                                </a>
+                            `}
+                        </div>
                     </td>
                 </tr>
-            `).join('');
+            `}).join('');
+
+            // Attach listeners for Publish buttons
+            tbody.querySelectorAll('.btn-publish').forEach(btn => {
+                btn.addEventListener('click', async () => {
+                    const id = btn.dataset.id;
+                    if (confirm('¿Estás seguro de que deseas publicar esta subasta?')) {
+                        try {
+                            btn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size: 16px;">refresh</span>';
+                            await Api.auctions.publish(id);
+                            Utils.toast('Subasta publicada exitosamente', 'success');
+                            loadAuctions();
+                        } catch(err) {
+                            Utils.toast(err.message || 'Error al publicar', 'error');
+                            btn.innerHTML = '<span class="material-symbols-outlined" style="font-size: 16px;">publish</span>';
+                        }
+                    }
+                });
+            });
 
         } catch (error) {
             console.error('Failed to load seller auctions:', error);
+            
+            // Handle 401 specifically
+            if (error.status === 401 || (error.response && error.response.status === 401)) {
+                window.location.href = '/login?return=/seller/auctions';
+                return;
+            }
+
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="text-center text-error">Error al cargar las subastas</td>
+                    <td colspan="7" class="text-center text-error">
+                        Error al cargar las subastas. <button class="btn-link" onclick="location.reload()">Reintentar</button>
+                    </td>
                 </tr>
             `;
         }
@@ -70,6 +171,7 @@
             case 'ACTIVE': color = 'bg-success text-white'; break;
             case 'CLOSED': color = 'bg-dark text-white'; break;
             case 'DRAFT': color = 'bg-warning text-dark'; break;
+            case 'PUBLISHED': color = 'bg-info text-white'; break;
         }
         return `<span class="badge ${color}">${status}</span>`;
     }

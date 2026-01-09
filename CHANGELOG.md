@@ -14,11 +14,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 -   **Frontend**: Implemented `UserMiddleware` to inject session data into server-side templates.
 -   **API**: Added Watchlist Module (`WatchlistController`, `WatchlistService`).
 -   **API**: Added User Settings endpoints (`GET/PATCH /users/me/settings`).
+-   **API**: Expanded JWT payload to include full user profile (`isSeller`, `displayName`, `avatarUrl`, etc.) enabling stateless client-side data access.
+-   **Web**: Implemented `AuthState` client-side JWT decoding, removing redundant API calls to `/users/me`.
+-   **Web**: Added `refreshUser` mechanism to `AuthState` to synchronize token claims immediately after profile updates.
 
 ### Fixed
 -   **Frontend**: Resolved login loop and auth inconsistency issues by synchronizing cookies for SSR interactions.
 -   **Frontend**: Enforced strict route protection rules according to Spec v0.2.3.
 -   **Frontend**: Fixed `api-client.js` to correctly propagate `Authorization` headers for Watchlist and Settings API calls.
+-   **Frontend**: Removed duplicate API calls on profile and onboarding pages, improving load performance.
+-   **Frontend**: Fixed `ERR_HTTP_HEADERS_SENT` server crash on seller auction redirection.
+-   **Frontend**: Fixed redirection loop for Seller routes by implementing robust role checking.
 
 ## [0.2.0] - 2026-01-07
 

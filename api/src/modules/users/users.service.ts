@@ -74,7 +74,7 @@ export class UsersService {
 
   async updateProfile(userId: string, dto: UpdateProfileDto): Promise<UserProfileResponseDto> {
     const traceId = this.ctx.getTraceId();
-    this.log.debug('Updating profile', { userId });
+    this.log.debug('Updating profile', { userId, dto });
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -89,8 +89,8 @@ export class UsersService {
     }
 
     // Separate user fields from profile fields
-    const { displayName, avatarUrl, ...profileFields } = dto;
-    const hasProfileUpdates = Object.values(profileFields).some((v) => v !== undefined);
+    const { displayName, avatarUrl, profile } = dto;
+    const hasProfileUpdates = profile !== undefined && Object.keys(profile).length > 0;
 
     // Update user and profile in a transaction
     const updatedUser = await this.prisma.$transaction(async (tx) => {
@@ -111,18 +111,20 @@ export class UsersService {
           where: { userId },
           create: {
             userId,
-            phone: profileFields.phone,
-            address: profileFields.address,
-            city: profileFields.city,
-            country: profileFields.country,
-            postalCode: profileFields.postalCode,
+            phone: profile.phone,
+            address: profile.address,
+            city: profile.city,
+            country: profile.country,
+            postalCode: profile.postalCode,
+            legalName: profile.legalName,
           },
           update: {
-            ...(profileFields.phone !== undefined && { phone: profileFields.phone }),
-            ...(profileFields.address !== undefined && { address: profileFields.address }),
-            ...(profileFields.city !== undefined && { city: profileFields.city }),
-            ...(profileFields.country !== undefined && { country: profileFields.country }),
-            ...(profileFields.postalCode !== undefined && { postalCode: profileFields.postalCode }),
+            ...(profile.phone !== undefined && { phone: profile.phone }),
+            ...(profile.address !== undefined && { address: profile.address }),
+            ...(profile.city !== undefined && { city: profile.city }),
+            ...(profile.country !== undefined && { country: profile.country }),
+            ...(profile.postalCode !== undefined && { postalCode: profile.postalCode }),
+            ...(profile.legalName !== undefined && { legalName: profile.legalName }),
           },
         });
       }
@@ -154,6 +156,7 @@ export class UsersService {
           updatedFields: Object.keys(dto).filter(
             (k) => dto[k as keyof UpdateProfileDto] !== undefined,
           ),
+          hasProfileUpdates,
         },
       },
     );
@@ -572,6 +575,7 @@ export class UsersService {
             city: user.profile.city || undefined,
             country: user.profile.country || undefined,
             postalCode: user.profile.postalCode || undefined,
+            legalName: (user.profile as any).legalName || undefined,
           }
         : undefined,
       createdAt: user.createdAt,

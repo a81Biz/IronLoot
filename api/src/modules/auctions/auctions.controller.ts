@@ -59,27 +59,36 @@ export class AuctionsController {
   }
 
   /**
-   * List auctions (Public)
+   * List auctions (Public / Private)
    */
   @Get()
-  @UseGuards(OptionalJwtAuthGuard) // Allow user context if token present, but don't require it
-  @ApiOperation({ summary: 'List auctions', description: 'Get a list of auctions with filtering' })
+  @Public() // Bypass global strict guard, let OptionalJwtAuthGuard handle it
+  @UseGuards(OptionalJwtAuthGuard)
+  @ApiBearerAuth('access-token') // Optional for public, required for mine=true
+  @ApiOperation({
+    summary: 'List auctions',
+    description: `
+      Get a list of auctions.
+      - **Public Access**: Returns ACTIVE/PUBLISHED auctions. No auth required.
+      - **Private Access (mine=true)**: Returns ALL auctions (including DRAFT, CLOSED) for the authenticated seller. **Requires Authentication.**
+    `,
+  })
   @ApiQuery({
     name: 'status',
     enum: AuctionStatus,
     required: false,
-    description: 'Filter by status (Public view allows ACTIVE/PUBLISHED only)',
+    description: 'Filter by status (Public view defaults to ACTIVE).',
   })
   @ApiQuery({
     name: 'sellerId',
     required: false,
-    description: 'Filter by seller ID',
+    description: 'Filter by seller ID (Ignored if mine=true).',
   })
   @ApiQuery({
     name: 'mine',
     required: false,
     type: Boolean,
-    description: 'Show only my auctions (Requires Auth). Overrides sellerId.',
+    description: 'Set to "true" to view YOUR auctions (private view). Requires valid Bearer token.',
   })
   @ApiQuery({
     name: 'page',

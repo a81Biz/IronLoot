@@ -19,10 +19,17 @@
             <span class="material-symbols-outlined sidebar-link-icon">dashboard</span>
             <span>Dashboard</span>
         </a>
-        <a href="/auctions" class="sidebar-link" data-page="auctions">
+        {% if user.roles and user.roles.includes('SELLER') %}
+        <a href="/seller/auctions" class="sidebar-link" data-page="my-auctions">
+            <span class="material-symbols-outlined sidebar-link-icon">storefront</span>
+            <span>Mis Subastas</span>
+        </a>
+        {% else %}
+        <a href="/dashboard/auctions" class="sidebar-link" data-page="auctions">
             <span class="material-symbols-outlined sidebar-link-icon">gavel</span>
             <span>Subastas</span>
         </a>
+        {% endif %}
         <a href="/my-bids" class="sidebar-link" data-page="my-bids">
             <span class="material-symbols-outlined sidebar-link-icon">front_hand</span>
             <span>Mis Pujas</span>
@@ -57,10 +64,7 @@
 <div class="sidebar-section" id="sidebarSellerSection" style="display: none;">
     <div class="sidebar-section-title">Vendedor</div>
     <nav class="sidebar-nav">
-        <a href="/my-auctions" class="sidebar-link" data-page="my-auctions">
-            <span class="material-symbols-outlined sidebar-link-icon">storefront</span>
-            <span>Mis Subastas</span>
-        </a>
+        <!-- Link moved to main nav area -->
         <a href="/auction/create" class="sidebar-link" data-page="create-auction">
             <span class="material-symbols-outlined sidebar-link-icon">add_circle</span>
             <span>Crear Subasta</span>

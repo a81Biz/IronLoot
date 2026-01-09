@@ -78,7 +78,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'User login',
-    description: 'Authenticates user and returns JWT tokens',
+    description:
+      'Authenticates user and returns JWT tokens. The access token contains the full user profile (UserResponseDto structure).',
   })
   @ApiBody({ type: LoginDto })
   @ApiResponse({
@@ -104,7 +105,8 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Refresh access token',
-    description: 'Uses refresh token to obtain new access token',
+    description:
+      'Uses refresh token to obtain new access token. The new access token contains the updated full user profile.',
   })
   @ApiBody({ type: RefreshTokenDto })
   @ApiResponse({
@@ -304,7 +306,7 @@ export class AuthController {
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @ApiBearerAuth('access-token')
   @ApiOperation({
     summary: 'Get current user',
     description: 'Returns current authenticated user info',
@@ -315,7 +317,7 @@ export class AuthController {
     type: UserResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
-  async me(@CurrentUser() user: AuthenticatedUser): Promise<AuthenticatedUser> {
-    return user;
+  async me(@CurrentUser() user: AuthenticatedUser): Promise<UserResponseDto> {
+    return this.authService.getMe(user.id);
   }
 }

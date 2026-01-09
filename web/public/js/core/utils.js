@@ -112,6 +112,33 @@ const Utils = {
   },
 
   /**
+   * Set or get value of form element
+   * @param {string|Element} selector 
+   * @param {string} [value] 
+   * @returns {string|void}
+   */
+  val(selector, value) {
+    const el = typeof selector === 'string' ? this.$(selector) : selector;
+    if (!el) return;
+    
+    if (value === undefined) {
+      return el.value;
+    }
+    el.value = value;
+  },
+
+  /**
+   * Set text content of element
+   * @param {string|Element} selector 
+   * @param {string} text 
+   */
+  text(selector, text) {
+    const el = typeof selector === 'string' ? this.$(selector) : selector;
+    if (!el) return;
+    el.textContent = text;
+  },
+
+  /**
    * Get element by selector
    * @param {string} selector 
    * @returns {Element|null}

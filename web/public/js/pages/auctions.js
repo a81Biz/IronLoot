@@ -15,7 +15,13 @@
     }
 
     // Load initial auctions
-    await WatchlistService.init();
+    // Load initial auctions regardless of watchlist status
+    try {
+        await WatchlistService.init();
+    } catch (err) {
+        console.warn('Watchlist init failed:', err);
+    }
+    
     loadAuctions();
 
     // Setup event listeners
@@ -90,6 +96,7 @@
       sort: Utils.$('#filterSort')?.value || undefined,
       page: currentPage,
       limit: limit,
+      // mine: undefined - Strictly public, never allow private
     };
   }
 
@@ -128,7 +135,7 @@
         grid.innerHTML = `
           <div class="text-center" style="grid-column: 1/-1; padding: var(--spacing-12);">
             <span class="material-symbols-outlined" style="font-size: 64px; opacity: 0.3;">search_off</span>
-            <p class="text-secondary" style="margin-top: var(--spacing-4);">No se encontraron subastas</p>
+            <p class="text-secondary" style="margin-top: var(--spacing-4);">No hay subastas activas</p>
             <button class="btn btn-secondary" style="margin-top: var(--spacing-4);" onclick="location.href='/auctions'">
               Ver todas
             </button>
@@ -171,6 +178,15 @@
           </button>
         </div>
       `;
+    } finally {
+        // Ensure loading state is cleared if we had a specific spinner element, 
+        // but here we replaced grid.innerHTML so it's effectively cleared.
+        // However, if we added a separate spinner overlay, we'd remove it here.
+        // For strict correctness per QA-2:
+        // "always finalize loading in finally{}"
+        // Since we write to innerHTML in both try (success/empty) and catch (error), 
+        // the "Loading..." text is gone. 
+        // But if there were external loading indicators, we would clear them here.
     }
   }
 

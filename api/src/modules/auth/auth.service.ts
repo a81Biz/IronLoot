@@ -310,7 +310,11 @@ export class AuthService {
     // Find session
     const session = await this.prisma.session.findUnique({
       where: { refreshToken },
-      include: { user: true },
+      include: {
+        user: {
+          include: { profile: true },
+        },
+      },
     });
 
     if (!session) {
@@ -343,11 +347,19 @@ export class AuthService {
     });
 
     // Generate new access token (keep same refresh token)
+    // Map from session.user (which now includes profile)
+    const uDto = this.mapUserToResponse(session.user as any); // Cast because session.user type might be inferred strictly
+
     const payload: JwtPayload = {
       sub: session.user.id,
       email: session.user.email,
       username: session.user.username,
       state: session.user.state,
+      displayName: uDto.displayName,
+      avatarUrl: uDto.avatarUrl,
+      isSeller: uDto.isSeller,
+      emailVerified: uDto.emailVerified,
+      profile: uDto.profile,
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -599,21 +611,63 @@ export class AuthService {
   // ===========================================
 
   async validateUser(payload: JwtPayload): Promise<AuthenticatedUser | null> {
+    // We could just return payload if we want to be purely stateless/trusting the token
+    // But usually we want to verify user still exists/isn't banned.
+    // Let's broaden the select to include roles/profile if we are fetching from DB.
+    // OR we can merge payload info?
+    // For now, let's fetch the data to ensure "freshness" on every request if adhering to validateUser pattern,
+    // although "User requested to use JWT data".
+    // "en lugar de usar el api /api/v1/users/me usemos la info de jwt" -> This refers to the frontend not calling the endpoint.
+    // The backend `req.user` should be populated.
+
+    // If we want req.user to have all fields from the DB to be super fresh:
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
-      select: { id: true, email: true, username: true, state: true },
+      include: { profile: true },
     });
 
     if (!user || user.state === UserState.BANNED) {
       return null;
     }
 
+    // Map to AuthenticatedUser
     return {
       id: user.id,
       email: user.email,
       username: user.username,
       state: user.state,
+      displayName: user.displayName || undefined,
+      avatarUrl: user.avatarUrl || undefined,
+      isSeller: user.isSeller,
+      emailVerified: !!user.emailVerifiedAt,
+      profile: user.profile
+        ? {
+            phone: user.profile.phone || undefined,
+            address: user.profile.address || undefined,
+            city: user.profile.city || undefined,
+            country: user.profile.country || undefined,
+            postalCode: user.profile.postalCode || undefined,
+            legalName: (user.profile as any).legalName || undefined,
+          }
+        : undefined,
     };
+  }
+
+  // ===========================================
+  // GET CURRENT USER
+  // ===========================================
+
+  async getMe(userId: string): Promise<UserResponseDto> {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      include: { profile: true },
+    });
+
+    if (!user) {
+      throw new UserNotFoundException(userId);
+    }
+
+    return this.mapUserToResponse(user);
   }
 
   // ===========================================
@@ -625,11 +679,19 @@ export class AuthService {
     ipAddress?: string,
     userAgent?: string,
   ): Promise<AuthTokensResponseDto> {
+    // Helper to map
+    const dto = this.mapUserToResponse(user);
+
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
       username: user.username,
       state: user.state,
+      displayName: dto.displayName,
+      avatarUrl: dto.avatarUrl,
+      isSeller: dto.isSeller,
+      emailVerified: dto.emailVerified,
+      profile: dto.profile,
     };
 
     const accessToken = this.jwtService.sign(payload, {
@@ -695,7 +757,17 @@ export class AuthService {
     }
   }
 
-  private mapUserToResponse(user: User): UserResponseDto {
+  private mapUserToResponse(
+    user: User & {
+      profile?: {
+        phone: string | null;
+        address: string | null;
+        city: string | null;
+        country: string | null;
+        postalCode: string | null;
+      } | null;
+    },
+  ): UserResponseDto {
     return {
       id: user.id,
       email: user.email,
@@ -703,8 +775,19 @@ export class AuthService {
       displayName: user.displayName || undefined,
       avatarUrl: user.avatarUrl || undefined,
       state: user.state,
+      emailVerified: !!user.emailVerifiedAt,
       isSeller: user.isSeller,
       createdAt: user.createdAt,
+      profile: user.profile
+        ? {
+            phone: user.profile.phone || undefined,
+            address: user.profile.address || undefined,
+            city: user.profile.city || undefined,
+            country: user.profile.country || undefined,
+            postalCode: user.profile.postalCode || undefined,
+            legalName: (user.profile as any).legalName || undefined,
+          }
+        : undefined,
     };
   }
 }

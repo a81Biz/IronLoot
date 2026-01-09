@@ -165,8 +165,8 @@ Ver `public/css/base/variables.css` para:
 
 ## Integración con Backend
 
-El API Client (`public/js/core/api-client.js`) se comunica con el backend NestJS:
-- Gestión automática de tokens JWT (LocalStorage + Cookie para SSR)
-- Auto-refresh cuando expira
-- Queue de requests durante refresh
-- Manejo centralizado de errores
+El API Client (`public/js/core/api-client.js`) y `AuthState` (`public/js/core/auth-state.js`) gestionan la comunicación:
+- **JWT como Fuente de Verdad**: El token contiene el perfil completo (`isSeller`, `avatar`, etc.), eliminando llamadas redundantes a `/users/me`.
+- **Decodificación Local**: El cliente decodifica el JWT para hidratar el estado de usuario instantáneamente.
+- **Smart Refresh**: `AuthState.refreshUser()` actualiza el token tras cambios de perfil (ej. hacerse vendedor), sincronizando la UI sin relogin.
+- **SSR & Cookies**: Sincronización automática de cookies para soportar `RequireAuth` en renderizado de servidor.

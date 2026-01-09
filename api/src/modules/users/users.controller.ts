@@ -55,6 +55,7 @@ export class UsersController {
     return {
       id: profile.id,
       email: profile.email,
+      username: profile.username,
       displayName: profile.displayName ?? undefined,
       avatarUrl: profile.avatarUrl ?? undefined,
       state: profile.state,
@@ -68,6 +69,7 @@ export class UsersController {
             city: profile.profile.city ?? undefined,
             country: profile.profile.country ?? undefined,
             postalCode: profile.profile.postalCode ?? undefined,
+            legalName: profile.profile.legalName ?? undefined,
           }
         : undefined,
       createdAt: profile.createdAt,
@@ -102,6 +104,7 @@ export class UsersController {
     return {
       id: profile.id,
       email: profile.email,
+      username: profile.username,
       displayName: profile.displayName ?? undefined,
       avatarUrl: profile.avatarUrl ?? undefined,
       state: profile.state,
@@ -115,6 +118,7 @@ export class UsersController {
             city: profile.profile.city ?? undefined,
             country: profile.profile.country ?? undefined,
             postalCode: profile.profile.postalCode ?? undefined,
+            legalName: profile.profile.legalName ?? undefined,
           }
         : undefined,
       createdAt: profile.createdAt,

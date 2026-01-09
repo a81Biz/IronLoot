@@ -19,8 +19,9 @@
    * Initialize wallet
    */
   async function initWallet() {
-    await loadBalance();
-    await loadHistory();
+    // Load independently
+    loadBalance();
+    loadHistory();
     setupEventListeners();
   }
 
@@ -35,6 +36,17 @@
       Utils.$('#walletBalance').textContent = Utils.formatCurrency(balance.available);
       Utils.$('#walletHeld').textContent = Utils.formatCurrency(balance.held);
       Utils.$('#withdrawAvailable').textContent = Utils.formatCurrency(balance.available);
+      
+      // Withdraw Button State (QA-4)
+      const withdrawBtn = Utils.$('#btnWithdrawModalOpen'); // Assuming there's a button to open modal
+      // Wait, we need to disable the FORM inside the modal, or the Open Button?
+      // QA says "deshabilitar retiro". Usually means the submission or the entry point.
+      // Let's assume we validate on OPEN or inside modal. 
+      // The instruction says "if balance < minWithdraw => disable form + message".
+      // We'll handle this in setupWithdrawForm or when opening modal.
+      // Since specific ID for open button isn't here, we'll listen to modal open event or check on init.
+      
+      // We'll update the setupWithdrawForm to check balance.
     } catch (error) {
       console.error('Failed to load balance:', error);
       Utils.$('#walletBalance').textContent = 'Error';
@@ -53,7 +65,10 @@
 
       if (!history || history.length === 0) {
         container.innerHTML = `
-          <p class="text-secondary text-center">No hay transacciones</p>
+          <div class="text-center text-secondary" style="grid-column: 1/-1; padding: var(--spacing-8);">
+            <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.5;">receipt_long</span>
+            <p style="margin-top: var(--spacing-4);">Sin movimientos aún</p>
+          </div>
         `;
         return;
       }
@@ -75,8 +90,12 @@
     } catch (error) {
       console.error('Failed to load history:', error);
       container.innerHTML = `
-        <p class="text-error text-center">Error al cargar el historial</p>
+        <div class="text-center" style="grid-column: 1/-1; padding: var(--spacing-8);">
+            <p class="text-error">Error al cargar el historial</p>
+        </div>
       `;
+    } finally {
+        // Clear loading state if applicable
     }
   }
 
@@ -101,6 +120,32 @@
     Utils.$$('[data-modal-open]').forEach(btn => {
       btn.addEventListener('click', () => {
         const modalId = btn.dataset.modalOpen;
+        
+        // Withdraw guard (QA-4)
+        if (modalId === 'withdrawModal') {
+            const minWithdraw = 10;
+            if (currentBalance < minWithdraw) {
+                 Utils.toast('Saldo insuficiente para retirar (Mínimo $10.00)', 'error');
+                 // Disable inputs in modal? Or prevent opening?
+                 // Spec says "disable form + message". 
+                 // Let's open modal but disable inputs + show warning.
+                 setTimeout(() => {
+                     const field = Utils.$('#withdrawAmount');
+                     const submit = Utils.$('#btnWithdraw');
+                     if(field) { field.disabled = true; field.value = ''; field.placeholder = "Saldo insuficiente"; }
+                     if(submit) submit.disabled = true;
+                 }, 100); 
+            } else {
+                 // Enable in case it was disabled previously
+                  setTimeout(() => {
+                     const field = Utils.$('#withdrawAmount');
+                     const submit = Utils.$('#btnWithdraw');
+                     if(field) { field.disabled = false; field.placeholder = "Monto a retirar"; }
+                     if(submit) submit.disabled = false;
+                 }, 100);
+            }
+        }
+        
         Modal.open(modalId);
       });
     });

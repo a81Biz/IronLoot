@@ -13,6 +13,10 @@ describe('AuctionsController', () => {
     email: 'test@example.com',
     username: 'testuser',
     state: UserState.ACTIVE,
+    isSeller: false,
+    emailVerified: true,
+    displayName: 'Test User',
+    avatarUrl: undefined,
   };
 
   const mockAuction = {

@@ -22,6 +22,10 @@ export class ProfileResponseDto {
   @ApiPropertyOptional({ description: 'Postal code' })
   @Expose()
   postalCode?: string;
+
+  @ApiPropertyOptional({ description: 'Legal name for verification' })
+  @Expose()
+  legalName?: string;
 }
 
 export class UserStatsDto {
@@ -57,6 +61,10 @@ export class UserResponseDto {
   @ApiProperty({ description: 'Email address' })
   @Expose()
   email: string;
+
+  @ApiProperty({ description: 'Username' })
+  @Expose()
+  username: string;
 
   @ApiPropertyOptional({ description: 'Display name' })
   @Expose()
@@ -98,39 +106,52 @@ export class UserResponseDto {
 
 export class UserProfileResponseDto {
   @ApiProperty({ description: 'User ID', format: 'uuid' })
+  @Expose()
   id: string;
 
   @ApiProperty({ description: 'Email address' })
+  @Expose()
   email: string;
 
   @ApiProperty({ description: 'Username' })
+  @Expose()
   username: string;
 
   @ApiPropertyOptional({ description: 'Display name' })
+  @Expose()
   displayName?: string;
 
   @ApiPropertyOptional({ description: 'Avatar URL' })
+  @Expose()
   avatarUrl?: string;
 
   @ApiProperty({ description: 'User state', enum: UserState })
+  @Expose()
   state: UserState;
 
   @ApiProperty({ description: 'Email verified status' })
+  @Expose()
   emailVerified: boolean;
 
   @ApiProperty({ description: 'Seller enabled status' })
+  @Expose()
   isSeller: boolean;
 
   @ApiPropertyOptional({ description: 'Seller enabled date' })
+  @Expose()
   sellerEnabledAt?: Date;
 
   @ApiPropertyOptional({ description: 'User profile data', type: ProfileResponseDto })
+  @Expose()
+  @Type(() => ProfileResponseDto)
   profile?: ProfileResponseDto;
 
   @ApiProperty({ description: 'Account creation date' })
+  @Expose()
   createdAt: Date;
 
   @ApiProperty({ description: 'Last update date' })
+  @Expose()
   updatedAt: Date;
 }
 

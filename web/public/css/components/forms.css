@@ -190,3 +190,41 @@
 .form-search:focus-within {
   box-shadow: 0 0 0 2px var(--color-primary-light);
 }
+
+/* --- Input Group (Phone/Prefix) --- */
+.form-input-group {
+  display: flex;
+  gap: var(--spacing-2);
+}
+
+.form-input-prefix {
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.form-input-prefix .form-input {
+  text-align: center;
+  padding: 0;
+  background-color: var(--surface-main); /* Changed from surface-alt to match standard disabled input if needed, but user liked the grey box */
+}
+/* User specifically had background-color: var(--surface-alt) in inline style */
+.form-input-prefix input:disabled {
+     background-color: var(--bg-light); /* Or generic disabled style */
+}
+
+.form-input-flex {
+  flex: 1;
+}
+
+.form-input-suffix {
+  width: 70px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-main);
+  background-color: var(--surface-main);
+  border-radius: var(--radius-md);
+  /* If input has radius, we might need grouping logic to flatten inner corners, 
+     but for now separate boxes with gap is what the user has. */
+}

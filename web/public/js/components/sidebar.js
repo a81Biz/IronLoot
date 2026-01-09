@@ -46,7 +46,17 @@
     const currentPath = window.location.pathname;
     Utils.$$('.sidebar-link').forEach(link => {
       const href = link.getAttribute('href');
-      if (href === currentPath || (href !== '/' && currentPath.startsWith(href))) {
+      let isActive = false;
+
+      if (href === '/dashboard' || href === '/') {
+        // Strict match for dashboard root
+        isActive = currentPath === href;
+      } else {
+        // Prefix match for other sections
+        isActive = currentPath.startsWith(href);
+      }
+
+      if (isActive) {
         Utils.addClass(link, 'active');
       }
     });

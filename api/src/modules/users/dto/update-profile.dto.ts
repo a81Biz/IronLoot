@@ -1,6 +1,53 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsUrl, MaxLength, MinLength, Matches } from 'class-validator';
-import { Transform } from 'class-transformer';
+import {
+  IsString,
+  IsOptional,
+  IsUrl,
+  MaxLength,
+  MinLength,
+  ValidateNested,
+  Matches,
+} from 'class-validator';
+import { Transform, Type } from 'class-transformer';
+
+export class UpdateProfileDetailsDto {
+  @ApiPropertyOptional({ example: '+1234567890' })
+  @IsOptional()
+  @IsString()
+  @Matches(/^\+?[1-9]\d{1,14}$/, { message: 'Phone must be a valid international phone number' })
+  phone?: string;
+
+  @ApiPropertyOptional({ example: '123 Main St' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  address?: string;
+
+  @ApiPropertyOptional({ example: 'New York' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  city?: string;
+
+  @ApiPropertyOptional({ example: 'USA' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  country?: string;
+
+  @ApiPropertyOptional({ example: '10001' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  postalCode?: string;
+
+  @ApiPropertyOptional({ example: 'Juan Perez' })
+  @IsOptional()
+  @IsString()
+  @MinLength(2)
+  @MaxLength(150)
+  legalName?: string;
+}
 
 export class UpdateProfileDto {
   @ApiPropertyOptional({
@@ -26,55 +73,11 @@ export class UpdateProfileDto {
   avatarUrl?: string;
 
   @ApiPropertyOptional({
-    description: 'Phone number with country code',
-    example: '+1234567890',
+    description: 'Profile details',
+    type: UpdateProfileDetailsDto,
   })
   @IsOptional()
-  @IsString()
-  @Matches(/^\+?[1-9]\d{1,14}$/, {
-    message: 'Phone must be a valid international phone number',
-  })
-  phone?: string;
-
-  @ApiPropertyOptional({
-    description: 'Street address',
-    example: '123 Main Street, Apt 4B',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(200, { message: 'Address must not exceed 200 characters' })
-  @Transform(({ value }) => value?.trim())
-  address?: string;
-
-  @ApiPropertyOptional({
-    description: 'City name',
-    example: 'New York',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(100, { message: 'City must not exceed 100 characters' })
-  @Transform(({ value }) => value?.trim())
-  city?: string;
-
-  @ApiPropertyOptional({
-    description: 'Country name',
-    example: 'United States',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(100, { message: 'Country must not exceed 100 characters' })
-  @Transform(({ value }) => value?.trim())
-  country?: string;
-
-  @ApiPropertyOptional({
-    description: 'Postal/ZIP code',
-    example: '10001',
-  })
-  @IsOptional()
-  @IsString()
-  @MaxLength(20, { message: 'Postal code must not exceed 20 characters' })
-  @Matches(/^[A-Za-z0-9\s\-]{2,20}$/, {
-    message: 'Postal code format is invalid',
-  })
-  postalCode?: string;
+  @ValidateNested()
+  @Type(() => UpdateProfileDetailsDto)
+  profile?: UpdateProfileDetailsDto;
 }

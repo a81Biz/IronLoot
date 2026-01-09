@@ -195,7 +195,7 @@ export class ChangePasswordDto {
 
 export class AuthTokensResponseDto {
   @ApiProperty({
-    description: 'JWT access token',
+    description: 'JWT access token containing full user profile',
     example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
   })
   accessToken: string;
@@ -211,6 +211,26 @@ export class AuthTokensResponseDto {
     example: 3600,
   })
   expiresIn: number;
+}
+
+export class ProfileDto {
+  @ApiPropertyOptional({ example: '+1234567890' })
+  phone?: string;
+
+  @ApiPropertyOptional({ example: '123 Main St' })
+  address?: string;
+
+  @ApiPropertyOptional({ example: 'New York' })
+  city?: string;
+
+  @ApiPropertyOptional({ example: 'USA' })
+  country?: string;
+
+  @ApiPropertyOptional({ example: '10001' })
+  postalCode?: string;
+
+  @ApiPropertyOptional({ example: 'John Doe Legal' })
+  legalName?: string;
 }
 
 export class UserResponseDto {
@@ -235,11 +255,17 @@ export class UserResponseDto {
   })
   state: string;
 
+  @ApiProperty({ example: true })
+  emailVerified: boolean;
+
   @ApiProperty({ example: false })
   isSeller: boolean;
 
   @ApiProperty({ example: '2025-01-01T00:00:00.000Z' })
   createdAt: Date;
+
+  @ApiPropertyOptional({ type: ProfileDto })
+  profile?: ProfileDto;
 }
 
 export class AuthResponseDto {

@@ -18,6 +18,7 @@
             startNotificationPolling();
         } else {
             stopNotificationPolling();
+            stopBalancePolling();
         }
     });
 
@@ -92,6 +93,44 @@
     }
 
 
+    // --- Wallet Logic ---
+    let balancePollingInterval = null;
+    const BALANCE_POLLING_MS = 60000; // 1 min
+
+    function startBalancePolling() {
+        if (balancePollingInterval) return;
+        fetchWalletBalance();
+        balancePollingInterval = setInterval(() => {
+            if (document.hidden) return;
+            fetchWalletBalance();
+        }, BALANCE_POLLING_MS);
+    }
+
+    function stopBalancePolling() {
+        if (balancePollingInterval) clearInterval(balancePollingInterval);
+        balancePollingInterval = null;
+    }
+
+    async function fetchWalletBalance() {
+        try {
+            const balance = await Api.wallet.getBalance();
+            updateWalletNav(balance.available);
+        } catch (e) {
+            console.warn('Failed to fetch wallet balance', e);
+        }
+    }
+
+    function updateWalletNav(amount) {
+        const walletLink = Utils.$('#navWalletLink');
+        if (walletLink) {
+            walletLink.innerHTML = `
+                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 4px; vertical-align: text-bottom;">account_balance_wallet</span>
+                ${Utils.formatCurrency(amount)}
+            `;
+            // Keep the "Wallet" text logic? User requested amount.
+        }
+    }
+
     // --- Notifications Logic ---
 
     let pollingInterval = null;
@@ -100,6 +139,8 @@
     function startNotificationPolling() {
         if (pollingInterval) return;
         fetchUnreadCount(); // Initial fetch
+        startBalancePolling(); // Start balance polling too
+        
         pollingInterval = setInterval(() => {
             if (document.hidden) return; // Pause if hidden
             fetchUnreadCount();

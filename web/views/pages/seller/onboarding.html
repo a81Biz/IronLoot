@@ -1,0 +1,128 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Actívate como Vendedor - Iron Loot{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="/css/components/cards.css">
+{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 700px; margin: 0 auto; padding: var(--spacing-8) 0;">
+    <div class="mb-6">
+        <a href="/profile" class="btn btn-sm btn-ghost text-secondary">
+            <span class="material-symbols-outlined">arrow_back</span> Volver al Perfil
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h1 class="text-2xl font-bold">Configuración de Vendedor</h1>
+            <p class="text-secondary mt-2">Completa tu información para comenzar a vender en Iron Loot. Estos datos son necesarios para verificar tu identidad y procesar pagos/envíos.</p>
+        </div>
+        
+        <div class="card-body">
+            <form id="onboardingForm">
+                
+                <!-- 1. Identity -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-bold mb-4 border-b pb-2">Identidad</h3>
+                    
+                    <div class="form-group mb-4">
+                        <label class="form-label">Nombre de Usuario (Público)</label>
+                        <input type="text" class="form-input" id="displayName" name="displayName" placeholder="Cómo te verán los compradores" required>
+                        <p class="text-xs text-secondary mt-1">Este nombre aparecerá en tus subastas.</p>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label class="form-label">Nombre Legal / Titular (Privado)</label>
+                        <input type="text" class="form-input" id="legalName" name="legalName" placeholder="Nombre completo como en tu ID" required>
+                        <p class="text-xs text-secondary mt-1">Necesario para depósitos y facturación. No será público.</p>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label class="form-label">Teléfono Móvil</label>
+                        <div class="form-input-group">
+                            <div class="form-input-prefix">
+                                <input type="text" class="form-input font-mono" id="phonePrefix" value="+52" disabled>
+                            </div>
+                            <div class="form-input-flex">
+                                <input type="tel" class="form-input font-mono" id="phone" name="phone" placeholder="10 dígitos" maxlength="12">
+                            </div>
+                        </div>
+                        <p class="text-xs text-secondary mt-1">10 dígitos sin espacios ni guiones (se formateará autom.).</p>
+                    </div>
+                </div>
+
+                <!-- 2. Address -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-bold mb-4 border-b pb-2">Ubicación y Envíos</h3>
+                    
+                    <div class="form-group mb-4">
+                        <label class="form-label">País</label>
+                        <input type="text" class="form-input" id="country" name="country" placeholder="Ej. México" required>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label class="form-label">Dirección Completa</label>
+                        <input type="text" class="form-input" id="address" name="address" placeholder="Calle, Número, Colonia" required>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="form-group mb-4">
+                            <label class="form-label">Ciudad</label>
+                            <input type="text" class="form-input" id="city" name="city" required>
+                        </div>
+                        <div class="form-group mb-4">
+                            <label class="form-label">Código Postal</label>
+                            <input type="text" class="form-input" id="postalCode" name="postalCode" required>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. Verification -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-bold mb-4 border-b pb-2">Verificación</h3>
+                    
+                    <div class="form-group mb-4">
+                        <label class="form-label">Correo Electrónico</label>
+                        <div class="form-input-group">
+                            <div class="form-input-flex">
+                                <input type="text" class="form-input" id="emailDisplay" disabled>
+                            </div>
+                            <div class="form-input-suffix" id="emailStatus">
+                                <span class="material-symbols-outlined spin text-secondary">refresh</span>
+                            </div>
+                        </div>
+                        <p class="text-xs text-secondary mt-1" id="emailHelpText">Estado de verificación de tu cuenta.</p>
+                        <div id="emailActions" class="hidden"></div> 
+                    </div>
+                </div>
+
+                <!-- 4. Terms -->
+                <div class="mb-8 p-4 bg-surface-alt rounded-lg">
+                    <label class="flex items-start gap-3 cursor-pointer">
+                        <input type="checkbox" id="acceptTerms" class="mt-1">
+                        <span class="text-sm">
+                            He leído y acepto los <a href="/terms" target="_blank" class="text-primary hover:underline">Términos y Condiciones para Vendedores</a>.
+                            Entiendo que Iron Loot cobrará una comisión por venta exitosa.
+                        </span>
+                    </label>
+                </div>
+
+                <!-- Submit -->
+                <div class="flex justify-end gap-3">
+                    <a href="/profile" class="btn btn-ghost">Cancelar</a>
+                    <button type="submit" class="btn btn-primary" id="btnSubmit" disabled>
+                        Confirmar y Activar
+                    </button>
+                </div>
+
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/seller/onboarding.js"></script>
+{% endblock %}

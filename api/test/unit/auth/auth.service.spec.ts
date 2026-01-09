@@ -211,6 +211,8 @@ describe('AuthService', () => {
         email: mockUser.email,
         username: mockUser.username,
         state: mockUser.state,
+        isSeller: mockUser.isSeller,
+        emailVerified: !!mockUser.emailVerifiedAt,
       };
 
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
@@ -231,6 +233,8 @@ describe('AuthService', () => {
         email: mockUser.email,
         username: mockUser.username,
         state: UserState.BANNED,
+        isSeller: mockUser.isSeller,
+        emailVerified: !!mockUser.emailVerifiedAt,
       };
 
       (prismaService.user.findUnique as jest.Mock).mockResolvedValue({

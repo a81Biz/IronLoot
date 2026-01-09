@@ -38,18 +38,69 @@ const AuthState = (function() {
     }
 
     /**
-     * Fetch current user data from API
+     * Parse JWT payload
+     */
+    function parseJwt(token) {
+        try {
+            const base64Url = token.split('.')[1];
+            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+            const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
+                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+            }).join(''));
+            return JSON.parse(jsonPayload);
+        } catch (e) {
+            console.error('Failed to parse JWT', e);
+            return null;
+        }
+    }
+
+    /**
+     * Fetch current user data from Token
      */
     async function hydrate() {
         try {
-            const user = await Api.get('/auth/me'); // Api client adds /api/v1 prefix? No, based on api-client.js it uses BASE_URL = /api/v1. So /auth/me -> /api/v1/auth/me
-            currentUser = user;
+            const token = Api.getAccessToken();
+            if (!token) {
+                currentUser = null;
+                return null;
+            }
+            
+            const payload = parseJwt(token);
+            if (!payload) {
+                throw new Error('Invalid token format');
+            }
+            
+            // Map JWT payload to currentUser structure expected by UI
+            // Payload now matches UserResponseDto structure
+            currentUser = { data: payload }; // Wrapper to match previous API response structure { data: ... }
+            
             // Notify system
-            window.dispatchEvent(new CustomEvent(EVENT_USER_UPDATED, { detail: user }));
-            return user;
+            window.dispatchEvent(new CustomEvent(EVENT_USER_UPDATED, { detail: currentUser }));
+            return currentUser;
         } catch (error) {
+            console.error('Hydration error', error);
             currentUser = null;
             throw error;
+        }
+    }
+
+    /**
+     * Force refresh user data (e.g. after profile update)
+     */
+    async function refreshUser() {
+        try {
+             const rt = localStorage.getItem('ironloot_refresh_token');
+             if (!rt) throw new Error('No refresh token');
+             
+             // Force network refresh
+             const res = await Api.post('/auth/refresh', { refreshToken: rt });
+             if (res && res.accessToken) {
+                 Api.setTokens(res.accessToken, res.refreshToken);
+                 return await hydrate();
+             }
+        } catch (e) {
+            console.error('Failed to refresh user', e);
+            throw e;
         }
     }
 
@@ -57,22 +108,7 @@ const AuthState = (function() {
      * Refresh session (explicit call if needed)
      */
     async function refresh() {
-       // Typically handled by ApiClient interceptor, but exposed if needed
-       try {
-           const response = await Api.post('/auth/refresh');
-           // ApiClient should update tokens automatically if it intercepts. 
-           // If direct call, we might need to set tokens?
-           // Assuming ApiClient handles token storage on success if response has tokens.
-           // If the endpoint just sets cookies (unlikely for mobile-ready), we check response.
-           if (response.accessToken) {
-               // ApiClient.setTokens(response.accessToken, response.refreshToken); // If exposed
-               // Re-hydrate
-               await hydrate();
-           }
-       } catch (e) {
-           console.error('Refresh failed', e);
-           logout();
-       }
+       return refreshUser();
     }
 
     /**
@@ -95,8 +131,10 @@ const AuthState = (function() {
      * @param {string} role 
      */
     function hasRole(role) {
-        if (!currentUser || !currentUser.roles) return false;
-        return currentUser.roles.includes(role);
+        if (!currentUser || !currentUser.data) return false;
+        // Mapping for backward compatibility or direct check
+        if (role === 'SELLER') return currentUser.data.isSeller;
+        return false;
     }
 
     /**
@@ -128,10 +166,17 @@ const AuthState = (function() {
          window.dispatchEvent(new CustomEvent(EVENT_USER_UPDATED, { detail: currentUser }));
     }
 
+    function updateUser(user) {
+        currentUser = user;
+        updateUI();
+    }
+
     // Public API
     return {
         init,
         hydrate,
+        updateUser, // Expose method
+        refreshUser, // Expose method (new)
         logout,
         hasRole,
         getUser,

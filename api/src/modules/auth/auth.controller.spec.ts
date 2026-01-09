@@ -3,7 +3,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { RegisterDto, LoginDto } from './dto';
 import { Request } from 'express';
-import { JwtAuthGuard } from './guards';
+import { JwtAuthGuard, RecaptchaGuard } from './guards';
+import { TwoFactorAuthService } from './two-factor-auth.service';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -20,6 +21,12 @@ describe('AuthController', () => {
     changePassword: jest.fn(),
   };
 
+  const mockTwoFactorAuthService = {
+    generateSecret: jest.fn(),
+    verifyAndEnable: jest.fn(),
+    disable: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [AuthController],
@@ -28,14 +35,19 @@ describe('AuthController', () => {
           provide: AuthService,
           useValue: mockAuthService,
         },
+        {
+          provide: TwoFactorAuthService,
+          useValue: mockTwoFactorAuthService,
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)
       .useValue({ canActivate: () => true })
+      .overrideGuard(RecaptchaGuard)
+      .useValue({ canActivate: () => true })
       .compile();
 
     controller = module.get<AuthController>(AuthController);
-    // service = module.get<AuthService>(AuthService);
   });
 
   it('should be defined', () => {
@@ -48,10 +60,24 @@ describe('AuthController', () => {
         email: 'test@example.com',
         password: 'password123',
         username: 'testuser',
-        // firstName: 'Test', // Removed as per DTO definition
-        // lastName: 'User', // Removed as per DTO definition
       };
-      const result = { message: 'User registered successfully' };
+      // AuthResponseDto structure
+      const result = {
+        user: {
+          id: '1',
+          email: dto.email,
+          username: dto.username,
+          state: 'ACTIVE',
+          emailVerified: false,
+          isSeller: false,
+          createdAt: new Date(),
+        },
+        tokens: {
+          accessToken: 'token',
+          refreshToken: 'refresh',
+          expiresIn: 3600,
+        },
+      };
 
       mockAuthService.register.mockResolvedValue(result);
 
@@ -73,7 +99,23 @@ describe('AuthController', () => {
         },
       } as unknown as Request;
 
-      const result = { accessToken: 'token', refreshToken: 'refresh' };
+      // AuthResponseDto structure
+      const result = {
+        user: {
+          id: '1',
+          email: dto.email,
+          username: 'testuser',
+          state: 'ACTIVE',
+          emailVerified: true,
+          isSeller: false,
+          createdAt: new Date(),
+        },
+        tokens: {
+          accessToken: 'token',
+          refreshToken: 'refresh',
+          expiresIn: 3600,
+        },
+      };
 
       mockAuthService.login.mockResolvedValue(result);
 

@@ -1,0 +1,52 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}Términos y Condiciones - Iron Loot{% endblock %}
+
+{% block content %}
+<div class="container" style="max-width: 800px; margin: 0 auto; padding: var(--spacing-8) 0;">
+    <h1 style="margin-bottom: var(--spacing-6);">Términos y Condiciones para Vendedores</h1>
+
+    <div class="card">
+        <div class="card-body">
+            <h2 class="text-lg font-bold mb-4">1. Introducción</h2>
+            <p class="text-secondary mb-6">
+                Bienvenido a Iron Loot. Al activar tu cuenta de vendedor, aceptas cumplir con los siguientes términos y condiciones.
+                Estos términos rigen la venta de productos, subastas y el uso de nuestra plataforma para transacciones comerciales.
+            </p>
+
+            <h2 class="text-lg font-bold mb-4">2. Requisitos del Vendedor</h2>
+            <p class="text-secondary mb-4">
+                Para operar como vendedor en Iron Loot, debes:
+            </p>
+            <ul class="list-disc pl-6 mb-6 text-secondary" style="list-style-type: disc;">
+                <li>Ser mayor de edad (18 años).</li>
+                <li>Proporcionar información de contacto verídica y verificable (Dirección, Teléfono).</li>
+                <li>Mantener tu cuenta en buen estado (sin suspensiones activas).</li>
+            </ul>
+
+            <h2 class="text-lg font-bold mb-4">3. Conducta en Subastas</h2>
+            <ul class="list-disc pl-6 mb-6 text-secondary" style="list-style-type: disc;">
+                <li>No está permitido pujar en tus propias subastas (shill bidding).</li>
+                <li>Todos los artículos deben ser descritos con precisión.</li>
+                <li>Debes realizar el envío del artículo dentro de los 3 días hábiles posteriores al pago.</li>
+            </ul>
+
+            <h2 class="text-lg font-bold mb-4">4. Comisiones y Pagos</h2>
+            <p class="text-secondary mb-6">
+                Iron Loot cobra una comisión del 5% sobre el valor final de venta. Esta comisión se descuenta automáticamente
+                al momento de liberarse los fondos en tu billetera.
+            </p>
+
+            <h2 class="text-lg font-bold mb-4">5. Política de Envíos y Disputas</h2>
+            <p class="text-secondary mb-6">
+                Eres responsable de empacar y enviar los artículos de manera segura. Si un comprador abre una disputa
+                por artículo no recibido o no conforme a la descripción, los fondos pueden ser retenidos hasta la resolución.
+            </p>
+
+            <div class="flex justify-end mt-8">
+                <a href="/profile" class="btn btn-primary">Volver al Perfil</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -76,6 +76,12 @@ async function bootstrap(): Promise<void> {
       .addTag('auctions', 'Auction creation and lifecycle management')
       .addTag('bids', 'Bidding validation and processing')
       .addTag('orders', 'Order creation and management')
+      .addTag('wallet', 'Wallet and transaction history')
+      .addTag('ratings', 'User reputation system')
+      .addTag('disputes', 'Dispute resolution')
+      .addTag('payments', 'Payment processing')
+      .addTag('watchlist', 'User watchlist management')
+      .addTag('web-views', 'Web-specific endpoints')
       .addTag('diagnostics', 'System diagnostics (Non-production)')
       .build();
 

@@ -39,6 +39,16 @@ export class WebViewsController {
    * Source: GET /wallet/history (filtered)
    * Spec v0.2.2 Section 7
    */
+  @Get('privacy')
+  privacy() {
+    return { view: 'pages/privacy' };
+  }
+
+  @Get('terms')
+  terms() {
+    return { view: 'pages/terms' };
+  }
+
   @Get('payments')
   @ApiOperation({
     summary: 'Get payments (Derived View)',

@@ -1,0 +1,16 @@
+{% extends "layouts/base.html" %}
+
+{% block body %}
+<!-- Navigation -->
+{% include "partials/navigation.html" %}
+
+<!-- Main Content (Full Width, No Sidebar) -->
+<main class="main-content" style="padding-top: var(--header-height); min-height: calc(100vh - var(--footer-height));">
+    <div class="main-content-container" style="max-width: 1200px; margin: 0 auto; padding: var(--spacing-6);">
+        {% block content %}{% endblock %}
+    </div>
+</main>
+
+<!-- Footer -->
+{% include "partials/footer.html" %}
+{% endblock %}

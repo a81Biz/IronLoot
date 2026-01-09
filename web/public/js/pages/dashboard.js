@@ -19,7 +19,12 @@
   async function initDashboard() {
     const user = Auth.getUser();
     // Initialize Watchlist
-    await WatchlistService.init();
+    // Initialize Watchlist (non-blocking)
+    try {
+        await WatchlistService.init();
+    } catch (e) {
+        console.warn('Watchlist init failed', e);
+    }
 
     // Update user name
     const userNameEl = Utils.$('#dashboardUserName');
@@ -32,12 +37,10 @@
       Utils.show('#btnCreateAuction');
     }
 
-    // Load all dashboard data
-    await Promise.all([
-      loadStats(),
-      loadRecentActivity(),
-      loadActiveBids(),
-    ]);
+    // Load all dashboard data independently to prevent cascading failures
+    loadStats(); // async, don't await blocking
+    loadRecentActivity();
+    loadActiveBids();
   }
 
   /**

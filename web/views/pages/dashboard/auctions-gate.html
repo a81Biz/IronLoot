@@ -1,0 +1,32 @@
+{% extends "layouts/main.html" %}
+
+{% block title %}{{ title }} - Iron Loot{% endblock %}
+
+{% block content %}
+<div class="card text-center" style="max-width: 600px; margin: var(--spacing-8) auto; padding: var(--spacing-8);">
+    <div class="card-body">
+        <div style="margin-bottom: var(--spacing-6);">
+            <span class="material-symbols-outlined" style="font-size: 64px; color: var(--text-secondary);">storefront</span>
+        </div>
+        
+        <h2 class="h3" style="margin-bottom: var(--spacing-4);">Gestión de Subastas</h2>
+        
+        <p class="text-secondary" style="margin-bottom: var(--spacing-8); font-size: 1.1rem; line-height: 1.6;">
+            Esta sección está disponible exclusivamente para usuarios con cuenta de <strong>Vendedor</strong>.
+            <br>
+            Activa tu cuenta de vendedor para comenzar a crear y gestionar tus propias subastas.
+        </p>
+
+        <div style="display: flex; gap: var(--spacing-4); justify-content: center;">
+            <a href="/profile" class="btn btn-primary">
+                <span class="material-symbols-outlined">person</span>
+                Ir a Mi Perfil
+            </a>
+            <a href="/auctions" class="btn btn-secondary">
+                <span class="material-symbols-outlined">search</span>
+                Explorar Subastas
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

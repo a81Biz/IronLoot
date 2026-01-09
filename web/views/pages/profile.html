@@ -10,49 +10,102 @@
 <div class="container" style="max-width: 800px; margin: 0 auto; padding: var(--spacing-8) 0;">
     <h1 style="margin-bottom: var(--spacing-6);">Mi Perfil</h1>
 
-    <div class="card">
+    <!-- 1. Perfil de Comprador (Público/Básico) -->
+    <div class="card mb-8">
+        <div class="card-header border-b">
+            <h2 class="text-xl font-bold">Perfil de <span id="headerUsername" class="text-primary">Usuario</span></h2>
+            <p class="text-secondary text-sm">Información visible para otros usuarios</p>
+        </div>
         <div class="card-body">
-            <div style="display: flex; align-items: start; gap: var(--spacing-6);">
-                <div style="width: 80px; height: 80px; background: var(--bg-secondary); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
-                    <span class="material-symbols-outlined" style="font-size: 40px; color: var(--text-secondary);">person</span>
-                </div>
-                
-                <div style="flex: 1;">
-                    <h2 class="text-xl font-bold" id="profileName">Cargando...</h2>
-                    <p class="text-secondary" id="profileEmail">...</p>
+            <form id="profileForm" class="flex flex-col gap-6">
+                <div class="flex items-start gap-6">
+                    <!-- Avatar placeholder -->
+                    <div class="w-20 h-20 rounded-full bg-surface-alt flex items-center justify-center shrink-0">
+                         <span class="material-symbols-outlined text-4xl text-secondary">person</span>
+                    </div>
                     
-                    <div style="margin-top: var(--spacing-4); display: flex; gap: var(--spacing-2);" id="profileRoles">
-                        <!-- Roles badges -->
+                    <div class="flex-1 grid gap-4">
+                         <div class="form-group">
+                             <label class="label">Nombre de Usuario (Display Name)</label>
+                             <input type="text" id="displayName" class="input w-full" placeholder="Tu nombre público">
+                         </div>
+                         
+                         <div class="form-group">
+                             <label class="label">Correo Electrónico</label>
+                             <input type="email" id="emailDisplay" class="input w-full bg-surface-alt" disabled>
+                             <p class="text-xs text-secondary mt-1">El correo no se puede cambiar directamente.</p>
+                         </div>
                     </div>
                 </div>
-            </div>
 
-            <hr style="margin: var(--spacing-6) 0; border: 0; border-top: 1px solid var(--border-main);">
-
-            <!-- Seller Section -->
-            <div id="sellerSection">
-                <h3 class="font-bold text-lg mb-2">Estado de Vendedor</h3>
-                <p class="text-secondary mb-4">Conviértete en vendedor para publicar tus propias subastas.</p>
-                
-                <button class="btn btn-primary" id="btnEnableSeller">
-                    <span class="material-symbols-outlined">storefront</span>
-                    Activar Cuenta de Vendedor
-                </button>
-            </div>
-            
-            <div id="sellerActiveSection" style="display: none;">
-                <div class="alert alert-success">
-                    <div class="alert-icon">
-                        <span class="material-symbols-outlined">check_circle</span>
+                <div class="flex justify-between items-center border-t pt-4">
+                    <div class="flex gap-2" id="profileRoles">
+                         <!-- Badges -->
                     </div>
-                    <div class="alert-content">
-                        <strong>¡Eres Vendedor!</strong>
-                        <p>Puedes crear y gestionar tus subastas desde el panel.</p>
-                    </div>
+                    <button type="submit" class="btn btn-primary" id="btnSaveProfile">
+                        Guardar Cambios
+                    </button>
                 </div>
-            </div>
+            </form>
         </div>
     </div>
+
+    <!-- 2. Perfil de Vendedor (Privado/Delicado) -->
+    <div class="card">
+        <div class="card-header border-b flex justify-between items-center">
+            <div>
+                <h2 class="text-xl font-bold">Perfil de Vendedor</h2>
+                <p class="text-secondary text-sm">Información legal y de facturación (Privado)</p>
+            </div>
+            <!-- Status Badge -->
+            <div id="sellerStatusBadge"></div>
+        </div>
+        
+        <div class="card-body">
+            
+            <!-- State: NOT SELLER -->
+            <div id="sellerPromoSelect" style="display: none;">
+                <div class="text-center py-6">
+                    <span class="material-symbols-outlined text-primary text-5xl mb-4">storefront</span>
+                    <h3 class="text-lg font-bold mb-2">¡Empieza a Vender en Iron Loot!</h3>
+                    <p class="text-secondary mb-6 max-w-md mx-auto">
+                        Activa tu cuenta de vendedor para crear subastas y llegar a miles de compradores. 
+                        Necesitamos verificar algunos datos legales.
+                    </p>
+                    <a href="/seller/onboarding" class="btn btn-primary">
+                        Comenzar Activación
+                    </a>
+                </div>
+            </div>
+
+            <!-- State: SELLER (Active) -->
+            <div id="sellerInfoSection" style="display: none;">
+                <div class="grid grid-cols-2 gap-6">
+                    <div>
+                        <span class="text-xs font-bold text-secondary uppercase block mb-1">Nombre Legal / Titular</span>
+                        <p class="text-lg" id="sellerLegalName">-</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-secondary uppercase block mb-1">Ubicación</span>
+                        <p class="text-lg" id="sellerLocation">-</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6 pt-6 border-t">
+                    <h4 class="font-bold mb-4">Dirección Registrada</h4>
+                    <p class="text-secondary" id="sellerAddress">-</p>
+                </div>
+
+                <div class="mt-6 flex justify-end">
+                    <a href="/seller/onboarding" class="btn btn-sm btn-outline">
+                        <span class="material-symbols-outlined">edit</span> Editar Datos Legales
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
 </div>
 {% endblock %}
 

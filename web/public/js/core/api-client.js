@@ -178,6 +178,12 @@ const ApiClient = (function() {
     const url = buildUrl(path, options.params);
     const headers = getHeaders();
 
+    // Dev Logging
+    if (window.APP_CONFIG?.env === 'development' || location.hostname === 'localhost') {
+        const requestId = Date.now().toString(36);
+        console.debug(`[API] Req ${requestId} | ${method} ${path}`, { body, headers });
+    }
+
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
 
@@ -185,6 +191,7 @@ const ApiClient = (function() {
       method,
       headers,
       signal: controller.signal,
+      credentials: 'include', // Enforce cookies for all requests
     };
 
     if (body && method !== 'GET') {
@@ -196,6 +203,11 @@ const ApiClient = (function() {
       clearTimeout(timeoutId);
 
       const traceId = response.headers.get('x-trace-id');
+
+      // Dev Logging Response
+      if (window.APP_CONFIG?.env === 'development' || location.hostname === 'localhost') {
+          console.debug(`[API] Res | ${method} ${path} | Status: ${response.status}`, { traceId });
+      }
 
       // Handle 401 Unauthorized
       if (response.status === 401) {
@@ -218,6 +230,8 @@ const ApiClient = (function() {
         error.statusCode = response.status;
         error.data = data;
         error.traceId = traceId;
+        // Attach context for debugging
+        error.endpoint = path; 
         throw error;
       }
 
@@ -403,9 +417,9 @@ const ApiClient = (function() {
 
     // --- Users API ---
     users: {
-      async enableSeller() {
-        const { data } = await request('POST', '/users/me/enable-seller');
-        return data;
+      async enableSeller(data = { acceptTerms: true }) {
+        const response = await request('POST', '/users/me/enable-seller', data);
+        return response.data;
       },
       async getStats() {
           const { data } = await request('GET', '/users/me/stats');

@@ -15,8 +15,16 @@ export class UserMiddleware implements NestMiddleware {
         const decoded = jwt.decode(token);
         
         if (decoded) {
-            req['user'] = decoded;
-            res.locals.user = decoded; // Make available to Nunjucks
+             // Check expiration
+             const exp = (decoded as any).exp;
+             if (exp && Date.now() >= exp * 1000) {
+                 // Token expired
+                 res.locals.user = null;
+                 req['user'] = null;
+             } else {
+                 req['user'] = decoded;
+                 res.locals.user = decoded; // Make available to Nunjucks
+             }
         }
       } catch (err) {
         // Token invalid, ignore

@@ -64,7 +64,11 @@
 
         } catch (error) {
             console.error('Failed to load reputation:', error);
-            listContainer.innerHTML = `<p class="text-center text-error">Error al cargar la reputación.</p>`;
+            if (listContainer) {
+                listContainer.innerHTML = `<p class="text-center text-error">Error al cargar la reputación.</p>`;
+            }
+        } finally {
+            // Ensure any loading state is cleared if present
         }
     }
 

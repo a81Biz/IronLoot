@@ -108,7 +108,8 @@ model Profile {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   // Contact info
-  phone String? @db.VarChar(20)
+  phone     String? @db.VarChar(20)
+  legalName String? @map("legal_name") @db.VarChar(150) // New field for Seller/Deposit verification
 
   // Address
   address    String? @db.Text

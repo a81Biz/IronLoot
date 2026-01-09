@@ -24,7 +24,7 @@
         container.innerHTML = `
           <div class="text-center text-secondary" style="grid-column: 1/-1; padding: var(--spacing-8);">
             <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.5;">gavel</span>
-            <p style="margin-top: var(--spacing-4);">No hay subastas activas en este momento</p>
+            <p style="margin-top: var(--spacing-4);">Aún no hay subastas publicadas</p>
           </div>
         `;
         return;

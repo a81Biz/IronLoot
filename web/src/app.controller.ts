@@ -1,4 +1,4 @@
-import { Controller, Get, Render, UseGuards } from '@nestjs/common';
+import { Controller, Get, Render, UseGuards, Req, Res } from '@nestjs/common';
 import { AppService } from './app.service';
 import { RequireAuth } from './common/guards/require-auth.guard';
 
@@ -93,11 +93,24 @@ export class AppController {
     return { title: 'Mis Órdenes' };
   }
 
+  @Get('dashboard/auctions')
+  @UseGuards(RequireAuth)
+  dashboardAuctions(@Req() req, @Res() res) {
+    const user = req.user;
+    if (user && user.isSeller) {
+        return res.redirect('/seller/auctions');
+    }
+    return res.render('pages/dashboard/auctions-gate', { title: 'Gestión de Subastas' });
+  }
+
   @Get('seller/auctions')
   @UseGuards(RequireAuth)
-  @Render('pages/seller/auctions')
-  sellerAuctions() {
-    return { title: 'Mis Subastas' };
+  sellerAuctions(@Req() req, @Res() res) {
+    const user = req.user;
+    if (!user || !user.isSeller) {
+       return res.redirect('/dashboard/auctions');
+    }
+    return res.render('pages/seller/auctions', { title: 'Mis Subastas' });
   }
 
   @Get('seller/orders')
@@ -105,6 +118,13 @@ export class AppController {
   @Render('pages/seller/orders')
   sellerOrders() {
     return { title: 'Gestión de Envíos' };
+  }
+
+  @Get('seller/onboarding')
+  @UseGuards(RequireAuth)
+  @Render('pages/seller/onboarding')
+  sellerOnboarding() {
+    return { title: 'Actívate como Vendedor' };
   }
 
   @Get('auction/create')
@@ -162,8 +182,12 @@ export class AppController {
 
   @Get('auctions')
   @Render('pages/auctions/list')
-  auctions() {
-    return { title: 'Subastas Activas' };
+  auctions(@Req() req) {
+    const layout = req.user ? 'layouts/main.html' : 'layouts/public.html';
+    return { 
+      title: 'Subastas Activas',
+      layout 
+    };
   }
 
   @Get('auctions/:id')

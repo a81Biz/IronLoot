@@ -16,6 +16,28 @@
         </a>
     </div>
 
+    <!-- Filters -->
+    <div class="card" style="margin-bottom: var(--spacing-6);">
+        <div class="card-body" style="display: flex; gap: var(--spacing-4); padding: var(--spacing-4);">
+            <div class="form-group" style="margin-bottom: 0;">
+                <input type="text" class="form-input" id="filterSearch" placeholder="Buscar por título...">
+            </div>
+            <select class="form-select" id="filterStatus" style="width: 150px;">
+                <option value="">Todos</option>
+                <option value="DRAFT">Borradores</option>
+                <option value="PUBLISHED">Publicadas</option>
+                <option value="ACTIVE">Activas</option>
+                <option value="CLOSED">Cerradas</option>
+            </select>
+            <select class="form-select" id="filterSort" style="width: 180px;">
+                <option value="createdAt:desc">Recién creadas</option>
+                <option value="endsAt:asc">Termina pronto</option>
+                <option value="bidCount:desc">Más pujas</option>
+                <option value="currentPrice:desc">Más alto</option>
+            </select>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-body">
             <div class="table-container">
@@ -27,6 +49,7 @@
                             <th>Pujas</th>
                             <th>Termina</th>
                             <th>Estado</th>
+                            <th>Visibilidad</th>
                             <th>Acciones</th>
                         </tr>
                     </thead>
