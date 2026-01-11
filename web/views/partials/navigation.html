@@ -30,11 +30,14 @@
         <div class="navbar-right">
             <!-- Nav Links (Desktop) -->
             <div class="navbar-nav">
+                <!-- Dashboard Link (Hidden by default, shown via JS if auth & not on /dashboard) -->
+                <a href="/dashboard" class="navbar-link" id="navDashboardLink" data-auth="required" style="display: none;">Dashboard</a>
+                
                 <a href="/auctions" class="navbar-link">Subastas</a>
                 <!-- 'Mis Subastas' is in Sidebar -->
-                <!-- Dashboard removed from Navbar per user request -->
+                
                 <!-- Wallet replaced by Balance in JS, but static markup remains as fallback or container -->
-                <a href="/wallet" class="navbar-link" id="navWalletLink" data-auth="required">Wallet</a>
+                <a href="/wallet" class="navbar-link" id="navWalletLink" data-auth="required" style="display: none;">Wallet</a>
             </div>
 
             <!-- Auth Section (when logged out) -->

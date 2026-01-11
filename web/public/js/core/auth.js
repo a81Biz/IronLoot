@@ -132,11 +132,8 @@
     try {
       await Auth.register({ email, username, password });
       
-      // Auto login after registration
-      await Auth.login(email, password);
-      
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
+      // AuthFlow handles redirection to verification page.
+      // We do nothing here.
     } catch (error) {
       console.error('Registration failed:', error);
       
@@ -181,7 +178,7 @@
     submitBtn.classList.add('btn-loading');
 
     try {
-      await Api.auth.forgotPassword(email);
+      await AuthFlow.forgotPassword(email);
       
       if (successEl) {
         successEl.textContent = 'Se ha enviado un enlace de recuperación a tu correo';

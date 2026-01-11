@@ -163,10 +163,15 @@ Ver `public/css/base/variables.css` para:
 - Z-index
 - Transiciones
 
-## Integración con Backend
+## Integración con Backend (Seguridad Mejorada v0.5.0)
 
-El API Client (`public/js/core/api-client.js`) y `AuthState` (`public/js/core/auth-state.js`) gestionan la comunicación:
-- **JWT como Fuente de Verdad**: El token contiene el perfil completo (`isSeller`, `avatar`, etc.), eliminando llamadas redundantes a `/users/me`.
-- **Decodificación Local**: El cliente decodifica el JWT para hidratar el estado de usuario instantáneamente.
-- **Smart Refresh**: `AuthState.refreshUser()` actualiza el token tras cambios de perfil (ej. hacerse vendedor), sincronizando la UI sin relogin.
-- **SSR & Cookies**: Sincronización automática de cookies para soportar `RequireAuth` en renderizado de servidor.
+El sistema utiliza una arquitectura **Secure by Design**:
+
+1.  **HttpOnly Cookies**: El cliente NUNCA accede al JWT. La gestión de sesión es exclusiva del backend (`AuthSessionController`).
+2.  **SSR State Injection**: El estado inicial del usuario (`currentUser`) se inyecta en el HTML (`window.CURRENT_USER`) durante el renderizado servidor.
+3.  **BFF Pattern**: Las peticiones de Auth (`/auth/session/*`) pasan por el servidor web (NestJS) que actúa como proxy seguro hacia la API.
+4.  **Api Client Agnostic**: `api-client.js` no maneja tokens. El navegador envía automáticamente las cookies Secure/HttpOnly.
+5.  **Protección Avanzada**:
+    - CSP Strict (Helmet)
+    - CSRF Protection (Double-Submit Cookie)
+    - Global Rate Limiting

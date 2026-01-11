@@ -12,7 +12,7 @@
 
     async function loadBalance() {
         try {
-            const balance = await Api.wallet.getBalance();
+            const balance = await WalletFlow.loadBalance();
             availableBalance = balance.available || 0;
             Utils.$('#withdrawAvailable').textContent = Utils.formatCurrency(availableBalance);
             
@@ -48,8 +48,11 @@
                 btn.innerHTML = '<span class="material-symbols-outlined spin">refresh</span> Procesando...';
 
                 try {
-                    // Call API
-                    await Api.wallet.withdraw(amount, `WTH-${Date.now()}`);
+                    // Use WalletFlow
+                    await WalletFlow.withdraw({
+                        amount, 
+                        destination: `WTH-${Date.now()}` // Mock destination/ref
+                    });
                     
                     Utils.toast('Solicitud de retiro enviada', 'success');
                     

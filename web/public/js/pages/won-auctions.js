@@ -39,10 +39,10 @@
                     <td class="font-mono text-sm">${order.id.substring(0, 8)}</td>
                     <td>
                         <div style="display: flex; align-items: center; gap: var(--spacing-3);">
-                            <img src="${getImage(order)}" 
+                            <img src="${Utils.escapeHtml(getImage(order))}" 
                                  alt="Item" 
                                  style="width: 40px; height: 40px; object-fit: cover; border-radius: 4px;">
-                            <span class="fw-bold">${order.auction?.title || 'Artículo Desconocido'}</span>
+                            <span class="fw-bold">${Utils.escapeHtml(order.auction?.title || 'Artículo Desconocido')}</span>
                         </div>
                     </td>
                     <td>${Utils.formatCurrency(order.totalAmount)}</td>

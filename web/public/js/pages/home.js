@@ -1,5 +1,6 @@
 /**
  * Iron Loot - Home Page
+ * @depends AuctionService
  */
 
 (function() {
@@ -15,12 +16,15 @@
     if (!container) return;
 
     try {
-      const { data: auctions } = await Api.auctions.list({ 
+      // Use AuctionFlow orchestrator
+      const auctions = await AuctionFlow.listAuctions({ 
         status: 'ACTIVE', 
         limit: 6 
       });
-
-      if (auctions.length === 0) {
+      // AuctionService.list returns data directly (array) based on my service implementation
+      // Check AuctionService.js: returns data.
+      
+      if (!auctions || auctions.length === 0) {
         container.innerHTML = `
           <div class="text-center text-secondary" style="grid-column: 1/-1; padding: var(--spacing-8);">
             <span class="material-symbols-outlined" style="font-size: 48px; opacity: 0.5;">gavel</span>
@@ -36,7 +40,7 @@
       container.innerHTML = `
         <div class="text-center text-secondary" style="grid-column: 1/-1; padding: var(--spacing-8);">
           <p>Error al cargar las subastas</p>
-          <button class="btn btn-secondary" onclick="location.reload()">Reintentar</button>
+          <button class="btn btn-primary" onclick="location.reload()">Reintentar</button>
         </div>
       `;
     }
@@ -49,7 +53,8 @@
     const imageUrl = auction.images?.[0] || 'https://via.placeholder.com/400x300?text=Sin+imagen';
     const currentPrice = Utils.formatCurrency(auction.currentPrice || auction.startingPrice);
     const timeLeft = Utils.formatCountdown(auction.endsAt);
-    const isEnding = new Date(auction.endsAt) - new Date() < 3600000; // Less than 1 hour
+    // basic check for ending soon
+    const isEnding = new Date(auction.endsAt) - new Date() < 3600000; 
 
     return `
       <a href="/auctions/${auction.slug || auction.id}" class="card card-hover auction-card">

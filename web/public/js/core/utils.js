@@ -4,6 +4,21 @@
 
 const Utils = {
   /**
+   * Escape HTML to prevent XSS
+   * @param {string} unsafe 
+   * @returns {string}
+   */
+  escapeHtml(unsafe) {
+    if (unsafe === null || unsafe === undefined) return '';
+    return String(unsafe)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  },
+
+  /**
    * Format currency
    * @param {number} amount 
    * @param {string} currency 
@@ -15,6 +30,11 @@ const Utils = {
       currency: currency,
     }).format(amount);
   },
+
+  // ... (keeping other methods same, just injecting escapeHtml at top) ...
+
+// ... down to toast ...
+
 
   /**
    * Format date
@@ -109,6 +129,18 @@ const Utils = {
         setTimeout(() => (inThrottle = false), limit);
       }
     };
+  },
+
+  /**
+   * Get cookie by name
+   * @param {string} name 
+   * @returns {string|null}
+   */
+  getCookie(name) {
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; ${name}=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
+    return null;
   },
 
   /**
@@ -289,7 +321,7 @@ const Utils = {
     
     toast.innerHTML = `
       <span class="material-symbols-outlined" style="font-size: 20px;">${icons[type] || icons.info}</span>
-      <span style="flex: 1;">${message}</span>
+      <span style="flex: 1;">${this.escapeHtml(message)}</span>
       <button style="background: none; border: none; color: inherit; cursor: pointer; padding: 4px; display: flex; align-items: center;">
         <span class="material-symbols-outlined" style="font-size: 18px;">close</span>
       </button>

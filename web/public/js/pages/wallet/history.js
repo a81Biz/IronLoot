@@ -29,7 +29,7 @@
                     <td>${formatTransactionType(tx.type)}</td>
                     <td class="${getAmountClass(tx.type)}">${Utils.formatCurrency(tx.amount)}</td>
                     <td>${formatStatus(tx.status)}</td>
-                    <td><span class="text-xs font-mono">${tx.referenceId || '-'}</span></td>
+                    <td><span class="text-xs font-mono">${Utils.escapeHtml(tx.referenceId || '-')}</span></td>
                 </tr>
             `).join('');
 

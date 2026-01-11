@@ -5,6 +5,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-01-10
+
+### Security (Critical)
+- **Authentication**: Migrated from LocalStorage to **HttpOnly Cookies** via BFF (`AuthSessionController`).
+- **SSR**: Implemented Secure Server-Side State Injection (`window.CURRENT_USER`) to eliminate client-side token handling.
+- **JWT**: Enforced strict `jwt.verify` in backend middleware.
+- **XSS**: Global implementation of HTML escaping in all UI components (`Utils.escapeHtml`).
+- **CSP**: Implemented strict **Content Security Policy** and Security Headers using `helmet`.
+- **CSRF**: Added Double-Submit Cookie protection for state-changing requests.
+- **Rate Limiting**: Enabled global throttling (100 req/min) to prevent brute-force attacks.
+
+### Added
+- **Flows**: Created `PaymentFlow` orchestrator.
+- **Flows**: Completed missing implementation in `ProfileFlow`, `SellerFlow`, `AuctionFlow` (Lifecycle), and `OrderFlow`.
+- **Validation**: Added `ParseUUIDPipe` for strict ID sanitization on API routes.
+
+### Fixed
+- **AuthFlow**: Resolved syntax errors and open redirect vulnerabilities.
+- **Frontend**: Fixed broken methods in `AuctionService` and `SellerService`.
+- **Utils**: Fixed multiple syntax errors in `utils.js`.
+
 ## [0.2.3] - 2026-01-08
 
 ### Added

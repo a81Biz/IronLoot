@@ -101,7 +101,7 @@
             <span class="material-symbols-outlined">${getNotificationIcon(notif.type)}</span>
           </div>
           <div class="transaction-info">
-            <div class="transaction-description">${notif.title}</div>
+            <div class="transaction-description">${Utils.escapeHtml(notif.title)}</div>
             <div class="transaction-date">${Utils.formatRelativeTime(notif.createdAt)}</div>
           </div>
         </div>
@@ -137,7 +137,7 @@
         <tr>
           <td>
             <a href="/auctions/${bid.auction?.slug || '#'}" class="fw-bold text-decoration-none">
-              ${bid.auction?.title || 'Unknown Item'}
+              ${Utils.escapeHtml(bid.auction?.title || 'Unknown Item')}
             </a>
           </td>
           <td>${Utils.formatCurrency(bid.amount)}</td>

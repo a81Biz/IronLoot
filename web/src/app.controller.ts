@@ -1,6 +1,9 @@
-import { Controller, Get, Render, UseGuards, Req, Res } from '@nestjs/common';
+import { Controller, Get, Render, UseGuards, Req, Res, Param, ParseUUIDPipe } from '@nestjs/common';
 import { AppService } from './app.service';
 import { RequireAuth } from './common/guards/require-auth.guard';
+import { SellerGuard } from './common/guards/seller.guard';
+
+
 
 @Controller()
 export class AppController {
@@ -28,6 +31,12 @@ export class AppController {
   @Render('pages/auth/verify-email') // Assuming this view exists or we create a generic one
   verifyEmail() {
     return { title: 'Verifying Email' };
+  }
+
+  @Get('auth/verify-email-pending')
+  @Render('pages/auth/verify-email-pending')
+  verifyEmailPending() {
+    return { title: 'Verificación Pendiente' };
   }
 
   @Get('dashboard')
@@ -82,7 +91,7 @@ export class AppController {
   @Get('orders/:id')
   @UseGuards(RequireAuth)
   @Render('pages/orders/detail')
-  orderDetail() {
+  orderDetail(@Param('id', ParseUUIDPipe) id: string) {
     return { title: 'Detalle de Orden' };
   }
 
@@ -104,7 +113,7 @@ export class AppController {
   }
 
   @Get('seller/auctions')
-  @UseGuards(RequireAuth)
+  @UseGuards(RequireAuth, SellerGuard)
   sellerAuctions(@Req() req, @Res() res) {
     const user = req.user;
     if (!user || !user.isSeller) {
@@ -114,7 +123,7 @@ export class AppController {
   }
 
   @Get('seller/orders')
-  @UseGuards(RequireAuth)
+  @UseGuards(RequireAuth, SellerGuard)
   @Render('pages/seller/orders')
   sellerOrders() {
     return { title: 'Gestión de Envíos' };
@@ -128,7 +137,7 @@ export class AppController {
   }
 
   @Get('auction/create')
-  @UseGuards(RequireAuth)
+  @UseGuards(RequireAuth, SellerGuard)
   @Render('pages/auction/create')
   createAuction() {
     return { title: 'Crear Subasta' };
@@ -158,7 +167,7 @@ export class AppController {
   @Get('disputes/:id')
   @UseGuards(RequireAuth)
   @Render('pages/disputes/detail')
-  disputeDetail() {
+  disputeDetail(@Param('id', ParseUUIDPipe) id: string) {
     return { title: 'Detalle de Disputa' };
   }
 
@@ -192,7 +201,7 @@ export class AppController {
 
   @Get('auctions/:id')
   @Render('pages/auctions/detail')
-  auctionDetail() {
+  auctionDetail(@Param('id', ParseUUIDPipe) id: string) {
     return { title: 'Detalle de Subasta' };
   }
 

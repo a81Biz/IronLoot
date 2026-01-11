@@ -118,7 +118,8 @@
 
     try {
       const filters = getFilters();
-      const response = await Api.auctions.list(filters);
+      // Use AuctionFlow orchestrator
+      const response = await AuctionFlow.listAuctions(filters);
       
       const auctions = response.data || response;
       const meta = response.meta || { total: auctions.length, page: 1, totalPages: 1 };
@@ -206,13 +207,13 @@
     return `
       <a href="/auctions/${auction.slug || auction.id}" class="card card-hover auction-card">
         <div class="card-image">
-          <img src="${imageUrl}" alt="${auction.title}" loading="lazy">
+          <img src="${Utils.escapeHtml(imageUrl)}" alt="${Utils.escapeHtml(auction.title)}" loading="lazy">
           <button class="btn btn-icon btn-watchlist ${watchClass}" data-id="${auction.id}" title="Añadir a favoritos">
               <span class="material-symbols-outlined">${watchIcon}</span>
           </button>
         </div>
         <div class="auction-card-content">
-          <h3 class="auction-card-title">${auction.title}</h3>
+          <h3 class="auction-card-title">${Utils.escapeHtml(auction.title)}</h3>
           <div class="auction-card-meta">
             <div>
               <p class="auction-card-price-label">Precio actual</p>

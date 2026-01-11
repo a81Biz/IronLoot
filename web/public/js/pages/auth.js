@@ -1,54 +1,24 @@
 /**
- * Iron Loot - Auth Manager
- * Handles authentication state and UI updates
+ * Iron Loot - UI Auth Manager
+ * Handles UI updates for Auth state (Navbar, Sidebar)
+ * Delegates logic to AuthState and AuthService
  */
 
 const Auth = (function() {
-  // State
-  let currentUser = null;
 
   /**
-   * Initialize auth state
+   * Initialize auth UI
    */
   async function init() {
-    // Listen for auth events
-    window.addEventListener('auth:login', handleLogin);
-    window.addEventListener('auth:logout', handleLogout);
+    // Listen for AuthState events (Single Source of Truth)
+    window.addEventListener(AuthState.EVENTS.USER_UPDATED, () => updateUI(true));
+    window.addEventListener(AuthState.EVENTS.USER_CLEARED, () => updateUI(false));
 
-    // Check if user is authenticated
-    if (Api.isAuthenticated()) {
-      try {
-        currentUser = await Api.auth.me();
-        updateUI(true);
-      } catch (error) {
-        console.error('Failed to get user info:', error);
-        Api.clearTokens();
-        updateUI(false);
-      }
+    // Initial check (if AuthState already ready)
+    if (AuthState.isLoggedIn()) {
+      updateUI(true);
     } else {
       updateUI(false);
-    }
-  }
-
-  /**
-   * Handle login event
-   */
-  function handleLogin(event) {
-    currentUser = event.detail;
-    updateUI(true);
-  }
-
-  /**
-   * Handle logout event
-   */
-  function handleLogout() {
-    currentUser = null;
-    updateUI(false);
-    
-    // Redirect to home if on protected page
-    const protectedPages = ['/dashboard', '/wallet', '/profile', '/my-bids', '/watchlist'];
-    if (protectedPages.some(page => window.location.pathname.startsWith(page))) {
-      window.location.href = '/login';
     }
   }
 
@@ -63,14 +33,18 @@ const Auth = (function() {
     const sidebarUserName = Utils.$('#sidebarUserName');
     const sidebarUserRole = Utils.$('#sidebarUserRole');
     const sidebarSellerSection = Utils.$('#sidebarSellerSection');
+    
+    // Get latest data from AuthState
+    const user = AuthState.getUser()?.data;
+    const isSeller = AuthState.isSeller();
+    const displayName = AuthState.getDisplayName();
 
-    if (isLoggedIn && currentUser) {
+    if (isLoggedIn && user) {
       // Hide auth buttons, show user menu
       if (authButtons) authButtons.style.display = 'none';
       if (userMenu) userMenu.style.display = 'flex';
       
       // Update user name
-      const displayName = currentUser.displayName || currentUser.username;
       if (userName) userName.textContent = displayName;
       if (sidebarUserName) sidebarUserName.textContent = displayName;
       
@@ -79,19 +53,19 @@ const Auth = (function() {
       
       // Update user role
       if (sidebarUserRole) {
-        sidebarUserRole.textContent = currentUser.isSeller ? 'Vendedor' : 'Comprador';
+        sidebarUserRole.textContent = isSeller ? 'Vendedor' : 'Comprador';
       }
 
       // Show seller section if user is seller
       if (sidebarSellerSection) {
-        sidebarSellerSection.style.display = currentUser.isSeller ? 'block' : 'none';
+        sidebarSellerSection.style.display = isSeller ? 'block' : 'none';
       }
 
-      // Hide auth-required elements that should only show for logged out users
+      // Hide active auth-required elements
       Utils.$$('[data-auth="guest"]').forEach(el => el.style.display = 'none');
       Utils.$$('[data-auth="required"]').forEach(el => el.style.display = '');
 
-      // Update notification count
+      // Update notification count (using new Service)
       updateNotificationCount();
     } else {
       // Show auth buttons, hide user menu
@@ -102,7 +76,7 @@ const Auth = (function() {
       if (sidebarUser) sidebarUser.style.display = 'none';
       if (sidebarSellerSection) sidebarSellerSection.style.display = 'none';
 
-      // Show guest elements, hide auth-required elements
+      // Show guest elements
       Utils.$$('[data-auth="guest"]').forEach(el => el.style.display = '');
       Utils.$$('[data-auth="required"]').forEach(el => el.style.display = 'none');
     }
@@ -113,7 +87,7 @@ const Auth = (function() {
    */
   async function updateNotificationCount() {
     try {
-      const { count } = await Api.notifications.getUnreadCount();
+      const { count } = await NotificationService.getUnreadCount();
       const badge = Utils.$('#notificationCount');
       const sidebarBadge = Utils.$('#sidebarNotifBadge');
       
@@ -127,60 +101,44 @@ const Auth = (function() {
         sidebarBadge.style.display = count > 0 ? 'inline-block' : 'none';
       }
     } catch (error) {
-      console.error('Failed to get notification count:', error);
+       // Silent fail
     }
   }
 
-  /**
-   * Get current user
-   */
-  function getUser() {
-    return currentUser;
-  }
+  // --- Wrapper Methods for Login/Register Pages ---
+
+  // --- Wrapper Methods for Login/Register Pages ---
 
   /**
-   * Check if user is authenticated
-   */
-  function isLoggedIn() {
-    return Api.isAuthenticated() && currentUser !== null;
-  }
-
-  /**
-   * Check if user is seller
-   */
-  function isSeller() {
-    return currentUser?.isSeller === true;
-  }
-
-  /**
-   * Login
+   * Login Wrapper
    */
   async function login(email, password) {
-    const result = await Api.auth.login(email, password);
-    currentUser = result.user;
-    return result;
+    // Delegate strictly to Flow
+    return AuthFlow.login({ email, password });
   }
 
   /**
-   * Register
+   * Register Wrapper
    */
   async function register(userData) {
-    return Api.auth.register(userData);
+    // Delegate strictly to Flow
+    return AuthFlow.register(userData);
   }
 
   /**
-   * Logout
+   * Logout Wrapper
    */
   async function logout() {
-    await Api.auth.logout();
+    // Delegate strictly to Flow
+    await AuthFlow.logout();
   }
 
   // Public API
   return {
     init,
-    getUser,
-    isLoggedIn,
-    isSeller,
+    getUser: AuthState.getUser,
+    isLoggedIn: AuthState.isLoggedIn,
+    isSeller: AuthState.isSeller,
     login,
     register,
     logout,

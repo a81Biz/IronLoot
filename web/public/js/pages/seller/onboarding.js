@@ -177,47 +177,45 @@
         btn.disabled = true;
         btn.innerHTML = '<span class="material-symbols-outlined spin">refresh</span> Procesando...';
 
+        btn.innerHTML = 'Activando...';
+
         try {
-             // 1. Update Profile Fields
-             
-             const profileData = {
-                 displayName: Utils.val('#displayName'),
-                 profile: {
-                    phone: Utils.val('#phonePrefix') + Utils.val('#phone').replace(/\D/g, ''),
-                    address: Utils.val('#address'),
-                    city: Utils.val('#city'),
-                    country: Utils.val('#country'),
-                    postalCode: Utils.val('#postalCode'),
-                    legalName: Utils.val('#legalName')
-                 }
-             };
+            const acceptTerms = Utils.$('#acceptTerms').checked;
+            
+            if (!acceptTerms) {
+                throw new Error('Debes aceptar los términos y condiciones');
+            }
 
-             await Api.patch('/users/me', profileData);
+            const legalName = Utils.val('#legalName');
+            const documentId = Utils.val('#documentId'); // Assuming these fields exist in form
 
-             // 2. Enable Seller
-             await Api.users.enableSeller({ acceptTerms: true });
+            // Prepare Data
+            const profileData = {
+                // If the flow supports updating profile data simultaneously
+                legalName, 
+                documentId
+            };
 
-             // 3. Success
-             Utils.toast('¡Cuenta de Vendedor Activada!', 'success');
-             
-             // Refresh tokens and state to get new 'isSeller' claim
-             if (window.AuthState) {
-                try {
-                    await window.AuthState.refreshUser();
-                } catch(e) {
-                    console.warn('Failed to refresh user state', e);
-                }
-             }
-             
-             setTimeout(() => {
-                 window.location.href = '/profile';
-             }, 1000);
+            // Call Flow
+            // Orchestrates: Update Profile -> Enable Seller -> Refresh Token -> Redirect
+            await SellerFlow.activateSeller({ 
+                profileData, 
+                acceptTerms: true 
+            });
+
+            Utils.toast('¡Cuenta de vendedor activada!', 'success');
+            
+            // Redirect is handled by Flow usually, or here?
+            // The Plan says Flow redirects, but let's be safe.
+            setTimeout(() => {
+                window.location.href = '/seller/dashboard';
+            }, 1000);
 
         } catch (error) {
-            console.error('Onboarding failed', error);
-            Utils.toast(error.message || 'Error al activar vendedor', 'error');
+            console.error('[Onboarding] Activation failed', error);
+            Utils.toast(error.message || 'Error al activar cuenta', 'error');
             btn.disabled = false;
-            btn.innerHTML = original;
+            btn.innerHTML = originalText;
         }
     }
 

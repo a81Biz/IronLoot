@@ -310,16 +310,22 @@ export class AuthService {
     // Find session
     const session = await this.prisma.session.findUnique({
       where: { refreshToken },
-      include: {
-        user: {
-          include: { profile: true },
-        },
-      },
     });
 
     if (!session) {
       this.log.warn('Refresh failed: session not found');
       this.metrics.increment('auth_refresh_failed', 1, { reason: 'session_not_found' });
+      throw new TokenInvalidException();
+    }
+
+    // Fetch user separately to ensure fresh data
+    const user = await this.prisma.user.findUnique({
+      where: { id: session.userId },
+      include: { profile: true },
+    });
+
+    if (!user) {
+      this.log.warn('Refresh failed: user not found', { userId: session.userId });
       throw new TokenInvalidException();
     }
 
@@ -338,7 +344,7 @@ export class AuthService {
     }
 
     // Check user state
-    this.validateUserState(session.user);
+    this.validateUserState(user);
 
     // Update session last used
     await this.prisma.session.update({
@@ -348,13 +354,13 @@ export class AuthService {
 
     // Generate new access token (keep same refresh token)
     // Map from session.user (which now includes profile)
-    const uDto = this.mapUserToResponse(session.user as any); // Cast because session.user type might be inferred strictly
+    const uDto = this.mapUserToResponse(user);
 
     const payload: JwtPayload = {
-      sub: session.user.id,
-      email: session.user.email,
-      username: session.user.username,
-      state: session.user.state,
+      sub: user.id,
+      email: user.email,
+      username: user.username,
+      state: user.state,
       displayName: uDto.displayName,
       avatarUrl: uDto.avatarUrl,
       isSeller: uDto.isSeller,
@@ -366,7 +372,7 @@ export class AuthService {
       expiresIn: this.accessTokenExpiry,
     });
 
-    this.log.debug('Token refreshed successfully', { userId: session.user.id });
+    this.log.debug('Token refreshed successfully', { userId: user.id });
     this.metrics.increment('auth_refresh_success');
 
     return {

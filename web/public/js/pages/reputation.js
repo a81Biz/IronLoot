@@ -51,13 +51,13 @@
                 <div class="card mb-3" style="margin-bottom: var(--spacing-4);">
                     <div class="card-body">
                         <div class="flex justify-between mb-2">
-                            <span class="font-bold text-sm">Transacción #${r.transactionId?.substring(0,8) || 'N/A'}</span>
+                            <span class="font-bold text-sm">Transacción #${Utils.escapeHtml(r.transactionId?.substring(0,8) || 'N/A')}</span>
                             <span class="text-secondary text-sm">${Utils.formatRelativeTime(r.createdAt)}</span>
                         </div>
                         <div class="text-warning mb-2" style="font-size: 0.9rem;">
                             ${renderStars(r.score)}
                         </div>
-                        <p>${r.comment || 'Sin comentario.'}</p>
+                        <p>${Utils.escapeHtml(r.comment || 'Sin comentario.')}</p>
                     </div>
                 </div>
             `).join('');

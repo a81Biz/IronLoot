@@ -9,25 +9,26 @@ export class UserMiddleware implements NestMiddleware {
 
     if (token) {
       try {
-        // Decode only, verification happens request-side usually with secret
-        // For UI state, decoding is often sufficient if we trust the cookie (httpOnly)
-        // Ideally we verify with secret if shared, but for now we decode to get user info for UI.
-        const decoded = jwt.decode(token);
+        const secret = process.env.JWT_SECRET;
+        if (!secret) {
+           console.error('JWT_SECRET not defined in environment');
+           throw new Error('JWT configuration error');
+        }
+
+        // Verify token signature
+        const decoded = jwt.verify(token, secret);
         
         if (decoded) {
-             // Check expiration
-             const exp = (decoded as any).exp;
-             if (exp && Date.now() >= exp * 1000) {
-                 // Token expired
-                 res.locals.user = null;
-                 req['user'] = null;
-             } else {
-                 req['user'] = decoded;
-                 res.locals.user = decoded; // Make available to Nunjucks
-             }
+             // Check expiration (verify handles it, but keeping logic just in case if options differ)
+             // jwt.verify throws if expired unless ignoreExpiration: true
+             req['user'] = decoded;
+             res.locals.user = decoded; // Make available to Nunjucks
+             res.locals.userJson = JSON.stringify(decoded);
         }
       } catch (err) {
-        // Token invalid, ignore
+        // Token invalid or expired
+        res.locals.user = null;
+        req['user'] = null;
       }
     }
 

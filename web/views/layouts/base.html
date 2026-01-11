@@ -41,12 +41,40 @@
 <body>
     {% block body %}{% endblock %}
 
+    <script>
+      window.CURRENT_USER = {{ userJson | safe | default('null') }};
+    </script>
+
     <!-- Core Scripts -->
-    <script src="/js/vendor/toastify.js"></script>
+
     <script src="/js/core/utils.js"></script>
     <script src="/js/core/api-client.js"></script>
     <script src="/js/core/auth-state.js"></script>
-    <script src="/js/core/watchlist-service.js"></script>
+    <!-- Services -->
+    <script src="/js/services/auth.service.js"></script>
+    <script src="/js/services/user.service.js"></script>
+    <script src="/js/services/seller.service.js"></script>
+    <script src="/js/services/auction.service.js"></script>
+    <script src="/js/services/watchlist.service.js"></script>
+    <script src="/js/services/wallet.service.js"></script>
+    <script src="/js/services/notification.service.js"></script>
+    <script src="/js/services/order.service.js"></script>
+    <script src="/js/services/dispute.service.js"></script>
+    <script src="/js/services/reputation.service.js"></script>
+    <!-- Flows -->
+    <script src="/js/flows/profile.flow.js"></script>
+    <script src="/js/flows/seller.flow.js"></script>
+    <script src="/js/flows/auth.flow.js"></script>
+    <script src="/js/flows/auction.flow.js"></script>
+    <script src="/js/flows/bid.flow.js"></script>
+    <script src="/js/flows/wallet.flow.js"></script>
+    <script src="/js/flows/watchlist.flow.js"></script>
+    <script src="/js/flows/notification.flow.js"></script>
+    <script src="/js/flows/order.flow.js"></script>
+    <script src="/js/flows/dispute.flow.js"></script>
+    <script src="/js/flows/reputation.flow.js"></script>
+    <script src="/js/flows/flow-registry.js"></script>
+    
     <script src="/js/core/auth.js"></script>
 
     <!-- Components -->

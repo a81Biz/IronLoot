@@ -1,155 +1,123 @@
 /**
  * Iron Loot - Auth State Management
- * Handles session hydration, refresh, role management, and route guarding.
+ * Strict Token-Based Identity.
+ * Source of Truth: The JWT Token.
  */
 
 const AuthState = (function() {
-    // Current User State
-    let currentUser = null;
-    let isInitialized = false; // To track if we've attempted hydration
+    // --- Constants & Enums ---
+    const EVENTS = {
+        USER_UPDATED: 'auth:user-updated',
+        USER_CLEARED: 'auth:user-cleared'
+    };
 
-    // Events
-    const EVENT_USER_UPDATED = 'auth:user-updated';
+    const IDENTITY_CLAIMS = ['sub', 'email', 'emailVerified', 'displayName', 'isSeller'];
+
+    // --- State ---
+    let currentUser = null; // { data: { ...claims } }
+    let isInitialized = false;
+    let refreshPromise = null; // For single-flight refresh
+
+    // --- Private Helpers ---
+    // Token decoding removed (Server-Side Auth)
+
 
     /**
-     * Initialize Auth State
-     * Called on page load
+     * Internal state updater
+     * Emits event ONLY if effective change or forced.
+     */
+    function _updateState(payload) {
+        // Wrap to match assumed structure in app { data: payload }
+        const newUser = { data: payload };
+        
+        // Simple equality check optimization could go here, 
+        // but for now we emit to be safe as per "One Truth" rule.
+        currentUser = newUser;
+        window.dispatchEvent(new CustomEvent(EVENTS.USER_UPDATED, { detail: currentUser }));
+    }
+
+    function _clearState() {
+        if (currentUser === null) return; // Already cleared
+        currentUser = null;
+        window.dispatchEvent(new CustomEvent(EVENTS.USER_CLEARED));
+    }
+
+    // --- Public API Implementation ---
+
+    /**
+     * Initialize: Hydrate from storage
      */
     async function init() {
         if (isInitialized) return;
-        
-        if (Api.isAuthenticated()) {
-            try {
-                await hydrate();
-            } catch (error) {
-                console.warn('Hydration failed, attempting refresh...', error);
-                // Hydration failed (e.g. 401). API Client might have already tried refresh?
-                // If API client handles 401 auto-refresh, we might just need to catch here.
-                // But if we want explicit handling:
-                // For now, if hydration fails, we assume token invalid/expired if not recovered.
-                 if (!Api.isAuthenticated()) {
-                     // Token was cleared by API client on 401
-                     currentUser = null;
-                 }
-            }
-        }
+
+        // Listen for 401s from ApiClient
+        window.addEventListener('auth:cleared', () => {
+            _clearState();
+        });
+
+        hydrateFromSSR();
         isInitialized = true;
-        updateUI();
     }
 
     /**
-     * Parse JWT payload
+     * Read state from SSR Injection
      */
-    function parseJwt(token) {
-        try {
-            const base64Url = token.split('.')[1];
-            const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-            const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(function(c) {
-                return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-            }).join(''));
-            return JSON.parse(jsonPayload);
-        } catch (e) {
-            console.error('Failed to parse JWT', e);
-            return null;
+    function hydrateFromSSR() {
+        const payload = window.CURRENT_USER;
+        if (payload) {
+             _updateState(payload);
+        } else {
+             _clearState();
         }
     }
 
     /**
-     * Fetch current user data from Token
+     * Set User (from Login/Register response)
+     * @param {Object} user
      */
-    async function hydrate() {
-        try {
-            const token = Api.getAccessToken();
-            if (!token) {
-                currentUser = null;
-                return null;
-            }
-            
-            const payload = parseJwt(token);
-            if (!payload) {
-                throw new Error('Invalid token format');
-            }
-            
-            // Map JWT payload to currentUser structure expected by UI
-            // Payload now matches UserResponseDto structure
-            currentUser = { data: payload }; // Wrapper to match previous API response structure { data: ... }
-            
-            // Notify system
-            window.dispatchEvent(new CustomEvent(EVENT_USER_UPDATED, { detail: currentUser }));
-            return currentUser;
-        } catch (error) {
-            console.error('Hydration error', error);
-            currentUser = null;
-            throw error;
-        }
+    function setUser(user) {
+        if (!user) return;
+        _updateState(user);
     }
 
     /**
-     * Force refresh user data (e.g. after profile update)
+     * Refresh User (Single Flight)
+     * Fetches new token from backend using refreshToken.
      */
-    async function refreshUser() {
-        try {
-             const rt = localStorage.getItem('ironloot_refresh_token');
-             if (!rt) throw new Error('No refresh token');
-             
-             // Force network refresh
-             const res = await Api.post('/auth/refresh', { refreshToken: rt });
-             if (res && res.accessToken) {
-                 Api.setTokens(res.accessToken, res.refreshToken);
-                 return await hydrate();
-             }
-        } catch (e) {
-            console.error('Failed to refresh user', e);
-            throw e;
-        }
+    /**
+     * Refresh User - Now handled by HttpOnly Cookie auto-renewal or re-login.
+     * We can verify session with an endpoint if needed, but for now we trust SSR/Cookie.
+     */
+     async function refreshUser() {
+        // No-op for client-side token refresh. 
+        // If session is invalid, next request fails and backend redirects or clears cookie.
+        return null;
     }
 
-    /**
-     * Refresh session (explicit call if needed)
-     */
-    async function refresh() {
-       return refreshUser();
-    }
 
-    /**
-     * Logout
-     */
-    async function logout() {
-        try {
-            await Api.post('/auth/logout');
-        } catch (e) {
-            console.warn('Logout API call failed', e);
-        } finally {
-            Api.clearTokens();
-            currentUser = null;
-            window.location.href = '/';
-        }
-    }
+    // --- Helpers (Data Access) ---
 
-    /**
-     * Check if user has specific role
-     * @param {string} role 
-     */
-    function hasRole(role) {
-        if (!currentUser || !currentUser.data) return false;
-        // Mapping for backward compatibility or direct check
-        if (role === 'SELLER') return currentUser.data.isSeller;
-        return false;
-    }
-
-    /**
-     * Get User
-     */
     function getUser() {
         return currentUser;
     }
 
+    function isSeller() {
+        return currentUser?.data?.isSeller === true;
+    }
+
+    function getDisplayName() {
+        return currentUser?.data?.displayName || currentUser?.data?.username || '';
+    }
+
+    function isLoggedIn() {
+        return !!currentUser;
+    }
+
     /**
      * Guard Route
-     * Call this on private pages
      */
     function guard() {
-        if (!Api.isAuthenticated()) {
+        if (!isLoggedIn()) {
             const returnUrl = encodeURIComponent(window.location.pathname + window.location.search);
             window.location.href = `/login?return=${returnUrl}`;
             return false;
@@ -157,37 +125,27 @@ const AuthState = (function() {
         return true;
     }
 
-    /**
-     * Update UI based on roles/state
-     * (Basic stuff, Navigation component handles specific menu items)
-     */
-    function updateUI() {
-        // Dispatch event for other components to react
-         window.dispatchEvent(new CustomEvent(EVENT_USER_UPDATED, { detail: currentUser }));
-    }
-
-    function updateUser(user) {
-        currentUser = user;
-        updateUI();
-    }
 
     // Public API
     return {
         init,
-        hydrate,
-        updateUser, // Expose method
-        refreshUser, // Expose method (new)
-        logout,
-        hasRole,
+        // Methods
+        hydrateFromDOM: hydrateFromSSR,
+        setUser,
+        clearTokens: _clearState, // Alias compatibility
+        refreshUser,
         getUser,
         guard,
-        EVENTS: {
-            USER_UPDATED: EVENT_USER_UPDATED
-        }
+        // Helpers
+        isSeller,
+        getDisplayName,
+        isLoggedIn,
+        // Constants
+        EVENTS
     };
 })();
 
-// Auto-init on load
+// Auto-init
 document.addEventListener('DOMContentLoaded', () => {
     AuthState.init();
 });

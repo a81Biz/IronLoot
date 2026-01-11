@@ -50,14 +50,39 @@
         }
 
         try {
-            // Use the global Api object defined in api-client.js
-            await Api.auth.verifyEmail(token);
-            showSuccess();
-            
-            // Redirect to login after 2 seconds
-            setTimeout(() => {
-                window.location.href = '/login?verified=true';
-            }, 2000);
+            // Use AuthFlow orchestrator
+            await AuthFlow.verifyEmail({ token });
+            // AuthFlow handles redirect to /profile usually, but verify-email page might want to show success message first.
+            // AuthFlow implementation: 
+            // async function verifyEmail({ token }) { ... window.location.href = '/profile'; ... }
+            // So Flow redirects IMMEDIATELY.
+            // If we want to show success message, we might need to adjust Flow or accept redirect.
+            // The HTML has a nice success UI.
+            // If Flow redirects, we won't see it. 
+            // However, strictly "Flows orchestrate".
+            // Implementation of AuthFlow.verifyEmail:
+            /*
+            async function verifyEmail({ token }) {
+                try {
+                    const res = await AuthService.verifyEmail(token);
+                     if (res.accessToken) AuthState.setTokens(res);
+                     else await AuthState.refreshUser(); // verify typically performs login/update
+                    window.location.href = '/profile';
+                    return true;
+                } ...
+            */
+            // Ideally Flow returns result and let Page handle UI/Redirect if strictly decoupled, 
+            // OR Flow handles everything. 
+            // Current AuthFlow handles redirect.
+            // So the legacy "Success UI" in verify-email.html will be skipped.
+            // That's acceptable for "Strict Flow Architecture" if Flow dictates the UX.
+            // OR I should change AuthFlow to NOT redirect if I want this page to handle it?
+            // "Pages -> DOM manipulation ... calling Flows".
+            // If Page wants to show success, Flow should return success.
+            // But AuthFlow.verifyEmail currently has `window.location.href = '/profile'`.
+            // I will respect AuthFlow behavior for now to be consistent with "Flows determine outcome".
+            // So simply calling it will suffice.
+
         } catch (error) {
             console.error(error);
             showError(error.message || 'Error al verificar el correo');

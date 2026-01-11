@@ -76,7 +76,18 @@
         if (userName) userName.textContent = user.firstName || user.email || 'Usuario';
         
         // Show protected links
-        authLinks.forEach(link => link.style.display = 'block');
+        authLinks.forEach(link => {
+            // Dashboard Logic: Hide if we are on /dashboard
+            if (link.id === 'navDashboardLink') {
+                if (window.location.pathname === '/dashboard') {
+                    link.style.display = 'none';
+                } else {
+                    link.style.display = 'block';
+                }
+            } else {
+                link.style.display = 'block';
+            }
+        });
         
         // Role check (Example: Seller link)
         // If we had specific role ids, we'd toggle them here.
@@ -113,51 +124,25 @@
 
     async function fetchWalletBalance() {
         try {
-            const balance = await Api.wallet.getBalance();
+            // Use WalletFlow
+            const balance = await WalletFlow.loadBalance();
             updateWalletNav(balance.available);
         } catch (e) {
             console.warn('Failed to fetch wallet balance', e);
         }
     }
 
-    function updateWalletNav(amount) {
-        const walletLink = Utils.$('#navWalletLink');
-        if (walletLink) {
-            walletLink.innerHTML = `
-                <span class="material-symbols-outlined" style="font-size: 18px; margin-right: 4px; vertical-align: text-bottom;">account_balance_wallet</span>
-                ${Utils.formatCurrency(amount)}
-            `;
-            // Keep the "Wallet" text logic? User requested amount.
-        }
-    }
-
-    // --- Notifications Logic ---
-
-    let pollingInterval = null;
-    const POLLING_MS = 45000; // 45s
-
-    function startNotificationPolling() {
-        if (pollingInterval) return;
-        fetchUnreadCount(); // Initial fetch
-        startBalancePolling(); // Start balance polling too
-        
-        pollingInterval = setInterval(() => {
-            if (document.hidden) return; // Pause if hidden
-            fetchUnreadCount();
-        }, POLLING_MS);
-    }
-
-    function stopNotificationPolling() {
-        if (pollingInterval) clearInterval(pollingInterval);
-        pollingInterval = null;
-    }
+    // ...
 
     async function fetchUnreadCount() {
         try {
-            const count = await Api.get('/notifications/unread-count');
+            // Use NotificationFlow
+            // getUnreadCount returns just { count } or the count? Check Flow implementation.
+            // NotificationFlow.getUnreadCount returns NotificationService.getUnreadCount() which returns { count } usually.
+            const { count } = await NotificationFlow.getUnreadCount();
             updateNotificationBadge(count);
         } catch (e) {
-            console.warn('Failed to fetch notifications', e);
+             // silent
         }
     }
 

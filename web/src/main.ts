@@ -10,9 +10,27 @@ import { createProxyMiddleware } from 'http-proxy-middleware';
 
 import * as cookieParser from 'cookie-parser';
 
+import * as helmet from 'helmet';
+
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
+  
   app.use(cookieParser());
+  
+  // Security Headers (Helmet)
+  app.use(helmet.default({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'"], // unsafe-inline needed for window.CURRENT_USER injection
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false, // Often causes issues with resources
+  }));
 
   const viewsPath = join(__dirname, '..', 'views');
   
@@ -45,6 +63,15 @@ async function bootstrap() {
       pathRewrite: {
         '^/v1': '/api/v1', // rewrite /v1 -> /api/v1
         '^/api': '/api',   // keep /api as is
+      },
+      on: {
+        proxyReq: (proxyReq, req, res) => {
+          // Bridge HttpOnly Cookie -> Bearer Header for Backend API
+          const expressReq = req as any;
+          if (expressReq.cookies && expressReq.cookies['access_token']) {
+             proxyReq.setHeader('Authorization', `Bearer ${expressReq.cookies['access_token']}`);
+          }
+        },
       },
     }),
   );

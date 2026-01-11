@@ -27,7 +27,7 @@
                 <tr>
                     <td class="font-mono text-sm">${dispute.id.substring(0, 8)}</td>
                     <td class="font-mono text-sm">${dispute.orderId?.substring(0, 8) || '-'}</td>
-                    <td>${dispute.reason}</td>
+                    <td>${Utils.escapeHtml(dispute.reason)}</td>
                     <td>${formatStatus(dispute.status)}</td>
                     <td>${Utils.formatRelativeTime(dispute.createdAt)}</td>
                     <td>

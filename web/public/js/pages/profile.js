@@ -1,97 +1,118 @@
 /**
  * Iron Loot - Profile Page
+ * @role Page Controller
+ * @depends AuthState, ProfileFlow, UserService, Utils
  */
 
 (function() {
-    let currentUser = null;
+    // Local State
+    let richProfileData = {}; // "Rich" data (legal name, address, etc) from UserService
 
     document.addEventListener('DOMContentLoaded', () => {
+        setupEventListeners();
         init();
     });
 
     async function init() {
-         // Always fetch fresh data to ensure we have latest schema (username, legalName, etc.)
-         if (Api.isAuthenticated()) {
-             // Use AuthState instead of duplicate call
-             const initProfile = (res) => {
-                 if (res && res.data) {
-                     currentUser = res.data;
-                     renderProfile();
-                     setupEventListeners();
-                 }
-             };
+         // Guard Check
+         if (!AuthState.guard()) return;
 
-             const userWrapper = AuthState.getUser();
-             if (userWrapper && userWrapper.data) {
-                 initProfile(userWrapper);
-             } else {
-                 window.addEventListener('auth:user-updated', (e) => {
-                     initProfile(e.detail);
-                 }, { once: true });
+         // 1. Subscribe to Identity Changes (Token Source of Truth)
+         window.addEventListener(AuthState.EVENTS.USER_UPDATED, () => {
+             renderProfile(); // Re-render when token changes (e.g. displayName update)
+         });
+
+         // 2. Initial Render (if already hydrated)
+         renderProfile();
+
+         // 3. Fetch Rich Data (Local state only)
+         try {
+             const res = await UserService.getMe();
+             if (res && res.data) {
+                 richProfileData = res.data;
+                 renderSellerSection(); // Rich data updates seller section details
              }
-         } else {
-              window.location.href = '/login?return=/profile';
+         } catch (e) {
+             console.warn('Failed to fetch rich profile', e);
          }
-    }
-
-    function renderProfile() {
-        if (!currentUser) return;
-
-        // 1. Header & Inputs
-        Utils.text('#headerUsername', currentUser.username);
-        Utils.val('#displayName', currentUser.displayName || '');
-        Utils.val('#emailDisplay', currentUser.email);
-
-        const rolesContainer = Utils.$('#profileRoles');
-        if (rolesContainer && currentUser.roles) {
-            // Safe check for roles array, though standard user might not have it in UserResponseDto unless mapped?
-            // UsersService maps 'isSeller'. 'roles' was in old AuthResponse likely.
-            // Let's check currentUser structure. If roles missing, we skip or infer.
-            const role = currentUser.isSeller ? 'SELLER' : 'BUYER'; 
-            // Better to show explicit badge if available.
-            // If API doesn't return roles array in /users/me, we infer from isSeller.
-            const badges = [];
-            if (currentUser.state === 'ACTIVE') badges.push('<span class="badge bg-success text-white">Activo</span>');
-            if (currentUser.isSeller) badges.push('<span class="badge bg-primary text-white">Vendedor</span>');
-            else badges.push('<span class="badge bg-secondary text-white">Comprador</span>');
-            
-            rolesContainer.innerHTML = badges.join('');
-        }
-
-        // 2. Seller Profile
-        const seller = currentUser || {};
-        
-        if (seller.isSeller) {
-            // SHOW Seller Info
-            Utils.hide('#sellerPromoSelect');
-            Utils.show('#sellerInfoSection');
-            
-            Utils.text('#sellerLegalName', seller.profile.legalName || 'No configurado');
-            Utils.text('#sellerLocation', `${seller.profile.city || ''}, ${seller.profile.country || ''}`);
-            Utils.text('#sellerAddress', `${seller.profile.address || ''} ${seller.profile.postalCode || ''}`);
-            
-            // Badge
-            const badge = Utils.$('#sellerStatusBadge');
-            if (badge) {
-                badge.innerHTML = `<span class="badge bg-success text-white">Vendedor Activo</span>`;
-            }
-
-        } else {
-            // SHOW Promo
-            Utils.show('#sellerPromoSelect');
-            Utils.hide('#sellerInfoSection');
-             
-            const badge = Utils.$('#sellerStatusBadge');
-            if (badge) {
-                badge.innerHTML = `<span class="badge bg-surface-alt border border-border-main">Usuario Standard</span>`;
-            }
-        }
     }
 
     function setupEventListeners() {
         const form = Utils.$('#profileForm');
         if (form) {
+            form.removeEventListener('submit', handleUpdateProfile);
             form.addEventListener('submit', handleUpdateProfile);
+        }
+    }
+
+    function renderProfile() {
+        // Identity from Token
+        const user = AuthState.getUser()?.data;
+        if (!user) return;
+
+        // Header
+        const displayName = AuthState.getDisplayName() || 'Usuario';
+        Utils.text('#headerUsername', displayName);
+        
+        // Form Fields (Identity)
+        // input might be dirty if user is typing, but for now we sync on load/update.
+        // If we want to avoid overwriting user input while typing, we'd need checks.
+        // Assuming this runs on "save success" mostly.
+        const nameInput = Utils.$('#displayName');
+        if (nameInput && document.activeElement !== nameInput) {
+             nameInput.value = displayName;
+        }
+        
+        Utils.val('#emailDisplay', user.email || '');
+
+        // Roles / Badges
+        const rolesContainer = Utils.$('#profileRoles');
+        if (rolesContainer) {
+            let rolesHtml = '';
+            if (AuthState.isSeller()) {
+                rolesHtml += '<span class="badge badge-primary">Vendedor</span>';
+            } else {
+                rolesHtml += '<span class="badge badge-secondary">Comprador</span>';
+            }
+            if (user.emailVerified) {
+                rolesHtml += '<span class="badge badge-success">Verificado</span>';
+            }
+            rolesContainer.innerHTML = rolesHtml;
+        }
+
+        // Seller Section (Visibility depends on Identity)
+        renderSellerSection();
+    }
+
+    function renderSellerSection() {
+        // Identity Check
+        const isSeller = AuthState.isSeller();
+        
+        const promo = Utils.$('#sellerPromoSelect');
+        const info = Utils.$('#sellerInfoSection');
+        const badge = Utils.$('#sellerStatusBadge');
+
+        if (!promo || !info) return;
+
+        if (isSeller) {
+            Utils.hide(promo);
+            Utils.show(info);
+            if (badge) badge.innerHTML = '<span class="badge badge-primary">Cuenta de Vendedor Activa</span>';
+            
+            // Populate Details from Rich Data (not Token)
+            const p = richProfileData.profile || {};
+            
+            Utils.text('#sellerLegalName', p.legalName || 'No registrado');
+            
+            const location = [p.city, p.country].filter(Boolean).join(', ');
+            Utils.text('#sellerLocation', location || 'No registrada');
+            
+            Utils.text('#sellerAddress', p.address || 'No registrada');
+
+        } else {
+            Utils.show(promo);
+            Utils.hide(info);
+            if (badge) badge.innerHTML = '';
         }
     }
 
@@ -105,16 +126,12 @@
         try {
             const displayName = Utils.val('#displayName');
             
-            // Only sending displayName for now as email is disabled
-            const updateData = { displayName };
-
-            await Api.patch('/users/me', updateData);
-            
-            // Refresh token and local state to ensure everything is in sync
-            await AuthState.refreshUser();
+            // Call Flow (Orchestrator)
+            // It will handle API + Token Refresh + Event Emission
+            await ProfileFlow.updateDisplayName({ displayName });
             
             Utils.toast('Perfil actualizado correctamente', 'success');
-            renderProfile(); // Re-render to ensure consistency
+            // renderProfile() will trigger automatically via USER_UPDATED event
 
         } catch (error) {
             console.error('Update failed', error);

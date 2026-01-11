@@ -41,8 +41,8 @@
                         <span class="material-symbols-outlined">${getIcon(notif.type)}</span>
                     </div>
                     <div style="flex: 1;">
-                        <h4 class="font-bold">${notif.title}</h4>
-                        <p class="text-sm">${notif.message}</p>
+                        <h4 class="font-bold">${Utils.escapeHtml(notif.title)}</h4>
+                        <p class="text-sm">${Utils.escapeHtml(notif.message)}</p>
                         <p class="notification-time">${Utils.formatRelativeTime(notif.createdAt)}</p>
                     </div>
                      ${!notif.readAt ? '<div style="width: 8px; height: 8px; background: var(--color-primary); border-radius: 50%; align-self: center;"></div>' : ''}
@@ -79,7 +79,7 @@
         //  If nothing applies, navigate to /notifications (reload) or do nothing.
         //  Always mark the notification as read." (Done above)
         
-        if (notification.url) {
+        if (notification.url && notification.url.startsWith('/') && !notification.url.startsWith('//')) {
             window.location.href = notification.url;
             return;
         }
