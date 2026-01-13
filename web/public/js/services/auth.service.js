@@ -5,63 +5,37 @@
  */
 window.AuthService = (function() {
 
-    function _getHeaders() {
-        return {
-            'Content-Type': 'application/json',
-            'x-xsrf-token': Utils.getCookie('XSRF-TOKEN') || ''
-        };
-    }
-
     async function login(email, password) {
-        // Api.post returns { data: { user, tokens }, ... }
-        // We return the full response or just data?
-        // Let's return the raw response structure the Flows expect or Api.post returns.
-        const res = await fetch('/auth/session/login', {
-            method: 'POST',
-            headers: _getHeaders(),
-            body: JSON.stringify({ email, password })
-        });
-        if (!res.ok) throw await res.json();
-        return await res.json(); 
+        return Api.post(ApiRoutes.auth.login, { email, password });
     }
 
     async function register(userData) {
-        const res = await fetch('/auth/session/register', {
-            method: 'POST',
-            headers: _getHeaders(),
-            body: JSON.stringify(userData)
-        });
-        if (!res.ok) throw await res.json();
-        return await res.json();
+        return Api.post(ApiRoutes.auth.register, userData);
     }
 
     async function logout() {
-        return fetch('/auth/session/logout', { 
-            method: 'POST',
-            headers: _getHeaders()
-        });
+        return Api.post(ApiRoutes.auth.logout);
     }
 
     async function verifyEmail(token) {
-        return Api.post('/auth/verify-email', { token });
+        return Api.post(ApiRoutes.auth.verifyEmail, { token });
     }
 
     async function forgotPassword(email) {
-        return Api.post('/auth/forgot-password', { email });
+        return Api.post(ApiRoutes.auth.forgotPassword, { email });
     }
 
     async function resetPassword(token, newPassword) {
-        return Api.post('/auth/reset-password', { token, newPassword });
+        return Api.post(ApiRoutes.auth.resetPassword, { token, newPassword });
     }
     
     /**
      * Explicit Refresh
-     * @param {string} refreshToken
+     * @param {string} [refreshToken] - Optional, if not provided, Proxy will inject from Cookie
      */
     async function refresh(refreshToken) {
-        // Api.post returns { data, ... }
-        // endpoint returns { accessToken, refreshToken }
-        return Api.post('/auth/refresh', { refreshToken });
+        // If no token provided, send empty object (Proxy handles injection)
+        return Api.post(ApiRoutes.auth.refresh, { refreshToken });
     }
 
     return {

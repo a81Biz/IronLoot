@@ -1,6 +1,6 @@
 {
   "name": "ironloot-web",
-  "version": "0.5.0",
+  "version": "0.5.1",
   "description": "Iron Loot Frontend (NestJS SSR)",
   "author": "",
   "private": true,

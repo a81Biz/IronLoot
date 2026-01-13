@@ -47,6 +47,13 @@ describe('UsersService', () => {
     user: {
       findUnique: jest.fn(),
       update: jest.fn(),
+      count: jest.fn().mockResolvedValue(0),
+    },
+    order: {
+      count: jest.fn().mockResolvedValue(0),
+    },
+    rating: {
+      aggregate: jest.fn().mockResolvedValue({ _avg: { score: 4.5 }, _count: { score: 10 } }),
     },
     profile: {
       upsert: jest.fn(),

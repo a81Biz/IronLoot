@@ -13,12 +13,7 @@ window.WatchlistService = (function() {
         if (isInitialized) return;
 
         try {
-            const { data } = await Api.get('/watchlist');
-            // Assuming data is array of objects { id, ... } or { auctionId, ... }
-            // API usually returns list of auctions orwatchlist items.
-            // Let's assume list of auctions or objects with auctionId.
-            // We need to know the structure. 
-            // Previous 'api-client.js' had `async list() { const { data } = await request('GET', '/watchlist'); return data; }`
+            const { data } = await Api.get(ApiRoutes.watchlist.list);
             
             // Let's map whatever we get to IDs.
             if (Array.isArray(data)) {
@@ -35,18 +30,18 @@ window.WatchlistService = (function() {
 
     async function list() {
         // Returns full objects
-        const { data } = await Api.get('/watchlist');
+        const { data } = await Api.get(ApiRoutes.watchlist.list);
         return data; 
     }
 
     async function add(auctionId) {
-        await Api.post('/watchlist', { auctionId });
+        await Api.post(ApiRoutes.watchlist.add, { auctionId });
         watchedIds.add(auctionId);
         window.dispatchEvent(new CustomEvent('watchlist:updated'));
     }
 
     async function remove(auctionId) {
-        await Api.delete(`/watchlist/${auctionId}`);
+        await Api.delete(ApiRoutes.watchlist.remove(auctionId));
         watchedIds.delete(auctionId);
         window.dispatchEvent(new CustomEvent('watchlist:updated'));
     }

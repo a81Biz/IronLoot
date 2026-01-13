@@ -3,7 +3,7 @@ import { WalletService } from '../../../src/modules/wallet/wallet.service';
 import { PrismaService } from '../../../src/database/prisma.service';
 import { BadRequestException } from '@nestjs/common';
 import { Decimal } from '@prisma/client/runtime/library';
-import { StructuredLogger } from '../../../src/common/observability';
+import { StructuredLogger, InsufficientBalanceException } from '../../../src/common/observability';
 
 // Mock types
 const mockWallet = {
@@ -137,7 +137,9 @@ describe('WalletService', () => {
     it('should throw error if insufficient funds', async () => {
       mockTx.wallet.findUnique.mockResolvedValue(mockWallet); // Balance 100
 
-      await expect(service.withdraw('user-123', 150, 'ref-3')).rejects.toThrow(BadRequestException);
+      await expect(service.withdraw('user-123', 150, 'ref-3')).rejects.toThrow(
+        InsufficientBalanceException,
+      );
     });
   });
 

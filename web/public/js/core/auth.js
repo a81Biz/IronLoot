@@ -60,15 +60,19 @@
     submitBtn.classList.add('btn-loading');
 
     try {
-      await Auth.login(email, password);
+      console.log('Attempting Login with:', { email, passwordLength: password.length });
+      // Critical Fix: Use AuthFlow to handle Token Saving + Redirect
+      await AuthFlow.login({ email, password });
       
-      // Redirect to dashboard or previous page
+      // Fallback: If AuthFlow didn't redirect (e.g. slight timing issue), force it here.
+      // This ensures we NEVER get stuck on the login page after a successful API 200.
       const returnUrl = new URLSearchParams(window.location.search).get('return') || '/dashboard';
-      window.location.href = returnUrl;
+      console.log('[Core] Fallback Redirecting to:', returnUrl);
+      window.location.replace(returnUrl);
     } catch (error) {
-      console.error('Login failed:', error);
-      
-      if (errorEl) {
+       console.error('Login Error:', error);
+       
+       if (errorEl) {
         let message = error.message || 'Credenciales inválidas';
         
         // Handle specific error codes

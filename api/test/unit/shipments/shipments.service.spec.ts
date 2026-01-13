@@ -9,6 +9,7 @@ import { ShipmentStatus, ShipmentProvider } from '@prisma/client';
 const mockPrismaService = {
   order: {
     findUnique: jest.fn(),
+    update: jest.fn(),
   },
   shipment: {
     findUnique: jest.fn(),

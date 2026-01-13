@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.1] - 2026-01-12
+
+### Added
+- **Payments**: Full integration of **PayPal (WPS)** and **Mercado Pago (Checkout Pro)**.
+- **Payments**: Implemented Webhook validation (HMAC for MP, IPN logic for PayPal).
+- **Wallet**: Automated wallet crediting upon payment confirmation.
+- **Currency**: Standardized platform currency to **MXN** (Mexican Pesos).
+
+### Fixed
+- **Payments**: Removed all Mock implementations; strict production-ready checks enabled.
+- **Security**: Ensured all payment credentials and secrets are loaded strictly from environment variables.
+
 ## [0.5.0] - 2026-01-10
 
 ### Security (Critical)

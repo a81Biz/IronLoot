@@ -5,21 +5,21 @@
 window.NotificationService = (function() {
 
     async function list() {
-        const { data } = await Api.get('/notifications');
+        const { data } = await Api.get(ApiRoutes.notifications.list);
         return data;
     }
 
     async function getUnreadCount() {
-        const { data } = await Api.get('/notifications/unread-count');
+        const { data } = await Api.get(ApiRoutes.notifications.unreadCount);
         return data;
     }
 
     async function markAsRead(id) {
-        return Api.patch(`/notifications/${id}/read`);
+        return Api.patch(ApiRoutes.notifications.markRead(id));
     }
 
     async function markAllAsRead() {
-        return Api.patch('/notifications/read-all');
+        return Api.patch(ApiRoutes.notifications.readAll);
     }
 
     return {

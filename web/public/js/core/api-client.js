@@ -1,7 +1,11 @@
 /**
  * Iron Loot - API Client
- * Wraps HTTP requests and handles token injection/storage.
- * Does NOT contain domain logic.
+ * Wraps HTTP requests and handles authentication via cookies.
+ * 
+ * NOTA: Tokens se manejan via cookies HttpOnly:
+ * - El proxy setea cookies en login/register
+ * - El proxy inyecta Authorization header automáticamente
+ * - No hay tokens en localStorage (seguridad)
  */
 
 const ApiClient = (function() {
@@ -9,25 +13,23 @@ const ApiClient = (function() {
   const BASE_URL = window.APP_CONFIG?.apiUrl || '/api/v1';
   const TIMEOUT = 30000;
 
-  // State - Managed by HttpOnly Cookie (Server) and AuthState (SSR)
-  // No local token storage.
-
   /**
-   * Set authentication tokens - Deprecated/No-op
+   * @deprecated Tokens are handled via HttpOnly cookies by the proxy
    */
-  function setTokens() {
-    // No-op
+  function setTokens(tokens) {
+    // No-op: cookies are set by proxy
+    console.warn('[ApiClient] setTokens() deprecated - tokens handled via HttpOnly cookies');
   }
 
   /**
-   * Clear all tokens - Deprecated/No-op
+   * @deprecated Tokens are handled via HttpOnly cookies by the proxy
    */
   function clearTokens() {
-    // No-op
+    // No-op: cookies are cleared by proxy on logout
   }
 
   /**
-   * Get current Access Token
+   * @deprecated Tokens are in HttpOnly cookies (not accessible from JS)
    */
   function getAccessToken() {
     return null;
@@ -37,7 +39,6 @@ const ApiClient = (function() {
    * Helper: Build full URL
    */
   function _buildUrl(path, params = {}) {
-    // Determine Base URL (handling leading/trailing slashes)
     let base = BASE_URL.endsWith('/') ? BASE_URL.slice(0, -1) : BASE_URL;
     let endpoint = path.startsWith('/') ? path : '/' + path;
     const url = new URL(base + endpoint, window.location.origin);
@@ -59,10 +60,16 @@ const ApiClient = (function() {
       'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
+    
+    // CSRF Token (Double Submit Cookie pattern)
     const csrfToken = Utils.getCookie('XSRF-TOKEN');
     if (csrfToken) {
        headers['x-xsrf-token'] = csrfToken;
     }
+    
+    // Note: Authorization header is injected by the proxy from HttpOnly cookie
+    // No need to add it here
+    
     return headers;
   }
 
@@ -80,7 +87,7 @@ const ApiClient = (function() {
       method,
       headers,
       signal: controller.signal,
-      credentials: 'include',
+      credentials: 'include', // Important: Send cookies with requests
     };
 
     if (body && method !== 'GET') {
@@ -91,20 +98,6 @@ const ApiClient = (function() {
       const response = await fetch(url, fetchOptions);
       clearTimeout(timeoutId);
 
-      const traceId = response.headers.get('x-trace-id');
-
-      // --- CRITICAL: 401 Handling (No Loops) ---
-      if (response.status === 401) {
-        console.warn('[Api] 401 Unauthorized. Clearing tokens.');
-        clearTokens();
-        // Emit event so AuthState can react (clean state)
-        window.dispatchEvent(new CustomEvent('auth:cleared')); 
-        // Throw error to stop flow
-        const err = new Error('Unauthorized');
-        err.statusCode = 401;
-        throw err;
-      }
-
       // Parse response
       let data;
       const contentType = response.headers.get('content-type');
@@ -114,6 +107,44 @@ const ApiClient = (function() {
         data = await response.text();
       }
 
+       const traceId = response.headers.get('x-trace-id');
+
+      // ===================================
+      // 401 Interceptor (Auto-Refresh)
+      // ===================================
+      if (response.status === 401) {
+        // Prevent infinite loops if refresh itself fails
+        if (path.includes('/auth/refresh')) {
+             console.warn('[Api] Refresh failed. Clearing session.');
+             window.dispatchEvent(new CustomEvent('auth:cleared'));
+             throw new Error('Session expired');
+        }
+
+        console.warn('[Api] 401 detected. Attempting Auto-Refresh...');
+
+        try {
+            // Attempt Refresh (Proxy will inject cookie)
+            // We use a fresh Api.post call here
+            await Api.post(ApiRoutes.auth.refresh, {});
+            console.log('[Api] Refresh successful. Retrying original request...');
+            
+            // Retry Original Request
+            // (Clone options to avoid mutation issues if any)
+            return request(method, path, body, options);
+
+        } catch (refreshError) {
+            // Refresh failed (Session truly expired or invalid)
+            // Log as info/warn, not error, as this is a normal lifecycle event
+            console.warn('[Api] Session expired (Auto-Refresh failed). Clearing local state.');
+            window.dispatchEvent(new CustomEvent('auth:cleared'));
+            
+            const err = new Error('Session expired');
+            err.statusCode = 401;
+            throw err;
+        }
+      }
+
+      // Other Errors
       if (!response.ok) {
         const error = new Error(data?.message || 'Request failed');
         error.statusCode = response.status;
@@ -122,8 +153,7 @@ const ApiClient = (function() {
         throw error;
       }
 
-      // Return unified response
-      return { data, status: response.status, accessToken: data?.accessToken };
+      return { data, status: response.status };
     } catch (error) {
       clearTimeout(timeoutId);
       if (error.name === 'AbortError') {
@@ -133,16 +163,15 @@ const ApiClient = (function() {
     }
   }
 
-  // --- Cookie Helpers ---
-  // --- Cookie Helpers Removed ---
-
   // Public Interface
   return {
+    // Deprecated (kept for compatibility)
     setTokens,
     clearTokens,
     getAccessToken,
-    isAuthenticated: () => false, // Handled by AuthState
+    isAuthenticated: () => false,
     
+    // HTTP methods
     get: (path, options) => request('GET', path, null, options),
     post: (path, body, options) => request('POST', path, body, options),
     patch: (path, body, options) => request('PATCH', path, body, options),

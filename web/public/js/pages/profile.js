@@ -10,7 +10,8 @@
 
     document.addEventListener('DOMContentLoaded', () => {
         setupEventListeners();
-        init();
+        // Critical: Wait for session hydration before running guard
+        AuthState.waitForInit().then(init);
     });
 
     async function init() {

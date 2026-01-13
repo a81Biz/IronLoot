@@ -45,16 +45,18 @@ export class AuctionsService {
       throw new ForbiddenException('User is not a registered seller');
     }
 
-    const startsAt = new Date(dto.startsAt);
-    const endsAt = new Date(dto.endsAt);
+    // Default startsAt to NOW if not provided (Server Authority)
     const now = new Date();
+    const startsAt = dto.startsAt ? new Date(dto.startsAt) : now;
+    const endsAt = new Date(dto.endsAt);
 
     if (endsAt <= startsAt) {
       throw new ValidationException('End date must be after start date');
     }
 
+    // Only validate past date if user explicitly provided it (and not defaulting to now)
     // Allow a small buffer (e.g. 1 minute) for network latency
-    if (startsAt.getTime() < now.getTime() - 60000) {
+    if (dto.startsAt && startsAt.getTime() < now.getTime() - 60000) {
       throw new ValidationException('Start date cannot be in the past');
     }
 
@@ -219,9 +221,22 @@ export class AuctionsService {
       throw new ValidationException('Auction is not in DRAFT state');
     }
 
+    // Recalculate dates based on duration
+    const now = new Date();
+    const durationMs = auction.endsAt.getTime() - auction.startsAt.getTime();
+
+    // Safety check for invalid duration (e.g. negative), default to 7 days if broken
+    const finalDuration = durationMs > 0 ? durationMs : 7 * 24 * 60 * 60 * 1000;
+
+    const newEndsAt = new Date(now.getTime() + finalDuration);
+
     const updatedAuction = await this.prisma.auction.update({
       where: { id },
-      data: { status: AuctionStatus.PUBLISHED },
+      data: {
+        status: AuctionStatus.PUBLISHED,
+        startsAt: now,
+        endsAt: newEndsAt,
+      },
     });
 
     this.log.info('Auction published', { auctionId: id });

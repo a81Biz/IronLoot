@@ -26,7 +26,7 @@
       renderAuction();
       renderBids(bidsData); // function renamed/created
       
-      if (Auth.isLoggedIn()) {
+      if (AuthState.isLoggedIn()) {
           setupWatchButton(auction.id, watchedStatus);
       }
 
@@ -34,11 +34,76 @@
       startCountdown();
     } catch (error) {
       console.error('Failed to load auction:', error);
-      Utils.$('#auctionTitle').textContent = 'Subasta no encontrada';
+      const msg = error.message || error.toString();
+      Utils.$('#auctionTitle').textContent = `Error: ${msg}`;
+      // Also log to toast
+      Utils.toast(`Error al cargar: ${msg}`, 'error');
     }
   }
 
-  // ... (renderAuction remains mostly same) ...
+  function setupEventListeners() {
+      const btnPlaceBid = Utils.$('#btnPlaceBid');
+      if (btnPlaceBid) {
+          btnPlaceBid.onclick = handlePlaceBid;
+      }
+      
+      // Also allow Enter key in amount input
+      const amountInput = Utils.$('#bidAmount');
+      if (amountInput) {
+          amountInput.addEventListener('keypress', (e) => {
+              if (e.key === 'Enter') {
+                  handlePlaceBid();
+              }
+          });
+      }
+  }
+
+  /**
+   * Render auction details
+   */
+  function renderAuction() {
+      if (!auction) return;
+
+      // Basic Info
+      Utils.text('#auctionTitle', auction.title);
+      Utils.text('#auctionDescription', auction.description);
+      Utils.text('#currentPrice', Utils.formatCurrency(auction.currentPrice));
+      
+      // Images
+      const img = auction.images && auction.images.length > 0 ? auction.images[0] : 'https://via.placeholder.com/800x600?text=Sin+Imagen';
+      const imgEl = Utils.$('#auctionImage');
+      if (imgEl) imgEl.src = img;
+
+      // Status & Times
+      Utils.text('#statusBadge', getStatusText(auction.status));
+      const statusEl = Utils.$('#statusBadge');
+      if (statusEl) {
+           statusEl.className = `badge badge-${auction.status.toLowerCase()}`;
+      }
+      
+      Utils.text('#startingPrice', Utils.formatCurrency(auction.startingPrice));
+      Utils.text('#startDate', Utils.formatDate(auction.startsAt));
+      Utils.text('#endDate', Utils.formatDate(auction.endsAt));
+
+      // Seller Info
+      if (auction.seller) {
+          Utils.text('#sellerName', auction.seller.username || 'Vendedor');
+          Utils.text('#sellerRating', auction.seller.rating ? `${auction.seller.rating} ★` : 'N/A');
+      }
+
+      // Bid Form State
+      const bidForm = Utils.$('#bidForm');
+      if (bidForm) {
+          if (auction.status === 'ACTIVE') {
+              bidForm.style.display = 'block';
+              const minBid = (parseFloat(auction.currentPrice) || 0) + 1;
+              Utils.$('#bidAmount').placeholder = `Mínimo ${Utils.formatCurrency(minBid)}`;
+              Utils.$('#bidAmount').min = minBid;
+          } else {
+              bidForm.style.display = 'none';
+          }
+      }
+  }
 
   async function setupWatchButton(auctionId, initialStatus) {
       const titleEl = Utils.$('#auctionTitle');
@@ -119,7 +184,7 @@
   // ...
 
   async function handlePlaceBid() {
-    if (!Auth.isLoggedIn()) {
+    if (!AuthState.isLoggedIn()) {
       const returnUrl = encodeURIComponent(window.location.pathname);
       window.location.href = `/login?return=${returnUrl}`;
       return;

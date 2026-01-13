@@ -4,6 +4,30 @@
 
 {% block styles %}
 <link rel="stylesheet" href="/css/pages/wallet.css">
+<style>
+    .radio-card {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius-md);
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .radio-card:hover {
+        background: var(--bg-hover);
+        border-color: var(--primary);
+    }
+    .radio-card input:checked + .card-content {
+        color: var(--primary);
+    }
+    .radio-card:has(input:checked) {
+        border-color: var(--primary);
+        background: var(--bg-surface-2);
+        box-shadow: 0 0 0 1px var(--primary);
+    }
+</style>
 {% endblock %}
 
 {% block content %}
@@ -43,6 +67,52 @@
                     <button type="button" class="btn btn-secondary btn-sm deposit-suggestion" data-amount="100">$100</button>
                     <button type="button" class="btn btn-secondary btn-sm deposit-suggestion" data-amount="200">$200</button>
                     <button type="button" class="btn btn-secondary btn-sm deposit-suggestion" data-amount="500">$500</button>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Método de Pago</label>
+                <div style="display: flex; gap: var(--spacing-4); flex-direction: column;">
+                    <label class="radio-card">
+                        <input type="radio" name="provider" value="MERCADO_PAGO" checked>
+                        <div class="card-content">
+                            <span style="font-weight: bold;">Mercado Pago</span>
+                            <small class="text-secondary">Tarjeta, OXXO, Saldo MP</small>
+                        </div>
+                    </label>
+                    
+                    <!-- MP Brick Container -->
+                    <!-- MP Brick Container -->
+                    <div id="cardPaymentBrick_container"></div>
+
+                    <label class="radio-card">
+                        <input type="radio" name="provider" value="MERCADO_PAGO_OFFLINE">
+                        <div class="card-content">
+                            <span style="font-weight: bold;">Efectivo / Transferencia</span>
+                            <small class="text-secondary">OXXO, BBVA, Citibanamex, Paycash</small>
+                        </div>
+                    </label>
+
+                    <div id="offline_payment_options" style="display: none; padding-left: 2rem;">
+                        <select class="form-input" id="offlineMethodSelector">
+                            <option value="oxxo">OXXO</option>
+                            <option value="bancomer">BBVA Bancomer</option>
+                            <option value="banamex">Citibanamex</option>
+                            <option value="paycash">PayCash</option>
+                            <option value="clabe">Transferencia SPEI</option>
+                        </select>
+                        <p class="text-sm text-secondary mt-2">
+                            Se generará una boleta de pago. Deberás realizar el pago en el establecimiento seleccionado.
+                        </p>
+                    </div>
+
+                    <label class="radio-card">
+                        <input type="radio" name="provider" value="PAYPAL">
+                        <div class="card-content">
+                            <span style="font-weight: bold;">PayPal</span>
+                            <small class="text-secondary">Tarjeta, Saldo PayPal</small>
+                        </div>
+                    </label>
                 </div>
             </div>
 

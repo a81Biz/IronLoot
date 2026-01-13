@@ -1,0 +1,229 @@
+﻿
+> iron-loot-api@0.2.3 test
+> jest
+
+node.exe : PASS test/u
+nit/auctions/auctions.
+service.spec.ts 
+(10.108 s)
+En línea: 1 Carácter: 
+1
++ & "C:\Program Files\
+nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (PASS test/   
+ unit/...c.ts (10.    
+108 s):String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+PASS src/modules/walle
+t/wallet.service.spec.
+ts (10.181 s)
+PASS test/unit/shipmen
+ts/shipments.service.s
+pec.ts (10.63 s)
+PASS test/unit/wallet/
+wallet.service.spec.ts
+ (10.722 s)
+PASS test/unit/dispute
+s/disputes.service.spe
+c.ts (10.902 s)
+PASS test/unit/users/u
+sers.service.spec.ts 
+(10.936 s)
+PASS test/unit/ratings
+/ratings.service.spec.
+ts (10.867 s)
+PASS src/modules/diagn
+ostics/diagnostics.con
+troller.spec.ts 
+(11.004 s)
+PASS test/unit/payment
+s/payments.service.spe
+c.ts (11.139 s)
+PASS test/unit/bids/bi
+ds.service.spec.ts 
+(11.219 s)
+PASS test/unit/orders/
+orders.service.spec.ts
+PASS test/unit/notific
+ations/notifications.s
+ervice.spec.ts
+PASS test/unit/users/u
+sers.controller.spec.t
+s (11.473 s)
+PASS test/unit/health/
+health.controller.spec
+.ts
+PASS src/modules/notif
+ications/notifications
+.controller.spec.ts
+PASS test/unit/auction
+s/auctions.controller.
+spec.ts (11.625 s)
+PASS test/unit/orders/
+orders.controller.spec
+.ts
+PASS test/unit/bids/bi
+ds.controller.spec.ts
+PASS src/modules/payme
+nts/payments.controlle
+r.spec.ts
+PASS src/modules/dispu
+tes/disputes.controlle
+r.spec.ts
+PASS src/modules/auth/
+auth.controller.spec.t
+s (11.741 s)
+PASS src/modules/ratin
+gs/ratings.controller.
+spec.ts
+PASS src/modules/shipm
+ents/shipments.control
+ler.spec.ts
+FAIL test/unit/wallet/
+wallet.controller.spec
+.ts (11.9 s)
+  ÔùÅ 
+WalletController ÔÇ║ 
+deposit ÔÇ║ should 
+call service.deposit
+
+    PaymentMismatchExc
+eption: Payment 
+amount mismatch
+
+    [0m [90m 106 
+|[39m       [90m// 
+Optionally throw or 
+just use the real 
+amount.[39m
+     [90m 107 |[39m 
+      [90m// 
+Throwing is safer to 
+alert the user of 
+mismatch[39m
+    [31m[1m>[22m[3
+9m[90m 108 |[39m    
+   [36mthrow[39m 
+[36mnew[39m [33mPay
+mentMismatchException
+[39m([33mNumber[39m(
+payment[33m.[39mamou
+nt)[33m,[39m dto[33
+m.[39mamount)[33m;[
+39m
+     [90m     |[39m 
+            
+[31m[1m^[22m[39m
+     [90m 109 |[39m 
+    }
+     [90m 110 |[39m
+     [90m 111 |[39m 
+    [36mreturn[39m 
+[36mthis[39m[33m.[3
+9mwalletService[33m.
+[39mdeposit(req[33m.
+[39muser[33m.[39mid
+[33m,[39m payment[33
+m.[39mamount[33m,[3
+9m dto[33m.[39mrefer
+enceId)[33m;[39m[0m
+
+      at WalletControl
+ler.deposit (src/modul
+es/wallet/wallet.contr
+oller.ts:108:13)
+      at 
+Object.<anonymous> (te
+st/unit/wallet/wallet.
+controller.spec.ts:58:
+7)
+
+PASS test/unit/auth/au
+th.service.spec.ts 
+(12.109 s)
+
+Summary of all 
+failing tests
+FAIL test/unit/wallet/
+wallet.controller.spec
+.ts (11.9 s)
+  ÔùÅ 
+WalletController ÔÇ║ 
+deposit ÔÇ║ should 
+call service.deposit
+
+    PaymentMismatchExc
+eption: Payment 
+amount mismatch
+
+    [0m [90m 106 
+|[39m       [90m// 
+Optionally throw or 
+just use the real 
+amount.[39m
+     [90m 107 |[39m 
+      [90m// 
+Throwing is safer to 
+alert the user of 
+mismatch[39m
+    [31m[1m>[22m[3
+9m[90m 108 |[39m    
+   [36mthrow[39m 
+[36mnew[39m [33mPay
+mentMismatchException
+[39m([33mNumber[39m(
+payment[33m.[39mamou
+nt)[33m,[39m dto[33
+m.[39mamount)[33m;[
+39m
+     [90m     |[39m 
+            
+[31m[1m^[22m[39m
+     [90m 109 |[39m 
+    }
+     [90m 110 |[39m
+     [90m 111 |[39m 
+    [36mreturn[39m 
+[36mthis[39m[33m.[3
+9mwalletService[33m.
+[39mdeposit(req[33m.
+[39muser[33m.[39mid
+[33m,[39m payment[33
+m.[39mamount[33m,[3
+9m dto[33m.[39mrefer
+enceId)[33m;[39m[0m
+
+      at WalletControl
+ler.deposit (src/modul
+es/wallet/wallet.contr
+oller.ts:108:13)
+      at 
+Object.<anonymous> (te
+st/unit/wallet/wallet.
+controller.spec.ts:58:
+7)
+
+
+Test Suites: 1 
+failed, 24 passed, 25 
+total
+Tests:       1 
+failed, 119 passed, 
+120 total
+Snapshots:   0 total
+Time:        13.024 
+s, estimated 15 s
+Ran all test suites.

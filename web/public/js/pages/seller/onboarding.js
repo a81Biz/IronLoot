@@ -15,7 +15,7 @@
         
         // Load Data
         try {
-            const verifyStatus = await Api.get('/users/me/verification-status');
+            const verifyStatus = await Api.get(ApiRoutes.users.verificationStatus);
             
             const handleUser = (userWrapper) => {
                 if (!userWrapper || !userWrapper.data) return;
@@ -131,7 +131,7 @@
     // Expose resend helper globally
     window.resendVerification = async function() {
         try {
-            await Api.post('/users/me/resend-verification');
+            await Api.post(ApiRoutes.users.resendVerification);
             Utils.toast('Correo de verificación enviado', 'success');
         } catch (e) {
             if(e.statusCode === 409) {
@@ -173,7 +173,7 @@
     async function handleSubmit(e) {
         e.preventDefault();
         const btn = Utils.$('#btnSubmit');
-        const original = btn.innerHTML;
+        const originalText = btn.innerHTML;
         btn.disabled = true;
         btn.innerHTML = '<span class="material-symbols-outlined spin">refresh</span> Procesando...';
 
@@ -187,13 +187,31 @@
             }
 
             const legalName = Utils.val('#legalName');
-            const documentId = Utils.val('#documentId'); // Assuming these fields exist in form
+            const phoneVal = Utils.val('#phone').replace(/\s+/g, ''); // Strip spaces
+            const phonePrefix = Utils.val('#phonePrefix') || '+52';
+            
+            // Format phone for backend (+521234567890)
+            const phone = `${phonePrefix}${phoneVal}`;
 
-            // Prepare Data
+            const address = Utils.val('#address');
+            const city = Utils.val('#city');
+            const country = Utils.val('#country');
+            const postalCode = Utils.val('#postalCode');
+
+            // Prepare Data (Nested for UpdateProfileDto)
+            // Prepare Data (Nested for UpdateProfileDto)
+            const displayName = Utils.val('#displayName');
+            
             const profileData = {
-                // If the flow supports updating profile data simultaneously
-                legalName, 
-                documentId
+                displayName, // API expects this at root
+                profile: {
+                    legalName,
+                    phone,
+                    address,
+                    city,
+                    country,
+                    postalCode
+                }
             };
 
             // Call Flow
@@ -207,8 +225,9 @@
             
             // Redirect is handled by Flow usually, or here?
             // The Plan says Flow redirects, but let's be safe.
+            // Redirect to profile where status is visible
             setTimeout(() => {
-                window.location.href = '/seller/dashboard';
+                window.location.href = '/profile';
             }, 1000);
 
         } catch (error) {

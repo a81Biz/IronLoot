@@ -106,7 +106,7 @@
                 try {
                     // API call to ship
                     // PATCH /orders/:id/ship
-                     await Api.post(`/orders/${orderId}/ship`, { trackingNumber: tracking, carrier });
+                     await Api.post(ApiRoutes.orders.ship(orderId), { trackingNumber: tracking, carrier });
                     
                     Utils.toast('Envío registrado', 'success');
                     Utils.$('#shipModal').classList.remove('active');

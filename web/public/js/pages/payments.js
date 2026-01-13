@@ -14,14 +14,8 @@
 
         try {
             // WebViewsController: GET /api/web-views/payments
-            const response = await fetch('/api/web-views/payments', {
-                headers: {
-                    'Authorization': `Bearer ${Utils.getToken()}`
-                }
-            });
-
-            if (!response.ok) throw new Error('Failed to fetch payments');
-            const data = await response.json();
+            // WebViewsController: GET /api/web-views/payments
+            const { data } = await Api.get(ApiRoutes.webViews.payments);
             const transactions = data.transactions || [];
             
             if (transactions.length === 0) {

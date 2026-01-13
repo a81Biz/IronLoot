@@ -5,22 +5,22 @@
 window.DisputeService = (function() {
 
     async function create(payload) {
-        const { data } = await Api.post('/disputes', payload);
+        const { data } = await Api.post(ApiRoutes.disputes.create, payload);
         return data;
     }
 
     async function listMine() {
-        const { data } = await Api.get('/disputes');
+        const { data } = await Api.get(ApiRoutes.disputes.list);
         return data;
     }
 
     async function getById(id) {
-        const { data } = await Api.get(`/disputes/${id}`);
+        const { data } = await Api.get(ApiRoutes.disputes.detail(id));
         return data;
     }
 
     async function addMessage(disputeId, message) {
-        const { data } = await Api.post(`/disputes/${disputeId}/messages`, { message });
+        const { data } = await Api.post(ApiRoutes.disputes.addMessage(disputeId), { message });
         return data;
     }
     
@@ -36,12 +36,12 @@ window.DisputeService = (function() {
         // unless Api client supports it.
         // However, standard file upload usually needs FormData.
         // Let's implement `post` normally.
-        const { data } = await Api.post(`/disputes/${disputeId}/evidence`, formData); // hope Api client doesn't force Content-Type: application/json
+        const { data } = await Api.post(ApiRoutes.disputes.uploadEvidence(disputeId), formData); // hope Api client doesn't force Content-Type: application/json
         return data;
     }
 
     async function resolve(disputeId, resolution) {
-        const { data } = await Api.post(`/disputes/${disputeId}/resolve`, { resolution });
+        const { data } = await Api.post(ApiRoutes.disputes.resolve(disputeId), { resolution });
         return data;
     }
 

@@ -97,6 +97,23 @@ const Utils = {
   },
 
   /**
+   * Format duration from milliseconds
+   * @param {number} ms 
+   * @returns {string}
+   */
+  formatDuration(ms) {
+    if (!ms || ms < 0) return '0m';
+    
+    const days = Math.floor(ms / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((ms % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (days >= 1) return `${days} ${days === 1 ? 'día' : 'días'}`;
+    if (hours >= 1) return `${hours} ${hours === 1 ? 'hora' : 'horas'}`;
+    return `${minutes} ${minutes === 1 ? 'minuto' : 'minutos'}`;
+  },
+
+  /**
    * Debounce function
    * @param {Function} func 
    * @param {number} wait 

@@ -41,14 +41,24 @@
 <body>
     {% block body %}{% endblock %}
 
+    <script id="current-user-data" type="application/json">
+      {{ userJson | safe | default('null') }}
+    </script>
     <script>
-      window.CURRENT_USER = {{ userJson | safe | default('null') }};
+      try {
+        window.CURRENT_USER = JSON.parse(document.getElementById('current-user-data').textContent);
+      } catch (e) {
+        window.CURRENT_USER = null;
+      }
     </script>
 
     <!-- Core Scripts -->
+    <script src="https://sdk.mercadopago.com/js/v2"></script>
 
+    <script src="/js/core/app-config.js"></script>
     <script src="/js/core/utils.js"></script>
     <script src="/js/core/api-client.js"></script>
+    <script src="/js/core/api-routes.js"></script>
     <script src="/js/core/auth-state.js"></script>
     <!-- Services -->
     <script src="/js/services/auth.service.js"></script>

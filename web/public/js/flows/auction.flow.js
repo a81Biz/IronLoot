@@ -60,9 +60,8 @@ window.AuctionFlow = (function() {
         
         // 3. Redirect
         // Spec 11: Redirect to edit (draft) or detail (published)
-        const target = created.status === 'DRAFT' 
-            ? `/auctions/${created.id}/edit`
-            : `/auctions/${created.id}`;
+        // Note: Edit path not yet implemented in Controller, redirecting to Detail for now.
+        const target = `/auctions/${created.id}`;
             
         window.location.href = target;
         return created;

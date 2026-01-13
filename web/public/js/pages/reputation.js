@@ -16,19 +16,11 @@
 
         try {
             // 1. Get current user ID
-            const profileRes = await fetch('/api/users/me', {
-                headers: { 'Authorization': `Bearer ${Utils.getToken()}` }
-            });
-            if (!profileRes.ok) throw new Error('Failed to load profile');
-            const user = await profileRes.json();
+            // 1. Get current user ID
+            const { data: user } = await Api.get(ApiRoutes.users.me);
 
             // 2. Fetch ratings for this user
-            const ratingsRes = await fetch(`/api/users/${user.id}/ratings`, {
-                headers: { 'Authorization': `Bearer ${Utils.getToken()}` }
-            });
-            
-            if (!ratingsRes.ok) throw new Error('Failed to fetch ratings');
-            const ratings = await ratingsRes.json();
+            const { data: ratings } = await Api.get(ApiRoutes.users.ratings(user.id));
 
             // 3. Calculate Stats
             const total = ratings.length;

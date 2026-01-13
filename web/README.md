@@ -148,7 +148,8 @@ await Api.wallet.deposit(amount, referenceId);
 | Dashboard | `/dashboard` | main |
 | Subastas | `/auctions` | main |
 | Detalle Subasta | `/auctions/:id` | main |
-| Wallet | `/wallet` | main |
+| Wallet (Resumen) | `/wallet` | main |
+| Wallet (Depositar) | `/wallet/deposit` | main |
 | Watchlist | `/watchlist` | main |
 | Settings | `/settings` | main |
 

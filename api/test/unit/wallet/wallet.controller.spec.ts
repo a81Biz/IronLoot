@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { WalletController } from '../../../src/modules/wallet/wallet.controller';
 import { WalletService } from '../../../src/modules/wallet/wallet.service';
+import { PaymentsService } from '../../../src/modules/payments/payments.service';
 import { PrismaService } from '../../../src/database/prisma.service';
 import { DepositDto } from '../../../src/modules/wallet/dto/wallet.dto';
 import { JwtAuthGuard } from '../../../src/modules/auth/guards/jwt-auth.guard';
@@ -30,6 +31,13 @@ describe('WalletController', () => {
       controllers: [WalletController],
       providers: [
         { provide: WalletService, useValue: mockWalletService },
+        {
+          provide: PaymentsService,
+          useValue: {
+            createCheckoutSession: jest.fn(),
+            verifyPayment: jest.fn().mockResolvedValue({ status: 'COMPLETED', amount: 100 }),
+          },
+        },
         { provide: PrismaService, useValue: mockPrismaService },
       ],
     })
@@ -43,9 +51,14 @@ describe('WalletController', () => {
 
   describe('getBalance', () => {
     it('should return balance', async () => {
-      mockWalletService.getBalance.mockResolvedValue({ available: 100 });
+      mockWalletService.getBalance.mockResolvedValue({
+        available: 100,
+        held: 0,
+        currency: 'USD',
+        isActive: true,
+      });
       const result = await controller.getBalance(mockRequest);
-      expect(result).toEqual({ available: 100 });
+      expect(result).toEqual({ available: 100, held: 0, currency: 'USD', isActive: true });
       expect(service.getBalance).toHaveBeenCalledWith('user-123');
     });
   });

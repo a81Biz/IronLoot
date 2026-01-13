@@ -4,6 +4,7 @@ import { INestApplication } from '@nestjs/common';
 import { AppModule } from '../../src/app.module'; // Adjust path if needed
 import { PrismaService } from '../../src/database/prisma.service';
 import { LedgerType } from '@prisma/client';
+import { AuctionSchedulerService } from '../../src/modules/scheduler/auction-scheduler.service';
 
 describe('Orders Flow (E2E)', () => {
   let app: INestApplication;
@@ -25,6 +26,11 @@ describe('Orders Flow (E2E)', () => {
     await prisma.order.deleteMany();
     await prisma.bid.deleteMany();
     await prisma.auction.deleteMany();
+    await prisma.user.deleteMany({
+      where: {
+        email: { in: ['buyer_e2e@test.com', 'seller_e2e@test.com'] },
+      },
+    });
     // Don't delete all users in shared env, but for E2E usually safe if specific db
   });
 
@@ -32,7 +38,7 @@ describe('Orders Flow (E2E)', () => {
   // If it fails with "Tests: 0 total", check Jest config paths and DB connection.
   it('should execute the full financial flow on auction close', async () => {
     // const walletService = app.get('WalletService'); // Unused
-    const scheduler = app.get('AuctionSchedulerService');
+    const scheduler = app.get(AuctionSchedulerService);
 
     // 1. Create Seller & Buyer
     const buyer = await prisma.user.create({

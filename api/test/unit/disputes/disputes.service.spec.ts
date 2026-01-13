@@ -58,6 +58,8 @@ describe('DisputesService', () => {
         id: 'order-1',
         buyerId: userId,
         sellerId: 'user-2',
+        status: 'DELIVERED',
+        updatedAt: new Date(),
         dispute: null,
       });
 

@@ -13,6 +13,8 @@ import {
   EmailAlreadyExistsException,
 } from '@common/observability';
 import { AuditPersistenceService } from '@modules/audit/audit-persistence.service';
+import { EmailService } from '@/modules/notifications/email.service';
+import { TwoFactorAuthService } from '@/modules/auth/two-factor-auth.service';
 
 describe('AuthService', () => {
   let service: AuthService;
@@ -117,6 +119,14 @@ describe('AuthService', () => {
         {
           provide: AuditPersistenceService,
           useValue: mockAudit,
+        },
+        {
+          provide: EmailService,
+          useValue: { sendVerificationEmail: jest.fn(), sendPasswordResetEmail: jest.fn() },
+        },
+        {
+          provide: TwoFactorAuthService,
+          useValue: { validateToken: jest.fn() },
         },
       ],
     }).compile();
@@ -224,6 +234,11 @@ describe('AuthService', () => {
         email: mockUser.email,
         username: mockUser.username,
         state: mockUser.state,
+        displayName: mockUser.displayName,
+        isSeller: mockUser.isSeller,
+        emailVerified: !!mockUser.emailVerifiedAt,
+        avatarUrl: undefined,
+        profile: undefined,
       });
     });
 

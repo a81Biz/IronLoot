@@ -12,7 +12,7 @@ window.UserService = (function() {
      */
     async function getMe() {
         // Returns { data: ... }
-        return Api.get('/users/me'); 
+        return Api.get(ApiRoutes.users.me); 
     }
 
     /**
@@ -22,14 +22,14 @@ window.UserService = (function() {
      */
     async function updateMe(data) {
         // Expected response: { data: updatedUser, accessToken: newToken? }
-        return Api.patch('/users/me', data);
+        return Api.patch(ApiRoutes.users.me, data);
     }
 
     /**
      * Get User Statistics
      */
     async function getStats() {
-        const { data } = await Api.get('/users/me/stats');
+        const { data } = await Api.get(ApiRoutes.users.stats);
         return data; 
     }
 
@@ -37,7 +37,7 @@ window.UserService = (function() {
      * Get User Settings
      */
     async function getSettings() {
-        const { data } = await Api.get('/users/me/settings');
+        const { data } = await Api.get(ApiRoutes.users.settings);
         return data;
     }
 
@@ -45,7 +45,7 @@ window.UserService = (function() {
      * Update User Settings
      */
     async function updateSettings(settings) {
-        const { data } = await Api.patch('/users/me/settings', settings);
+        const { data } = await Api.patch(ApiRoutes.users.settings, settings);
         return data;
     }
 

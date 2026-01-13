@@ -106,7 +106,7 @@ describe('AuctionsService', () => {
         description: 'Desc',
         startingPrice: 100,
         startsAt: new Date().toISOString(),
-        endsAt: new Date().toISOString(),
+        endsAt: new Date(Date.now() + 7200000).toISOString(),
         images: [],
       };
 
@@ -187,6 +187,64 @@ describe('AuctionsService', () => {
       });
 
       await expect(service.update(mockUser.id, mockAuction.id, {})).rejects.toThrow(
+        ValidationException,
+      );
+    });
+  });
+
+  describe('publish', () => {
+    it('should publish auction and recalculate dates', async () => {
+      // Setup draft with old dates (e.g. created 1 day ago, duration 2 hours)
+      const oldStart = new Date(Date.now() - 86400000); // 1 day ago
+      const oldEnd = new Date(oldStart.getTime() + 7200000); // 2 hours duration
+
+      const draftAuction = {
+        ...mockAuction,
+        startsAt: oldStart,
+        endsAt: oldEnd,
+      };
+
+      mockPrismaService.auction.findUnique.mockResolvedValue(draftAuction);
+      mockPrismaService.auction.update.mockImplementation((params) => {
+        return Promise.resolve({
+          ...draftAuction,
+          ...params.data, // Should include new startsAt/endsAt
+          status: AuctionStatus.PUBLISHED,
+        });
+      });
+
+      await service.publish(mockUser.id, mockAuction.id);
+
+      expect(mockPrismaService.auction.update).toHaveBeenCalled();
+      const updateCall = mockPrismaService.auction.update.mock.calls[0][0];
+
+      // Verify Status
+      expect(updateCall.data.status).toBe(AuctionStatus.PUBLISHED);
+
+      // Verify Dates were recalculated
+      expect(updateCall.data.startsAt).toBeDefined();
+      expect(updateCall.data.endsAt).toBeDefined();
+
+      // Verify Duration is preserved (allow small ms diff if Date.now() shifts)
+      const newDuration = updateCall.data.endsAt.getTime() - updateCall.data.startsAt.getTime();
+      expect(newDuration).toBe(7200000); // 2 hours
+    });
+
+    it('should throw ForbiddenException if not owner', async () => {
+      mockPrismaService.auction.findUnique.mockResolvedValue(mockAuction);
+
+      await expect(service.publish('other-user', mockAuction.id)).rejects.toThrow(
+        ForbiddenException,
+      );
+    });
+
+    it('should throw ValidationException if not in DRAFT state', async () => {
+      mockPrismaService.auction.findUnique.mockResolvedValue({
+        ...mockAuction,
+        status: AuctionStatus.ACTIVE,
+      });
+
+      await expect(service.publish(mockUser.id, mockAuction.id)).rejects.toThrow(
         ValidationException,
       );
     });

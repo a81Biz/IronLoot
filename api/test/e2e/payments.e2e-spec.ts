@@ -103,4 +103,29 @@ describe('Payments Module (e2e)', () => {
         .expect(404); // Or 400 depending on service logic
     });
   });
+  describe('POST /payments/initiate', () => {
+    it('should initiate a wallet deposit', async () => {
+      const res = await request(testApp.getApp().getHttpServer())
+        .post('/api/v1/payments/initiate')
+        .set('Authorization', `Bearer ${winner.token}`)
+        .send({
+          amount: 100,
+          provider: 'PAYPAL',
+        })
+        .expect(201);
+
+      expect(res.body.redirectUrl).toBeDefined();
+    });
+
+    it('should fail with invalid amount', async () => {
+      await request(testApp.getApp().getHttpServer())
+        .post('/api/v1/payments/initiate')
+        .set('Authorization', `Bearer ${winner.token}`)
+        .send({
+          amount: -50,
+          provider: 'PAYPAL',
+        })
+        .expect(400);
+    });
+  });
 });

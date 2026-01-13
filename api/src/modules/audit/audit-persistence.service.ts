@@ -87,7 +87,7 @@ export class AuditPersistenceService implements OnModuleInit {
           actorType: data.actorType,
           actorUserId: data.actorUserId,
           entityType: data.entityType,
-          entityId: data.entityId,
+          entityId: data.entityId || '00000000-0000-0000-0000-000000000000',
           result: data.result,
           reasonCode: data.reasonCode,
           payload: (data.payload || {}) as Prisma.InputJsonValue,

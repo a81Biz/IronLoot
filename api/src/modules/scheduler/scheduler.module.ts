@@ -16,5 +16,6 @@ import { NotificationsModule } from '../notifications/notifications.module';
     NotificationsModule,
   ],
   providers: [AuctionSchedulerService, SystemCleanupService],
+  exports: [AuctionSchedulerService],
 })
 export class SchedulerModule {}

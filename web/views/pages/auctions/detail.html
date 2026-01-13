@@ -8,10 +8,15 @@
 
 {% block content %}
 <div class="auction-detail">
+    {% if user and user.isSeller %}
+    <div style="margin-bottom: var(--spacing-4);">
+        <a href="/seller/auctions" class="text-secondary text-sm text-decoration-none">← Mis Subastas</a>
+    </div>
+    {% endif %}
     <!-- Gallery -->
     <div class="auction-gallery">
         <div class="auction-main-image" id="mainImage">
-            <img src="https://via.placeholder.com/800x600?text=Cargando..." alt="Imagen principal">
+            <img id="auctionImage" src="https://via.placeholder.com/800x600?text=Cargando..." alt="Imagen principal">
         </div>
         <div class="auction-thumbnails" id="thumbnails">
             <!-- Thumbnails loaded dynamically -->

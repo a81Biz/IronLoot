@@ -4,11 +4,9 @@ import { PaymentsService } from '../../../src/modules/payments/payments.service'
 // import { PaymentsController } from '../../../src/modules/payments/payments.controller';
 import { MercadoPagoProvider } from '../../../src/modules/payments/providers/mercadopago.provider';
 import { PaypalProvider } from '../../../src/modules/payments/providers/paypal.provider';
-// import { StripeProvider } from '../../../src/modules/payments/providers/stripe.provider';
+import { StripeProvider } from '../../../src/modules/payments/providers/stripe.provider';
 import { PrismaService } from '../../../src/database/prisma.service';
-import { OrdersService } from '../../../src/modules/orders/orders.service';
-import { StructuredLogger } from '../../../src/common/observability';
-// import { PaymentProviderEnum } from '../../../src/modules/payments/interfaces';
+import { WalletService } from '../../../src/modules/wallet/wallet.service';
 
 // Mock Dependencies
 const mockPrismaService = {
@@ -17,8 +15,9 @@ const mockPrismaService = {
   },
 };
 
-const mockOrdersService = {
-  findOne: jest.fn(),
+const mockWalletService = {
+  deposit: jest.fn(),
+  getBalance: jest.fn(),
 };
 
 const mockLogger = {
@@ -30,19 +29,36 @@ const mockLogger = {
 describe('PaymentsService', () => {
   let service: PaymentsService;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  let ordersService: OrdersService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PaymentsService,
-        MercadoPagoProvider,
-        PaypalProvider,
-        { provide: PrismaService, useValue: mockPrismaService },
-        { provide: OrdersService, useValue: mockOrdersService },
-        { provide: StructuredLogger, useValue: mockLogger },
         {
-          provide: 'StripeProvider',
+          provide: MercadoPagoProvider,
+          useValue: {
+            createPayment: jest.fn(),
+            verifyPayment: jest.fn(),
+            handleWebhook: jest.fn(),
+            checkStatus: jest.fn().mockReturnValue(true),
+          },
+        },
+        {
+          provide: PaypalProvider,
+          useValue: {
+            createPayment: jest.fn(),
+            verifyPayment: jest.fn(),
+            handleWebhook: jest.fn(),
+            checkStatus: jest.fn().mockReturnValue(true),
+          },
+        },
+        { provide: PrismaService, useValue: mockPrismaService },
+
+        { provide: WalletService, useValue: mockWalletService },
+        { provide: 'StructuredLogger', useValue: mockLogger }, // If token is string, or remove if unused in service (we removed it)
+        // { provide: StructuredLogger, useValue: mockLogger }, // Removed from service
+        {
+          provide: StripeProvider,
           useValue: {
             checkStatus: jest.fn().mockReturnValue(true),
             createPayment: jest
@@ -54,7 +70,6 @@ describe('PaymentsService', () => {
     }).compile();
 
     service = module.get<PaymentsService>(PaymentsService);
-    ordersService = module.get<OrdersService>(OrdersService);
   });
 
   it('should be defined', () => {
@@ -66,7 +81,7 @@ describe('PaymentsService', () => {
       const userId = 'user-uuid';
       const dto = { amount: 100, description: 'Test Deposit' };
 
-      const result = await service.createCheckoutSession(userId, dto);
+      const result = await service.createCheckoutSession(userId, 'test@example.com', dto);
 
       expect(result).toBeDefined();
       // Expect mock to be called (Stripe is now the default provider in the implementation shown in step 860)

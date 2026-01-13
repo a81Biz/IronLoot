@@ -33,7 +33,7 @@ class IsFutureDateConstraint implements ValidatorConstraintInterface {
 class IsAfterStartDateConstraint implements ValidatorConstraintInterface {
   validate(value: string, args: ValidationArguments) {
     const object = args.object as CreateAuctionDto;
-    const startsAt = new Date(object.startsAt);
+    const startsAt = object.startsAt ? new Date(object.startsAt) : new Date();
     const endsAt = new Date(value);
     // Minimum duration: 1 hour
     const minDuration = 60 * 60 * 1000;
@@ -62,11 +62,11 @@ export class CreateAuctionDto {
   @Min(1, { message: 'Starting price must be at least $1.00' })
   startingPrice: number;
 
-  @ApiProperty({ example: '2026-01-10T10:00:00Z' })
+  @ApiProperty({ example: '2026-01-10T10:00:00Z', required: false })
   @IsDateString()
-  @IsNotEmpty()
+  @IsOptional()
   @Validate(IsFutureDateConstraint)
-  startsAt: string;
+  startsAt?: string;
 
   @ApiProperty({ example: '2026-01-11T10:00:00Z' })
   @IsDateString()

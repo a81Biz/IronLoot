@@ -1,0 +1,2262 @@
+﻿
+> iron-loot-api@0.2.3 test
+> jest
+
+node.exe : FAIL test/u
+nit/disputes/disputes.
+service.spec.ts (9.42 
+s)
+En línea: 1 Carácter: 
+1
++ & "C:\Program Files\
+nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (FAIL test/   
+ unit/...pec.ts (9    
+.42 s):String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+  ÔùÅ DisputesService 
+ÔÇ║ create ÔÇ║ should 
+create a dispute 
+successfully
+
+    TypeError: Cannot 
+read properties of 
+undefined (reading 
+'getTime')
+
+    [0m [90m 47 
+|[39m     [90m// 
+Time limit: 30 days 
+after update (delivery
+/payment)[39m
+     [90m 48 |[39m  
+   [36mconst[39m 
+thirtyDays 
+[33m=[39m 
+[35m30[39m 
+[33m*[39m 
+[35m24[39m 
+[33m*[39m 
+[35m60[39m 
+[33m*[39m 
+[35m60[39m 
+[33m*[39m [35m1000
+[39m[33m;[39m
+    [31m[1m>[22m[3
+9m[90m 49 |[39m     
+[36mif[39m 
+([36mnew[39m [33mDa
+te[39m()[33m.[39mge
+tTime() [33m-[39m or
+der[33m.[39mupdatedA
+t[33m.[39mgetTime() 
+[33m>[39m 
+thirtyDays) {
+     [90m    |[39m  
+                      
+                      
+  [31m[1m^[22m[39m
+     [90m 50 |[39m  
+     [36mthrow[39m 
+[36mnew[39m [33mBad
+RequestException[39m(
+[32m'Dispute period 
+has expired (30 days)'
+[39m)[33m;[39m
+     [90m 51 |[39m  
+   }
+     [90m 52 
+|[39m[0m
+
+      at DisputesServi
+ce.create (src/modules
+/disputes/disputes.ser
+vice.ts:49:48)
+      at 
+Object.<anonymous> (te
+st/unit/disputes/dispu
+tes.service.spec.ts:71
+:22)
+
+PASS src/modules/walle
+t/wallet.service.spec.
+ts (9.62 s)
+FAIL test/unit/users/u
+sers.service.spec.ts 
+(9.68 s)
+  ÔùÅ UsersService 
+ÔÇ║ getPublicProfile 
+ÔÇ║ should return 
+public profile with 
+limited data
+
+    TypeError: Cannot 
+read properties of 
+undefined (reading 
+'count')
+
+    [0m [90m 422 
+|[39m     
+[36mconst[39m 
+[sold[33m,[39m 
+won[33m,[39m 
+ratings] [33m=[39m 
+[36mawait[39m [33mP
+romise[39m[33m.[39m
+all([
+     [90m 423 |[39m 
+      [90m// Sold: 
+Auctions where user 
+is seller and order 
+exists (item actually 
+sold)[39m
+    [31m[1m>[22m[3
+9m[90m 424 |[39m    
+   [36mthis[39m[33m
+.[39mprisma[33m.[39
+morder[33m.[39mcount
+({
+     [90m     |[39m 
+                      
+  [31m[1m^[22m[39m
+     [90m 425 |[39m 
+        
+where[33m:[39m { 
+sellerId[33m:[39m 
+userId[33m,[39m 
+status[33m:[39m { 
+not[33m:[39m 
+[32m'CANCELLED'[39m 
+} }[33m,[39m
+     [90m 426 |[39m 
+      })[33m,[39m
+     [90m 427 |[39m 
+      [90m// Won: 
+Auctions where user 
+is buyer[39m[0m
+
+      at UsersService.
+calculateUserStats (sr
+c/modules/users/users.
+service.ts:424:25)
+      at UsersService.
+getPublicProfile (src/
+modules/users/users.se
+rvice.ts:196:19)
+      at 
+Object.<anonymous> (te
+st/unit/users/users.se
+rvice.spec.ts:174:22)
+
+  ÔùÅ UsersService 
+ÔÇ║ getUserStats ÔÇ║ 
+should return user 
+statistics
+
+    TypeError: Cannot 
+read properties of 
+undefined (reading 
+'count')
+
+    [0m [90m 422 
+|[39m     
+[36mconst[39m 
+[sold[33m,[39m 
+won[33m,[39m 
+ratings] [33m=[39m 
+[36mawait[39m [33mP
+romise[39m[33m.[39m
+all([
+     [90m 423 |[39m 
+      [90m// Sold: 
+Auctions where user 
+is seller and order 
+exists (item actually 
+sold)[39m
+    [31m[1m>[22m[3
+9m[90m 424 |[39m    
+   [36mthis[39m[33m
+.[39mprisma[33m.[39
+morder[33m.[39mcount
+({
+     [90m     |[39m 
+                      
+  [31m[1m^[22m[39m
+     [90m 425 |[39m 
+        
+where[33m:[39m { 
+sellerId[33m:[39m 
+userId[33m,[39m 
+status[33m:[39m { 
+not[33m:[39m 
+[32m'CANCELLED'[39m 
+} }[33m,[39m
+     [90m 426 |[39m 
+      })[33m,[39m
+     [90m 427 |[39m 
+      [90m// Won: 
+Auctions where user 
+is buyer[39m[0m
+
+      at UsersService.
+calculateUserStats (sr
+c/modules/users/users.
+service.ts:424:25)
+
+PASS test/unit/wallet/
+wallet.service.spec.ts
+ (9.75 s)
+FAIL test/unit/payment
+s/payments.service.spe
+c.ts (9.867 s)
+  ÔùÅ PaymentsService 
+ÔÇ║ should be defined
+
+    Nest can't 
+resolve dependencies 
+of the 
+PaymentsService (?). 
+Please make sure that 
+the argument 
+StripeProvider at 
+index [0] is 
+available in the 
+RootTestModule 
+context.
+
+    Potential 
+solutions:
+    - Is 
+RootTestModule a 
+valid NestJS module?
+    - If 
+StripeProvider is a 
+provider, is it part 
+of the current 
+RootTestModule?
+    - If 
+StripeProvider is 
+exported from a 
+separate @Module, is 
+that module imported 
+within RootTestModule?
+      @Module({
+        imports: [ /* 
+the Module containing 
+StripeProvider */ ]
+      })
+
+    [0m [90m 34 
+|[39m
+     [90m 35 |[39m  
+ beforeEach([36masync
+[39m () [33m=>[39m 
+{
+    [31m[1m>[22m[3
+9m[90m 36 |[39m     
+[36mconst[39m 
+module[33m:[39m [33
+mTestingModule[39m 
+[33m=[39m 
+[36mawait[39m [33mT
+est[39m[33m.[39mcre
+ateTestingModule({
+     [90m    |[39m  
+                      
+           
+[31m[1m^[22m[39m
+     [90m 37 |[39m  
+     
+providers[33m:[39m [
+     [90m 38 |[39m  
+       [33mPaymentsSe
+rvice[39m[33m,[39m
+     [90m 39 |[39m  
+       [33mMercadoPag
+oProvider[39m[33m,[
+39m[0m
+
+      at TestingInject
+or.lookupComponentInPa
+rentModules (node_modu
+les/@nestjs/core/injec
+tor/injector.js:262:19
+)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/core/injector/in
+jector.js:215:33)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/testing/testing-
+injector.js:19:45)
+      at resolveParam 
+(node_modules/@nestjs/
+core/injector/injector
+.js:129:38)
+          at async 
+Promise.all (index 0)
+      at TestingInject
+or.resolveConstructorP
+arams (node_modules/@n
+estjs/core/injector/in
+jector.js:144:27)
+      at TestingInject
+or.loadInstance (node_
+modules/@nestjs/core/i
+njector/injector.js:70
+:13)
+      at TestingInject
+or.loadProvider (node_
+modules/@nestjs/core/i
+njector/injector.js:98
+:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:56:
+13
+          at async 
+Promise.all (index 3)
+      at TestingInstan
+ceLoader.createInstanc
+esOfProviders (node_mo
+dules/@nestjs/core/inj
+ector/instance-loader.
+js:55:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:40:
+13
+          at async 
+Promise.all (index 1)
+      at TestingInstan
+ceLoader.createInstanc
+es (node_modules/@nest
+js/core/injector/insta
+nce-loader.js:39:9)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/core/
+injector/instance-load
+er.js:22:13)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/testi
+ng/testing-instance-lo
+ader.js:9:9)
+      at TestingModule
+Builder.createInstance
+sOfDependencies (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:118:9)
+      at TestingModule
+Builder.compile (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:74:9)
+      at 
+Object.<anonymous> (te
+st/unit/payments/payme
+nts.service.spec.ts:36
+:35)
+
+  ÔùÅ PaymentsService 
+ÔÇ║ 
+createCheckoutSession 
+ÔÇ║ should create a 
+payment session for 
+Wallet Deposit
+
+    Nest can't 
+resolve dependencies 
+of the 
+PaymentsService (?). 
+Please make sure that 
+the argument 
+StripeProvider at 
+index [0] is 
+available in the 
+RootTestModule 
+context.
+
+    Potential 
+solutions:
+    - Is 
+RootTestModule a 
+valid NestJS module?
+    - If 
+StripeProvider is a 
+provider, is it part 
+of the current 
+RootTestModule?
+    - If 
+StripeProvider is 
+exported from a 
+separate @Module, is 
+that module imported 
+within RootTestModule?
+      @Module({
+        imports: [ /* 
+the Module containing 
+StripeProvider */ ]
+      })
+
+    [0m [90m 34 
+|[39m
+     [90m 35 |[39m  
+ beforeEach([36masync
+[39m () [33m=>[39m 
+{
+    [31m[1m>[22m[3
+9m[90m 36 |[39m     
+[36mconst[39m 
+module[33m:[39m [33
+mTestingModule[39m 
+[33m=[39m 
+[36mawait[39m [33mT
+est[39m[33m.[39mcre
+ateTestingModule({
+     [90m    |[39m  
+                      
+           
+[31m[1m^[22m[39m
+     [90m 37 |[39m  
+     
+providers[33m:[39m [
+     [90m 38 |[39m  
+       [33mPaymentsSe
+rvice[39m[33m,[39m
+     [90m 39 |[39m  
+       [33mMercadoPag
+oProvider[39m[33m,[
+39m[0m
+
+      at TestingInject
+or.lookupComponentInPa
+rentModules (node_modu
+les/@nestjs/core/injec
+tor/injector.js:262:19
+)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/core/injector/in
+jector.js:215:33)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/testing/testing-
+injector.js:19:45)
+      at resolveParam 
+(node_modules/@nestjs/
+core/injector/injector
+.js:129:38)
+          at async 
+Promise.all (index 0)
+      at TestingInject
+or.resolveConstructorP
+arams (node_modules/@n
+estjs/core/injector/in
+jector.js:144:27)
+      at TestingInject
+or.loadInstance (node_
+modules/@nestjs/core/i
+njector/injector.js:70
+:13)
+      at TestingInject
+or.loadProvider (node_
+modules/@nestjs/core/i
+njector/injector.js:98
+:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:56:
+13
+          at async 
+Promise.all (index 3)
+      at TestingInstan
+ceLoader.createInstanc
+esOfProviders (node_mo
+dules/@nestjs/core/inj
+ector/instance-loader.
+js:55:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:40:
+13
+          at async 
+Promise.all (index 1)
+      at TestingInstan
+ceLoader.createInstanc
+es (node_modules/@nest
+js/core/injector/insta
+nce-loader.js:39:9)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/core/
+injector/instance-load
+er.js:22:13)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/testi
+ng/testing-instance-lo
+ader.js:9:9)
+      at TestingModule
+Builder.createInstance
+sOfDependencies (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:118:9)
+      at TestingModule
+Builder.compile (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:74:9)
+      at 
+Object.<anonymous> (te
+st/unit/payments/payme
+nts.service.spec.ts:36
+:35)
+
+PASS test/unit/bids/bi
+ds.service.spec.ts 
+(9.947 s)
+PASS test/unit/shipmen
+ts/shipments.service.s
+pec.ts (10.076 s)
+PASS test/unit/auction
+s/auctions.service.spe
+c.ts (10.215 s)
+PASS src/modules/diagn
+ostics/diagnostics.con
+troller.spec.ts 
+(10.179 s)
+PASS test/unit/ratings
+/ratings.service.spec.
+ts (10.234 s)
+PASS test/unit/orders/
+orders.controller.spec
+.ts
+PASS test/unit/health/
+health.controller.spec
+.ts
+PASS test/unit/notific
+ations/notifications.s
+ervice.spec.ts
+PASS test/unit/orders/
+orders.service.spec.ts
+PASS test/unit/users/u
+sers.controller.spec.t
+s (10.987 s)
+PASS src/modules/shipm
+ents/shipments.control
+ler.spec.ts
+PASS test/unit/bids/bi
+ds.controller.spec.ts
+PASS src/modules/dispu
+tes/disputes.controlle
+r.spec.ts
+PASS test/unit/auction
+s/auctions.controller.
+spec.ts (10.991 s)
+FAIL test/unit/wallet/
+wallet.controller.spec
+.ts (11.044 s)
+  ÔùÅ 
+WalletController ÔÇ║ 
+getBalance ÔÇ║ should 
+return balance
+
+    Nest can't 
+resolve dependencies 
+of the 
+WalletController 
+(WalletService, 
+PrismaService, ?). 
+Please make sure that 
+the argument 
+PaymentsService at 
+index [2] is 
+available in the 
+RootTestModule 
+context.
+
+    Potential 
+solutions:
+    - Is 
+RootTestModule a 
+valid NestJS module?
+    - If 
+PaymentsService is a 
+provider, is it part 
+of the current 
+RootTestModule?
+    - If 
+PaymentsService is 
+exported from a 
+separate @Module, is 
+that module imported 
+within RootTestModule?
+      @Module({
+        imports: [ /* 
+the Module containing 
+PaymentsService */ ]
+      })
+
+    [0m [90m 27 
+|[39m
+     [90m 28 |[39m  
+ beforeEach([36masync
+[39m () [33m=>[39m 
+{
+    [31m[1m>[22m[3
+9m[90m 29 |[39m     
+[36mconst[39m 
+module[33m:[39m [33
+mTestingModule[39m 
+[33m=[39m 
+[36mawait[39m [33mT
+est[39m[33m.[39mcre
+ateTestingModule({
+     [90m    |[39m  
+                      
+           
+[31m[1m^[22m[39m
+     [90m 30 |[39m  
+     controllers[33m:
+[39m [[33mWalletCont
+roller[39m][33m,[39
+m
+     [90m 31 |[39m  
+     
+providers[33m:[39m [
+     [90m 32 |[39m  
+       { 
+provide[33m:[39m [3
+3mWalletService[39m[
+33m,[39m 
+useValue[33m:[39m 
+mockWalletService 
+}[33m,[39m[0m
+
+      at TestingInject
+or.lookupComponentInPa
+rentModules (node_modu
+les/@nestjs/core/injec
+tor/injector.js:262:19
+)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/core/injector/in
+jector.js:215:33)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/testing/testing-
+injector.js:19:45)
+      at resolveParam 
+(node_modules/@nestjs/
+core/injector/injector
+.js:129:38)
+          at async 
+Promise.all (index 2)
+      at TestingInject
+or.resolveConstructorP
+arams (node_modules/@n
+estjs/core/injector/in
+jector.js:144:27)
+      at TestingInject
+or.loadInstance (node_
+modules/@nestjs/core/i
+njector/injector.js:70
+:13)
+      at TestingInject
+or.loadController (nod
+e_modules/@nestjs/core
+/injector/injector.js:
+89:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:68:
+13
+          at async 
+Promise.all (index 0)
+      at TestingInstan
+ceLoader.createInstanc
+esOfControllers (node_
+modules/@nestjs/core/i
+njector/instance-loade
+r.js:67:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:42:
+13
+          at async 
+Promise.all (index 1)
+      at TestingInstan
+ceLoader.createInstanc
+es (node_modules/@nest
+js/core/injector/insta
+nce-loader.js:39:9)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/core/
+injector/instance-load
+er.js:22:13)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/testi
+ng/testing-instance-lo
+ader.js:9:9)
+      at TestingModule
+Builder.createInstance
+sOfDependencies (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:118:9)
+      at TestingModule
+Builder.compile (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:74:9)
+      at 
+Object.<anonymous> (te
+st/unit/wallet/wallet.
+controller.spec.ts:29:
+35)
+
+  ÔùÅ 
+WalletController ÔÇ║ 
+deposit ÔÇ║ should 
+call service.deposit
+
+    Nest can't 
+resolve dependencies 
+of the 
+WalletController 
+(WalletService, 
+PrismaService, ?). 
+Please make sure that 
+the argument 
+PaymentsService at 
+index [2] is 
+available in the 
+RootTestModule 
+context.
+
+    Potential 
+solutions:
+    - Is 
+RootTestModule a 
+valid NestJS module?
+    - If 
+PaymentsService is a 
+provider, is it part 
+of the current 
+RootTestModule?
+    - If 
+PaymentsService is 
+exported from a 
+separate @Module, is 
+that module imported 
+within RootTestModule?
+      @Module({
+        imports: [ /* 
+the Module containing 
+PaymentsService */ ]
+      })
+
+    [0m [90m 27 
+|[39m
+     [90m 28 |[39m  
+ beforeEach([36masync
+[39m () [33m=>[39m 
+{
+    [31m[1m>[22m[3
+9m[90m 29 |[39m     
+[36mconst[39m 
+module[33m:[39m [33
+mTestingModule[39m 
+[33m=[39m 
+[36mawait[39m [33mT
+est[39m[33m.[39mcre
+ateTestingModule({
+     [90m    |[39m  
+                      
+           
+[31m[1m^[22m[39m
+     [90m 30 |[39m  
+     controllers[33m:
+[39m [[33mWalletCont
+roller[39m][33m,[39
+m
+     [90m 31 |[39m  
+     
+providers[33m:[39m [
+     [90m 32 |[39m  
+       { 
+provide[33m:[39m [3
+3mWalletService[39m[
+33m,[39m 
+useValue[33m:[39m 
+mockWalletService 
+}[33m,[39m[0m
+
+      at TestingInject
+or.lookupComponentInPa
+rentModules (node_modu
+les/@nestjs/core/injec
+tor/injector.js:262:19
+)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/core/injector/in
+jector.js:215:33)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/testing/testing-
+injector.js:19:45)
+      at resolveParam 
+(node_modules/@nestjs/
+core/injector/injector
+.js:129:38)
+          at async 
+Promise.all (index 2)
+      at TestingInject
+or.resolveConstructorP
+arams (node_modules/@n
+estjs/core/injector/in
+jector.js:144:27)
+      at TestingInject
+or.loadInstance (node_
+modules/@nestjs/core/i
+njector/injector.js:70
+:13)
+      at TestingInject
+or.loadController (nod
+e_modules/@nestjs/core
+/injector/injector.js:
+89:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:68:
+13
+          at async 
+Promise.all (index 0)
+      at TestingInstan
+ceLoader.createInstanc
+esOfControllers (node_
+modules/@nestjs/core/i
+njector/instance-loade
+r.js:67:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:42:
+13
+          at async 
+Promise.all (index 1)
+      at TestingInstan
+ceLoader.createInstanc
+es (node_modules/@nest
+js/core/injector/insta
+nce-loader.js:39:9)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/core/
+injector/instance-load
+er.js:22:13)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/testi
+ng/testing-instance-lo
+ader.js:9:9)
+      at TestingModule
+Builder.createInstance
+sOfDependencies (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:118:9)
+      at TestingModule
+Builder.compile (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:74:9)
+      at 
+Object.<anonymous> (te
+st/unit/wallet/wallet.
+controller.spec.ts:29:
+35)
+
+  ÔùÅ 
+WalletController ÔÇ║ 
+getHistory ÔÇ║ should 
+return history
+
+    Nest can't 
+resolve dependencies 
+of the 
+WalletController 
+(WalletService, 
+PrismaService, ?). 
+Please make sure that 
+the argument 
+PaymentsService at 
+index [2] is 
+available in the 
+RootTestModule 
+context.
+
+    Potential 
+solutions:
+    - Is 
+RootTestModule a 
+valid NestJS module?
+    - If 
+PaymentsService is a 
+provider, is it part 
+of the current 
+RootTestModule?
+    - If 
+PaymentsService is 
+exported from a 
+separate @Module, is 
+that module imported 
+within RootTestModule?
+      @Module({
+        imports: [ /* 
+the Module containing 
+PaymentsService */ ]
+      })
+
+    [0m [90m 27 
+|[39m
+     [90m 28 |[39m  
+ beforeEach([36masync
+[39m () [33m=>[39m 
+{
+    [31m[1m>[22m[3
+9m[90m 29 |[39m     
+[36mconst[39m 
+module[33m:[39m [33
+mTestingModule[39m 
+[33m=[39m 
+[36mawait[39m [33mT
+est[39m[33m.[39mcre
+ateTestingModule({
+     [90m    |[39m  
+                      
+           
+[31m[1m^[22m[39m
+     [90m 30 |[39m  
+     controllers[33m:
+[39m [[33mWalletCont
+roller[39m][33m,[39
+m
+     [90m 31 |[39m  
+     
+providers[33m:[39m [
+     [90m 32 |[39m  
+       { 
+provide[33m:[39m [3
+3mWalletService[39m[
+33m,[39m 
+useValue[33m:[39m 
+mockWalletService 
+}[33m,[39m[0m
+
+      at TestingInject
+or.lookupComponentInPa
+rentModules (node_modu
+les/@nestjs/core/injec
+tor/injector.js:262:19
+)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/core/injector/in
+jector.js:215:33)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/testing/testing-
+injector.js:19:45)
+      at resolveParam 
+(node_modules/@nestjs/
+core/injector/injector
+.js:129:38)
+          at async 
+Promise.all (index 2)
+      at TestingInject
+or.resolveConstructorP
+arams (node_modules/@n
+estjs/core/injector/in
+jector.js:144:27)
+      at TestingInject
+or.loadInstance (node_
+modules/@nestjs/core/i
+njector/injector.js:70
+:13)
+      at TestingInject
+or.loadController (nod
+e_modules/@nestjs/core
+/injector/injector.js:
+89:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:68:
+13
+          at async 
+Promise.all (index 0)
+      at TestingInstan
+ceLoader.createInstanc
+esOfControllers (node_
+modules/@nestjs/core/i
+njector/instance-loade
+r.js:67:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:42:
+13
+          at async 
+Promise.all (index 1)
+      at TestingInstan
+ceLoader.createInstanc
+es (node_modules/@nest
+js/core/injector/insta
+nce-loader.js:39:9)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/core/
+injector/instance-load
+er.js:22:13)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/testi
+ng/testing-instance-lo
+ader.js:9:9)
+      at TestingModule
+Builder.createInstance
+sOfDependencies (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:118:9)
+      at TestingModule
+Builder.compile (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:74:9)
+      at 
+Object.<anonymous> (te
+st/unit/wallet/wallet.
+controller.spec.ts:29:
+35)
+
+PASS src/modules/notif
+ications/notifications
+.controller.spec.ts
+PASS src/modules/ratin
+gs/ratings.controller.
+spec.ts
+PASS src/modules/payme
+nts/payments.controlle
+r.spec.ts
+PASS src/modules/auth/
+auth.controller.spec.t
+s (11.3 s)
+FAIL test/unit/auth/au
+th.service.spec.ts 
+(11.296 s)
+  ÔùÅ AuthService ÔÇ║ 
+validateUser ÔÇ║ 
+should return user 
+for valid payload
+
+    expect(received).t
+oEqual(expected) // 
+deep equality
+
+    - Expected  - 0
+    + Received  + 5
+
+      Object {
+    +   "avatarUrl": 
+undefined,
+    +   
+"displayName": "Test 
+User",
+        "email": 
+"test@example.com",
+    +   
+"emailVerified": true,
+        "id": "123e456
+7-e89b-12d3-a456-42661
+4174000",
+    +   "isSeller": 
+false,
+    +   "profile": 
+undefined,
+        "state": 
+"ACTIVE",
+        "username": 
+"testuser",
+      }
+
+    [0m [90m 230 
+|[39m       
+[36mconst[39m 
+result [33m=[39m 
+[36mawait[39m servic
+e[33m.[39mvalidateUs
+er(payload)[33m;[39m
+     [90m 231 |[39m
+    [31m[1m>[22m[3
+9m[90m 232 |[39m    
+   expect(result)[33m
+.[39mtoEqual({
+     [90m     |[39m 
+                     
+[31m[1m^[22m[39m
+     [90m 233 |[39m 
+        id[33m:[39m 
+mockUser[33m.[39mid
+[33m,[39m
+     [90m 234 |[39m 
+        
+email[33m:[39m mockU
+ser[33m.[39memail[3
+3m,[39m
+     [90m 235 |[39m 
+        
+username[33m:[39m mo
+ckUser[33m.[39musern
+ame[33m,[39m[0m
+
+      at 
+Object.<anonymous> (te
+st/unit/auth/auth.serv
+ice.spec.ts:232:22)
+
+Summary of all 
+failing tests
+FAIL test/unit/dispute
+s/disputes.service.spe
+c.ts (9.42 s)
+  ÔùÅ DisputesService 
+ÔÇ║ create ÔÇ║ should 
+create a dispute 
+successfully
+
+    TypeError: Cannot 
+read properties of 
+undefined (reading 
+'getTime')
+
+    [0m [90m 47 
+|[39m     [90m// 
+Time limit: 30 days 
+after update (delivery
+/payment)[39m
+     [90m 48 |[39m  
+   [36mconst[39m 
+thirtyDays 
+[33m=[39m 
+[35m30[39m 
+[33m*[39m 
+[35m24[39m 
+[33m*[39m 
+[35m60[39m 
+[33m*[39m 
+[35m60[39m 
+[33m*[39m [35m1000
+[39m[33m;[39m
+    [31m[1m>[22m[3
+9m[90m 49 |[39m     
+[36mif[39m 
+([36mnew[39m [33mDa
+te[39m()[33m.[39mge
+tTime() [33m-[39m or
+der[33m.[39mupdatedA
+t[33m.[39mgetTime() 
+[33m>[39m 
+thirtyDays) {
+     [90m    |[39m  
+                      
+                      
+  [31m[1m^[22m[39m
+     [90m 50 |[39m  
+     [36mthrow[39m 
+[36mnew[39m [33mBad
+RequestException[39m(
+[32m'Dispute period 
+has expired (30 days)'
+[39m)[33m;[39m
+     [90m 51 |[39m  
+   }
+     [90m 52 
+|[39m[0m
+
+      at DisputesServi
+ce.create (src/modules
+/disputes/disputes.ser
+vice.ts:49:48)
+      at 
+Object.<anonymous> (te
+st/unit/disputes/dispu
+tes.service.spec.ts:71
+:22)
+
+FAIL test/unit/users/u
+sers.service.spec.ts 
+(9.68 s)
+  ÔùÅ UsersService 
+ÔÇ║ getPublicProfile 
+ÔÇ║ should return 
+public profile with 
+limited data
+
+    TypeError: Cannot 
+read properties of 
+undefined (reading 
+'count')
+
+    [0m [90m 422 
+|[39m     
+[36mconst[39m 
+[sold[33m,[39m 
+won[33m,[39m 
+ratings] [33m=[39m 
+[36mawait[39m [33mP
+romise[39m[33m.[39m
+all([
+     [90m 423 |[39m 
+      [90m// Sold: 
+Auctions where user 
+is seller and order 
+exists (item actually 
+sold)[39m
+    [31m[1m>[22m[3
+9m[90m 424 |[39m    
+   [36mthis[39m[33m
+.[39mprisma[33m.[39
+morder[33m.[39mcount
+({
+     [90m     |[39m 
+                      
+  [31m[1m^[22m[39m
+     [90m 425 |[39m 
+        
+where[33m:[39m { 
+sellerId[33m:[39m 
+userId[33m,[39m 
+status[33m:[39m { 
+not[33m:[39m 
+[32m'CANCELLED'[39m 
+} }[33m,[39m
+     [90m 426 |[39m 
+      })[33m,[39m
+     [90m 427 |[39m 
+      [90m// Won: 
+Auctions where user 
+is buyer[39m[0m
+
+      at UsersService.
+calculateUserStats (sr
+c/modules/users/users.
+service.ts:424:25)
+      at UsersService.
+getPublicProfile (src/
+modules/users/users.se
+rvice.ts:196:19)
+      at 
+Object.<anonymous> (te
+st/unit/users/users.se
+rvice.spec.ts:174:22)
+
+  ÔùÅ UsersService 
+ÔÇ║ getUserStats ÔÇ║ 
+should return user 
+statistics
+
+    TypeError: Cannot 
+read properties of 
+undefined (reading 
+'count')
+
+    [0m [90m 422 
+|[39m     
+[36mconst[39m 
+[sold[33m,[39m 
+won[33m,[39m 
+ratings] [33m=[39m 
+[36mawait[39m [33mP
+romise[39m[33m.[39m
+all([
+     [90m 423 |[39m 
+      [90m// Sold: 
+Auctions where user 
+is seller and order 
+exists (item actually 
+sold)[39m
+    [31m[1m>[22m[3
+9m[90m 424 |[39m    
+   [36mthis[39m[33m
+.[39mprisma[33m.[39
+morder[33m.[39mcount
+({
+     [90m     |[39m 
+                      
+  [31m[1m^[22m[39m
+     [90m 425 |[39m 
+        
+where[33m:[39m { 
+sellerId[33m:[39m 
+userId[33m,[39m 
+status[33m:[39m { 
+not[33m:[39m 
+[32m'CANCELLED'[39m 
+} }[33m,[39m
+     [90m 426 |[39m 
+      })[33m,[39m
+     [90m 427 |[39m 
+      [90m// Won: 
+Auctions where user 
+is buyer[39m[0m
+
+      at UsersService.
+calculateUserStats (sr
+c/modules/users/users.
+service.ts:424:25)
+
+FAIL test/unit/payment
+s/payments.service.spe
+c.ts (9.867 s)
+  ÔùÅ PaymentsService 
+ÔÇ║ should be defined
+
+    Nest can't 
+resolve dependencies 
+of the 
+PaymentsService (?). 
+Please make sure that 
+the argument 
+StripeProvider at 
+index [0] is 
+available in the 
+RootTestModule 
+context.
+
+    Potential 
+solutions:
+    - Is 
+RootTestModule a 
+valid NestJS module?
+    - If 
+StripeProvider is a 
+provider, is it part 
+of the current 
+RootTestModule?
+    - If 
+StripeProvider is 
+exported from a 
+separate @Module, is 
+that module imported 
+within RootTestModule?
+      @Module({
+        imports: [ /* 
+the Module containing 
+StripeProvider */ ]
+      })
+
+    [0m [90m 34 
+|[39m
+     [90m 35 |[39m  
+ beforeEach([36masync
+[39m () [33m=>[39m 
+{
+    [31m[1m>[22m[3
+9m[90m 36 |[39m     
+[36mconst[39m 
+module[33m:[39m [33
+mTestingModule[39m 
+[33m=[39m 
+[36mawait[39m [33mT
+est[39m[33m.[39mcre
+ateTestingModule({
+     [90m    |[39m  
+                      
+           
+[31m[1m^[22m[39m
+     [90m 37 |[39m  
+     
+providers[33m:[39m [
+     [90m 38 |[39m  
+       [33mPaymentsSe
+rvice[39m[33m,[39m
+     [90m 39 |[39m  
+       [33mMercadoPag
+oProvider[39m[33m,[
+39m[0m
+
+      at TestingInject
+or.lookupComponentInPa
+rentModules (node_modu
+les/@nestjs/core/injec
+tor/injector.js:262:19
+)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/core/injector/in
+jector.js:215:33)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/testing/testing-
+injector.js:19:45)
+      at resolveParam 
+(node_modules/@nestjs/
+core/injector/injector
+.js:129:38)
+          at async 
+Promise.all (index 0)
+      at TestingInject
+or.resolveConstructorP
+arams (node_modules/@n
+estjs/core/injector/in
+jector.js:144:27)
+      at TestingInject
+or.loadInstance (node_
+modules/@nestjs/core/i
+njector/injector.js:70
+:13)
+      at TestingInject
+or.loadProvider (node_
+modules/@nestjs/core/i
+njector/injector.js:98
+:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:56:
+13
+          at async 
+Promise.all (index 3)
+      at TestingInstan
+ceLoader.createInstanc
+esOfProviders (node_mo
+dules/@nestjs/core/inj
+ector/instance-loader.
+js:55:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:40:
+13
+          at async 
+Promise.all (index 1)
+      at TestingInstan
+ceLoader.createInstanc
+es (node_modules/@nest
+js/core/injector/insta
+nce-loader.js:39:9)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/core/
+injector/instance-load
+er.js:22:13)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/testi
+ng/testing-instance-lo
+ader.js:9:9)
+      at TestingModule
+Builder.createInstance
+sOfDependencies (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:118:9)
+      at TestingModule
+Builder.compile (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:74:9)
+      at 
+Object.<anonymous> (te
+st/unit/payments/payme
+nts.service.spec.ts:36
+:35)
+
+  ÔùÅ PaymentsService 
+ÔÇ║ 
+createCheckoutSession 
+ÔÇ║ should create a 
+payment session for 
+Wallet Deposit
+
+    Nest can't 
+resolve dependencies 
+of the 
+PaymentsService (?). 
+Please make sure that 
+the argument 
+StripeProvider at 
+index [0] is 
+available in the 
+RootTestModule 
+context.
+
+    Potential 
+solutions:
+    - Is 
+RootTestModule a 
+valid NestJS module?
+    - If 
+StripeProvider is a 
+provider, is it part 
+of the current 
+RootTestModule?
+    - If 
+StripeProvider is 
+exported from a 
+separate @Module, is 
+that module imported 
+within RootTestModule?
+      @Module({
+        imports: [ /* 
+the Module containing 
+StripeProvider */ ]
+      })
+
+    [0m [90m 34 
+|[39m
+     [90m 35 |[39m  
+ beforeEach([36masync
+[39m () [33m=>[39m 
+{
+    [31m[1m>[22m[3
+9m[90m 36 |[39m     
+[36mconst[39m 
+module[33m:[39m [33
+mTestingModule[39m 
+[33m=[39m 
+[36mawait[39m [33mT
+est[39m[33m.[39mcre
+ateTestingModule({
+     [90m    |[39m  
+                      
+           
+[31m[1m^[22m[39m
+     [90m 37 |[39m  
+     
+providers[33m:[39m [
+     [90m 38 |[39m  
+       [33mPaymentsSe
+rvice[39m[33m,[39m
+     [90m 39 |[39m  
+       [33mMercadoPag
+oProvider[39m[33m,[
+39m[0m
+
+      at TestingInject
+or.lookupComponentInPa
+rentModules (node_modu
+les/@nestjs/core/injec
+tor/injector.js:262:19
+)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/core/injector/in
+jector.js:215:33)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/testing/testing-
+injector.js:19:45)
+      at resolveParam 
+(node_modules/@nestjs/
+core/injector/injector
+.js:129:38)
+          at async 
+Promise.all (index 0)
+      at TestingInject
+or.resolveConstructorP
+arams (node_modules/@n
+estjs/core/injector/in
+jector.js:144:27)
+      at TestingInject
+or.loadInstance (node_
+modules/@nestjs/core/i
+njector/injector.js:70
+:13)
+      at TestingInject
+or.loadProvider (node_
+modules/@nestjs/core/i
+njector/injector.js:98
+:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:56:
+13
+          at async 
+Promise.all (index 3)
+      at TestingInstan
+ceLoader.createInstanc
+esOfProviders (node_mo
+dules/@nestjs/core/inj
+ector/instance-loader.
+js:55:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:40:
+13
+          at async 
+Promise.all (index 1)
+      at TestingInstan
+ceLoader.createInstanc
+es (node_modules/@nest
+js/core/injector/insta
+nce-loader.js:39:9)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/core/
+injector/instance-load
+er.js:22:13)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/testi
+ng/testing-instance-lo
+ader.js:9:9)
+      at TestingModule
+Builder.createInstance
+sOfDependencies (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:118:9)
+      at TestingModule
+Builder.compile (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:74:9)
+      at 
+Object.<anonymous> (te
+st/unit/payments/payme
+nts.service.spec.ts:36
+:35)
+
+FAIL test/unit/wallet/
+wallet.controller.spec
+.ts (11.044 s)
+  ÔùÅ 
+WalletController ÔÇ║ 
+getBalance ÔÇ║ should 
+return balance
+
+    Nest can't 
+resolve dependencies 
+of the 
+WalletController 
+(WalletService, 
+PrismaService, ?). 
+Please make sure that 
+the argument 
+PaymentsService at 
+index [2] is 
+available in the 
+RootTestModule 
+context.
+
+    Potential 
+solutions:
+    - Is 
+RootTestModule a 
+valid NestJS module?
+    - If 
+PaymentsService is a 
+provider, is it part 
+of the current 
+RootTestModule?
+    - If 
+PaymentsService is 
+exported from a 
+separate @Module, is 
+that module imported 
+within RootTestModule?
+      @Module({
+        imports: [ /* 
+the Module containing 
+PaymentsService */ ]
+      })
+
+    [0m [90m 27 
+|[39m
+     [90m 28 |[39m  
+ beforeEach([36masync
+[39m () [33m=>[39m 
+{
+    [31m[1m>[22m[3
+9m[90m 29 |[39m     
+[36mconst[39m 
+module[33m:[39m [33
+mTestingModule[39m 
+[33m=[39m 
+[36mawait[39m [33mT
+est[39m[33m.[39mcre
+ateTestingModule({
+     [90m    |[39m  
+                      
+           
+[31m[1m^[22m[39m
+     [90m 30 |[39m  
+     controllers[33m:
+[39m [[33mWalletCont
+roller[39m][33m,[39
+m
+     [90m 31 |[39m  
+     
+providers[33m:[39m [
+     [90m 32 |[39m  
+       { 
+provide[33m:[39m [3
+3mWalletService[39m[
+33m,[39m 
+useValue[33m:[39m 
+mockWalletService 
+}[33m,[39m[0m
+
+      at TestingInject
+or.lookupComponentInPa
+rentModules (node_modu
+les/@nestjs/core/injec
+tor/injector.js:262:19
+)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/core/injector/in
+jector.js:215:33)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/testing/testing-
+injector.js:19:45)
+      at resolveParam 
+(node_modules/@nestjs/
+core/injector/injector
+.js:129:38)
+          at async 
+Promise.all (index 2)
+      at TestingInject
+or.resolveConstructorP
+arams (node_modules/@n
+estjs/core/injector/in
+jector.js:144:27)
+      at TestingInject
+or.loadInstance (node_
+modules/@nestjs/core/i
+njector/injector.js:70
+:13)
+      at TestingInject
+or.loadController (nod
+e_modules/@nestjs/core
+/injector/injector.js:
+89:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:68:
+13
+          at async 
+Promise.all (index 0)
+      at TestingInstan
+ceLoader.createInstanc
+esOfControllers (node_
+modules/@nestjs/core/i
+njector/instance-loade
+r.js:67:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:42:
+13
+          at async 
+Promise.all (index 1)
+      at TestingInstan
+ceLoader.createInstanc
+es (node_modules/@nest
+js/core/injector/insta
+nce-loader.js:39:9)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/core/
+injector/instance-load
+er.js:22:13)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/testi
+ng/testing-instance-lo
+ader.js:9:9)
+      at TestingModule
+Builder.createInstance
+sOfDependencies (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:118:9)
+      at TestingModule
+Builder.compile (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:74:9)
+      at 
+Object.<anonymous> (te
+st/unit/wallet/wallet.
+controller.spec.ts:29:
+35)
+
+  ÔùÅ 
+WalletController ÔÇ║ 
+deposit ÔÇ║ should 
+call service.deposit
+
+    Nest can't 
+resolve dependencies 
+of the 
+WalletController 
+(WalletService, 
+PrismaService, ?). 
+Please make sure that 
+the argument 
+PaymentsService at 
+index [2] is 
+available in the 
+RootTestModule 
+context.
+
+    Potential 
+solutions:
+    - Is 
+RootTestModule a 
+valid NestJS module?
+    - If 
+PaymentsService is a 
+provider, is it part 
+of the current 
+RootTestModule?
+    - If 
+PaymentsService is 
+exported from a 
+separate @Module, is 
+that module imported 
+within RootTestModule?
+      @Module({
+        imports: [ /* 
+the Module containing 
+PaymentsService */ ]
+      })
+
+    [0m [90m 27 
+|[39m
+     [90m 28 |[39m  
+ beforeEach([36masync
+[39m () [33m=>[39m 
+{
+    [31m[1m>[22m[3
+9m[90m 29 |[39m     
+[36mconst[39m 
+module[33m:[39m [33
+mTestingModule[39m 
+[33m=[39m 
+[36mawait[39m [33mT
+est[39m[33m.[39mcre
+ateTestingModule({
+     [90m    |[39m  
+                      
+           
+[31m[1m^[22m[39m
+     [90m 30 |[39m  
+     controllers[33m:
+[39m [[33mWalletCont
+roller[39m][33m,[39
+m
+     [90m 31 |[39m  
+     
+providers[33m:[39m [
+     [90m 32 |[39m  
+       { 
+provide[33m:[39m [3
+3mWalletService[39m[
+33m,[39m 
+useValue[33m:[39m 
+mockWalletService 
+}[33m,[39m[0m
+
+      at TestingInject
+or.lookupComponentInPa
+rentModules (node_modu
+les/@nestjs/core/injec
+tor/injector.js:262:19
+)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/core/injector/in
+jector.js:215:33)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/testing/testing-
+injector.js:19:45)
+      at resolveParam 
+(node_modules/@nestjs/
+core/injector/injector
+.js:129:38)
+          at async 
+Promise.all (index 2)
+      at TestingInject
+or.resolveConstructorP
+arams (node_modules/@n
+estjs/core/injector/in
+jector.js:144:27)
+      at TestingInject
+or.loadInstance (node_
+modules/@nestjs/core/i
+njector/injector.js:70
+:13)
+      at TestingInject
+or.loadController (nod
+e_modules/@nestjs/core
+/injector/injector.js:
+89:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:68:
+13
+          at async 
+Promise.all (index 0)
+      at TestingInstan
+ceLoader.createInstanc
+esOfControllers (node_
+modules/@nestjs/core/i
+njector/instance-loade
+r.js:67:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:42:
+13
+          at async 
+Promise.all (index 1)
+      at TestingInstan
+ceLoader.createInstanc
+es (node_modules/@nest
+js/core/injector/insta
+nce-loader.js:39:9)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/core/
+injector/instance-load
+er.js:22:13)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/testi
+ng/testing-instance-lo
+ader.js:9:9)
+      at TestingModule
+Builder.createInstance
+sOfDependencies (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:118:9)
+      at TestingModule
+Builder.compile (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:74:9)
+      at 
+Object.<anonymous> (te
+st/unit/wallet/wallet.
+controller.spec.ts:29:
+35)
+
+  ÔùÅ 
+WalletController ÔÇ║ 
+getHistory ÔÇ║ should 
+return history
+
+    Nest can't 
+resolve dependencies 
+of the 
+WalletController 
+(WalletService, 
+PrismaService, ?). 
+Please make sure that 
+the argument 
+PaymentsService at 
+index [2] is 
+available in the 
+RootTestModule 
+context.
+
+    Potential 
+solutions:
+    - Is 
+RootTestModule a 
+valid NestJS module?
+    - If 
+PaymentsService is a 
+provider, is it part 
+of the current 
+RootTestModule?
+    - If 
+PaymentsService is 
+exported from a 
+separate @Module, is 
+that module imported 
+within RootTestModule?
+      @Module({
+        imports: [ /* 
+the Module containing 
+PaymentsService */ ]
+      })
+
+    [0m [90m 27 
+|[39m
+     [90m 28 |[39m  
+ beforeEach([36masync
+[39m () [33m=>[39m 
+{
+    [31m[1m>[22m[3
+9m[90m 29 |[39m     
+[36mconst[39m 
+module[33m:[39m [33
+mTestingModule[39m 
+[33m=[39m 
+[36mawait[39m [33mT
+est[39m[33m.[39mcre
+ateTestingModule({
+     [90m    |[39m  
+                      
+           
+[31m[1m^[22m[39m
+     [90m 30 |[39m  
+     controllers[33m:
+[39m [[33mWalletCont
+roller[39m][33m,[39
+m
+     [90m 31 |[39m  
+     
+providers[33m:[39m [
+     [90m 32 |[39m  
+       { 
+provide[33m:[39m [3
+3mWalletService[39m[
+33m,[39m 
+useValue[33m:[39m 
+mockWalletService 
+}[33m,[39m[0m
+
+      at TestingInject
+or.lookupComponentInPa
+rentModules (node_modu
+les/@nestjs/core/injec
+tor/injector.js:262:19
+)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/core/injector/in
+jector.js:215:33)
+      at TestingInject
+or.resolveComponentIns
+tance (node_modules/@n
+estjs/testing/testing-
+injector.js:19:45)
+      at resolveParam 
+(node_modules/@nestjs/
+core/injector/injector
+.js:129:38)
+          at async 
+Promise.all (index 2)
+      at TestingInject
+or.resolveConstructorP
+arams (node_modules/@n
+estjs/core/injector/in
+jector.js:144:27)
+      at TestingInject
+or.loadInstance (node_
+modules/@nestjs/core/i
+njector/injector.js:70
+:13)
+      at TestingInject
+or.loadController (nod
+e_modules/@nestjs/core
+/injector/injector.js:
+89:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:68:
+13
+          at async 
+Promise.all (index 0)
+      at TestingInstan
+ceLoader.createInstanc
+esOfControllers (node_
+modules/@nestjs/core/i
+njector/instance-loade
+r.js:67:9)
+      at node_modules/
+@nestjs/core/injector/
+instance-loader.js:42:
+13
+          at async 
+Promise.all (index 1)
+      at TestingInstan
+ceLoader.createInstanc
+es (node_modules/@nest
+js/core/injector/insta
+nce-loader.js:39:9)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/core/
+injector/instance-load
+er.js:22:13)
+      at TestingInstan
+ceLoader.createInstanc
+esOfDependencies (node
+_modules/@nestjs/testi
+ng/testing-instance-lo
+ader.js:9:9)
+      at TestingModule
+Builder.createInstance
+sOfDependencies (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:118:9)
+      at TestingModule
+Builder.compile (node_
+modules/@nestjs/testin
+g/testing-module.build
+er.js:74:9)
+      at 
+Object.<anonymous> (te
+st/unit/wallet/wallet.
+controller.spec.ts:29:
+35)
+
+FAIL test/unit/auth/au
+th.service.spec.ts 
+(11.296 s)
+  ÔùÅ AuthService ÔÇ║ 
+validateUser ÔÇ║ 
+should return user 
+for valid payload
+
+    expect(received).t
+oEqual(expected) // 
+deep equality
+
+    - Expected  - 0
+    + Received  + 5
+
+      Object {
+    +   "avatarUrl": 
+undefined,
+    +   
+"displayName": "Test 
+User",
+        "email": 
+"test@example.com",
+    +   
+"emailVerified": true,
+        "id": "123e456
+7-e89b-12d3-a456-42661
+4174000",
+    +   "isSeller": 
+false,
+    +   "profile": 
+undefined,
+        "state": 
+"ACTIVE",
+        "username": 
+"testuser",
+      }
+
+    [0m [90m 230 
+|[39m       
+[36mconst[39m 
+result [33m=[39m 
+[36mawait[39m servic
+e[33m.[39mvalidateUs
+er(payload)[33m;[39m
+     [90m 231 |[39m
+    [31m[1m>[22m[3
+9m[90m 232 |[39m    
+   expect(result)[33m
+.[39mtoEqual({
+     [90m     |[39m 
+                     
+[31m[1m^[22m[39m
+     [90m 233 |[39m 
+        id[33m:[39m 
+mockUser[33m.[39mid
+[33m,[39m
+     [90m 234 |[39m 
+        
+email[33m:[39m mockU
+ser[33m.[39memail[3
+3m,[39m
+     [90m 235 |[39m 
+        
+username[33m:[39m mo
+ckUser[33m.[39musern
+ame[33m,[39m[0m
+
+      at 
+Object.<anonymous> (te
+st/unit/auth/auth.serv
+ice.spec.ts:232:22)
+
+
+Test Suites: 5 
+failed, 20 passed, 25 
+total
+Tests:       9 
+failed, 111 passed, 
+120 total
+Snapshots:   0 total
+Time:        12.302 
+s, estimated 15 s
+Ran all test suites.

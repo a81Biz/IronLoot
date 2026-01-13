@@ -1,0 +1,744 @@
+﻿
+> iron-loot-api@0.2.3 test
+> jest
+
+node.exe : PASS test/u
+nit/ratings/ratings.se
+rvice.spec.ts (10.222 
+s)
+En línea: 1 Carácter: 
+1
++ & "C:\Program Files\
+nodejs/node.exe" 
+"C:\Program 
+Files\nodejs/node_mo 
+...
++ ~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo    
+          : NotSpeci  
+  fied: (PASS test/   
+ unit/...c.ts (10.    
+222 s):String) []    
+, RemoteException
+    + FullyQualifiedE 
+   rrorId : NativeCo  
+  mmandError
+ 
+PASS test/unit/auction
+s/auctions.service.spe
+c.ts (10.386 s)
+PASS src/modules/walle
+t/wallet.service.spec.
+ts (10.467 s)
+FAIL test/unit/users/u
+sers.service.spec.ts 
+(10.602 s)
+  ÔùÅ UsersService 
+ÔÇ║ getPublicProfile 
+ÔÇ║ should return 
+public profile with 
+limited data
+
+    TypeError: Cannot 
+read properties of 
+undefined (reading 
+'aggregate')
+
+    [0m [90m 430 
+|[39m       
+})[33m,[39m
+     [90m 431 |[39m 
+      [90m// 
+Ratings: Received by 
+user[39m
+    [31m[1m>[22m[3
+9m[90m 432 |[39m    
+   [36mthis[39m[33m
+.[39mprisma[33m.[39
+mrating[33m.[39maggr
+egate({
+     [90m     |[39m 
+                      
+   
+[31m[1m^[22m[39m
+     [90m 433 |[39m 
+        
+where[33m:[39m { 
+targetId[33m:[39m 
+userId }[33m,[39m
+     [90m 434 |[39m 
+        
+_avg[33m:[39m { 
+score[33m:[39m 
+[36mtrue[39m 
+}[33m,[39m
+     [90m 435 |[39m 
+        
+_count[33m:[39m { 
+score[33m:[39m 
+[36mtrue[39m 
+}[33m,[39m[0m
+
+      at UsersService.
+calculateUserStats (sr
+c/modules/users/users.
+service.ts:432:26)
+      at UsersService.
+getPublicProfile (src/
+modules/users/users.se
+rvice.ts:196:19)
+      at 
+Object.<anonymous> (te
+st/unit/users/users.se
+rvice.spec.ts:177:22)
+
+  ÔùÅ UsersService 
+ÔÇ║ getUserStats ÔÇ║ 
+should return user 
+statistics
+
+    TypeError: Cannot 
+read properties of 
+undefined (reading 
+'aggregate')
+
+    [0m [90m 430 
+|[39m       
+})[33m,[39m
+     [90m 431 |[39m 
+      [90m// 
+Ratings: Received by 
+user[39m
+    [31m[1m>[22m[3
+9m[90m 432 |[39m    
+   [36mthis[39m[33m
+.[39mprisma[33m.[39
+mrating[33m.[39maggr
+egate({
+     [90m     |[39m 
+                      
+   
+[31m[1m^[22m[39m
+     [90m 433 |[39m 
+        
+where[33m:[39m { 
+targetId[33m:[39m 
+userId }[33m,[39m
+     [90m 434 |[39m 
+        
+_avg[33m:[39m { 
+score[33m:[39m 
+[36mtrue[39m 
+}[33m,[39m
+     [90m 435 |[39m 
+        
+_count[33m:[39m { 
+score[33m:[39m 
+[36mtrue[39m 
+}[33m,[39m[0m
+
+      at UsersService.
+calculateUserStats (sr
+c/modules/users/users.
+service.ts:432:26)
+
+PASS test/unit/wallet/
+wallet.service.spec.ts
+ (10.602 s)
+PASS test/unit/dispute
+s/disputes.service.spe
+c.ts (10.664 s)
+PASS test/unit/shipmen
+ts/shipments.service.s
+pec.ts (10.52 s)
+PASS test/unit/bids/bi
+ds.service.spec.ts 
+(10.902 s)
+PASS test/unit/payment
+s/payments.service.spe
+c.ts (11.008 s)
+PASS src/modules/diagn
+ostics/diagnostics.con
+troller.spec.ts 
+(11.094 s)
+PASS test/unit/orders/
+orders.controller.spec
+.ts
+PASS test/unit/orders/
+orders.service.spec.ts
+PASS src/modules/notif
+ications/notifications
+.controller.spec.ts
+PASS test/unit/auction
+s/auctions.controller.
+spec.ts (11.414 s)
+PASS test/unit/health/
+health.controller.spec
+.ts
+PASS test/unit/notific
+ations/notifications.s
+ervice.spec.ts
+PASS test/unit/users/u
+sers.controller.spec.t
+s (11.462 s)
+PASS src/modules/dispu
+tes/disputes.controlle
+r.spec.ts
+FAIL test/unit/wallet/
+wallet.controller.spec
+.ts (11.498 s)
+  ÔùÅ 
+WalletController ÔÇ║ 
+getBalance ÔÇ║ should 
+return balance
+
+    expect(received).t
+oEqual(expected) // 
+deep equality
+
+    - Expected  - 0
+    + Received  + 3
+
+      Object {
+        "available": 
+100,
+    +   "currency": 
+undefined,
+    +   "held": NaN,
+    +   "isActive": 
+undefined,
+      }
+
+    [0m [90m 48 
+|[39m       mockWalle
+tService[33m.[39mget
+Balance[33m.[39mmock
+ResolvedValue({ 
+available[33m:[39m 
+[35m100[39m 
+})[33m;[39m
+     [90m 49 |[39m  
+     [36mconst[39m 
+result [33m=[39m 
+[36mawait[39m contro
+ller[33m.[39mgetBala
+nce(mockRequest)[33m;
+[39m
+    [31m[1m>[22m[3
+9m[90m 50 |[39m     
+  expect(result)[33m.
+[39mtoEqual({ 
+available[33m:[39m 
+[35m100[39m 
+})[33m;[39m
+     [90m    |[39m  
+                    
+[31m[1m^[22m[39m
+     [90m 51 |[39m  
+     expect(service[3
+3m.[39mgetBalance)[3
+3m.[39mtoHaveBeenCall
+edWith([32m'user-123'
+[39m)[33m;[39m
+     [90m 52 |[39m  
+   })[33m;[39m
+     [90m 53 |[39m  
+ })[33m;[39m[0m
+
+      at 
+Object.<anonymous> (te
+st/unit/wallet/wallet.
+controller.spec.ts:50:
+22)
+
+  ÔùÅ 
+WalletController ÔÇ║ 
+deposit ÔÇ║ should 
+call service.deposit
+
+    TypeError: this.pa
+ymentsService.verifyPa
+yment is not a 
+function
+
+    [0m [90m  95 
+|[39m   
+[36masync[39m deposi
+t([33m@[39m[33mRequ
+est[39m() 
+req[33m:[39m [33mAu
+thenticatedRequest[39
+m[33m,[39m [33m@[3
+9m[33mBody[39m() 
+dto[33m:[39m 
+[33mDepositDto[39m) 
+{
+     [90m  96 |[39m 
+    [90m// 1. Verify 
+that the payment 
+reference is valid 
+and completed[39m
+    [31m[1m>[22m[3
+9m[90m  97 |[39m    
+ [36mconst[39m 
+payment [33m=[39m 
+[36mawait[39m [36mt
+his[39m[33m.[39mpay
+mentsService[33m.[39
+mverifyPayment(dto[33
+m.[39mreferenceId)[3
+3m;[39m
+     [90m     |[39m 
+                      
+                      
+   
+[31m[1m^[22m[39m
+     [90m  98 |[39m
+     [90m  99 |[39m 
+    [36mif[39m (paym
+ent[33m.[39mstatus 
+[33m!==[39m [32m'CO
+MPLETED'[39m) {
+     [90m 100 |[39m 
+      [36mthrow[39m 
+[36mnew[39m [33mBad
+RequestException[39m(
+[32m`Payment 
+verification failed: 
+status is ${payment.st
+atus}`[39m)[33m;[39
+m[0m
+
+      at WalletControl
+ler.deposit (src/modul
+es/wallet/wallet.contr
+oller.ts:97:48)
+      at 
+Object.<anonymous> (te
+st/unit/wallet/wallet.
+controller.spec.ts:58:
+24)
+
+PASS src/modules/ratin
+gs/ratings.controller.
+spec.ts
+PASS src/modules/payme
+nts/payments.controlle
+r.spec.ts
+PASS src/modules/shipm
+ents/shipments.control
+ler.spec.ts
+PASS test/unit/bids/bi
+ds.controller.spec.ts
+PASS src/modules/auth/
+auth.controller.spec.t
+s (11.783 s)
+FAIL test/unit/auth/au
+th.service.spec.ts 
+(12.023 s)
+  ÔùÅ AuthService ÔÇ║ 
+validateUser ÔÇ║ 
+should return user 
+for valid payload
+
+    expect(received).t
+oEqual(expected) // 
+deep equality
+
+    - Expected  - 0
+    + Received  + 5
+
+      Object {
+    +   "avatarUrl": 
+undefined,
+    +   
+"displayName": "Test 
+User",
+        "email": 
+"test@example.com",
+    +   
+"emailVerified": true,
+        "id": "123e456
+7-e89b-12d3-a456-42661
+4174000",
+    +   "isSeller": 
+false,
+    +   "profile": 
+undefined,
+        "state": 
+"ACTIVE",
+        "username": 
+"testuser",
+      }
+
+    [0m [90m 230 
+|[39m       
+[36mconst[39m 
+result [33m=[39m 
+[36mawait[39m servic
+e[33m.[39mvalidateUs
+er(payload)[33m;[39m
+     [90m 231 |[39m
+    [31m[1m>[22m[3
+9m[90m 232 |[39m    
+   expect(result)[33m
+.[39mtoEqual({
+     [90m     |[39m 
+                     
+[31m[1m^[22m[39m
+     [90m 233 |[39m 
+        id[33m:[39m 
+mockUser[33m.[39mid
+[33m,[39m
+     [90m 234 |[39m 
+        
+email[33m:[39m mockU
+ser[33m.[39memail[3
+3m,[39m
+     [90m 235 |[39m 
+        
+username[33m:[39m mo
+ckUser[33m.[39musern
+ame[33m,[39m[0m
+
+      at 
+Object.<anonymous> (te
+st/unit/auth/auth.serv
+ice.spec.ts:232:22)
+
+Summary of all 
+failing tests
+FAIL test/unit/users/u
+sers.service.spec.ts 
+(10.602 s)
+  ÔùÅ UsersService 
+ÔÇ║ getPublicProfile 
+ÔÇ║ should return 
+public profile with 
+limited data
+
+    TypeError: Cannot 
+read properties of 
+undefined (reading 
+'aggregate')
+
+    [0m [90m 430 
+|[39m       
+})[33m,[39m
+     [90m 431 |[39m 
+      [90m// 
+Ratings: Received by 
+user[39m
+    [31m[1m>[22m[3
+9m[90m 432 |[39m    
+   [36mthis[39m[33m
+.[39mprisma[33m.[39
+mrating[33m.[39maggr
+egate({
+     [90m     |[39m 
+                      
+   
+[31m[1m^[22m[39m
+     [90m 433 |[39m 
+        
+where[33m:[39m { 
+targetId[33m:[39m 
+userId }[33m,[39m
+     [90m 434 |[39m 
+        
+_avg[33m:[39m { 
+score[33m:[39m 
+[36mtrue[39m 
+}[33m,[39m
+     [90m 435 |[39m 
+        
+_count[33m:[39m { 
+score[33m:[39m 
+[36mtrue[39m 
+}[33m,[39m[0m
+
+      at UsersService.
+calculateUserStats (sr
+c/modules/users/users.
+service.ts:432:26)
+      at UsersService.
+getPublicProfile (src/
+modules/users/users.se
+rvice.ts:196:19)
+      at 
+Object.<anonymous> (te
+st/unit/users/users.se
+rvice.spec.ts:177:22)
+
+  ÔùÅ UsersService 
+ÔÇ║ getUserStats ÔÇ║ 
+should return user 
+statistics
+
+    TypeError: Cannot 
+read properties of 
+undefined (reading 
+'aggregate')
+
+    [0m [90m 430 
+|[39m       
+})[33m,[39m
+     [90m 431 |[39m 
+      [90m// 
+Ratings: Received by 
+user[39m
+    [31m[1m>[22m[3
+9m[90m 432 |[39m    
+   [36mthis[39m[33m
+.[39mprisma[33m.[39
+mrating[33m.[39maggr
+egate({
+     [90m     |[39m 
+                      
+   
+[31m[1m^[22m[39m
+     [90m 433 |[39m 
+        
+where[33m:[39m { 
+targetId[33m:[39m 
+userId }[33m,[39m
+     [90m 434 |[39m 
+        
+_avg[33m:[39m { 
+score[33m:[39m 
+[36mtrue[39m 
+}[33m,[39m
+     [90m 435 |[39m 
+        
+_count[33m:[39m { 
+score[33m:[39m 
+[36mtrue[39m 
+}[33m,[39m[0m
+
+      at UsersService.
+calculateUserStats (sr
+c/modules/users/users.
+service.ts:432:26)
+
+FAIL test/unit/wallet/
+wallet.controller.spec
+.ts (11.498 s)
+  ÔùÅ 
+WalletController ÔÇ║ 
+getBalance ÔÇ║ should 
+return balance
+
+    expect(received).t
+oEqual(expected) // 
+deep equality
+
+    - Expected  - 0
+    + Received  + 3
+
+      Object {
+        "available": 
+100,
+    +   "currency": 
+undefined,
+    +   "held": NaN,
+    +   "isActive": 
+undefined,
+      }
+
+    [0m [90m 48 
+|[39m       mockWalle
+tService[33m.[39mget
+Balance[33m.[39mmock
+ResolvedValue({ 
+available[33m:[39m 
+[35m100[39m 
+})[33m;[39m
+     [90m 49 |[39m  
+     [36mconst[39m 
+result [33m=[39m 
+[36mawait[39m contro
+ller[33m.[39mgetBala
+nce(mockRequest)[33m;
+[39m
+    [31m[1m>[22m[3
+9m[90m 50 |[39m     
+  expect(result)[33m.
+[39mtoEqual({ 
+available[33m:[39m 
+[35m100[39m 
+})[33m;[39m
+     [90m    |[39m  
+                    
+[31m[1m^[22m[39m
+     [90m 51 |[39m  
+     expect(service[3
+3m.[39mgetBalance)[3
+3m.[39mtoHaveBeenCall
+edWith([32m'user-123'
+[39m)[33m;[39m
+     [90m 52 |[39m  
+   })[33m;[39m
+     [90m 53 |[39m  
+ })[33m;[39m[0m
+
+      at 
+Object.<anonymous> (te
+st/unit/wallet/wallet.
+controller.spec.ts:50:
+22)
+
+  ÔùÅ 
+WalletController ÔÇ║ 
+deposit ÔÇ║ should 
+call service.deposit
+
+    TypeError: this.pa
+ymentsService.verifyPa
+yment is not a 
+function
+
+    [0m [90m  95 
+|[39m   
+[36masync[39m deposi
+t([33m@[39m[33mRequ
+est[39m() 
+req[33m:[39m [33mAu
+thenticatedRequest[39
+m[33m,[39m [33m@[3
+9m[33mBody[39m() 
+dto[33m:[39m 
+[33mDepositDto[39m) 
+{
+     [90m  96 |[39m 
+    [90m// 1. Verify 
+that the payment 
+reference is valid 
+and completed[39m
+    [31m[1m>[22m[3
+9m[90m  97 |[39m    
+ [36mconst[39m 
+payment [33m=[39m 
+[36mawait[39m [36mt
+his[39m[33m.[39mpay
+mentsService[33m.[39
+mverifyPayment(dto[33
+m.[39mreferenceId)[3
+3m;[39m
+     [90m     |[39m 
+                      
+                      
+   
+[31m[1m^[22m[39m
+     [90m  98 |[39m
+     [90m  99 |[39m 
+    [36mif[39m (paym
+ent[33m.[39mstatus 
+[33m!==[39m [32m'CO
+MPLETED'[39m) {
+     [90m 100 |[39m 
+      [36mthrow[39m 
+[36mnew[39m [33mBad
+RequestException[39m(
+[32m`Payment 
+verification failed: 
+status is ${payment.st
+atus}`[39m)[33m;[39
+m[0m
+
+      at WalletControl
+ler.deposit (src/modul
+es/wallet/wallet.contr
+oller.ts:97:48)
+      at 
+Object.<anonymous> (te
+st/unit/wallet/wallet.
+controller.spec.ts:58:
+24)
+
+FAIL test/unit/auth/au
+th.service.spec.ts 
+(12.023 s)
+  ÔùÅ AuthService ÔÇ║ 
+validateUser ÔÇ║ 
+should return user 
+for valid payload
+
+    expect(received).t
+oEqual(expected) // 
+deep equality
+
+    - Expected  - 0
+    + Received  + 5
+
+      Object {
+    +   "avatarUrl": 
+undefined,
+    +   
+"displayName": "Test 
+User",
+        "email": 
+"test@example.com",
+    +   
+"emailVerified": true,
+        "id": "123e456
+7-e89b-12d3-a456-42661
+4174000",
+    +   "isSeller": 
+false,
+    +   "profile": 
+undefined,
+        "state": 
+"ACTIVE",
+        "username": 
+"testuser",
+      }
+
+    [0m [90m 230 
+|[39m       
+[36mconst[39m 
+result [33m=[39m 
+[36mawait[39m servic
+e[33m.[39mvalidateUs
+er(payload)[33m;[39m
+     [90m 231 |[39m
+    [31m[1m>[22m[3
+9m[90m 232 |[39m    
+   expect(result)[33m
+.[39mtoEqual({
+     [90m     |[39m 
+                     
+[31m[1m^[22m[39m
+     [90m 233 |[39m 
+        id[33m:[39m 
+mockUser[33m.[39mid
+[33m,[39m
+     [90m 234 |[39m 
+        
+email[33m:[39m mockU
+ser[33m.[39memail[3
+3m,[39m
+     [90m 235 |[39m 
+        
+username[33m:[39m mo
+ckUser[33m.[39musern
+ame[33m,[39m[0m
+
+      at 
+Object.<anonymous> (te
+st/unit/auth/auth.serv
+ice.spec.ts:232:22)
+
+
+Test Suites: 3 
+failed, 22 passed, 25 
+total
+Tests:       5 
+failed, 115 passed, 
+120 total
+Snapshots:   0 total
+Time:        12.971 
+s, estimated 14 s
+Ran all test suites.

@@ -7,6 +7,7 @@ import {
   Injectable,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { RequestContextService } from './request-context.service';
 import { StructuredLogger } from './logger.service';
@@ -73,7 +74,12 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
     const request = ctx.getRequest<Request>();
 
-    const traceId = this.requestContext.getTraceId();
+    let traceId = this.requestContext.getTraceId();
+
+    // Fallback to request.traceId if context traceId is missing/default
+    if (!traceId || traceId === 'no-trace') {
+      traceId = request.traceId || uuidv4();
+    }
     const userId = this.requestContext.getUserId();
 
     // Extract error details

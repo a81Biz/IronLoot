@@ -11,16 +11,16 @@ window.SellerService = (function() {
      * @returns {Promise<{ data: Object, accessToken?: string }>}
      */
     async function enableSeller(data = { acceptTerms: true }) {
-        return Api.post('/users/me/enable-seller', data);
+        return Api.post(ApiRoutes.users.enableSeller, data);
     }
 
     async function getDashboard() {
         // Stub: /seller/dashboard or aggregate
-        return Api.get('/seller/dashboard').then(res => res.data).catch(() => ({}));
+        return Api.get(ApiRoutes.seller.dashboard).then(res => res.data).catch(() => ({}));
     }
 
     async function updateProfile(data) {
-        return Api.patch('/seller/profile', data);
+        return Api.patch(ApiRoutes.seller.profile, data);
     }
 
     return {

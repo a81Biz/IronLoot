@@ -16,6 +16,8 @@ const AuthState = (function() {
     // --- State ---
     let currentUser = null; // { data: { ...claims } }
     let isInitialized = false;
+    let initPromiseResolver = null;
+    const initPromise = new Promise(resolve => initPromiseResolver = resolve);
     let refreshPromise = null; // For single-flight refresh
 
     // --- Private Helpers ---
@@ -55,8 +57,48 @@ const AuthState = (function() {
             _clearState();
         });
 
-        hydrateFromSSR();
+        await hydrateFromStorage();
         isInitialized = true;
+        if (initPromiseResolver) initPromiseResolver(true);
+    }
+
+    /**
+     * Hydrate from SSR or Storage
+     * Tries to recover session from LocalStorage tokens if SSR failed.
+     */
+    async function hydrateFromStorage() {
+        // 1. Check if we already have SSR user
+        if (currentUser) return true;
+
+        // 2. Check for Token in ApiClient (LocalStorage)
+        // We can't access ApiClient directly if circular dependency, but usually fine in global scope.
+        // Assuming Api exposes internal token check or we check storage manually?
+        // Better: Try to fetch /me using ApiClient (which auto-uses token)
+        
+        // Quick check if token exists to avoid unnecessary 401
+        // (We need to expose a check from ApiClient or assume)
+        // But for now, let's try to fetch user if not present.
+
+        // OPTIMIZATION: If SSR explicitly set CURRENT_USER to null, we are Guest.
+        // Don't waste a network call just to get a 401.
+        if (window.CURRENT_USER === null) {
+            return false;
+        }
+        
+        try {
+             // If ApiClient has no token, this will fail or be skipped?
+             // We need a way to check if we *should* try.
+             // Let's rely on ApiClient.
+             const { data } = await Api.get(ApiRoutes.auth.me);
+             if (data) {
+                 setUser(data);
+                 return true;
+             }
+        } catch (e) {
+            // Token invalid or no token
+            _clearState();
+        }
+        return false;
     }
 
     /**
@@ -66,9 +108,8 @@ const AuthState = (function() {
         const payload = window.CURRENT_USER;
         if (payload) {
              _updateState(payload);
-        } else {
-             _clearState();
         }
+        // Do NOT clear state here if SSR is missing, as we might hydrate from storage next.
     }
 
     /**
@@ -89,8 +130,15 @@ const AuthState = (function() {
      * We can verify session with an endpoint if needed, but for now we trust SSR/Cookie.
      */
      async function refreshUser() {
-        // No-op for client-side token refresh. 
-        // If session is invalid, next request fails and backend redirects or clears cookie.
+        try {
+            const { data } = await Api.get(ApiRoutes.auth.me);
+            if (data) {
+                setUser(data);
+                return data;
+            }
+        } catch (e) {
+            console.warn('[AuthState] Refresh failed', e);
+        }
         return null;
     }
 
@@ -129,7 +177,9 @@ const AuthState = (function() {
     // Public API
     return {
         init,
+        waitForInit: () => initPromise,
         // Methods
+        hydrateFromStorage,
         hydrateFromDOM: hydrateFromSSR,
         setUser,
         clearTokens: _clearState, // Alias compatibility

@@ -6,8 +6,11 @@
     let currentPage = 1;
     const limit = 10;
 
-    document.addEventListener('DOMContentLoaded', () => {
-        if (!Auth.isSeller()) {
+    document.addEventListener('DOMContentLoaded', async () => {
+        await AuthState.waitForInit();
+        
+        // Use AuthState instead of Auth
+        if (!AuthState.isSeller()) {
              window.location.href = '/profile';
              return;
         }
@@ -63,11 +66,12 @@
             // Validate mine=true is present as per user requirement
             if (!filters.mine) filters.mine = true;
 
-            const response = await Api.auctions.list(filters);
-            const data = response.data || response;
+            // AuctionService.list returns { data: [], total: ... }
+            const response = await AuctionService.list(filters);
+            const auctions = response.data || [];
             
             // Check for empty array
-            if (!data || data.length === 0) {
+            if (!auctions || auctions.length === 0) {
                 tbody.innerHTML = `
                     <tr>
                         <td colspan="7" class="text-center" style="padding: var(--spacing-8);">
@@ -85,7 +89,7 @@
                 return;
             }
 
-            tbody.innerHTML = data.map(auction => {
+            tbody.innerHTML = auctions.map(auction => {
                 const isDraft = auction.status === 'DRAFT';
                 const isPublished = auction.status === 'PUBLISHED' || auction.status === 'ACTIVE';
                 const isVisible = isPublished ? 'Sí' : 'No';
@@ -102,7 +106,12 @@
                     </td>
                     <td>${Utils.formatCurrency(auction.currentPrice || auction.startingPrice)}</td>
                     <td>${auction.bidCount || 0}</td>
-                    <td>${Utils.formatRelativeTime(auction.endsAt)}</td>
+                    <td>
+                        ${isDraft 
+                            ? Utils.formatDuration(new Date(auction.endsAt) - new Date(auction.startsAt)) 
+                            : Utils.formatDate(auction.endsAt, { hour: '2-digit', minute: '2-digit' })
+                        }
+                    </td>
                     <td>${formatStatus(auction.status)}</td>
                     <td>
                         <span class="badge ${isPublished ? 'bg-success-subtle text-success' : 'bg-secondary-subtle text-secondary'}">
@@ -119,7 +128,7 @@
                                     <span class="material-symbols-outlined" style="font-size: 16px;">publish</span>
                                 </button>
                             ` : `
-                                <a href="/auctions/${auction.slug || auction.id}" class="btn btn-secondary btn-sm" title="Ver Detalle">
+                                <a href="/auctions/${auction.id}" class="btn btn-secondary btn-sm" title="Ver Detalle">
                                     <span class="material-symbols-outlined" style="font-size: 16px;">visibility</span>
                                 </a>
                             `}
@@ -135,7 +144,7 @@
                     if (confirm('¿Estás seguro de que deseas publicar esta subasta?')) {
                         try {
                             btn.innerHTML = '<span class="material-symbols-outlined spin" style="font-size: 16px;">refresh</span>';
-                            await Api.auctions.publish(id);
+                            await AuctionService.publish(id);
                             Utils.toast('Subasta publicada exitosamente', 'success');
                             loadAuctions();
                         } catch(err) {

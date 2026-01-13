@@ -4,13 +4,15 @@
 
 (function() {
   document.addEventListener('DOMContentLoaded', () => {
-    // Check authentication
-    if (!Auth.isLoggedIn()) {
-      window.location.href = '/login?return=/dashboard';
-      return;
-    }
-
-    initDashboard();
+    // Check authentication (Async Wait)
+    AuthState.waitForInit().then(() => {
+        if (!Auth.isLoggedIn()) {
+            console.warn('[Dashboard] Not logged in after hydration. Redirecting.');
+            window.location.href = '/login?return=/dashboard';
+            return;
+        }
+        initDashboard();
+    });
   });
 
   /**

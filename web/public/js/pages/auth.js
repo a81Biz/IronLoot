@@ -101,7 +101,7 @@ const Auth = (function() {
         sidebarBadge.style.display = count > 0 ? 'inline-block' : 'none';
       }
     } catch (error) {
-       // Silent fail
+       console.error('Notification Update Error:', error);
     }
   }
 

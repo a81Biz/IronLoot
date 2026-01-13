@@ -331,7 +331,7 @@ The API connects to Mailhog using the hostname `mailhog` on port `1025` (SMTP). 
 
 ## 💳 Integraciones de Pago y Logística
 - **Integración de Pagos**:
-  - `PaymentsModule`: Controladores y servicios para manejar pagos con MercadoPago y PayPal. Usa `PaymentProvider` interface para abstracción. Actualmente funciona en modo **MOCK** (simulación) por defecto.
+  - `PaymentsModule`: Controladores y servicios para manejar pagos con MercadoPago y PayPal. Usa `PaymentProvider` interface para abstracción. Soporta **MXN**.
 
 - **Logística y Envíos**:
   - `ShipmentsModule`: Gestión de envíos para órdenes pagadas. Permite al vendedor crear envíos y a ambas partes ver el estado.
@@ -345,16 +345,24 @@ Para activar la integración real con los proveedores:
    ```bash
    MERCADO_PAGO_ACCESS_TOKEN=tu_access_token
    ```
-3. Implementar la llamada al SDK en `src/modules/payments/providers/mercadopago.provider.ts`.
+3. Configurar Webhook Secret para validación de seguridad:
+   ```bash
+   MERCADO_PAGO_WEBHOOK_SECRET=tu_webhook_secret
+   ```
 
 ### PayPal
 1. Obtener `CLIENT_ID` y `CLIENT_SECRET`.
 2. Configurar en `.env`:
    ```bash
    PAYPAL_CLIENT_ID=tu_client_id
-   PAYPAL_CLIENT_SECRET=tu_client_secret
+   PAYPAL_BUSINESS_EMAIL=email_vendedor_paypal@example.com
+   PAYPAL_MODE=sandbox # o production
    ```
-3. Implementar la llamada al SDK en `src/modules/payments/providers/paypal.provider.ts`.
+3. Configurar URLs base para redirecciones y webhooks:
+   ```bash
+   API_BASE_URL=https://api.tu-dominio.com
+   WEB_BASE_URL=https://tu-dominio.com
+   ```
 
 ### Verificación de Integración
 El endpoint `POST /payments/checkout` retorna un campo `isIntegrated` que indica si las credenciales están configuradas:
@@ -363,7 +371,7 @@ El endpoint `POST /payments/checkout` retorna un campo `isIntegrated` que indica
 {
   "externalId": "...",
   "redirectUrl": "...",
-  "isIntegrated": false // false = MOCK, true = REAL
+  "isIntegrated": true
 }
 ```
 

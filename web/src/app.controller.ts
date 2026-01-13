@@ -106,9 +106,12 @@ export class AppController {
   @UseGuards(RequireAuth)
   dashboardAuctions(@Req() req, @Res() res) {
     const user = req.user;
+    console.log('[AppController] Dashboard Auctions. User:', user?.email, 'IsSeller:', user?.isSeller);
     if (user && user.isSeller) {
+        console.log('[AppController] Redirecting to Seller Auctions');
         return res.redirect('/seller/auctions');
     }
+    console.log('[AppController] Rendering Gate');
     return res.render('pages/dashboard/auctions-gate', { title: 'Gestión de Subastas' });
   }
 
@@ -141,6 +144,13 @@ export class AppController {
   @Render('pages/auction/create')
   createAuction() {
     return { title: 'Crear Subasta' };
+  }
+
+  @Get('auction/:id/edit')
+  @UseGuards(RequireAuth, SellerGuard)
+  @Render('pages/auction/edit')
+  editAuction(@Param('id', ParseUUIDPipe) id: string) {
+    return { title: 'Editar Subasta', auctionId: id };
   }
 
   @Get('notifications')

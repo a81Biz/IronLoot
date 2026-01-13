@@ -7,7 +7,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 
 import { CsrfMiddleware } from './common/middleware/csrf.middleware';
-import { AuthSessionController } from './auth-session.controller';
+// REMOVED: AuthSessionController - Now handled by proxy in main.ts
 
 @Module({
   imports: [
@@ -16,7 +16,7 @@ import { AuthSessionController } from './auth-session.controller';
       limit: 100,
     }]),
   ],
-  controllers: [AppController, AuthSessionController],
+  controllers: [AppController], // Removed AuthSessionController
   providers: [
     AppService,
     {

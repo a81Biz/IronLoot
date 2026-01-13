@@ -29,4 +29,21 @@
         </div>
     </div>
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Self-Repair: If client knows we are a seller but server rendered the Gate,
+        // it means the cookie was stale. Force refresh and try again.
+        await AuthState.waitForInit();
+        if (AuthState.isSeller()) {
+            console.warn('[AuctionsGate] Client is seller. Refreshing token and redirecting...');
+            try {
+                await AuthService.refresh();
+                window.location.href = '/seller/auctions';
+            } catch (e) {
+                console.error('Failed to auto-repair session', e);
+            }
+        }
+    });
+</script>
 {% endblock %}

@@ -6,26 +6,33 @@
   document.addEventListener('DOMContentLoaded', () => {
     
     // --- Auth State Integration ---
+    // --- Auth State Integration ---
     const logoutBtn = Utils.$('#navLogoutBtn');
     if (logoutBtn) {
-      logoutBtn.addEventListener('click', () => AuthState.logout());
+      // Fix: Use AuthFlow.logout() (Dispatcher) instead of AuthState (Store)
+      logoutBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          AuthFlow.logout();
+      });
     }
 
     // Listen for User Updates (from AuthState)
     window.addEventListener(AuthState.EVENTS.USER_UPDATED, (e) => {
         updateAuthUI(e.detail);
-        if (e.detail) {
+        if (e.detail && AuthState.isLoggedIn()) {
             startNotificationPolling();
+            startBalancePolling();
         } else {
             stopNotificationPolling();
             stopBalancePolling();
         }
     });
 
-    // Initial UI Update (in case AuthState init finished before listener added, 
-    // though AuthState.init() runs on DOMContentLoaded too, race condition possible?
-    // AuthState.getUser() is synchronous if hydrated.
-    updateAuthUI(AuthState.getUser());
+    // Initial UI Update
+    // Critical: Wait for hydration to finish before deciding on UI state
+    AuthState.waitForInit().then(() => {
+        updateAuthUI(AuthState.getUser());
+    });
 
 
     // --- Navigation Logic ---
@@ -132,7 +139,30 @@
         }
     }
 
-    // ...
+    function updateWalletNav(amount) {
+        const balanceEl = Utils.$('#navWalletBalance');
+        if (balanceEl) {
+            balanceEl.textContent = Utils.formatCurrency(amount);
+        }
+    }
+
+    // --- Notification Logic ---
+    let notificationPollingInterval = null;
+    const NOTIFICATION_POLLING_MS = 30000; // 30 sec
+
+    function startNotificationPolling() {
+        if (notificationPollingInterval) return;
+        fetchUnreadCount();
+        notificationPollingInterval = setInterval(() => {
+            if (document.hidden) return;
+            fetchUnreadCount();
+        }, NOTIFICATION_POLLING_MS);
+    }
+
+    function stopNotificationPolling() {
+        if (notificationPollingInterval) clearInterval(notificationPollingInterval);
+        notificationPollingInterval = null;
+    }
 
     async function fetchUnreadCount() {
         try {
@@ -142,7 +172,11 @@
             const { count } = await NotificationFlow.getUnreadCount();
             updateNotificationBadge(count);
         } catch (e) {
-             // silent
+             // error
+             if (e.status === 401) {
+                console.error('Refusing to poll notifications due to 401.');
+                stopNotificationPolling();
+             }
         }
     }
 

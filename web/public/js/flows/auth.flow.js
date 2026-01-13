@@ -3,6 +3,10 @@
  * @role Orchestrator (Authentication & Session)
  * @description Handles Login, Register, Logout, and Session Hydration.
  * @depends AuthService, AuthState, Utils
+ * 
+ * NOTA: Los tokens ahora se manejan via cookies HttpOnly.
+ * El proxy intercepta las respuestas de auth y setea las cookies automáticamente.
+ * El body de respuesta solo contiene { success: true, user: {...} }
  */
 window.AuthFlow = (function() {
 
@@ -10,24 +14,15 @@ window.AuthFlow = (function() {
 
     /**
      * Hydrate Session
-     * Restores session from storage on app load.
+     * Restores session from SSR injection or /auth/me endpoint.
      */
     async function hydrateSession() {
-        // AuthState.hydrateFromStorage internally validates expiration.
         const success = await AuthState.hydrateFromStorage();
-        if (!success) {
-            // Token invalid or missing.
-            // If on protected route, redirect is handled by Guards or Page init logic usually.
-            // But we can enable a force redirect here if needed.
-            // For now, just ensure state is cleared.
-            // AuthState.hydrateFromStorage calls _clearState() on failure.
-        }
         return success;
     }
 
     /**
      * Refresh Session
-     * Wrapper for AuthState logic or explicit API check.
      */
     async function refreshSession() {
         return AuthState.refreshUser();
@@ -45,8 +40,7 @@ window.AuthFlow = (function() {
             // 1. Call Service
             const res = await AuthService.register(payload);
             
-            // 2. Strict Requirement: NO Auto-Login.
-            // Persist email for next view
+            // 2. NO Auto-Login - Redirect to verification
             sessionStorage.setItem('pendingVerifyEmail', payload.email);
 
             // 3. Redirect to Pending Verification
@@ -64,30 +58,50 @@ window.AuthFlow = (function() {
      * Login
      * @param {string} email 
      * @param {string} password 
+     * 
+     * Response format (from proxy):
+     * { success: true, user: {...} }
+     * Tokens are set as HttpOnly cookies by the proxy
      */
     async function login({ email, password }) {
         try {
             // 1. Service Call
             const res = await AuthService.login(email, password);
-             // Expected: { accessToken, refreshToken, ... } or { tokens: {...} }
-             const tokens = res.tokens || res;
+            console.log('[AuthFlow] Login Response:', res);
+            
+            // Expected: { data: { success: true, user: {...} } }
+            const payload = res.data || {};
+            const user = payload.user;
 
-            // 2. Set Tokens (Identity Source)
-            if (tokens && tokens.accessToken) {
-                AuthState.setTokens(tokens);
-                
-                // 3. Redirect
-                const returnParam = new URLSearchParams(window.location.search).get('return');
-                let returnUrl = '/dashboard';
-                // Prevent Open Redirect: only allow relative paths
-                if (returnParam && returnParam.startsWith('/') && !returnParam.startsWith('//')) {
-                    returnUrl = returnParam;
-                }
-                window.location.href = returnUrl;
-                return res;
-            } else {
-                throw new Error('No tokens received');
+            // 2. Validate response
+            if (!payload.success) {
+                throw new Error(payload.message || 'Login failed');
             }
+
+            // 3. Set User State (tokens are in HttpOnly cookies, handled by proxy)
+            if (user) {
+                console.log('[AuthFlow] Setting active user...');
+                AuthState.setUser(user);
+                console.log('[AuthFlow] User set. Preparing redirect.');
+            } else {
+                // Login successful but no user in response - fetch from /me
+                console.log('[AuthFlow] No user in response, fetching from /me...');
+                await AuthState.hydrateFromStorage();
+            }
+            
+            // 4. Redirect
+            const returnParam = new URLSearchParams(window.location.search).get('return');
+            let returnUrl = '/dashboard';
+            
+            // Prevent Open Redirect
+            if (returnParam && returnParam.startsWith('/') && !returnParam.startsWith('//') && !returnParam.includes(':')) {
+                returnUrl = returnParam;
+            }
+            
+            console.log('[AuthFlow] REDIRECTING TO:', returnUrl);
+            window.location.href = returnUrl;
+            return res;
+
         } catch (error) {
             console.error('[AuthFlow] Login failed', error);
             throw error;
@@ -96,17 +110,17 @@ window.AuthFlow = (function() {
 
     /**
      * Logout
+     * Cookie is cleared by the proxy when calling /auth/logout
      */
     async function logout() {
         try {
-            // 1. Service Call (Optional, good for invalidating refresh token)
             await AuthService.logout(); 
         } catch (e) {
             console.warn('Logout API call failed', e);
         } finally {
-            // 2. Clear State
+            // Clear Client State
             AuthState.clearTokens();
-            // 3. Redirect
+            // Redirect
             window.location.href = '/login';
         }
     }
@@ -117,19 +131,17 @@ window.AuthFlow = (function() {
      */
     async function verifyEmail({ token }) {
         try {
-            // 1. Service
-            // Expected: might return new tokens with emailVerified=true
             const res = await AuthService.verifyEmail(token);
             
-            // 2. Refresh / Set Tokens
-            if (res.accessToken) {
-                AuthState.setTokens(res);
+            const payload = res.data || {};
+            const user = payload.user;
+
+            if (user) {
+                AuthState.setUser(user);
             } else {
-                // DO-NEW + WAIT
                 await AuthState.refreshUser();
             }
 
-            // 3. Redirect
             window.location.href = '/profile';
             return true;
         } catch (error) {
@@ -137,6 +149,7 @@ window.AuthFlow = (function() {
             throw error;
         }
     }
+
     /**
      * Forgot Password
      * @param {string} email

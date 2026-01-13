@@ -40,17 +40,14 @@
                 <a href="/wallet" class="navbar-link" id="navWalletLink" data-auth="required" style="display: none;">Wallet</a>
             </div>
 
-            <!-- Auth Section (when logged out) -->
-            {% if not user %}
-            <div class="navbar-auth" id="navAuthButtons">
+            <!-- Auth Section -->
+            <div class="navbar-auth" id="navAuthButtons" style="display: {{ 'none' if user else 'flex' }};">
                 <a href="/login" class="btn btn-ghost">Iniciar Sesión</a>
                 <a href="/register" class="btn btn-primary">Registrarse</a>
             </div>
-            {% endif %}
 
-            <!-- User Section (when logged in) -->
-            {% if user %}
-            <div class="navbar-auth" id="navUserMenu">
+            <!-- User Section -->
+            <div class="navbar-auth" id="navUserMenu" style="display: {{ 'flex' if user else 'none' }};">
                 <!-- Notifications -->
                 <a href="/notifications" class="navbar-notifications">
                     <button class="btn btn-icon btn-ghost navbar-notifications">
@@ -64,7 +61,7 @@
                     <div class="navbar-user-avatar">
                         <span class="material-symbols-outlined">person</span>
                     </div>
-                    <span class="navbar-user-name" id="navUserName">{{ user.username or 'Usuario' }}</span>
+                    <span class="navbar-user-name" id="navUserName">{{ user.username if user else 'Usuario' }}</span>
                 </a>
 
                 <!-- Settings Link (New) -->
@@ -75,7 +72,6 @@
                 <!-- Logout -->
                 <button class="btn btn-ghost" id="navLogoutBtn">Salir</button>
             </div>
-            {% endif %}
 
             <!-- Mobile Menu Toggle -->
             <button class="navbar-toggle" id="navMenuToggle">

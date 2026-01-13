@@ -27,12 +27,11 @@ window.SellerFlow = (function() {
             const res = await SellerService.enableSeller({ acceptTerms });
 
             // 3. Consistency (Critical Step)
-            if (res.accessToken) {
-                AuthState.setTokens({ accessToken: res.accessToken, refreshToken: res.refreshToken });
-            } else {
-                // Force DO-NEW + WAIT
-                await AuthState.refreshUser();
-            }
+            // A. Force Token Refresh (updates HttpOnly cookie with new claims like isSeller=true)
+            await AuthService.refresh();
+            
+            // B. Fetch fresh user state from backend (using the new token)
+            await AuthState.refreshUser();
 
             // 4. Verify (Optional Safety check)
             if (!AuthState.isSeller()) {

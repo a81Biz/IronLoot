@@ -16,14 +16,10 @@
             // Using the API endpoint we created in the previous step
             // WebViewsController: GET /api/web-views/won-auctions
             // The proxy in main.ts redirects /api requests to the backend
-            const response = await fetch('/api/web-views/won-auctions', {
-                headers: {
-                    'Authorization': `Bearer ${Utils.getToken()}`
-                }
-            });
-
-            if (!response.ok) throw new Error('Failed to fetch won auctions');
-            const orders = await response.json();
+            // Using the API endpoint we created in the previous step
+            // WebViewsController: GET /api/web-views/won-auctions
+            // The proxy in main.ts redirects /api requests to the backend
+            const { data: orders } = await Api.get(ApiRoutes.webViews.wonAuctions);
             
             if (!orders || orders.length === 0) {
                 tbody.innerHTML = `
