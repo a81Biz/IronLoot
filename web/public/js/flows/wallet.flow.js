@@ -15,28 +15,28 @@ window.WalletFlow = (function() {
 
     /**
      * Load History
+     * @param {number} [limit]
      */
-    async function loadHistory(filters) {
-        return WalletService.getHistory(filters);
+    async function loadHistory(limit) {
+        return WalletService.getHistory(limit);
     }
 
     /**
      * Deposit Funds
-     * @param {Object} params { amount, method }
+     * @param {Object} params { amount, referenceId }
      */
-    async function deposit({ amount, method }) {
-        const res = await WalletService.deposit(amount, method); // Assuming signature
-        // If immediate success:
+    async function deposit({ amount, referenceId }) {
+        const res = await WalletService.deposit(amount, referenceId);
         await syncAfterMutation();
         return res;
     }
 
     /**
      * Withdraw Funds
-     * @param {Object} params { amount, destination }
+     * @param {Object} params { amount, referenceId }
      */
-    async function withdraw({ amount, destination }) {
-        const res = await WalletService.withdraw(amount, destination);
+    async function withdraw({ amount, referenceId }) {
+        const res = await WalletService.withdraw(amount, referenceId);
         await syncAfterMutation();
         return res;
     }
@@ -50,7 +50,7 @@ window.WalletFlow = (function() {
             // Parallel fetch to be efficient
             const [balance, history] = await Promise.all([
                  WalletService.getBalance(),
-                 WalletService.getHistory({ limit: 5 }) // Fresh history
+                 WalletService.getHistory(5)
             ]);
             
             // Broadcast updates to components (Navbar, WalletWidget, etc)

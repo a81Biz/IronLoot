@@ -2,6 +2,7 @@ import { Injectable, BadRequestException } from '@nestjs/common';
 import { StripeProvider } from './providers/stripe.provider';
 import { MercadoPagoProvider } from './providers/mercadopago.provider';
 import { PaypalProvider } from './providers/paypal.provider';
+import { HeyBancoProvider } from './providers/heybanco.provider';
 import { PaymentProviderEnum } from './interfaces';
 import { WalletService } from '../wallet/wallet.service';
 
@@ -21,6 +22,7 @@ export class PaymentsService {
     private readonly stripeProvider: StripeProvider,
     private readonly mercadopagoProvider: MercadoPagoProvider,
     private readonly paypalProvider: PaypalProvider,
+    private readonly heyBancoProvider: HeyBancoProvider,
     private readonly walletService: WalletService,
   ) {}
 
@@ -53,7 +55,13 @@ export class PaymentsService {
 
       case PaymentProviderEnum.STRIPE:
         if (this.stripeProvider.checkStatus()) {
-          return this.stripeProvider.createPayment(orderId, amount, 'usd', description, email);
+          return this.stripeProvider.createPayment(orderId, amount, currency, description, email);
+        }
+        break;
+
+      case PaymentProviderEnum.HEY_BANCO:
+        if (this.heyBancoProvider.checkStatus()) {
+          return this.heyBancoProvider.createPayment(orderId, amount, currency, description, email);
         }
         break;
     }
@@ -111,7 +119,7 @@ export class PaymentsService {
       return this.stripeProvider.createPayment(
         `DEP-${userId}-${Date.now()}`,
         dto.amount,
-        'usd',
+        'MXN',
         dto.description || 'Wallet Deposit',
         email,
       );
@@ -133,34 +141,32 @@ export class PaymentsService {
       result = await this.mercadopagoProvider.handleWebhook(payload, headers, query);
     } else if (provider === 'PAYPAL') {
       result = await this.paypalProvider.handleWebhook(payload);
+    } else if (provider === 'HEY_BANCO') {
+      result = await this.heyBancoProvider.handleWebhook(payload, headers);
     }
 
     if (result && result.status === 'COMPLETED') {
       // Extract UserId from Reference (DEP-UserId-Timestamp)
       const parts = result.externalId.split('-');
-      // Check if format is DEP-USERID-TIMESTAMP
       if (parts.length >= 3 && parts[0] === 'DEP') {
         const userId = parts[1];
-        // Credit Wallet
-        // We need amount.
-        // We can assume result.metadata has amount or we rely on what we can verify.
-        // Result doesn't strictly have amount in interface yet, but verifyPayment does.
-        // Let's rely on verifying the payment again to be safe and getting definitive details?
-        // Or trust the webhook result if we enhance the interface.
-        // For now, let's try to verify using the externalId to get definitive amount
-        try {
-          const verification = await this.verifyPayment(result.externalId);
-          if (verification.status === 'COMPLETED') {
-            this.logger.log(`Crediting wallet for user ${userId} amount ${verification.amount}`);
-            await this.walletService.deposit(
-              userId,
-              verification.amount,
-              result.externalId,
-              'DEPOSIT',
-            );
+        // Extract amount from webhook metadata — avoids re-calling the provider API
+        // MP: transaction_amount, PayPal IPN: mc_gross, Stripe: amount_total (cents)
+        const rawAmount =
+          result.metadata?.transaction_amount ??
+          result.metadata?.mc_gross ??
+          (result.metadata?.amountTotal ? Number(result.metadata.amountTotal) / 100 : 0);
+        const amount = Number(rawAmount) || 0;
+
+        if (amount > 0) {
+          try {
+            this.logger.log(`Crediting wallet for user ${userId} amount ${amount}`);
+            await this.walletService.deposit(userId, amount, result.externalId, 'DEPOSIT');
+          } catch (e) {
+            this.logger.error(`Failed to credit wallet for ${result.externalId}`, e);
           }
-        } catch (e) {
-          this.logger.error(`Failed to credit wallet for ${result.externalId}`, e);
+        } else {
+          this.logger.error(`Cannot credit wallet: amount not found in webhook metadata`, result);
         }
       }
     }

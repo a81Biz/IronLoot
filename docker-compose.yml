@@ -1,6 +1,63 @@
 services:
   # ===========================================
-  # Iron Loot Web (React + Vite)
+  # Nginx Reverse Proxy (subdomains)
+  # localhost       → web:5173
+  # api.localhost   → api:3000
+  # admin.localhost → admin:3001
+  # ===========================================
+  nginx:
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    container_name: ironloot-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+      - api
+      - admin
+    networks:
+      - ironloot-network
+    restart: unless-stopped
+
+  # ===========================================
+  # Iron Loot Admin Panel (NestJS SSR)
+  # ===========================================
+  admin:
+    build:
+      context: ./admin
+      dockerfile: Dockerfile.dev
+    container_name: ironloot-admin
+    ports:
+      - "${ADMIN_PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=development
+      - ADMIN_PORT=3001
+      - ADMIN_API_URL=http://api:3000
+      - ADMIN_API_KEY=${ADMIN_API_KEY:-dev-admin-key}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
+      - ADMIN_SESSION_SECRET=${ADMIN_SESSION_SECRET:-admin-dev-secret-change-me}
+    volumes:
+      - ./admin/src:/app/src
+      - ./admin/views:/app/views
+      - ./admin/public:/app/public
+      - ./admin/package.json:/app/package.json
+      - ./admin/tsconfig.json:/app/tsconfig.json
+      - ./admin/nest-cli.json:/app/nest-cli.json
+      - /app/node_modules
+    depends_on:
+      - api
+    networks:
+      - ironloot-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+    restart: unless-stopped
+
+  # ===========================================
+  # Iron Loot Web (NestJS SSR)
   # ===========================================
   web:
     build:
@@ -10,7 +67,9 @@ services:
     ports:
       - "${WEB_PORT:-5173}:5173"
     environment:
-      - VITE_API_URL=
+      - VITE_API_URL=http://api:3000
+    env_file:
+      - ./api/.env
     volumes:
       - ./web/src:/app/src
       - ./web/public:/app/public
@@ -46,6 +105,7 @@ services:
       - LOG_LEVEL=${LOG_LEVEL:-debug}
 
       - TRACE_ENABLED=true
+      - ADMIN_API_KEY=${ADMIN_API_KEY:-dev-admin-key}
       - MAIL_HOST=mailhog
       - MAIL_PORT=1025
       - MAIL_USER=test
@@ -53,7 +113,7 @@ services:
       - MAIL_FROM="Iron Loot <noreply@ironloot.com>"
     # Load additional env vars from project .env into the container
     env_file:
-      - .env
+      - ./api/.env
     volumes:
       - ./api/src:/app/src
       - ./api/prisma:/app/prisma

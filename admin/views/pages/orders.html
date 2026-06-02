@@ -1,0 +1,41 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if not result %}
+<div class="alert alert-error">No se pudo conectar con la API.</div>
+{% elif result.data.length == 0 %}
+<div class="empty-state"><span class="material-symbols-outlined">shopping_bag</span><p>No hay órdenes.</p></div>
+{% else %}
+<div class="table-container">
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Comprador</th><th>Vendedor</th><th>Total</th><th>Estado</th><th>Fecha</th></tr>
+    </thead>
+    <tbody>
+      {% for o in result.data %}
+      <tr>
+        <td class="mono text-xs">{{ o.id | truncate(8, true, '') }}…</td>
+        <td class="text-sm">{{ o.buyer.email }}</td>
+        <td class="text-sm text-muted">{{ o.seller.email }}</td>
+        <td>${{ o.totalAmount }}</td>
+        <td>
+          {% if o.status == 'PAID' %}<span class="badge badge-success">Pagado</span>
+          {% elif o.status == 'PENDING_PAYMENT' %}<span class="badge badge-warning">Pend. pago</span>
+          {% elif o.status == 'SHIPPED' %}<span class="badge badge-info">Enviado</span>
+          {% elif o.status == 'DELIVERED' %}<span class="badge badge-success">Entregado</span>
+          {% elif o.status == 'CANCELLED' %}<span class="badge badge-danger">Cancelado</span>
+          {% else %}<span class="badge badge-muted">{{ o.status }}</span>{% endif %}
+        </td>
+        <td class="text-xs text-muted">{{ o.createdAt | truncate(10, true, '') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="pagination">
+  <span class="page-info">{{ result.meta.total }} órdenes · página {{ result.meta.page }}/{{ result.meta.pages }}</span>
+  {% if result.meta.page > 1 %}<a href="/orders?page={{ result.meta.page - 1 }}" class="btn btn-ghost btn-sm">← Anterior</a>{% endif %}
+  {% if result.meta.page < result.meta.pages %}<a href="/orders?page={{ result.meta.page + 1 }}" class="btn btn-ghost btn-sm">Siguiente →</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

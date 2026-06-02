@@ -30,6 +30,12 @@
 </style>
 {% endblock %}
 
+{% block scripts_head %}
+<script>
+    window.MP_PUBLIC_KEY = "{{ mpPublicKey }}";
+</script>
+{% endblock %}
+
 {% block content %}
 <div class="wallet-header">
     <h1 class="wallet-title">Depositar Fondos</h1>
@@ -128,5 +134,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="/js/pages/wallet/deposit.js"></script>
+<script src="/js/pages/wallet/deposit.v2.js?v=8"></script>
 {% endblock %}

@@ -271,6 +271,7 @@ enum PaymentProvider {
   MERCADO_PAGO
   PAYPAL
   STRIPE
+  HEY_BANCO
 }
 
 /// Payment Status enum
@@ -289,7 +290,7 @@ model Payment {
 
   // Transaction Info
   amount   Decimal @db.Decimal(10, 2)
-  currency String  @default("USD") @db.VarChar(3)
+  currency String  @default("MXN") @db.VarChar(3)
 
   provider PaymentProvider
   status   PaymentStatus   @default(PENDING)
@@ -564,6 +565,20 @@ model RequestLog {
   @@index([httpStatus, timestamp(sort: Desc)], name: "idx_request_logs_status_time")
   @@index([actorUserId, timestamp(sort: Desc)], name: "idx_request_logs_actor_time")
   @@map("request_logs")
+}
+
+// ===========================================
+// SYSTEM CONFIGURATION
+// ===========================================
+
+/// SystemConfig - Key-value store for runtime configuration (payment providers, feature flags, etc.)
+model SystemConfig {
+  key       String   @id @db.VarChar(100)
+  value     String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("system_config")
 }
 
 // ===========================================

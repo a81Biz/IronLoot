@@ -35,6 +35,7 @@ import { UploadModule } from './modules/upload/upload.module';
 import { WebViewsModule } from './modules/web-views/web-views.module';
 import { WatchlistModule } from './modules/watchlist/watchlist.module';
 import { SystemCleanupModule } from './modules/system-cleanup/system-cleanup.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -97,6 +98,7 @@ import { SystemCleanupModule } from './modules/system-cleanup/system-cleanup.mod
     WebViewsModule,
     WatchlistModule,
     SystemCleanupModule,
+    AdminModule,
 
     // Serve Static Uploads
     ServeStaticModule.forRoot({

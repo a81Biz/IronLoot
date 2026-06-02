@@ -1,0 +1,97 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if not stats %}
+<div class="alert alert-error">
+  <span class="material-symbols-outlined">warning</span>
+  No se pudo conectar con la API. Verifica que el servicio esté corriendo.
+</div>
+{% else %}
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon icon-blue">
+      <span class="material-symbols-outlined">group</span>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">{{ stats.users.total }}</div>
+      <div class="stat-label">Usuarios totales</div>
+      <div class="stat-sub">{{ stats.users.active }} activos · {{ stats.users.newToday }} hoy</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon icon-orange">
+      <span class="material-symbols-outlined">gavel</span>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">{{ stats.auctions.active }}</div>
+      <div class="stat-label">Subastas activas</div>
+      <div class="stat-sub">{{ stats.auctions.total }} totales</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon icon-purple">
+      <span class="material-symbols-outlined">trending_up</span>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">{{ stats.bids.total }}</div>
+      <div class="stat-label">Pujas totales</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon icon-green">
+      <span class="material-symbols-outlined">payments</span>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">${{ stats.revenue.today | round(2) }}</div>
+      <div class="stat-label">Ingresos hoy</div>
+      <div class="stat-sub">MXN</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon icon-red">
+      <span class="material-symbols-outlined">pending_actions</span>
+    </div>
+    <div class="stat-body">
+      <div class="stat-value">{{ stats.orders.pending }}</div>
+      <div class="stat-label">Órdenes pendientes</div>
+      <div class="stat-sub">{{ stats.orders.total }} totales</div>
+    </div>
+  </div>
+</div>
+
+<div class="quick-links">
+  <h2 class="section-title">Accesos rápidos</h2>
+  <div class="quick-grid">
+    <a href="/users" class="quick-card">
+      <span class="material-symbols-outlined">manage_accounts</span>
+      <span>Gestionar usuarios</span>
+    </a>
+    <a href="/auctions?status=ACTIVE" class="quick-card">
+      <span class="material-symbols-outlined">gavel</span>
+      <span>Subastas activas</span>
+    </a>
+    <a href="/orders?status=PENDING_PAYMENT" class="quick-card">
+      <span class="material-symbols-outlined">hourglass_top</span>
+      <span>Pagos pendientes</span>
+    </a>
+    <a href="/disputes" class="quick-card">
+      <span class="material-symbols-outlined">balance</span>
+      <span>Disputas abiertas</span>
+    </a>
+    <a href="/settings" class="quick-card">
+      <span class="material-symbols-outlined">credit_card</span>
+      <span>Proveedores de pago</span>
+    </a>
+    <a href="/audit" class="quick-card">
+      <span class="material-symbols-outlined">history</span>
+      <span>Log de auditoría</span>
+    </a>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

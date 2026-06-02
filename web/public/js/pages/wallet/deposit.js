@@ -9,8 +9,9 @@
     document.addEventListener('DOMContentLoaded', () => {
         // Initialize Mercado Pago SDK
         try {
-            // TODO: Replace with your actual Public Key from .env or config
-            mp = new MercadoPago("YOUR_PUBLIC_KEY", {
+            // Public Key injected from backend
+            const publicKey = window.MP_PUBLIC_KEY || "YOUR_PUBLIC_KEY"; 
+            mp = new MercadoPago(publicKey, {
                 locale: "es-MX"
             });
         } catch (e) {
@@ -138,6 +139,11 @@
             brickController = await bricksBuilder.create('cardPayment', 'cardPaymentBrick_container', settings);
         } catch (e) {
             console.error('Error creating brick', e);
+            Utils.toast('Error al cargar formulario de tarjeta. Intente recargar.', 'error');
+            // Fallback: Show default button if Brick fails?
+            // Actually, default button submits to backend. 
+            // If Brick fails, we might want to fallback to a standard redirect flow or just show error.
+            document.getElementById('cardPaymentBrick_container').innerHTML = '<div class="alert alert-danger">Error al cargar el formulario de pago. Por favor revise su configuración o intente más tarde.</div>';
         }
     }
 
@@ -179,14 +185,19 @@
                     if (provider === 'MERCADO_PAGO_OFFLINE') {
                         // Handle Offline Payment (Ticket)
                         const methodId = document.getElementById('offlineMethodSelector').value;
-                        const response = await WalletService.processPayment({
+                        const payload = {
                             amount: amount,
                             provider: 'MERCADO_PAGO',
                             payment_method_id: methodId,
+                            installments: 1, 
                             payer: {
-                                email: 'placeholder@user.com' // Backend overrides
+                                email: 'placeholder@user.com',
+                                identification: { type: 'DNI', number: '12345678' }
                             }
-                        });
+                        };
+                        console.log('DEBUG: Sending offline payment payload:', payload);
+                        
+                        const response = await WalletService.processPayment(payload);
 
                         // Check for external resource URL (Ticket)
                         if (response.data && response.data.point_of_interaction && response.data.point_of_interaction.transaction_data.ticket_url) {

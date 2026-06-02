@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, UseGuards, Get, Headers, Query } from '@nestjs/common';
+import { Controller, Post, Body, Param, UseGuards, Get, Headers, Query, BadRequestException } from '@nestjs/common';
 
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { JwtAuthGuard } from '../auth/guards';
@@ -67,8 +67,12 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Process a payment directly' })
   @ApiResponse({ status: 201, description: 'Payment processed' })
   async processPayment(@CurrentUser() user: AuthenticatedUser, @Body() dto: ProcessPaymentDto) {
-    // Override/Ensure email is from the authenticated user
+    if (!user?.email) {
+      throw new BadRequestException('User email not found in token');
+    }
+
     dto.payer = { ...dto.payer, email: user.email };
+
     return this.paymentsService.processPayment(dto);
   }
 }

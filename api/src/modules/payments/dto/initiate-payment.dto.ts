@@ -1,5 +1,6 @@
 import { IsNumber, IsPositive, Min, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { PaymentProviderEnum } from '../interfaces';
 
 export class InitiatePaymentDto {
   @ApiProperty({ example: 100, description: 'Amount to deposit' })
@@ -8,7 +9,7 @@ export class InitiatePaymentDto {
   @Min(10)
   amount: number;
 
-  @ApiProperty({ enum: ['MERCADO_PAGO', 'PAYPAL', 'STRIPE'], description: 'Payment provider' })
-  @IsEnum(['MERCADO_PAGO', 'PAYPAL', 'STRIPE'])
-  provider: string;
+  @ApiProperty({ enum: PaymentProviderEnum, description: 'Payment provider' })
+  @IsEnum(PaymentProviderEnum)
+  provider: PaymentProviderEnum;
 }

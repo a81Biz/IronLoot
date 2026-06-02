@@ -6,6 +6,7 @@ import { AuctionsModule } from '../auctions/auctions.module';
 import { OrdersModule } from '../orders/orders.module';
 import { WalletModule } from '../wallet/wallet.module';
 import { NotificationsModule } from '../notifications/notifications.module';
+import { DistributedLockService } from '../../common/redis/distributed-lock.service';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { NotificationsModule } from '../notifications/notifications.module';
     WalletModule,
     NotificationsModule,
   ],
-  providers: [AuctionSchedulerService, SystemCleanupService],
+  providers: [AuctionSchedulerService, SystemCleanupService, DistributedLockService],
   exports: [AuctionSchedulerService],
 })
 export class SchedulerModule {}

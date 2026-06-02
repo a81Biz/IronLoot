@@ -1,0 +1,40 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if not result %}
+<div class="alert alert-error">No se pudo conectar con la API.</div>
+{% elif result.data.length == 0 %}
+<div class="empty-state"><span class="material-symbols-outlined">balance</span><p>No hay disputas.</p></div>
+{% else %}
+<div class="table-container">
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Orden</th><th>Creador</th><th>Motivo</th><th>Estado</th><th>Fecha</th></tr>
+    </thead>
+    <tbody>
+      {% for d in result.data %}
+      <tr>
+        <td class="mono text-xs">{{ d.id | truncate(8, true, '') }}…</td>
+        <td class="mono text-xs">{{ d.orderId | truncate(8, true, '') }}…</td>
+        <td class="text-sm">{{ d.creator.email }}</td>
+        <td class="text-sm">{{ d.reason | truncate(30) }}</td>
+        <td>
+          {% if d.status == 'OPEN' %}<span class="badge badge-danger">Abierta</span>
+          {% elif d.status == 'IN_MEDIATION' %}<span class="badge badge-warning">En mediación</span>
+          {% elif d.status == 'RESOLVED' %}<span class="badge badge-success">Resuelta</span>
+          {% elif d.status == 'CLOSED' %}<span class="badge badge-muted">Cerrada</span>
+          {% else %}<span class="badge badge-muted">{{ d.status }}</span>{% endif %}
+        </td>
+        <td class="text-xs text-muted">{{ d.createdAt | truncate(10, true, '') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="pagination">
+  <span class="page-info">{{ result.meta.total }} disputas · página {{ result.meta.page }}/{{ result.meta.pages }}</span>
+  {% if result.meta.page > 1 %}<a href="/disputes?page={{ result.meta.page - 1 }}" class="btn btn-ghost btn-sm">← Anterior</a>{% endif %}
+  {% if result.meta.page < result.meta.pages %}<a href="/disputes?page={{ result.meta.page + 1 }}" class="btn btn-ghost btn-sm">Siguiente →</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if not config %}
+<div class="alert alert-error">No se pudo cargar la configuración. Verifica que la API esté disponible.</div>
+{% else %}
+
+{% set saved = false %}
+
+<div class="settings-section">
+  <h2 class="section-title">
+    <span class="material-symbols-outlined">credit_card</span>
+    Proveedores de Pago
+  </h2>
+  <p class="section-desc">Configura qué proveedores de pago están disponibles para los usuarios de la plataforma.</p>
+
+  <form action="/settings/payment-config" method="POST" class="settings-form">
+
+    <div class="provider-grid">
+      {% for provider in allProviders %}
+      <div class="provider-card {% if provider.id in config.enabledProviders %}provider-enabled{% endif %}">
+        <div class="provider-header">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              name="providers"
+              value="{{ provider.id }}"
+              {% if provider.id in config.enabledProviders %}checked{% endif %}
+            >
+            <span class="provider-name">{{ provider.label }}</span>
+          </label>
+          {% if provider.id == 'MERCADO_PAGO' %}
+            <span class="provider-badge badge-success">Recomendado MX</span>
+          {% elif provider.id == 'HEY_BANCO' %}
+            <span class="provider-badge badge-info">Nuevo</span>
+          {% endif %}
+        </div>
+        <p class="provider-desc">{{ provider.desc }}</p>
+        <div class="provider-primary">
+          <label class="radio-label">
+            <input
+              type="radio"
+              name="primaryCardProvider"
+              value="{{ provider.id }}"
+              {% if provider.id == config.primaryCardProvider %}checked{% endif %}
+            >
+            <span>Proveedor principal para tarjeta</span>
+          </label>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">
+        <span class="material-symbols-outlined">save</span>
+        Guardar configuración
+      </button>
+    </div>
+  </form>
+</div>
+
+<div class="settings-section">
+  <h2 class="section-title">
+    <span class="material-symbols-outlined">info</span>
+    Variables de entorno requeridas
+  </h2>
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr><th>Variable</th><th>Proveedor</th><th>Descripción</th></tr>
+      </thead>
+      <tbody>
+        <tr><td class="mono">MERCADO_PAGO_ACCESS_TOKEN</td><td>Mercado Pago</td><td>Token de acceso de producción</td></tr>
+        <tr><td class="mono">MERCADO_PAGO_PUBLIC_KEY</td><td>Mercado Pago</td><td>Clave pública para el SDK frontend</td></tr>
+        <tr><td class="mono">MERCADO_PAGO_WEBHOOK_SECRET</td><td>Mercado Pago</td><td>Secret para validar webhooks HMAC</td></tr>
+        <tr><td class="mono">PAYPAL_BUSINESS_EMAIL</td><td>PayPal</td><td>Email de la cuenta merchant</td></tr>
+        <tr><td class="mono">PAYPAL_MODE</td><td>PayPal</td><td>sandbox | production</td></tr>
+        <tr><td class="mono">STRIPE_SECRET_KEY</td><td>Stripe</td><td>Secret key de Stripe</td></tr>
+        <tr><td class="mono">HEY_BANCO_CLIENT_ID</td><td>Hey Banco</td><td>Client ID de la app Hey Banco</td></tr>
+        <tr><td class="mono">HEY_BANCO_CLIENT_SECRET</td><td>Hey Banco</td><td>Client Secret (OAuth2)</td></tr>
+        <tr><td class="mono">HEY_BANCO_WEBHOOK_SECRET</td><td>Hey Banco</td><td>Secret para validar webhooks</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Show success toast if redirected with ?saved=1
+  if (new URLSearchParams(window.location.search).get('saved') === '1') {
+    showToast('Configuración guardada correctamente', 'success');
+    history.replaceState({}, '', '/settings');
+  }
+</script>
+{% endblock %}

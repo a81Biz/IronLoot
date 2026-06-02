@@ -1,0 +1,40 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if not result %}
+<div class="alert alert-error">No se pudo conectar con la API.</div>
+{% elif result.data.length == 0 %}
+<div class="empty-state"><span class="material-symbols-outlined">payments</span><p>No hay pagos registrados.</p></div>
+{% else %}
+<div class="table-container">
+  <table>
+    <thead>
+      <tr><th>ID</th><th>Comprador</th><th>Proveedor</th><th>Monto</th><th>Estado</th><th>Fecha</th></tr>
+    </thead>
+    <tbody>
+      {% for p in result.data %}
+      <tr>
+        <td class="mono text-xs">{{ p.id | truncate(8, true, '') }}…</td>
+        <td class="text-sm">{{ p.order.buyer.email }}</td>
+        <td><span class="badge badge-info">{{ p.provider }}</span></td>
+        <td>${{ p.amount }} <span class="text-xs text-muted">{{ p.currency }}</span></td>
+        <td>
+          {% if p.status == 'COMPLETED' %}<span class="badge badge-success">Completado</span>
+          {% elif p.status == 'PENDING' %}<span class="badge badge-warning">Pendiente</span>
+          {% elif p.status == 'FAILED' %}<span class="badge badge-danger">Fallido</span>
+          {% elif p.status == 'REFUNDED' %}<span class="badge badge-muted">Reembolsado</span>
+          {% else %}<span class="badge badge-muted">{{ p.status }}</span>{% endif %}
+        </td>
+        <td class="text-xs text-muted">{{ p.createdAt | truncate(10, true, '') }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="pagination">
+  <span class="page-info">{{ result.meta.total }} pagos · página {{ result.meta.page }}/{{ result.meta.pages }}</span>
+  {% if result.meta.page > 1 %}<a href="/payments?page={{ result.meta.page - 1 }}" class="btn btn-ghost btn-sm">← Anterior</a>{% endif %}
+  {% if result.meta.page < result.meta.pages %}<a href="/payments?page={{ result.meta.page + 1 }}" class="btn btn-ghost btn-sm">Siguiente →</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

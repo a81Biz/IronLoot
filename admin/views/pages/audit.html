@@ -1,0 +1,36 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if not result %}
+<div class="alert alert-error">No se pudo conectar con la API.</div>
+{% elif result.data.length == 0 %}
+<div class="empty-state"><span class="material-symbols-outlined">history</span><p>No hay eventos de auditoría.</p></div>
+{% else %}
+<div class="table-container">
+  <table>
+    <thead>
+      <tr><th>Timestamp</th><th>Evento</th><th>Entidad</th><th>Actor</th><th>Resultado</th></tr>
+    </thead>
+    <tbody>
+      {% for e in result.data %}
+      <tr>
+        <td class="text-xs text-muted mono">{{ e.timestamp | truncate(19, true, '') }}</td>
+        <td class="text-sm"><span class="badge badge-info">{{ e.eventType }}</span></td>
+        <td class="text-xs">{{ e.entityType }}<br><span class="text-muted mono">{{ e.entityId | truncate(8, true, '') }}…</span></td>
+        <td class="text-xs text-muted">{{ e.actorUserId | truncate(8, true, '') if e.actorUserId else 'system' }}</td>
+        <td>
+          {% if e.result == 'SUCCESS' %}<span class="badge badge-success">OK</span>
+          {% else %}<span class="badge badge-danger">{{ e.result }}</span>{% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+<div class="pagination">
+  <span class="page-info">{{ result.meta.total }} eventos · página {{ result.meta.page }}/{{ result.meta.pages }}</span>
+  {% if result.meta.page > 1 %}<a href="/audit?page={{ result.meta.page - 1 }}" class="btn btn-ghost btn-sm">← Anterior</a>{% endif %}
+  {% if result.meta.page < result.meta.pages %}<a href="/audit?page={{ result.meta.page + 1 }}" class="btn btn-ghost btn-sm">Siguiente →</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

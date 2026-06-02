@@ -2,6 +2,7 @@ export enum PaymentProviderEnum {
   MERCADO_PAGO = 'MERCADO_PAGO',
   PAYPAL = 'PAYPAL',
   STRIPE = 'STRIPE',
+  HEY_BANCO = 'HEY_BANCO',
 }
 
 export interface CreatePaymentResult {

@@ -72,7 +72,7 @@ export class WalletController {
         id: tx.id,
         type: tx.type,
         amount: Number(tx.amount),
-        currency: 'USD', // Ledger doesn't store currency directly, assuming USD or derived from context
+        currency: 'MXN',
         status: 'COMPLETED', // Ledger entries are always completed
         createdAt: tx.createdAt,
         referenceId: tx.referenceId || '',
@@ -81,7 +81,6 @@ export class WalletController {
   }
 
   @Post('deposit')
-  // @Throttle({ default: { limit: 10, ttl: 60000 } }) // TODO: Install ThrottlerModule
   @Throttle({ default: { limit: 10, ttl: 60000 } })
   @AuditedAction(
     AuditEventType.PAYMENT_CONFIRMED,
@@ -112,7 +111,6 @@ export class WalletController {
   }
 
   @Post('withdraw')
-  // @Throttle({ default: { limit: 5, ttl: 60000 } }) // TODO: Install ThrottlerModule
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @AuditedAction(
     AuditEventType.PAYMENT_INITIATED,

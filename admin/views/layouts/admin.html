@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ title }} — Iron Loot Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  <link rel="stylesheet" href="/css/admin.css">
+  {% block head %}{% endblock %}
+</head>
+<body class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <span class="material-symbols-outlined sidebar-logo-icon">bolt</span>
+      <div>
+        <div class="sidebar-brand">Iron Loot</div>
+        <div class="sidebar-sub">Admin Panel</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a href="/" class="nav-item {% if activePage == 'dashboard' %}active{% endif %}">
+        <span class="material-symbols-outlined">dashboard</span>
+        <span>Dashboard</span>
+      </a>
+      <a href="/users" class="nav-item {% if activePage == 'users' %}active{% endif %}">
+        <span class="material-symbols-outlined">group</span>
+        <span>Usuarios</span>
+      </a>
+      <a href="/auctions" class="nav-item {% if activePage == 'auctions' %}active{% endif %}">
+        <span class="material-symbols-outlined">gavel</span>
+        <span>Subastas</span>
+      </a>
+      <a href="/orders" class="nav-item {% if activePage == 'orders' %}active{% endif %}">
+        <span class="material-symbols-outlined">shopping_bag</span>
+        <span>Órdenes</span>
+      </a>
+      <a href="/payments" class="nav-item {% if activePage == 'payments' %}active{% endif %}">
+        <span class="material-symbols-outlined">payments</span>
+        <span>Pagos</span>
+      </a>
+      <a href="/disputes" class="nav-item {% if activePage == 'disputes' %}active{% endif %}">
+        <span class="material-symbols-outlined">balance</span>
+        <span>Disputas</span>
+      </a>
+      <a href="/audit" class="nav-item {% if activePage == 'audit' %}active{% endif %}">
+        <span class="material-symbols-outlined">history</span>
+        <span>Auditoría</span>
+      </a>
+      <div class="nav-divider"></div>
+      <a href="/settings" class="nav-item {% if activePage == 'settings' %}active{% endif %}">
+        <span class="material-symbols-outlined">settings</span>
+        <span>Configuración</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="admin-info">
+        <span class="material-symbols-outlined">admin_panel_settings</span>
+        <span class="admin-name">{{ adminUser or 'admin' }}</span>
+      </div>
+      <form action="/logout" method="POST">
+        <button type="submit" class="btn-logout" title="Cerrar sesión">
+          <span class="material-symbols-outlined">logout</span>
+        </button>
+      </form>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <div class="main-wrap">
+    <header class="top-bar">
+      <h1 class="page-title">{{ title }}</h1>
+      <div class="top-bar-right">
+        <a href="http://localhost:5173" target="_blank" class="btn btn-ghost btn-sm">
+          <span class="material-symbols-outlined">open_in_new</span>
+          Ver sitio
+        </a>
+      </div>
+    </header>
+
+    <main class="content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  <script src="/js/admin.js"></script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

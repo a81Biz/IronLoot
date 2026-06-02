@@ -144,8 +144,8 @@ export class MercadoPagoProvider implements PaymentProvider {
       const dataID = query['data.id'];
 
       if (!xSignature || !xRequestId || !dataID) {
-        this.logger.error('Missing signature headers or data.id');
-        // return null; // Or throw
+        this.logger.error('Missing signature headers or data.id — rejecting webhook');
+        throw new Error('Missing required webhook signature headers');
       } else {
         const parts = xSignature.split(',');
         let ts;

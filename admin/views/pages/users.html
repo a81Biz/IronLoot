@@ -1,0 +1,88 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+<div class="toolbar">
+  <form action="/users" method="GET" class="search-form">
+    <div class="input-wrap">
+      <span class="material-symbols-outlined input-icon">search</span>
+      <input type="text" name="q" placeholder="Buscar por email o username..." value="{{ q or '' }}">
+    </div>
+    <button type="submit" class="btn btn-primary btn-sm">Buscar</button>
+    {% if q %}<a href="/users" class="btn btn-ghost btn-sm">Limpiar</a>{% endif %}
+  </form>
+</div>
+
+{% if not result %}
+<div class="alert alert-error">No se pudo conectar con la API.</div>
+{% elif result.data.length == 0 %}
+<div class="empty-state">
+  <span class="material-symbols-outlined">person_off</span>
+  <p>No hay usuarios{% if q %} que coincidan con "{{ q }}"{% endif %}.</p>
+</div>
+{% else %}
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Username</th>
+        <th>Estado</th>
+        <th>Vendedor</th>
+        <th>Creado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for user in result.data %}
+      <tr>
+        <td><span class="mono">{{ user.email }}</span></td>
+        <td>{{ user.username }}</td>
+        <td>
+          {% if user.state == 'ACTIVE' %}
+            <span class="badge badge-success">Activo</span>
+          {% elif user.state == 'BANNED' %}
+            <span class="badge badge-danger">Baneado</span>
+          {% elif user.state == 'SUSPENDED' %}
+            <span class="badge badge-warning">Suspendido</span>
+          {% else %}
+            <span class="badge badge-muted">{{ user.state }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if user.isSeller %}
+            <span class="badge badge-info">Sí</span>
+          {% else %}
+            <span class="text-muted">No</span>
+          {% endif %}
+        </td>
+        <td class="text-muted text-sm">{{ user.createdAt | truncate(10, true, '') }}</td>
+        <td>
+          {% if user.state == 'BANNED' %}
+          <form action="/users/{{ user.id }}/unban" method="POST" style="display:inline">
+            <button type="submit" class="btn btn-success btn-xs" onclick="return confirm('¿Restaurar acceso?')">Restaurar</button>
+          </form>
+          {% else %}
+          <form action="/users/{{ user.id }}/ban" method="POST" style="display:inline">
+            <button type="submit" class="btn btn-danger btn-xs" onclick="return confirm('¿Banear usuario?')">Banear</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% if result.meta.pages > 1 %}
+<div class="pagination">
+  {% if result.meta.page > 1 %}
+  <a href="/users?page={{ result.meta.page - 1 }}{% if q %}&q={{ q }}{% endif %}" class="btn btn-ghost btn-sm">← Anterior</a>
+  {% endif %}
+  <span class="page-info">Página {{ result.meta.page }} de {{ result.meta.pages }} ({{ result.meta.total }} usuarios)</span>
+  {% if result.meta.page < result.meta.pages %}
+  <a href="/users?page={{ result.meta.page + 1 }}{% if q %}&q={{ q }}{% endif %}" class="btn btn-ghost btn-sm">Siguiente →</a>
+  {% endif %}
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}

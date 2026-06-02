@@ -5,23 +5,63 @@ import { PrismaService } from '../../database/prisma.service';
 import { WalletService } from '../wallet/wallet.service';
 import { AuctionStatus, OrderStatus, NotificationType } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
+import { DistributedLockService } from '../../common/redis/distributed-lock.service';
 
 @Injectable()
 export class AuctionSchedulerService {
   private readonly logger = new Logger(AuctionSchedulerService.name);
 
+  // Lock TTL: 60 seconds (2x max observed execution time)
+  // Measurement: closeExpiredAuctions() executes in ~15-30s under typical load:
+  // - Auction query: ~100ms
+  // - Per-auction transaction: ~20-50ms
+  // - Fund captures + ledger: ~50-100ms each
+  // - Notifications: ~50-200ms each (async)
+  // Worst case: 100+ auctions * (100ms) ≈ 15-30s
+  // TTL set to 2x (60s) for safety and clock skew tolerance
+  private readonly lockTtl = 60;
+
   constructor(
     private readonly prisma: PrismaService,
-
     private readonly walletService: WalletService,
     private readonly notificationsService: NotificationsService,
+    private readonly distributedLockService: DistributedLockService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
   async handleCron() {
     this.logger.debug('Running auction scheduler...');
+
+    // Non-critical operations (can run on any instance)
     await this.startScheduledAuctions();
-    await this.closeExpiredAuctions();
+
+    // CRITICAL: Acquire distributed lock before closing auctions
+    // Prevents race conditions in multi-instance deployments
+    const closeLock = await this.distributedLockService.acquireLock('lock:auction-close', this.lockTtl);
+    if (!closeLock) {
+      this.logger.log('auction-close: lock held by another instance, skipping');
+      return;
+    }
+
+    this.logger.debug('auction-close: lock acquired, starting execution');
+    const startTime = Date.now();
+
+    try {
+      await this.closeExpiredAuctions();
+      const duration = Date.now() - startTime;
+      this.logger.debug(`auction-close: completed in ${duration}ms`);
+    } catch (error) {
+      this.logger.error(`auction-close: failed to close auctions`, error);
+      throw error;
+    } finally {
+      // Always release lock, even if execution fails
+      const released = await this.distributedLockService.releaseLock('lock:auction-close', closeLock);
+      if (!released) {
+        this.logger.warn('auction-close: lock release failed (possibly expired and reacquired)');
+      } else {
+        this.logger.debug('auction-close: lock released');
+      }
+    }
   }
 
   /**

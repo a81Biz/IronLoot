@@ -23,7 +23,7 @@ export class ProcessPaymentDto {
   @ApiProperty({ description: 'Payer information' })
   @IsObject()
   payer: {
-    email: string;
+    email?: string;
     identification?: {
       type: string;
       number: string;

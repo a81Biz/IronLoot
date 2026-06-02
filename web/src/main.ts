@@ -40,11 +40,12 @@ async function bootstrap() {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'"],
-        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-        fontSrc: ["'self'", "https://fonts.gstatic.com"],
-        imgSrc: ["'self'", "data:", "https:"],
-        connectSrc: ["'self'"],
+        scriptSrc: ["'self'", "'unsafe-inline'", "https://sdk.mercadopago.com", "https://http2.mlstatic.com"],
+        styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://http2.mlstatic.com"],
+        fontSrc: ["'self'", "https://fonts.gstatic.com", "https://http2.mlstatic.com"],
+        imgSrc: ["'self'", "data:", "https:", "https://http2.mlstatic.com"],
+        connectSrc: ["'self'", "https://api.mercadopago.com", "https://events.mercadopago.com", "https://*.mercadopago.com", "https://http2.mlstatic.com", "https://*.mercadolibre.com"],
+        frameSrc: ["'self'", "https://sdk.mercadopago.com", "https://*.mercadolibre.com", "https://*.mercadopago.com"],
       },
     },
     crossOriginEmbedderPolicy: false,
