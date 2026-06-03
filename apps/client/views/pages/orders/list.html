@@ -10,7 +10,7 @@
         {% if orders and orders.items %}
           {% for order in orders.items %}
           <tr>
-            <td><code>{{ order.id[:8] }}…</code></td>
+            <td><code>{{ order.id }}</code></td>
             <td>{{ order.auction.title | default('—') }}</td>
             <td>MXN {{ order.totalAmount }}</td>
             <td><span class="badge badge-info">{{ order.status }}</span></td>
