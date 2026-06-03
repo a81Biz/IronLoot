@@ -35,7 +35,7 @@
     <tbody>
       {% for user in result.data %}
       <tr>
-        <td><span class="mono">{{ user.email }}</span></td>
+        <td><a href="/users/{{ user.id }}" class="link-primary mono">{{ user.email }}</a></td>
         <td>{{ user.username }}</td>
         <td>
           {% if user.state == 'ACTIVE' %}

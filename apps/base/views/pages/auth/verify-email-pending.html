@@ -1,0 +1,17 @@
+{% extends "layouts/base.html" %}
+{% block title %}Revisa tu correo — IronLoot{% endblock %}
+
+{% block content %}
+<div class="form-container" style="text-align:center;">
+  <h1 class="form-title" style="font-size:1.4rem;">📧 Revisa tu correo</h1>
+  <p style="color:#6c757d;margin-bottom:1.5rem;">
+    Te enviamos un enlace de verificación. Haz clic en él para activar tu cuenta.
+  </p>
+  <p style="font-size:.9rem;color:#6c757d;">
+    ¿No lo ves? Revisa la carpeta de spam. El enlace expira en 24 horas.
+  </p>
+  <div style="margin-top:2rem;">
+    <a href="/auth/login" class="btn btn-ghost">Volver a inicio de sesión</a>
+  </div>
+</div>
+{% endblock %}

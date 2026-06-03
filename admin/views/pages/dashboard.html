@@ -1,5 +1,9 @@
 {% extends "layouts/admin.html" %}
 
+{% block head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endblock %}
+
 {% block content %}
 {% if not stats %}
 <div class="alert alert-error">
@@ -8,90 +12,110 @@
 </div>
 {% else %}
 
+<!-- KPI Grid -->
 <div class="stats-grid">
   <div class="stat-card">
-    <div class="stat-icon icon-blue">
-      <span class="material-symbols-outlined">group</span>
-    </div>
+    <div class="stat-icon icon-blue"><span class="material-symbols-outlined">group</span></div>
     <div class="stat-body">
-      <div class="stat-value">{{ stats.users.total }}</div>
+      <div class="stat-value" id="kpi-users-total">{{ stats.users.total }}</div>
       <div class="stat-label">Usuarios totales</div>
       <div class="stat-sub">{{ stats.users.active }} activos · {{ stats.users.newToday }} hoy</div>
     </div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon icon-orange">
-      <span class="material-symbols-outlined">gavel</span>
-    </div>
+    <div class="stat-icon icon-teal"><span class="material-symbols-outlined">storefront</span></div>
     <div class="stat-body">
-      <div class="stat-value">{{ stats.auctions.active }}</div>
-      <div class="stat-label">Subastas activas</div>
-      <div class="stat-sub">{{ stats.auctions.total }} totales</div>
+      <div class="stat-value" id="kpi-sellers">{{ stats.users.sellers or 0 }}</div>
+      <div class="stat-label">Vendedores</div>
+      <div class="stat-sub">{{ stats.users.buyers or 0 }} compradores</div>
     </div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon icon-purple">
-      <span class="material-symbols-outlined">trending_up</span>
-    </div>
+    <div class="stat-icon icon-orange"><span class="material-symbols-outlined">gavel</span></div>
     <div class="stat-body">
-      <div class="stat-value">{{ stats.bids.total }}</div>
+      <div class="stat-value" id="kpi-auctions-active">{{ stats.auctions.active }}</div>
+      <div class="stat-label">Subastas activas</div>
+      <div class="stat-sub">{{ stats.auctions.scheduled or 0 }} programadas · {{ stats.auctions.total }} totales</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon icon-purple"><span class="material-symbols-outlined">trending_up</span></div>
+    <div class="stat-body">
+      <div class="stat-value" id="kpi-bids">{{ stats.bids.total }}</div>
       <div class="stat-label">Pujas totales</div>
     </div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon icon-green">
-      <span class="material-symbols-outlined">payments</span>
-    </div>
+    <div class="stat-icon icon-green"><span class="material-symbols-outlined">payments</span></div>
     <div class="stat-body">
-      <div class="stat-value">${{ stats.revenue.today | round(2) }}</div>
+      <div class="stat-value" id="kpi-revenue-today">${{ stats.revenue.today | round(2) }}</div>
       <div class="stat-label">Ingresos hoy</div>
-      <div class="stat-sub">MXN</div>
+      <div class="stat-sub">${{ stats.revenue.month | round(2) }} este mes · MXN</div>
     </div>
   </div>
 
   <div class="stat-card">
-    <div class="stat-icon icon-red">
-      <span class="material-symbols-outlined">pending_actions</span>
-    </div>
+    <div class="stat-icon icon-red"><span class="material-symbols-outlined">pending_actions</span></div>
     <div class="stat-body">
-      <div class="stat-value">{{ stats.orders.pending }}</div>
+      <div class="stat-value" id="kpi-orders-pending">{{ stats.orders.pending }}</div>
       <div class="stat-label">Órdenes pendientes</div>
       <div class="stat-sub">{{ stats.orders.total }} totales</div>
     </div>
   </div>
+
+  <div class="stat-card">
+    <div class="stat-icon icon-amber"><span class="material-symbols-outlined">error_outline</span></div>
+    <div class="stat-body">
+      <div class="stat-value" id="kpi-payments-failed">{{ stats.payments.failed or 0 }}</div>
+      <div class="stat-label">Pagos rechazados</div>
+      <div class="stat-sub">{{ stats.payments.pending or 0 }} pendientes</div>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon icon-indigo"><span class="material-symbols-outlined">receipt_long</span></div>
+    <div class="stat-body">
+      <div class="stat-value" id="kpi-cfdi-pending">{{ stats.cfdi.pending if stats and stats.cfdi else 0 }}</div>
+      <div class="stat-label">CFDIs pendientes</div>
+      <div class="stat-sub">{{ stats.commissions.pending if stats and stats.commissions else 0 }} comisiones pendientes</div>
+    </div>
+  </div>
 </div>
 
+<!-- Charts -->
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Ingresos diarios (últimos 90 días)</div>
+    <canvas id="chart-revenue" height="120"></canvas>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Nuevos usuarios (últimos 30 días)</div>
+    <canvas id="chart-users" height="120"></canvas>
+  </div>
+</div>
+
+<!-- Quick links -->
 <div class="quick-links">
   <h2 class="section-title">Accesos rápidos</h2>
   <div class="quick-grid">
-    <a href="/users" class="quick-card">
-      <span class="material-symbols-outlined">manage_accounts</span>
-      <span>Gestionar usuarios</span>
-    </a>
-    <a href="/auctions?status=ACTIVE" class="quick-card">
-      <span class="material-symbols-outlined">gavel</span>
-      <span>Subastas activas</span>
-    </a>
-    <a href="/orders?status=PENDING_PAYMENT" class="quick-card">
-      <span class="material-symbols-outlined">hourglass_top</span>
-      <span>Pagos pendientes</span>
-    </a>
-    <a href="/disputes" class="quick-card">
-      <span class="material-symbols-outlined">balance</span>
-      <span>Disputas abiertas</span>
-    </a>
-    <a href="/settings" class="quick-card">
-      <span class="material-symbols-outlined">credit_card</span>
-      <span>Proveedores de pago</span>
-    </a>
-    <a href="/audit" class="quick-card">
-      <span class="material-symbols-outlined">history</span>
-      <span>Log de auditoría</span>
-    </a>
+    <a href="/users" class="quick-card"><span class="material-symbols-outlined">manage_accounts</span><span>Gestionar usuarios</span></a>
+    <a href="/auctions?status=ACTIVE" class="quick-card"><span class="material-symbols-outlined">gavel</span><span>Subastas activas</span></a>
+    <a href="/moderation" class="quick-card"><span class="material-symbols-outlined">pending_actions</span><span>Moderación pendiente</span></a>
+    <a href="/orders?status=PENDING_PAYMENT" class="quick-card"><span class="material-symbols-outlined">hourglass_top</span><span>Pagos pendientes</span></a>
+    <a href="/kyc" class="quick-card"><span class="material-symbols-outlined">verified_user</span><span>KYC pendiente</span></a>
+    <a href="/reports" class="quick-card"><span class="material-symbols-outlined">bar_chart</span><span>Ver reportes</span></a>
   </div>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/dashboard-charts.js"></script>
+<script>
+  initDashboard();
+</script>
 {% endblock %}

@@ -1,0 +1,27 @@
+{% extends "layouts/admin.html" %}
+{% block title %}SEO — IronLoot Admin{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Configuración SEO</h1>
+<div id="seoList" class="row g-3"></div>
+<script>
+const API = '/api/v1/admin';
+async function loadSeo() {
+  const configs = await (await fetch(`${API}/seo`)).json();
+  const pages = ['home','auctions','about','terms','privacy'];
+  const existing = Object.fromEntries(configs.map(c => [c.page, c]));
+  document.getElementById('seoList').innerHTML = pages.map(page => {
+    const c = existing[page] || {};
+    return `<div class="col-md-6"><div class="card mb-3"><div class="card-header fw-semibold">${page}</div><div class="card-body">
+      <div class="mb-2"><label class="form-label form-label-sm">Title</label><input class="form-control form-control-sm" id="${page}_title" value="${c.title||''}"></div>
+      <div class="mb-2"><label class="form-label form-label-sm">Description</label><textarea class="form-control form-control-sm" id="${page}_desc" rows="2">${c.description||''}</textarea></div>
+      <button class="btn btn-sm btn-primary" onclick="saveSeo('${page}')">Guardar</button>
+    </div></div></div>`;
+  }).join('');
+}
+async function saveSeo(page) {
+  await fetch(`${API}/seo/${page}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ title: document.getElementById(page+'_title').value, description: document.getElementById(page+'_desc').value }) });
+  alert(`SEO para "${page}" guardado.`);
+}
+loadSeo();
+</script>
+{% endblock %}

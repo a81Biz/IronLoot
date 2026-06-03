@@ -1,0 +1,125 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if not auction %}
+<div class="alert alert-error">No se encontró la subasta.</div>
+{% else %}
+
+<div class="detail-header">
+  <a href="/auctions" class="btn btn-ghost btn-sm">
+    <span class="material-symbols-outlined">arrow_back</span> Subastas
+  </a>
+  <span class="status-badge status-{{ auction.status | lower }}">{{ auction.status }}</span>
+  {% if auction.isBlocked %}<span class="status-badge status-blocked">BLOQUEADO</span>{% endif %}
+</div>
+
+<div class="detail-grid">
+
+  <!-- Info principal -->
+  <div class="detail-card detail-main">
+    <h2 class="card-title">{{ auction.title }}</h2>
+    <p class="auction-desc">{{ auction.description }}</p>
+
+    <div class="info-grid">
+      <div><span class="info-label">ID</span><span class="info-val font-mono">{{ auction.id }}</span></div>
+      <div><span class="info-label">Vendedor</span><span class="info-val">{{ auction.seller.email }}</span></div>
+      <div><span class="info-label">Precio inicial</span><span class="info-val">${{ auction.startingPrice }}</span></div>
+      <div><span class="info-label">Precio actual</span><span class="info-val font-bold">${{ auction.currentPrice }}</span></div>
+      <div><span class="info-label">Inicia</span><span class="info-val">{{ auction.startsAt }}</span></div>
+      <div><span class="info-label">Termina</span><span class="info-val">{{ auction.endsAt }}</span></div>
+    </div>
+
+    {% if auction.adminNotes %}
+    <div class="admin-notes-box">
+      <span class="material-symbols-outlined">sticky_note_2</span>
+      <span>{{ auction.adminNotes }}</span>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Acciones admin -->
+  <div class="detail-card detail-actions">
+    <h3 class="card-title">Acciones de administración</h3>
+
+    {% if auction.status == 'DRAFT' or auction.status == 'PENDING_MODERATION' %}
+    <form action="/auctions/{{ auction.id }}/approve" method="POST" class="action-form">
+      <button type="submit" class="btn btn-success btn-block">
+        <span class="material-symbols-outlined">check_circle</span> Aprobar y publicar
+      </button>
+    </form>
+
+    <form action="/auctions/{{ auction.id }}/reject" method="POST" class="action-form">
+      <div class="form-group">
+        <label>Motivo de rechazo</label>
+        <select name="reason" class="form-select" required>
+          <option value="">Selecciona motivo...</option>
+          <option value="Producto prohibido">Producto prohibido</option>
+          <option value="Información insuficiente">Información insuficiente</option>
+          <option value="Imágenes incorrectas">Imágenes incorrectas</option>
+          <option value="Riesgo legal">Riesgo legal</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-danger btn-block">
+        <span class="material-symbols-outlined">cancel</span> Rechazar
+      </button>
+    </form>
+    {% endif %}
+
+    {% if auction.status == 'ACTIVE' %}
+    <form action="/auctions/{{ auction.id }}/suspend" method="POST" class="action-form">
+      <button type="submit" class="btn btn-warning btn-block">
+        <span class="material-symbols-outlined">pause_circle</span> Suspender
+      </button>
+    </form>
+    <form action="/auctions/{{ auction.id }}/force-close" method="POST" class="action-form"
+          onsubmit="return confirm('¿Forzar cierre anticipado?')">
+      <button type="submit" class="btn btn-danger btn-block">
+        <span class="material-symbols-outlined">stop_circle</span> Forzar cierre
+      </button>
+    </form>
+    {% endif %}
+
+    {% if auction.status == 'CLOSED' or auction.status == 'CANCELLED' or auction.status == 'SUSPENDED' %}
+    <form action="/auctions/{{ auction.id }}/reopen" method="POST" class="action-form"
+          onsubmit="return confirm('¿Reabrir esta subasta?')">
+      <button type="submit" class="btn btn-primary btn-block">
+        <span class="material-symbols-outlined">restart_alt</span> Reabrir
+      </button>
+    </form>
+    {% endif %}
+
+    {% if auction.status != 'CLOSED' and auction.status != 'CANCELLED' %}
+    <form action="/auctions/{{ auction.id }}/cancel" method="POST" class="action-form"
+          onsubmit="return confirm('¿Cancelar permanentemente?')">
+      <button type="submit" class="btn btn-ghost btn-block btn-sm">
+        <span class="material-symbols-outlined">delete</span> Cancelar subasta
+      </button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Top bids -->
+{% if auction.bids and auction.bids.length > 0 %}
+<div class="section-card">
+  <h3 class="card-title">Top Ofertas</h3>
+  <table class="data-table">
+    <thead>
+      <tr><th>#</th><th>Ofertante</th><th>Monto</th><th>Fecha</th></tr>
+    </thead>
+    <tbody>
+      {% for bid in auction.bids %}
+      <tr>
+        <td>{{ loop.index }}</td>
+        <td>{{ bid.bidder.email }}</td>
+        <td class="font-bold">${{ bid.amount }}</td>
+        <td>{{ bid.createdAt }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

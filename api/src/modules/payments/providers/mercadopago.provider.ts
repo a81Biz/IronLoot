@@ -6,6 +6,7 @@ import {
   CreatePaymentResult,
   WebhookResult,
 } from '../interfaces';
+import { WebhookSignatureValidator } from '@ironloot/core';
 
 @Injectable()
 export class MercadoPagoProvider implements PaymentProvider {
@@ -91,9 +92,9 @@ export class MercadoPagoProvider implements PaymentProvider {
           },
           external_reference: orderId,
           back_urls: {
-            success: `${process.env.WEB_BASE_URL}/wallet/success`,
-            failure: `${process.env.WEB_BASE_URL}/wallet/failure`,
-            pending: `${process.env.WEB_BASE_URL}/wallet/pending`,
+            success: `${process.env.CLIENT_URL || 'http://localhost:5173'}/wallet/success`,
+            failure: `${process.env.CLIENT_URL || 'http://localhost:5173'}/wallet/failure`,
+            pending: `${process.env.CLIENT_URL || 'http://localhost:5173'}/wallet/pending`,
           },
         },
       });
@@ -148,8 +149,8 @@ export class MercadoPagoProvider implements PaymentProvider {
         throw new Error('Missing required webhook signature headers');
       } else {
         const parts = xSignature.split(',');
-        let ts;
-        let hash;
+        let ts: string | undefined;
+        let hash: string | undefined;
 
         parts.forEach((part: string) => {
           const [key, value] = part.split('=');
@@ -161,28 +162,21 @@ export class MercadoPagoProvider implements PaymentProvider {
           }
         });
 
+        if (!ts || !hash) {
+          this.logger.error('Missing ts or v1 in x-signature header — rejecting webhook');
+          throw new Error('Missing required webhook signature components');
+        }
+
+        // PT-017: Delegate HMAC validation to CORE WebhookSignatureValidator.
+        // Mercado Pago signs a manifest string (not the raw body); pass it as the payload arg.
         const manifest = `id:${dataID};request-id:${xRequestId};ts:${ts};`;
 
-        // crypto is needed. I will use require for now or simple dynamic import if strict TS allows,
-        // but better to add import at top. I'll add the import in a separate step or assume I can use `import * as crypto` if I update the imports.
-        // Since I am only replacing this block, I should probably use `require` or rely on `global` specific to node (crypto module).
-        // Let's use `require('crypto')` for simplicity in this replacement block if possible, or assume typical NestJS environment.
-        // Actually, standard is `import * as crypto from 'crypto'`.
-        // I will use `require` to avoid editing top of file right now if strictness allows.
-
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
-        const crypto = require('crypto');
-
-        const hmac = crypto.createHmac('sha256', secret);
-        hmac.update(manifest);
-        const sha = hmac.digest('hex');
-
-        if (sha === hash) {
-          this.logger.log('HMAC verification passed');
-        } else {
-          this.logger.error('HMAC verification failed', { sha, hash, manifest });
+        if (!WebhookSignatureValidator.validateHmacSignature(manifest, hash, secret)) {
+          this.logger.error('HMAC verification failed', { manifest });
           throw new Error('Invalid Webhook Signature');
         }
+
+        this.logger.log('HMAC verification passed');
       }
     }
 

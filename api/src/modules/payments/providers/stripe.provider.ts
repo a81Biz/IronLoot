@@ -38,7 +38,7 @@ export class StripeProvider implements PaymentProvider {
   ): Promise<CreatePaymentResult> {
     if (!this.stripe) throw new Error('Stripe not configured');
 
-    const frontendUrl = this.configService.get('FRONTEND_URL', 'http://localhost:5173');
+    const frontendUrl = this.configService.get('CLIENT_URL', 'http://localhost:5173');
 
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],

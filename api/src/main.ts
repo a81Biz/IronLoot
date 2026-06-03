@@ -26,9 +26,20 @@ async function bootstrap(): Promise<void> {
   // Security
   app.use(helmet());
 
-  // CORS
+  // CORS — reads ALLOWED_ORIGINS (comma-separated) to support multi-domain architecture (PT-013)
+  const allowedOriginsEnv = process.env.ALLOWED_ORIGINS || '';
+  const allowedOrigins = allowedOriginsEnv
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+
   app.enableCors({
-    origin: env === 'production' ? config.get('CORS_ORIGIN') : true,
+    origin:
+      env === 'production' && allowedOrigins.length > 0
+        ? allowedOrigins
+        : env === 'development'
+          ? true
+          : (config.get('CORS_ORIGIN') ?? true),
     credentials: true,
   });
 

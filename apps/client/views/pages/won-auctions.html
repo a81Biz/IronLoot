@@ -1,0 +1,26 @@
+{% extends "layouts/client.html" %}
+{% block title %}Subastas ganadas — IronLoot{% endblock %}
+{% block page_title %}Subastas ganadas{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="table-responsive">
+    <table>
+      <thead><tr><th>Subasta</th><th>Monto</th><th>Estado</th><th>Acción</th></tr></thead>
+      <tbody>
+        {% if orders and orders.items %}
+          {% for order in orders.items %}
+          <tr>
+            <td>{{ order.auction.title | default(order.auctionId) }}</td>
+            <td>MXN {{ order.totalAmount }}</td>
+            <td><span class="badge badge-info">{{ order.status }}</span></td>
+            <td><a href="/orders/{{ order.id }}" class="btn btn-sm btn-ghost">Ver orden</a></td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="4" class="text-center text-muted">No has ganado subastas todavía.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

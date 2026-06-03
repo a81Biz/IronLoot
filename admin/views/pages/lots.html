@@ -1,0 +1,72 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+<div class="page-actions">
+  <form method="GET" class="filter-bar">
+    <select name="blocked" class="form-select" onchange="this.form.submit()">
+      <option value="">Todos los lotes</option>
+      <option value="false" {% if blocked == 'false' %}selected{% endif %}>Activos</option>
+      <option value="true" {% if blocked == 'true' %}selected{% endif %}>Bloqueados</option>
+    </select>
+  </form>
+</div>
+
+{% if result and result.data.length > 0 %}
+<div class="table-card">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Preview</th>
+        <th>Título</th>
+        <th>Estado</th>
+        <th>Vendedor</th>
+        <th>Pujas</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for lot in result.data %}
+      <tr class="{% if lot.isBlocked %}row-blocked{% endif %}">
+        <td>
+          {% if lot.images and lot.images.length > 0 %}
+          <img src="{{ lot.images[0] }}" class="lot-thumb" alt="preview">
+          {% else %}
+          <div class="lot-thumb lot-thumb-empty"><span class="material-symbols-outlined">image_not_supported</span></div>
+          {% endif %}
+        </td>
+        <td>
+          <a href="/lots/{{ lot.id }}" class="link-primary">{{ lot.title }}</a>
+          {% if lot.isBlocked %}<span class="badge badge-danger">BLOQUEADO</span>{% endif %}
+        </td>
+        <td><span class="status-badge status-{{ lot.status | lower }}">{{ lot.status }}</span></td>
+        <td>{{ lot.seller.email }}</td>
+        <td>{{ lot._count.bids }}</td>
+        <td>
+          <div class="action-group">
+            <a href="/lots/{{ lot.id }}" class="btn btn-ghost btn-xs">Ver</a>
+            {% if lot.isBlocked %}
+            <form action="/lots/{{ lot.id }}/unblock" method="POST" style="display:inline">
+              <button class="btn btn-success btn-xs">Desbloquear</button>
+            </form>
+            {% else %}
+            <form action="/lots/{{ lot.id }}/block" method="POST" style="display:inline"
+                  onsubmit="return confirm('¿Bloquear este lote?')">
+              <button class="btn btn-danger btn-xs">Bloquear</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+
+{% include "partials/pagination.html" ignore missing %}
+{% else %}
+<div class="empty-state">
+  <span class="material-symbols-outlined">layers</span>
+  <p>No se encontraron lotes</p>
+</div>
+{% endif %}
+{% endblock %}

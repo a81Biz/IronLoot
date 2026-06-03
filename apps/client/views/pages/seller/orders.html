@@ -1,0 +1,27 @@
+{% extends "layouts/client.html" %}
+{% block title %}Pedidos de vendedor — IronLoot{% endblock %}
+{% block page_title %}Mis pedidos (vendedor){% endblock %}
+{% block content %}
+<div class="card">
+  <div class="table-responsive">
+    <table>
+      <thead><tr><th>Orden</th><th>Comprador</th><th>Monto</th><th>Estado</th><th>Envío</th></tr></thead>
+      <tbody>
+        {% if orders and orders.items %}
+          {% for order in orders.items %}
+          <tr>
+            <td><a href="/orders/{{ order.id }}"><code>{{ order.id[:8] }}…</code></a></td>
+            <td>{{ order.buyer.username | default('—') }}</td>
+            <td>MXN {{ order.totalAmount }}</td>
+            <td><span class="badge badge-info">{{ order.status }}</span></td>
+            <td>{{ order.shipment.status | default('Pendiente') }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="5" class="text-center text-muted">Sin pedidos de compradores.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -19,23 +19,45 @@
       <span class="material-symbols-outlined sidebar-logo-icon">bolt</span>
       <div>
         <div class="sidebar-brand">Iron Loot</div>
-        <div class="sidebar-sub">Admin Panel</div>
+        <div class="sidebar-sub">Backoffice</div>
       </div>
     </div>
 
     <nav class="sidebar-nav">
+      <!-- ── Principal ── -->
       <a href="/" class="nav-item {% if activePage == 'dashboard' %}active{% endif %}">
         <span class="material-symbols-outlined">dashboard</span>
         <span>Dashboard</span>
       </a>
-      <a href="/users" class="nav-item {% if activePage == 'users' %}active{% endif %}">
-        <span class="material-symbols-outlined">group</span>
-        <span>Usuarios</span>
-      </a>
+
+      <!-- ── Catálogo ── -->
+      <div class="nav-section-label">Catálogo</div>
       <a href="/auctions" class="nav-item {% if activePage == 'auctions' %}active{% endif %}">
         <span class="material-symbols-outlined">gavel</span>
         <span>Subastas</span>
       </a>
+      <a href="/lots" class="nav-item {% if activePage == 'lots' %}active{% endif %}">
+        <span class="material-symbols-outlined">layers</span>
+        <span>Lotes</span>
+      </a>
+      <a href="/moderation" class="nav-item {% if activePage == 'moderation' %}active{% endif %}">
+        <span class="material-symbols-outlined">pending_actions</span>
+        <span>Moderación</span>
+      </a>
+
+      <!-- ── Usuarios ── -->
+      <div class="nav-section-label">Usuarios</div>
+      <a href="/users" class="nav-item {% if activePage == 'users' %}active{% endif %}">
+        <span class="material-symbols-outlined">group</span>
+        <span>Usuarios</span>
+      </a>
+      <a href="/kyc" class="nav-item {% if activePage == 'kyc' %}active{% endif %}">
+        <span class="material-symbols-outlined">verified_user</span>
+        <span>KYC</span>
+      </a>
+
+      <!-- ── Finanzas ── -->
+      <div class="nav-section-label">Finanzas</div>
       <a href="/orders" class="nav-item {% if activePage == 'orders' %}active{% endif %}">
         <span class="material-symbols-outlined">shopping_bag</span>
         <span>Órdenes</span>
@@ -44,18 +66,59 @@
         <span class="material-symbols-outlined">payments</span>
         <span>Pagos</span>
       </a>
+      <a href="/refunds" class="nav-item {% if activePage == 'refunds' %}active{% endif %}">
+        <span class="material-symbols-outlined">currency_exchange</span>
+        <span>Reembolsos</span>
+      </a>
+      <a href="/reconciliation" class="nav-item {% if activePage == 'reconciliation' %}active{% endif %}">
+        <span class="material-symbols-outlined">balance</span>
+        <span>Conciliación</span>
+      </a>
+      <a href="/commissions" class="nav-item {% if activePage == 'commissions' %}active{% endif %}">
+        <span class="material-symbols-outlined">percent</span>
+        <span>Comisiones</span>
+      </a>
+      <a href="/cfdi" class="nav-item {% if activePage == 'cfdi' %}active{% endif %}">
+        <span class="material-symbols-outlined">receipt_long</span>
+        <span>CFDI</span>
+      </a>
+
+      <!-- ── Operaciones ── -->
+      <div class="nav-section-label">Operaciones</div>
       <a href="/disputes" class="nav-item {% if activePage == 'disputes' %}active{% endif %}">
         <span class="material-symbols-outlined">balance</span>
         <span>Disputas</span>
+      </a>
+      <a href="/notifications" class="nav-item {% if activePage == 'notifications' %}active{% endif %}">
+        <span class="material-symbols-outlined">campaign</span>
+        <span>Notificaciones</span>
+      </a>
+      <a href="/reports" class="nav-item {% if activePage == 'reports' %}active{% endif %}">
+        <span class="material-symbols-outlined">bar_chart</span>
+        <span>Reportes</span>
       </a>
       <a href="/audit" class="nav-item {% if activePage == 'audit' %}active{% endif %}">
         <span class="material-symbols-outlined">history</span>
         <span>Auditoría</span>
       </a>
+
+      <!-- ── Configuración ── -->
       <div class="nav-divider"></div>
+      <a href="/configuration/platform" class="nav-item {% if activePage == 'platform-config' %}active{% endif %}">
+        <span class="material-symbols-outlined">tune</span>
+        <span>Config. Plataforma</span>
+      </a>
+      <a href="/seo" class="nav-item {% if activePage == 'seo' %}active{% endif %}">
+        <span class="material-symbols-outlined">travel_explore</span>
+        <span>SEO</span>
+      </a>
+      <a href="/cms" class="nav-item {% if activePage == 'cms' %}active{% endif %}">
+        <span class="material-symbols-outlined">article</span>
+        <span>CMS</span>
+      </a>
       <a href="/settings" class="nav-item {% if activePage == 'settings' %}active{% endif %}">
         <span class="material-symbols-outlined">settings</span>
-        <span>Configuración</span>
+        <span>Pasarelas</span>
       </a>
     </nav>
 
@@ -90,6 +153,7 @@
   </div>
 
   <script src="/js/admin.js"></script>
+  <!-- CDN libraries (loaded on demand via block) -->
   {% block scripts %}{% endblock %}
 </body>
 </html>

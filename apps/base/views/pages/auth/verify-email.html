@@ -1,0 +1,33 @@
+{% extends "layouts/base.html" %}
+{% block title %}Verificar correo — IronLoot{% endblock %}
+
+{% block content %}
+<div class="form-container" style="text-align:center;">
+  <h1 class="form-title">Verificando correo…</h1>
+  <div id="verifyStatus">
+    <p>Procesando tu verificación, por favor espera.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const API = '{{ apiUrl }}';
+const token = new URLSearchParams(window.location.search).get('token') || '{{ token }}';
+if (token) {
+  fetch(API + '/api/v1/auth/verify-email', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token }),
+  }).then(res => {
+    const el = document.getElementById('verifyStatus');
+    if (res.ok) {
+      el.innerHTML = '<div class="alert alert-success">¡Correo verificado! <a href="/auth/login">Iniciar sesión</a></div>';
+    } else {
+      el.innerHTML = '<div class="alert alert-error">Token inválido o expirado. <a href="/auth/recovery">Solicitar nuevo enlace</a></div>';
+    }
+  }).catch(() => {
+    document.getElementById('verifyStatus').innerHTML = '<div class="alert alert-error">Error de conexión.</div>';
+  });
+}
+</script>
+{% endblock %}

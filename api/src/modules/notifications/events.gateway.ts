@@ -10,9 +10,16 @@ import {
 import { Server, Socket } from 'socket.io';
 import { Logger } from '@nestjs/common';
 
+// PT-015: ALLOWED_ORIGINS parsed at startup — consistent with AuctionsGateway
+const wsOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 @WebSocketGateway({
   cors: {
-    origin: '*', // TODO: Configure strict CORS for production
+    origin: wsOrigins.length > 0 ? wsOrigins : '*',
+    credentials: true,
   },
   namespace: 'events',
 })

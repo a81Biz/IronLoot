@@ -1,0 +1,109 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if not lot %}
+<div class="alert alert-error">No se encontró el lote.</div>
+{% else %}
+
+<div class="detail-header">
+  <a href="/lots" class="btn btn-ghost btn-sm">
+    <span class="material-symbols-outlined">arrow_back</span> Lotes
+  </a>
+  <span class="status-badge status-{{ lot.status | lower }}">{{ lot.status }}</span>
+  {% if lot.isBlocked %}<span class="status-badge status-blocked">BLOQUEADO</span>{% endif %}
+</div>
+
+<div class="detail-grid">
+  <div class="detail-card detail-main">
+    <h2 class="card-title">{{ lot.title }}</h2>
+    <p>{{ lot.description }}</p>
+
+    <!-- Images gallery -->
+    {% if lot.images and lot.images.length > 0 %}
+    <div class="image-gallery">
+      {% for img in lot.images %}
+      <div class="gallery-item">
+        <img src="{{ img }}" alt="Imagen {{ loop.index }}">
+        <form action="/lots/{{ lot.id }}/images/{{ loop.index0 }}/delete" method="POST" class="img-delete-form"
+              onsubmit="return confirm('¿Eliminar esta imagen?')">
+          <button type="submit" class="btn-img-delete" title="Eliminar imagen">
+            <span class="material-symbols-outlined">delete</span>
+          </button>
+        </form>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted">Sin imágenes.</p>
+    {% endif %}
+
+    <div class="info-grid mt-4">
+      <div><span class="info-label">Vendedor</span><span class="info-val">{{ lot.seller.email }}</span></div>
+      <div><span class="info-label">Precio actual</span><span class="info-val">${{ lot.currentPrice }}</span></div>
+    </div>
+  </div>
+
+  <!-- Acciones -->
+  <div class="detail-card detail-actions">
+    <h3 class="card-title">Acciones</h3>
+
+    {% if lot.isBlocked %}
+    <form action="/lots/{{ lot.id }}/unblock" method="POST" class="action-form">
+      <button type="submit" class="btn btn-success btn-block">Desbloquear lote</button>
+    </form>
+    {% else %}
+    <form action="/lots/{{ lot.id }}/block" method="POST" class="action-form"
+          onsubmit="return confirm('¿Bloquear este lote?')">
+      <button type="submit" class="btn btn-danger btn-block">Bloquear lote</button>
+    </form>
+    {% endif %}
+
+    <form action="/lots/{{ lot.id }}/update" method="POST" class="action-form mt-4">
+      <div class="form-group">
+        <label>Notas del administrador</label>
+        <textarea name="adminNotes" class="form-input" rows="3">{{ lot.adminNotes or '' }}</textarea>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block">Guardar notas</button>
+    </form>
+
+    <form action="/lots/{{ lot.id }}/update-category" method="POST" class="action-form mt-4">
+      <div class="form-group">
+        <label>Reasignar categoría</label>
+        <select name="categoryId" class="form-select">
+          <option value="">— Seleccionar categoría —</option>
+          <option value="electronics">Electrónica</option>
+          <option value="vehicles">Vehículos</option>
+          <option value="art">Arte y Coleccionables</option>
+          <option value="jewelry">Joyería</option>
+          <option value="real_estate">Bienes Raíces</option>
+          <option value="furniture">Muebles y Hogar</option>
+          <option value="sports">Deportes</option>
+          <option value="other">Otros</option>
+        </select>
+      </div>
+      <button type="submit" class="btn btn-ghost btn-block">Reasignar categoría</button>
+    </form>
+  </div>
+</div>
+
+<!-- Bids -->
+{% if lot.bids and lot.bids.length > 0 %}
+<div class="section-card mt-4">
+  <h3 class="card-title">Ofertas</h3>
+  <table class="data-table">
+    <thead><tr><th>Ofertante</th><th>Monto</th><th>Fecha</th></tr></thead>
+    <tbody>
+      {% for bid in lot.bids %}
+      <tr>
+        <td>{{ bid.bidder.email }}</td>
+        <td>${{ bid.amount }}</td>
+        <td>{{ bid.createdAt }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endif %}
+
+{% endif %}
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "layouts/client.html" %}
+{% block title %}Mis disputas — IronLoot{% endblock %}
+{% block page_title %}Disputas{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>Mis disputas</h1>
+  <a href="/disputes/create" class="btn btn-primary">Nueva disputa</a>
+</div>
+<div class="card">
+  <div class="table-responsive">
+    <table>
+      <thead><tr><th>ID</th><th>Orden</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+      <tbody>
+        {% if disputes and disputes.items %}
+          {% for d in disputes.items %}
+          <tr>
+            <td><code>{{ d.id[:8] }}…</code></td>
+            <td>{{ d.orderId[:8] }}…</td>
+            <td><span class="badge badge-warning">{{ d.status }}</span></td>
+            <td>{{ d.createdAt }}</td>
+            <td><a href="/disputes/{{ d.id }}" class="btn btn-sm btn-ghost">Ver</a></td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="5" class="text-center text-muted">Sin disputas activas.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

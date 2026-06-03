@@ -68,7 +68,7 @@ describe('PaymentsController', () => {
 
   describe('initiate', () => {
     it('should call initiatePayment', async () => {
-      const dto: InitiatePaymentDto = { amount: 50, provider: 'MERCADO_PAGO' };
+      const dto: InitiatePaymentDto = { amount: 50, provider: 'MERCADO_PAGO' as any };
       const expectedResult = { externalId: 'mp-1', redirectUrl: 'http://mp' };
 
       mockPaymentsService.initiatePayment.mockResolvedValue(expectedResult);

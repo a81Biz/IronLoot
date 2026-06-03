@@ -1,0 +1,89 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if not submission %}
+<div class="alert alert-error">No se encontró la solicitud KYC.</div>
+{% else %}
+
+<div class="detail-header">
+  <a href="/kyc" class="btn btn-ghost btn-sm">
+    <span class="material-symbols-outlined">arrow_back</span> KYC
+  </a>
+  <span class="status-badge status-{{ submission.status | lower }}">{{ submission.status }}</span>
+</div>
+
+<div class="detail-grid">
+  <!-- Info del solicitante -->
+  <div class="detail-card detail-main">
+    <h2 class="card-title">{{ submission.user.displayName or submission.user.username }}</h2>
+    <div class="info-grid">
+      <div><span class="info-label">Email</span><span class="info-val">{{ submission.user.email }}</span></div>
+      <div><span class="info-label">Enviado</span><span class="info-val">{{ submission.submittedAt }}</span></div>
+      {% if submission.reviewedBy %}
+      <div><span class="info-label">Revisado por</span><span class="info-val">{{ submission.reviewedBy }}</span></div>
+      {% endif %}
+    </div>
+
+    {% if submission.reviewNotes %}
+    <div class="admin-notes-box mt-4">
+      <span class="material-symbols-outlined">sticky_note_2</span>
+      <span>{{ submission.reviewNotes }}</span>
+    </div>
+    {% endif %}
+
+    <!-- Documentos -->
+    <h3 class="card-title mt-4">Documentos</h3>
+    {% if submission.docsJson %}
+    <div class="docs-grid">
+      {% for key, url in submission.docsJson %}
+      <div class="doc-item">
+        <div class="doc-label">{{ key }}</div>
+        {% if url | lower | endswith('.pdf') %}
+        <a href="{{ url }}" target="_blank" class="btn btn-ghost btn-sm">
+          <span class="material-symbols-outlined">picture_as_pdf</span> Ver PDF
+        </a>
+        {% else %}
+        <img src="{{ url }}" class="doc-preview" alt="{{ key }}">
+        {% endif %}
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <p class="text-muted">Sin documentos adjuntos.</p>
+    {% endif %}
+  </div>
+
+  <!-- Acciones -->
+  <div class="detail-card detail-actions">
+    <h3 class="card-title">Decisión</h3>
+
+    {% if submission.status == 'PENDING' or submission.status == 'CORRECTION_NEEDED' %}
+    <form action="/kyc/{{ submission.id }}/approve" method="POST" class="action-form">
+      <button type="submit" class="btn btn-success btn-block">
+        <span class="material-symbols-outlined">verified</span> Aprobar KYC
+      </button>
+    </form>
+
+    <form action="/kyc/{{ submission.id }}/reject" method="POST" class="action-form mt-4">
+      <div class="form-group">
+        <label>Motivo de rechazo</label>
+        <textarea name="reason" class="form-input" rows="2" required placeholder="Describe el motivo..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-danger btn-block">Rechazar</button>
+    </form>
+
+    <form action="/kyc/{{ submission.id }}/request-correction" method="POST" class="action-form mt-4">
+      <div class="form-group">
+        <label>Instrucciones de corrección</label>
+        <textarea name="notes" class="form-input" rows="2" required placeholder="¿Qué debe corregir el vendedor?"></textarea>
+      </div>
+      <button type="submit" class="btn btn-warning btn-block">Solicitar corrección</button>
+    </form>
+    {% else %}
+    <p class="text-muted">Esta solicitud ya fue procesada.</p>
+    {% endif %}
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}

@@ -7,6 +7,7 @@ import {
   ChildLogger,
   InsufficientBalanceException,
 } from '../../common/observability';
+import { WalletCalculation } from '@ironloot/core';
 
 @Injectable()
 export class WalletService {
@@ -18,10 +19,6 @@ export class WalletService {
   ) {
     this.log = this.logger.child('WalletService');
   }
-
-  // ... (keeping existing methods until we hit the captureHeldFunds or others if we are replacing whole file, but replace_file_content targets chunks)
-  // Wait, I can't replace scattered chunks easily with one call if they are far apart unless using multi_replace.
-  // I will use replace_file_content for IMPORTS first.
 
   /**
    * Get or create a user's wallet
@@ -180,16 +177,22 @@ export class WalletService {
       const amountDecimal = new Decimal(amount);
       const currentBalance = new Decimal(wallet.balance);
 
-      if (currentBalance.lessThan(amountDecimal)) {
+      // Use WalletCalculation from @ironloot/core to validate fund availability.
+      // wallet.balance stores the available (spendable) balance; heldFunds are tracked separately.
+      if (!WalletCalculation.canLockFunds(currentBalance.toNumber(), 0, amount)) {
         throw new InsufficientBalanceException(
           userId,
-          amountDecimal.toNumber(),
+          amount,
           currentBalance.toNumber(),
         );
       }
 
       const newBalance = currentBalance.minus(amountDecimal);
-      const newHeld = new Decimal(wallet.heldFunds).plus(amountDecimal);
+      const newHeldNum = WalletCalculation.calculateNewHeldFunds(
+        new Decimal(wallet.heldFunds).toNumber(),
+        amount,
+      );
+      const newHeld = new Decimal(newHeldNum);
 
       // Ledger
       await tx.ledger.create({

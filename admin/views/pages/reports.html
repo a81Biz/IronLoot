@@ -1,0 +1,110 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+<div class="tabs-bar">
+  <button class="tab-btn active" data-tab="financial">Financiero</button>
+  <button class="tab-btn" data-tab="operational">Operacional</button>
+  <button class="tab-btn" data-tab="fiscal">Fiscal</button>
+</div>
+
+<div class="section-card filter-bar-card">
+  <form method="GET" class="filter-bar">
+    <div class="form-group">
+      <label>Desde</label>
+      <input type="date" name="from" value="{{ from or '' }}" class="form-input">
+    </div>
+    <div class="form-group">
+      <label>Hasta</label>
+      <input type="date" name="to" value="{{ to or '' }}" class="form-input">
+    </div>
+    <input type="hidden" name="type" value="{{ reportType or 'financial' }}">
+    <button type="submit" class="btn btn-primary">Ver reporte</button>
+    <a href="/reports/download/{{ reportType or 'financial' }}?from={{ from or '' }}&to={{ to or '' }}"
+       class="btn btn-ghost">
+      <span class="material-symbols-outlined">download</span> Descargar CSV
+    </a>
+  </form>
+</div>
+
+<!-- Financial tab -->
+<div class="tab-panel active" id="tab-financial">
+  {% if report and reportType == 'financial' %}
+  <div class="stats-grid stats-grid-3">
+    <div class="stat-card">
+      <div class="stat-body">
+        <div class="stat-value">${{ report.sales_total | round(2) }}</div>
+        <div class="stat-label">Ventas totales</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-body">
+        <div class="stat-value">${{ report.commissions_total | round(2) }}</div>
+        <div class="stat-label">Comisiones</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-body">
+        <div class="stat-value">${{ report.net_income | round(2) }}</div>
+        <div class="stat-label">Ingreso neto</div>
+      </div>
+    </div>
+  </div>
+
+  {% if report.by_day and report.by_day.length > 0 %}
+  <div class="table-card mt-4">
+    <table class="data-table">
+      <thead><tr><th>Fecha</th><th>Ventas</th><th>Comisiones</th></tr></thead>
+      <tbody>
+        {% for row in report.by_day %}
+        <tr><td>{{ row.date }}</td><td>${{ row.sales | round(2) }}</td><td>${{ row.commissions | round(2) }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% endif %}
+  {% else %}
+  <div class="empty-state"><span class="material-symbols-outlined">bar_chart</span><p>Selecciona un período para ver el reporte</p></div>
+  {% endif %}
+</div>
+
+<!-- Operational tab -->
+<div class="tab-panel" id="tab-operational" style="display:none">
+  {% if report and reportType == 'operational' %}
+  <div class="stats-grid stats-grid-4">
+    <div class="stat-card"><div class="stat-body"><div class="stat-value">{{ report.auctions_total }}</div><div class="stat-label">Subastas</div></div></div>
+    <div class="stat-card"><div class="stat-body"><div class="stat-value">{{ report.conversion_rate }}%</div><div class="stat-label">Conversión</div></div></div>
+    <div class="stat-card"><div class="stat-body"><div class="stat-value">{{ report.avg_bids_per_auction }}</div><div class="stat-label">Pujas/subasta</div></div></div>
+    <div class="stat-card"><div class="stat-body"><div class="stat-value">{{ report.new_users }}</div><div class="stat-label">Nuevos usuarios</div></div></div>
+  </div>
+  {% else %}
+  <div class="empty-state"><span class="material-symbols-outlined">bar_chart</span><p>Selecciona un período</p></div>
+  {% endif %}
+</div>
+
+<!-- Fiscal tab -->
+<div class="tab-panel" id="tab-fiscal" style="display:none">
+  {% if report and reportType == 'fiscal' %}
+  <div class="stats-grid stats-grid-4">
+    <div class="stat-card"><div class="stat-body"><div class="stat-value">{{ report.cfdi_emitted }}</div><div class="stat-label">CFDIs emitidos</div></div></div>
+    <div class="stat-card"><div class="stat-body"><div class="stat-value">{{ report.cfdi_cancelled }}</div><div class="stat-label">Cancelados</div></div></div>
+    <div class="stat-card"><div class="stat-body"><div class="stat-value">{{ report.cfdi_pending }}</div><div class="stat-label">Pendientes</div></div></div>
+    <div class="stat-card"><div class="stat-body"><div class="stat-value">${{ report.iva_total | round(2) }}</div><div class="stat-label">IVA total</div></div></div>
+  </div>
+  {% else %}
+  <div class="empty-state"><span class="material-symbols-outlined">receipt_long</span><p>Selecciona un período</p></div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).style.display = '';
+    });
+  });
+</script>
+{% endblock %}

@@ -13,15 +13,32 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.use(cookieParser());
+
+  // PT-013: Redis session store for admin (BRECHA-8 resolved)
+  // Falls back to in-memory store if Redis is unavailable (dev without Redis)
+  let store: session.Store | undefined;
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const { Redis } = require('ioredis');
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const RedisStore = require('connect-redis').default;
+    const redisClient = new Redis(process.env.REDIS_URL || 'redis://localhost:6379');
+    store = new RedisStore({ client: redisClient });
+    console.log('[Admin] Redis session store initialized');
+  } catch {
+    console.warn('[Admin] Redis unavailable — using in-memory session store (not for production)');
+  }
+
   app.use(
     session({
+      store,
       secret: process.env.ADMIN_SESSION_SECRET || 'admin-dev-secret-change-in-prod',
       resave: false,
       saveUninitialized: false,
       cookie: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
-        maxAge: 8 * 60 * 60 * 1000, // 8 hours
+        maxAge: 8 * 60 * 60 * 1000,
       },
     }),
   );

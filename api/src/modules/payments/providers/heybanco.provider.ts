@@ -48,7 +48,7 @@ export class HeyBancoProvider implements PaymentProvider {
       throw new Error(`HeyBanco auth failed: ${response.status}`);
     }
 
-    const data = await response.json() as any;
+    const data = (await response.json()) as any;
     return data.access_token;
   }
 
@@ -64,7 +64,7 @@ export class HeyBancoProvider implements PaymentProvider {
     this.logger.log(`Creating HeyBanco payment for ${orderId} (${amount} ${currency})`);
 
     const token = await this.getAccessToken();
-    const webBaseUrl = process.env.WEB_BASE_URL || 'http://localhost:5173';
+    const webBaseUrl = process.env.CLIENT_URL || 'http://localhost:5173';
     const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
 
     const response = await fetch(`${this.apiUrl}/payments`, {
@@ -90,7 +90,7 @@ export class HeyBancoProvider implements PaymentProvider {
       throw new Error(`HeyBanco payment creation failed: ${err}`);
     }
 
-    const result = await response.json() as any;
+    const result = (await response.json()) as any;
 
     return {
       externalId: result.id,
@@ -111,7 +111,7 @@ export class HeyBancoProvider implements PaymentProvider {
 
     if (!response.ok) throw new Error(`HeyBanco verify failed: ${response.status}`);
 
-    const result = await response.json() as any;
+    const result = (await response.json()) as any;
 
     return {
       paymentId: result.reference,

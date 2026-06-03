@@ -1,0 +1,18 @@
+{% extends "layouts/client.html" %}
+{% block title %}Detalle de disputa — IronLoot{% endblock %}
+{% block page_title %}Disputa{% endblock %}
+{% block content %}
+{% if dispute %}
+<div class="card">
+  <div class="d-flex justify-between align-center mb-2">
+    <strong>Disputa: {{ dispute.id[:8] }}…</strong>
+    <span class="badge badge-warning">{{ dispute.status }}</span>
+  </div>
+  <p><strong>Orden:</strong> {{ dispute.orderId }}</p>
+  <p><strong>Motivo:</strong> {{ dispute.reason }}</p>
+  <p><strong>Abierta:</strong> {{ dispute.createdAt }}</p>
+</div>
+{% else %}
+  <p>Disputa no encontrada. <a href="/disputes">Volver</a></p>
+{% endif %}
+{% endblock %}

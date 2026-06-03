@@ -1,0 +1,26 @@
+{% extends "layouts/client.html" %}
+{% block title %}Historial de transacciones — IronLoot{% endblock %}
+{% block page_title %}Historial de transacciones{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="table-responsive">
+    <table>
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Monto</th><th>Referencia</th></tr></thead>
+      <tbody>
+        {% if history and history.transactions %}
+          {% for tx in history.transactions %}
+          <tr>
+            <td>{{ tx.createdAt }}</td>
+            <td><span class="badge badge-info">{{ tx.type }}</span></td>
+            <td>MXN {{ tx.amount }}</td>
+            <td>{{ tx.referenceId | default('—') }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="4" class="text-center text-muted">Sin transacciones registradas.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

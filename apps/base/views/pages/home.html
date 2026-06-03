@@ -1,0 +1,38 @@
+{% extends "layouts/base.html" %}
+{% block title %}IronLoot — Subastas en línea{% endblock %}
+
+{% block content %}
+<section class="hero">
+  <h1>⚡ IronLoot</h1>
+  <p>Compra y vende en subastas transparentes y en tiempo real.</p>
+  <div class="hero-actions">
+    <a href="/auctions" class="btn btn-primary">Ver subastas activas</a>
+    <a href="{{ clientUrl }}/seller/onboarding" class="btn btn-ghost">Vender ahora</a>
+  </div>
+</section>
+
+<section>
+  <h2 class="section-title">Subastas activas</h2>
+  {% if auctions and auctions.length > 0 %}
+    <div class="auctions-grid">
+      {% for auction in auctions %}
+        <div class="auction-card">
+          <div class="auction-card-body">
+            <h3>{{ auction.title }}</h3>
+            <div class="auction-price">MXN {{ auction.currentPrice | default(auction.startingPrice) }}</div>
+            <div class="auction-meta">
+              {% if auction.totalBids %}{{ auction.totalBids }} oferta(s){% endif %}
+            </div>
+            <a href="/auctions/{{ auction.id }}" class="btn btn-secondary mt-2">Ver subasta</a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-center">No hay subastas activas en este momento. <a href="/auth/register">¡Regístrate</a> y sé el primero en publicar.</p>
+  {% endif %}
+  <div class="text-center mt-2">
+    <a href="/auctions" class="btn btn-primary">Ver todas las subastas</a>
+  </div>
+</section>
+{% endblock %}

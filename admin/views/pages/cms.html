@@ -1,0 +1,27 @@
+{% extends "layouts/admin.html" %}
+{% block title %}CMS — IronLoot Admin{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Contenido del sitio (CMS)</h1>
+<div id="cmsList"></div>
+<script>
+const API = '/api/v1/admin';
+async function loadCms() {
+  const items = await (await fetch(`${API}/cms`)).json();
+  const defaultKeys = ['home.hero.title','home.hero.subtitle','home.about.text','home.banner.url'];
+  const existing = Object.fromEntries(items.map(i => [i.key, i]));
+  const all = [...new Set([...defaultKeys, ...items.map(i => i.key)])];
+  document.getElementById('cmsList').innerHTML = all.map(key => {
+    const item = existing[key] || { value: '', type: 'TEXT' };
+    return `<div class="card mb-3"><div class="card-header d-flex justify-content-between"><span class="fw-semibold">${key}</span><span class="badge bg-secondary">${item.type}</span></div><div class="card-body">
+      <textarea class="form-control mb-2" id="cms_${key.replace(/\./g,'_')}" rows="3">${item.value}</textarea>
+      <button class="btn btn-sm btn-primary" onclick="saveCms('${key}','${key.replace(/\./g,'_')}')">Guardar</button>
+    </div></div>`;
+  }).join('');
+}
+async function saveCms(key, domId) {
+  await fetch(`${API}/cms/${key}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ value: document.getElementById('cms_'+domId).value }) });
+  alert(`"${key}" guardado.`);
+}
+loadCms();
+</script>
+{% endblock %}

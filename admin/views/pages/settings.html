@@ -1,98 +1,187 @@
 {% extends "layouts/admin.html" %}
 
 {% block content %}
-{% if not config %}
-<div class="alert alert-error">No se pudo cargar la configuración. Verifica que la API esté disponible.</div>
-{% else %}
+{% if saved %}<div class="alert alert-success"><span class="material-symbols-outlined">check_circle</span> Configuración guardada correctamente.</div>{% endif %}
 
-{% set saved = false %}
-
+<!-- ── Proveedores de Pago ───────────────────────────────────────────── -->
 <div class="settings-section">
   <h2 class="section-title">
     <span class="material-symbols-outlined">credit_card</span>
-    Proveedores de Pago
+    Proveedores de Pago Habilitados
   </h2>
   <p class="section-desc">Configura qué proveedores de pago están disponibles para los usuarios de la plataforma.</p>
 
+  {% if config %}
   <form action="/settings/payment-config" method="POST" class="settings-form">
-
     <div class="provider-grid">
       {% for provider in allProviders %}
       <div class="provider-card {% if provider.id in config.enabledProviders %}provider-enabled{% endif %}">
         <div class="provider-header">
           <label class="checkbox-label">
-            <input
-              type="checkbox"
-              name="providers"
-              value="{{ provider.id }}"
-              {% if provider.id in config.enabledProviders %}checked{% endif %}
-            >
+            <input type="checkbox" name="providers" value="{{ provider.id }}"
+              {% if provider.id in config.enabledProviders %}checked{% endif %}>
             <span class="provider-name">{{ provider.label }}</span>
           </label>
-          {% if provider.id == 'MERCADO_PAGO' %}
-            <span class="provider-badge badge-success">Recomendado MX</span>
-          {% elif provider.id == 'HEY_BANCO' %}
-            <span class="provider-badge badge-info">Nuevo</span>
-          {% endif %}
+          {% if provider.id == 'MERCADO_PAGO' %}<span class="provider-badge badge-success">Recomendado MX</span>{% endif %}
         </div>
         <p class="provider-desc">{{ provider.desc }}</p>
         <div class="provider-primary">
           <label class="radio-label">
-            <input
-              type="radio"
-              name="primaryCardProvider"
-              value="{{ provider.id }}"
-              {% if provider.id == config.primaryCardProvider %}checked{% endif %}
-            >
+            <input type="radio" name="primaryCardProvider" value="{{ provider.id }}"
+              {% if provider.id == config.primaryCardProvider %}checked{% endif %}>
             <span>Proveedor principal para tarjeta</span>
           </label>
         </div>
       </div>
       {% endfor %}
     </div>
-
-    <div class="form-actions">
+    <div class="form-actions mt-4">
       <button type="submit" class="btn btn-primary">
-        <span class="material-symbols-outlined">save</span>
-        Guardar configuración
+        <span class="material-symbols-outlined">save</span> Guardar proveedores
+      </button>
+    </div>
+  </form>
+  {% else %}
+  <div class="alert alert-error">No se pudo cargar la configuración de pagos. Verifica que la API esté disponible.</div>
+  {% endif %}
+</div>
+
+<!-- ── SMTP ─────────────────────────────────────────────────────────── -->
+<div class="settings-section mt-4">
+  <h2 class="section-title">
+    <span class="material-symbols-outlined">mail</span>
+    Configuración SMTP
+  </h2>
+  <p class="section-desc">Servidor de correo saliente para notificaciones de la plataforma. Los cambios se aplican sin redeployment.</p>
+
+  <form action="/settings/smtp" method="POST" class="settings-form">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Host SMTP</label>
+        {% set smtpHost = '' %}
+        {% for item in smtpConfig %}{% if item.key == 'SMTP_HOST' %}{% set smtpHost = item.value %}{% endif %}{% endfor %}
+        <input type="text" name="SMTP_HOST" value="{{ smtpHost }}" class="form-input" placeholder="smtp.gmail.com">
+      </div>
+      <div class="form-group">
+        <label>Puerto</label>
+        {% set smtpPort = '587' %}
+        {% for item in smtpConfig %}{% if item.key == 'SMTP_PORT' %}{% set smtpPort = item.value %}{% endif %}{% endfor %}
+        <input type="number" name="SMTP_PORT" value="{{ smtpPort }}" class="form-input" placeholder="587">
+      </div>
+      <div class="form-group">
+        <label>Usuario</label>
+        {% set smtpUser = '' %}
+        {% for item in smtpConfig %}{% if item.key == 'SMTP_USER' %}{% set smtpUser = item.value %}{% endif %}{% endfor %}
+        <input type="email" name="SMTP_USER" value="{{ smtpUser }}" class="form-input" placeholder="user@domain.com">
+      </div>
+      <div class="form-group">
+        <label>Contraseña</label>
+        <input type="password" name="SMTP_PASSWORD" value="" class="form-input" placeholder="Dejar vacío para no cambiar">
+        <span class="form-hint">El valor actual está enmascarado por seguridad</span>
+      </div>
+      <div class="form-group">
+        <label>Remitente (From)</label>
+        {% set smtpFrom = '' %}
+        {% for item in smtpConfig %}{% if item.key == 'SMTP_FROM' %}{% set smtpFrom = item.value %}{% endif %}{% endfor %}
+        <input type="email" name="SMTP_FROM" value="{{ smtpFrom }}" class="form-input" placeholder="noreply@ironloot.com">
+      </div>
+    </div>
+    <div class="form-actions mt-4">
+      <button type="submit" class="btn btn-primary">
+        <span class="material-symbols-outlined">save</span> Guardar SMTP
       </button>
     </div>
   </form>
 </div>
 
-<div class="settings-section">
+<!-- ── Storage ───────────────────────────────────────────────────────── -->
+<div class="settings-section mt-4">
+  <h2 class="section-title">
+    <span class="material-symbols-outlined">cloud_upload</span>
+    Configuración de Almacenamiento
+  </h2>
+  <p class="section-desc">Proveedor de almacenamiento de archivos (imágenes, documentos). Los cambios se aplican sin redeployment.</p>
+
+  <form action="/settings/storage" method="POST" class="settings-form">
+    {% set storageProvider = 'LOCAL' %}
+    {% for item in storageConfig %}{% if item.key == 'STORAGE_PROVIDER' %}{% set storageProvider = item.value %}{% endif %}{% endfor %}
+
+    <div class="form-group">
+      <label>Proveedor</label>
+      <div class="radio-group">
+        <label class="radio-label"><input type="radio" name="STORAGE_PROVIDER" value="LOCAL" {% if storageProvider == 'LOCAL' or not storageProvider %}checked{% endif %}> Local (servidor)</label>
+        <label class="radio-label"><input type="radio" name="STORAGE_PROVIDER" value="S3" {% if storageProvider == 'S3' %}checked{% endif %}> Amazon S3</label>
+        <label class="radio-label"><input type="radio" name="STORAGE_PROVIDER" value="MINIO" {% if storageProvider == 'MINIO' %}checked{% endif %}> MinIO</label>
+      </div>
+    </div>
+
+    <div class="form-grid" id="storage-cloud-fields" {% if storageProvider == 'LOCAL' or not storageProvider %}style="display:none"{% endif %}>
+      <div class="form-group">
+        <label>Bucket</label>
+        {% set storageBucket = '' %}
+        {% for item in storageConfig %}{% if item.key == 'STORAGE_BUCKET' %}{% set storageBucket = item.value %}{% endif %}{% endfor %}
+        <input type="text" name="STORAGE_BUCKET" value="{{ storageBucket }}" class="form-input" placeholder="ironloot-files">
+      </div>
+      <div class="form-group">
+        <label>Región</label>
+        {% set storageRegion = '' %}
+        {% for item in storageConfig %}{% if item.key == 'STORAGE_REGION' %}{% set storageRegion = item.value %}{% endif %}{% endfor %}
+        <input type="text" name="STORAGE_REGION" value="{{ storageRegion }}" class="form-input" placeholder="us-east-1">
+      </div>
+      <div class="form-group">
+        <label>Access Key</label>
+        <input type="text" name="STORAGE_ACCESS_KEY" value="" class="form-input" placeholder="Dejar vacío para no cambiar">
+      </div>
+      <div class="form-group">
+        <label>Secret Key</label>
+        <input type="password" name="STORAGE_SECRET_KEY" value="" class="form-input" placeholder="Dejar vacío para no cambiar">
+        <span class="form-hint">El valor actual está enmascarado por seguridad</span>
+      </div>
+    </div>
+
+    <div class="form-actions mt-4">
+      <button type="submit" class="btn btn-primary">
+        <span class="material-symbols-outlined">save</span> Guardar almacenamiento
+      </button>
+    </div>
+  </form>
+</div>
+
+<!-- ── Info ──────────────────────────────────────────────────────────── -->
+<div class="settings-section mt-4">
   <h2 class="section-title">
     <span class="material-symbols-outlined">info</span>
-    Variables de entorno requeridas
+    Credenciales de pasarelas de pago
   </h2>
-  <div class="table-container">
-    <table>
+  <p class="section-desc">Las credenciales de pago (API keys, secrets) se leen de las variables de entorno del servidor. Para cambiarlas sin redeployment, agrega las llaves correspondientes en <a href="/configuration/platform" class="link-primary">Configuración de Plataforma</a>.</p>
+  <div class="table-card mt-4">
+    <table class="data-table data-table-sm">
       <thead>
-        <tr><th>Variable</th><th>Proveedor</th><th>Descripción</th></tr>
+        <tr><th>Variable de entorno</th><th>Proveedor</th><th>Descripción</th></tr>
       </thead>
       <tbody>
         <tr><td class="mono">MERCADO_PAGO_ACCESS_TOKEN</td><td>Mercado Pago</td><td>Token de acceso de producción</td></tr>
         <tr><td class="mono">MERCADO_PAGO_PUBLIC_KEY</td><td>Mercado Pago</td><td>Clave pública para el SDK frontend</td></tr>
         <tr><td class="mono">MERCADO_PAGO_WEBHOOK_SECRET</td><td>Mercado Pago</td><td>Secret para validar webhooks HMAC</td></tr>
-        <tr><td class="mono">PAYPAL_BUSINESS_EMAIL</td><td>PayPal</td><td>Email de la cuenta merchant</td></tr>
-        <tr><td class="mono">PAYPAL_MODE</td><td>PayPal</td><td>sandbox | production</td></tr>
-        <tr><td class="mono">STRIPE_SECRET_KEY</td><td>Stripe</td><td>Secret key de Stripe</td></tr>
-        <tr><td class="mono">HEY_BANCO_CLIENT_ID</td><td>Hey Banco</td><td>Client ID de la app Hey Banco</td></tr>
-        <tr><td class="mono">HEY_BANCO_CLIENT_SECRET</td><td>Hey Banco</td><td>Client Secret (OAuth2)</td></tr>
-        <tr><td class="mono">HEY_BANCO_WEBHOOK_SECRET</td><td>Hey Banco</td><td>Secret para validar webhooks</td></tr>
+        <tr><td class="mono">PAYPAL_CLIENT_ID</td><td>PayPal</td><td>Client ID de la aplicación PayPal</td></tr>
+        <tr><td class="mono">PAYPAL_CLIENT_SECRET</td><td>PayPal</td><td>Client Secret de la aplicación PayPal</td></tr>
       </tbody>
     </table>
   </div>
 </div>
-
-{% endif %}
 {% endblock %}
 
 {% block scripts %}
 <script>
-  // Show success toast if redirected with ?saved=1
+  // Toggle cloud storage fields
+  document.querySelectorAll('input[name="STORAGE_PROVIDER"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const fields = document.getElementById('storage-cloud-fields');
+      if (fields) fields.style.display = radio.value === 'LOCAL' ? 'none' : '';
+    });
+  });
+
   if (new URLSearchParams(window.location.search).get('saved') === '1') {
-    showToast('Configuración guardada correctamente', 'success');
     history.replaceState({}, '', '/settings');
   }
 </script>

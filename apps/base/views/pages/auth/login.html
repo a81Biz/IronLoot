@@ -1,0 +1,56 @@
+{% extends "layouts/base.html" %}
+{% block title %}Iniciar sesión — IronLoot{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1 class="form-title">Iniciar sesión</h1>
+  <form id="loginForm">
+    <div class="form-group">
+      <label for="email">Correo electrónico</label>
+      <input class="form-control" type="email" id="email" name="email" required autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label for="password">Contraseña</label>
+      <input class="form-control" type="password" id="password" name="password" required autocomplete="current-password">
+    </div>
+    <button type="submit" class="btn btn-primary form-submit">Entrar</button>
+    <div id="loginError" class="alert alert-error" style="display:none;margin-top:.75rem;"></div>
+  </form>
+  <div class="form-footer">
+    <a href="/auth/recovery">¿Olvidaste tu contraseña?</a>
+    &nbsp;·&nbsp;
+    <a href="/auth/register">Crear cuenta</a>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const API = '{{ apiUrl }}';
+const CLIENT = '{{ clientUrl }}';
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+  const body = { email: e.target.email.value, password: e.target.password.value };
+  try {
+    const res = await fetch(API + '/api/v1/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+      credentials: 'include',
+    });
+    const data = await res.json();
+    if (res.ok) {
+      window.location.href = CLIENT + '/dashboard';
+    } else {
+      errEl.textContent = data.message || 'Credenciales incorrectas.';
+      errEl.style.display = 'block';
+    }
+  } catch {
+    errEl.textContent = 'Error de conexión. Intenta de nuevo.';
+    errEl.style.display = 'block';
+  }
+});
+</script>
+{% endblock %}

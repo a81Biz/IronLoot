@@ -1,4 +1,6 @@
+import * as https from 'https';
 import { Injectable, Logger } from '@nestjs/common';
+import { buildIpnVerificationPayload, validateIpnResponse } from '@ironloot/core';
 import {
   PaymentProvider,
   PaymentProviderEnum,
@@ -35,7 +37,7 @@ export class PaypalProvider implements PaymentProvider {
     }
 
     const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
-    const webBaseUrl = process.env.WEB_BASE_URL || 'http://localhost:5173';
+    const webBaseUrl = process.env.CLIENT_URL || 'http://localhost:5173';
 
     // Construct WPS Parameters
     // Ref: https://www.paypalobjects.com/digitalassets/c/website/marketing/latam/mx/merchant-integration/shared/pdf/Guia-de-WPS.pdf
@@ -68,9 +70,30 @@ export class PaypalProvider implements PaymentProvider {
   }
 
   async handleWebhook(payload: unknown): Promise<WebhookResult | null> {
-    this.logger.log('Received PayPal webhook', payload);
-    // IPN Handling (Simplified)
-    const p = payload as any;
+    this.logger.log('Received PayPal IPN webhook');
+
+    const p = payload as Record<string, any>;
+
+    // Reconstruct URL-encoded body from parsed payload for IPN verification.
+    const rawBody = new URLSearchParams(
+      Object.entries(p).map(([k, v]) => [k, String(v)] as [string, string]),
+    ).toString();
+
+    const mode = process.env.PAYPAL_MODE || 'sandbox';
+    const ipnHost =
+      mode === 'production' ? 'ipnpb.paypal.com' : 'ipnpb.sandbox.paypal.com';
+
+    // Use CORE to build the verification payload; provider executes the HTTP POST.
+    const verificationPayload = buildIpnVerificationPayload(rawBody);
+    const ipnResponse = await this.postToPayPal(ipnHost, verificationPayload);
+
+    if (!validateIpnResponse(ipnResponse)) {
+      this.logger.error('PayPal IPN verification failed — rejecting webhook');
+      throw new Error('Invalid PayPal IPN signature');
+    }
+
+    this.logger.log('PayPal IPN verification passed');
+
     if (p.payment_status === 'Completed') {
       return {
         paymentId: p.txn_id,
@@ -79,6 +102,39 @@ export class PaypalProvider implements PaymentProvider {
         metadata: p,
       };
     }
+
     return null;
+  }
+
+  // Makes an HTTPS POST to PayPal IPN verification endpoint.
+  // I/O stays in the provider; CORE only defines the payload structure and response validation.
+  private postToPayPal(host: string, body: string): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const options = {
+        hostname: host,
+        port: 443,
+        path: '/cgi-bin/webscr',
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Length': Buffer.byteLength(body),
+          'User-Agent': 'IronLoot-IPN-Verifier/1.0',
+        },
+      };
+
+      const req = https.request(options, (res) => {
+        let data = '';
+        res.on('data', (chunk: string) => { data += chunk; });
+        res.on('end', () => resolve(data));
+      });
+
+      req.on('error', reject);
+      req.setTimeout(10000, () => {
+        req.destroy(new Error('PayPal IPN verification request timed out'));
+      });
+
+      req.write(body);
+      req.end();
+    });
   }
 }

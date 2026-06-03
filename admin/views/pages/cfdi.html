@@ -1,0 +1,60 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+<div class="page-actions">
+  <a href="/configuration/cfdi" class="btn btn-ghost btn-sm">
+    <span class="material-symbols-outlined">settings</span> Config PAC
+  </a>
+  <form method="GET" class="filter-bar">
+    <select name="status" class="form-select" onchange="this.form.submit()">
+      <option value="">Todos</option>
+      <option value="PENDING" {% if status == 'PENDING' %}selected{% endif %}>Pendientes</option>
+      <option value="EMITTED" {% if status == 'EMITTED' %}selected{% endif %}>Emitidos</option>
+      <option value="CANCELLED" {% if status == 'CANCELLED' %}selected{% endif %}>Cancelados</option>
+      <option value="ERROR" {% if status == 'ERROR' %}selected{% endif %}>Con error</option>
+    </select>
+  </form>
+</div>
+
+{% if result and result.data.length > 0 %}
+<div class="table-card">
+  <table class="data-table">
+    <thead>
+      <tr><th>Order ID</th><th>UUID SAT</th><th>Estado</th><th>Emitido</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for cfdi in result.data %}
+      <tr>
+        <td class="font-mono text-sm">{{ cfdi.orderId | truncate(12) }}</td>
+        <td class="font-mono text-sm">{{ cfdi.uuidSat or '—' }}</td>
+        <td><span class="status-badge status-{{ cfdi.status | lower }}">{{ cfdi.status }}</span></td>
+        <td>{{ cfdi.emittedAt or '—' }}</td>
+        <td>
+          <div class="action-group">
+            {% if cfdi.status == 'PENDING' or cfdi.status == 'ERROR' %}
+            <form action="/cfdi/{{ cfdi.orderId }}/generate" method="POST" style="display:inline">
+              <button class="btn btn-primary btn-xs">Emitir</button>
+            </form>
+            {% endif %}
+            {% if cfdi.status == 'EMITTED' %}
+            <a href="/cfdi/{{ cfdi.orderId }}/download/xml" class="btn btn-ghost btn-xs">XML</a>
+            <a href="/cfdi/{{ cfdi.orderId }}/download/pdf" class="btn btn-ghost btn-xs">PDF</a>
+            <form action="/cfdi/{{ cfdi.orderId }}/cancel" method="POST" style="display:inline"
+                  onsubmit="return confirm('¿Cancelar este CFDI?')">
+              <button class="btn btn-danger btn-xs">Cancelar</button>
+            </form>
+            {% endif %}
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <span class="material-symbols-outlined">receipt_long</span>
+  <p>No hay registros CFDI</p>
+</div>
+{% endif %}
+{% endblock %}

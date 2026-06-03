@@ -1,0 +1,36 @@
+{% extends "layouts/client.html" %}
+{% block title %}Abrir disputa — IronLoot{% endblock %}
+{% block page_title %}Abrir disputa{% endblock %}
+{% block content %}
+<div class="card" style="max-width:600px;">
+  <form id="disputeForm">
+    <div class="form-group">
+      <label for="orderId">ID de la orden</label>
+      <input class="form-control" id="orderId" value="{{ orderId | default('') }}" required placeholder="UUID de la orden">
+    </div>
+    <div class="form-group">
+      <label for="reason">Motivo de la disputa</label>
+      <textarea class="form-control" id="reason" rows="4" required placeholder="Describe el problema con detalle…" style="resize:vertical;"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Abrir disputa</button>
+    <div id="disputeMsg" class="alert" style="display:none;margin-top:.75rem;"></div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const API = '{{ apiUrl }}';
+document.getElementById('disputeForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msgEl = document.getElementById('disputeMsg');
+  const res = await fetch(API + '/api/v1/disputes', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+    body: JSON.stringify({ orderId: document.getElementById('orderId').value, reason: document.getElementById('reason').value }),
+  });
+  msgEl.className = 'alert ' + (res.ok ? 'alert-success' : 'alert-error');
+  if (res.ok) { msgEl.textContent = 'Disputa abierta correctamente.'; setTimeout(() => window.location.href = '/disputes', 2000); }
+  else { const d = await res.json(); msgEl.textContent = d.message || 'Error al abrir disputa.'; }
+  msgEl.style.display = 'block';
+});
+</script>
+{% endblock %}

@@ -1,15 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DistributedLockService } from './distributed-lock.service';
-import { Logger } from '@nestjs/common';
 
-// Mock Redis client
-jest.mock('ioredis', () => {
-  return jest.fn(() => ({
+// Mock Redis client — match the named export pattern used in the service
+jest.mock('ioredis', () => ({
+  Redis: jest.fn(() => ({
     set: jest.fn(),
     eval: jest.fn(),
     exists: jest.fn(),
-  }));
-});
+  })),
+}));
 
 describe('DistributedLockService', () => {
   let service: DistributedLockService;
@@ -39,7 +38,7 @@ describe('DistributedLockService', () => {
 
       expect(lockValue).not.toBeNull();
       expect(typeof lockValue).toBe('string');
-      expect(mockRedis.set).toHaveBeenCalledWith('test-lock', lockValue, 'NX', 'EX', 30);
+      expect(mockRedis.set).toHaveBeenCalledWith('test-lock', lockValue, 'EX', 30, 'NX');
     });
 
     it('should return null when lock is already held', async () => {
@@ -79,7 +78,9 @@ describe('DistributedLockService', () => {
     it('should throw error on Redis failure', async () => {
       mockRedis.eval.mockRejectedValue(new Error('Redis Lua script failed'));
 
-      await expect(service.releaseLock('test-lock', 'uuid')).rejects.toThrow('Redis Lua script failed');
+      await expect(service.releaseLock('test-lock', 'uuid')).rejects.toThrow(
+        'Redis Lua script failed',
+      );
     });
   });
 

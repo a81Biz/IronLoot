@@ -11,6 +11,7 @@ import {
   RequestContextService,
 } from '@/common/observability';
 import { CreateAuctionDto } from '@/modules/auctions/dto';
+import { SystemConfigService } from '@/modules/system-config/system-config.service';
 
 describe('AuctionsService', () => {
   let service: AuctionsService;
@@ -88,6 +89,16 @@ describe('AuctionsService', () => {
         {
           provide: MetricsService,
           useValue: mockMetrics,
+        },
+        // PT-010 added SystemConfigService dependency — mock it here
+        {
+          provide: SystemConfigService,
+          useValue: {
+            get: jest.fn().mockResolvedValue(null),
+            getBoolean: jest.fn().mockResolvedValue(false),
+            getString: jest.fn().mockResolvedValue(null),
+            getNumber: jest.fn().mockResolvedValue(null),
+          },
         },
       ],
     }).compile();

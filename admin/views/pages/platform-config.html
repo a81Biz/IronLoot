@@ -1,0 +1,56 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if saved %}
+<div class="alert alert-success">
+  <span class="material-symbols-outlined">check_circle</span> Configuración guardada correctamente.
+</div>
+{% endif %}
+
+<form action="/configuration/platform" method="POST">
+  <!-- Subastas -->
+  <div class="section-card">
+    <h3 class="card-title">
+      <span class="material-symbols-outlined">gavel</span> Subastas
+    </h3>
+    <div class="form-grid">
+      {% for item in config.auctions %}
+      <div class="form-group">
+        <label>{{ item.description or item.key }}</label>
+        <input type="{% if item.isSecret %}password{% else %}text{% endif %}"
+               name="updates[{{ item.key }}]"
+               value="{{ '' if item.isSecret else item.value }}"
+               class="form-input"
+               placeholder="{{ item.key }}">
+        <span class="form-hint">{{ item.key }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <!-- Usuarios -->
+  <div class="section-card mt-4">
+    <h3 class="card-title">
+      <span class="material-symbols-outlined">group</span> Usuarios
+    </h3>
+    <div class="form-grid">
+      {% for item in config.users %}
+      <div class="form-group">
+        <label>{{ item.description or item.key }}</label>
+        <select name="updates[{{ item.key }}]" class="form-select">
+          <option value="true" {% if item.value == 'true' %}selected{% endif %}>Sí (requerido)</option>
+          <option value="false" {% if item.value == 'false' %}selected{% endif %}>No (opcional)</option>
+        </select>
+        <span class="form-hint">{{ item.key }}</span>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="form-actions mt-4">
+    <button type="submit" class="btn btn-primary">
+      <span class="material-symbols-outlined">save</span> Guardar configuración
+    </button>
+  </div>
+</form>
+{% endblock %}

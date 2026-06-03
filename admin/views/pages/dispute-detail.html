@@ -1,0 +1,86 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if not dispute %}
+<div class="alert alert-error">No se encontró la disputa.</div>
+{% else %}
+
+<div class="detail-header">
+  <a href="/disputes" class="btn btn-ghost btn-sm">
+    <span class="material-symbols-outlined">arrow_back</span> Disputas
+  </a>
+  <span class="status-badge status-{{ dispute.status | lower }}">{{ dispute.status }}</span>
+</div>
+
+<div class="detail-grid">
+  <!-- Información de la disputa -->
+  <div class="detail-card detail-main">
+    <h2 class="card-title">Disputa</h2>
+    <div class="info-grid">
+      <div><span class="info-label">ID</span><span class="info-val mono text-xs">{{ dispute.id }}</span></div>
+      <div><span class="info-label">Estado</span><span class="info-val">{{ dispute.status }}</span></div>
+      <div><span class="info-label">Motivo</span><span class="info-val">{{ dispute.reason }}</span></div>
+      <div><span class="info-label">Iniciado por</span><span class="info-val">{{ dispute.creator.email if dispute.creator else '—' }}</span></div>
+      <div><span class="info-label">Fecha</span><span class="info-val">{{ dispute.createdAt }}</span></div>
+    </div>
+
+    {% if dispute.description %}
+    <div class="admin-notes-box mt-4">
+      <span class="material-symbols-outlined">description</span>
+      <span>{{ dispute.description }}</span>
+    </div>
+    {% endif %}
+
+    {% if dispute.order %}
+    <h3 class="card-title mt-4">Orden vinculada</h3>
+    <div class="info-grid">
+      <div><span class="info-label">Orden ID</span><span class="info-val mono text-xs">{{ dispute.order.id }}</span></div>
+      <div><span class="info-label">Monto</span><span class="info-val">MXN {{ dispute.order.totalAmount }}</span></div>
+      <div><span class="info-label">Estado orden</span><span class="info-val">{{ dispute.order.status }}</span></div>
+      <div><span class="info-label">Comprador</span><span class="info-val">{{ dispute.order.buyer.email if dispute.order.buyer else '—' }}</span></div>
+      <div><span class="info-label">Vendedor</span><span class="info-val">{{ dispute.order.seller.email if dispute.order.seller else '—' }}</span></div>
+    </div>
+    {% endif %}
+  </div>
+
+  <!-- Acciones de resolución -->
+  <div class="detail-card detail-actions">
+    <h3 class="card-title">Resolución</h3>
+
+    {% if dispute.status == 'OPEN' or dispute.status == 'IN_MEDIATION' %}
+
+    <form method="POST" action="/disputes/{{ dispute.id }}/resolve-buyer" onsubmit="return confirm('¿Resolver a favor del comprador?')">
+      <div class="form-group mb-3">
+        <label class="form-label">Notas (resolución a favor del comprador)</label>
+        <textarea name="reason" class="form-control" rows="3" required placeholder="Motivo de la resolución..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-success btn-block mb-3">
+        <span class="material-symbols-outlined">person</span>
+        Resolver a favor del Comprador
+      </button>
+    </form>
+
+    <hr class="my-3">
+
+    <form method="POST" action="/disputes/{{ dispute.id }}/resolve-seller" onsubmit="return confirm('¿Resolver a favor del vendedor?')">
+      <div class="form-group mb-3">
+        <label class="form-label">Notas (resolución a favor del vendedor)</label>
+        <textarea name="reason" class="form-control" rows="3" required placeholder="Motivo de la resolución..."></textarea>
+      </div>
+      <button type="submit" class="btn btn-warning btn-block">
+        <span class="material-symbols-outlined">store</span>
+        Resolver a favor del Vendedor
+      </button>
+    </form>
+
+    {% else %}
+    <div class="empty-state">
+      <span class="material-symbols-outlined">check_circle</span>
+      <p>Esta disputa ya fue {{ 'resuelta' if dispute.status == 'RESOLVED' else 'cerrada' }}.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+{% endif %}
+{% endblock %}

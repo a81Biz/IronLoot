@@ -8,6 +8,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { CreateDisputeDto } from './dto';
 import { StructuredLogger, ChildLogger } from '../../common/observability';
 import { Dispute } from '@prisma/client';
+import { DisputeStateMachine } from '@ironloot/core';
 
 @Injectable()
 export class DisputesService {
@@ -39,15 +40,22 @@ export class DisputesService {
       throw new BadRequestException('A dispute already exists for this order');
     }
 
-    // Audit #24: Dispute validation
     if (order.status !== 'DELIVERED' && order.status !== 'PAID' && order.status !== 'SHIPPED') {
       throw new BadRequestException('Order must be PAID, SHIPPED or DELIVERED to open a dispute');
     }
 
-    // Time limit: 30 days after update (delivery/payment)
-    const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-    if (new Date().getTime() - order.updatedAt.getTime() > thirtyDays) {
-      throw new BadRequestException('Dispute period has expired (30 days)');
+    // Use CORE DisputeStateMachine for the time window.
+    // For DELIVERED orders, enforce the 14-day window from deliveredAt (domain invariant).
+    // For PAID/SHIPPED orders without deliveredAt, fall back to updatedAt.
+    const referenceDate: Date =
+      order.status === 'DELIVERED' && (order as any).deliveredAt
+        ? (order as any).deliveredAt
+        : order.updatedAt;
+
+    if (!DisputeStateMachine.canOpenDispute(referenceDate)) {
+      throw new BadRequestException(
+        `Dispute period has expired. Disputes must be opened within ${DisputeStateMachine.windowDays} days.`,
+      );
     }
 
     const dispute = await this.prisma.dispute.create({

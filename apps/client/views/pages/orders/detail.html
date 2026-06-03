@@ -1,0 +1,35 @@
+{% extends "layouts/client.html" %}
+{% block title %}Detalle de orden — IronLoot{% endblock %}
+{% block page_title %}Orden{% endblock %}
+{% block content %}
+{% if order %}
+<div class="card">
+  <div class="d-flex justify-between align-center mb-2">
+    <div><strong>Orden:</strong> {{ order.id }}</div>
+    <span class="badge badge-info">{{ order.status }}</span>
+  </div>
+  <table style="width:100%;font-size:.9rem;">
+    <tr><td style="width:160px;color:#6c757d;">Subasta</td><td>{{ order.auction.title | default(order.auctionId) }}</td></tr>
+    <tr><td style="color:#6c757d;">Monto total</td><td><strong>MXN {{ order.totalAmount }}</strong></td></tr>
+    <tr><td style="color:#6c757d;">Vendedor</td><td>{{ order.seller.username | default(order.sellerId) }}</td></tr>
+    <tr><td style="color:#6c757d;">Fecha</td><td>{{ order.createdAt }}</td></tr>
+  </table>
+</div>
+{% if order.status == 'PENDING_PAYMENT' %}
+<div class="card">
+  <div class="card-title">Completar pago</div>
+  <a href="/wallet/deposit" class="btn btn-primary">Depositar fondos</a>
+</div>
+{% endif %}
+{% if order.shipment %}
+<div class="card">
+  <div class="card-title">Envío</div>
+  <p>Transportista: {{ order.shipment.provider }}</p>
+  <p>Tracking: {{ order.shipment.trackingNumber | default('Pendiente') }}</p>
+  <p>Estado: {{ order.shipment.status }}</p>
+</div>
+{% endif %}
+{% else %}
+  <p>Orden no encontrada. <a href="/orders">Volver</a></p>
+{% endif %}
+{% endblock %}

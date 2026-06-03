@@ -1,0 +1,42 @@
+{% extends "layouts/client.html" %}
+{% block title %}Dashboard — IronLoot{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+<div class="stat-grid">
+  <div class="stat-card">
+    <div class="stat-value">MXN {{ wallet.balance | default('0.00') }}</div>
+    <div class="stat-label">Saldo disponible</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-value">MXN {{ wallet.held_funds | default('0.00') }}</div>
+    <div class="stat-label">Fondos retenidos</div>
+  </div>
+</div>
+<div class="card">
+  <div class="card-title">Acciones rápidas</div>
+  <div class="d-flex gap-2">
+    <a href="/wallet/deposit" class="btn btn-primary">Depositar fondos</a>
+    <a href="/auctions/create" class="btn btn-secondary">Crear subasta</a>
+    <a href="/my-bids" class="btn btn-ghost">Ver mis ofertas</a>
+  </div>
+</div>
+{% if auctions and auctions.items %}
+<div class="card">
+  <div class="card-title">Subastas activas</div>
+  <div class="table-responsive">
+    <table>
+      <thead><tr><th>Subasta</th><th>Precio actual</th><th>Acción</th></tr></thead>
+      <tbody>
+        {% for a in auctions.items %}
+        <tr>
+          <td>{{ a.title }}</td>
+          <td>MXN {{ a.currentPrice }}</td>
+          <td><a href="{{ baseUrl }}/auctions/{{ a.id }}" class="btn btn-sm btn-secondary">Ver</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

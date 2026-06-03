@@ -10,6 +10,7 @@ import {
 } from '../../common/observability';
 import { CreateOrderDto } from './dto';
 import { Order, OrderStatus } from '@prisma/client';
+import { OrderStateMachine, OrderStatus as CoreOrderStatus } from '@ironloot/core';
 
 @Injectable()
 export class OrdersService {
@@ -149,5 +150,16 @@ export class OrdersService {
     }
 
     return this.enrichOrder(order);
+  }
+
+  async updateStatus(orderId: string, newStatus: OrderStatus): Promise<Order> {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId } });
+    if (!order) throw new OrderNotFoundException(orderId);
+
+    if (!OrderStateMachine.canTransition(order.status as unknown as CoreOrderStatus, newStatus as unknown as CoreOrderStatus)) {
+      throw new ValidationException(`Cannot transition order ${orderId} from ${order.status} to ${newStatus}`);
+    }
+
+    return this.prisma.order.update({ where: { id: orderId }, data: { status: newStatus } });
   }
 }

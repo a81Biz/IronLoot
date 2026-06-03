@@ -1,0 +1,35 @@
+{% extends "layouts/client.html" %}
+{% block title %}Retirar fondos — IronLoot{% endblock %}
+{% block page_title %}Retirar fondos{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px;">
+  <form id="withdrawForm">
+    <div class="form-group">
+      <label for="amount">Monto a retirar (MXN)</label>
+      <input class="form-control" type="number" id="amount" min="100" step="0.01" placeholder="1000.00" required>
+    </div>
+    <div class="form-group">
+      <label for="account">CLABE / Cuenta bancaria</label>
+      <input class="form-control" type="text" id="account" placeholder="18 dígitos CLABE" required>
+    </div>
+    <button type="submit" class="btn btn-primary">Solicitar retiro</button>
+    <div id="withdrawMsg" class="alert" style="display:none;margin-top:.75rem;"></div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const API = '{{ apiUrl }}';
+document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msgEl = document.getElementById('withdrawMsg');
+  const res = await fetch(API + '/api/v1/wallet/withdraw', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+    body: JSON.stringify({ amount: parseFloat(document.getElementById('amount').value), account: document.getElementById('account').value }),
+  });
+  msgEl.className = 'alert ' + (res.ok ? 'alert-success' : 'alert-error');
+  msgEl.textContent = res.ok ? 'Solicitud de retiro enviada.' : 'Error al procesar.';
+  msgEl.style.display = 'block';
+});
+</script>
+{% endblock %}

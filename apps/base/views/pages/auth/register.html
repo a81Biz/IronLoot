@@ -1,0 +1,47 @@
+{% extends "layouts/base.html" %}
+{% block title %}Crear cuenta — IronLoot{% endblock %}
+
+{% block content %}
+<div class="form-container">
+  <h1 class="form-title">Crear cuenta</h1>
+  <form id="registerForm">
+    <div class="form-group">
+      <label for="username">Nombre de usuario</label>
+      <input class="form-control" type="text" id="username" name="username" required>
+    </div>
+    <div class="form-group">
+      <label for="email">Correo electrónico</label>
+      <input class="form-control" type="email" id="email" name="email" required autocomplete="email">
+    </div>
+    <div class="form-group">
+      <label for="password">Contraseña</label>
+      <input class="form-control" type="password" id="password" name="password" required minlength="8">
+    </div>
+    <button type="submit" class="btn btn-primary form-submit">Registrarme</button>
+    <div id="registerError" class="alert alert-error" style="display:none;margin-top:.75rem;"></div>
+  </form>
+  <div class="form-footer">¿Ya tienes cuenta? <a href="/auth/login">Inicia sesión</a></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const API = '{{ apiUrl }}';
+const CLIENT = '{{ clientUrl }}';
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('registerError');
+  errEl.style.display = 'none';
+  const body = { username: e.target.username.value, email: e.target.email.value, password: e.target.password.value };
+  try {
+    const res = await fetch(API + '/api/v1/auth/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body), credentials: 'include',
+    });
+    const data = await res.json();
+    if (res.ok) { window.location.href = '/auth/verify-email-pending'; }
+    else { errEl.textContent = data.message || 'Error al registrar.'; errEl.style.display = 'block'; }
+  } catch { errEl.textContent = 'Error de conexión.'; errEl.style.display = 'block'; }
+});
+</script>
+{% endblock %}

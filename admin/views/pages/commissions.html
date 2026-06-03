@@ -1,0 +1,126 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+<div class="tabs-bar" id="tabs">
+  <button class="tab-btn active" data-tab="config">Configuración</button>
+  <button class="tab-btn" data-tab="ledger">Ledger</button>
+</div>
+
+<!-- Config tab -->
+<div class="tab-panel active" id="tab-config">
+  <div class="section-card">
+    <h3 class="card-title">Tasa Global</h3>
+    {% if config and config.length > 0 %}
+      {% for entry in config %}
+        {% if entry.type == 'GLOBAL' %}
+        <form action="/commissions/config/global" method="POST" class="inline-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Tasa global (%)</label>
+              <input type="number" name="ratePercent" value="{{ entry.ratePercent }}" min="0" max="100" step="0.1" class="form-input" style="width:120px">
+            </div>
+            <button type="submit" class="btn btn-primary">Actualizar</button>
+          </div>
+        </form>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+    <form action="/commissions/config/global" method="POST" class="inline-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Tasa global (%)</label>
+          <input type="number" name="ratePercent" value="10" min="0" max="100" step="0.1" class="form-input" style="width:120px">
+        </div>
+        <button type="submit" class="btn btn-primary">Establecer</button>
+      </div>
+    </form>
+    {% endif %}
+  </div>
+
+  <div class="section-card mt-4">
+    <h3 class="card-title">Override por Vendedor</h3>
+    <form action="/commissions/config/seller" method="POST" class="inline-form">
+      <div class="form-row">
+        <div class="form-group">
+          <label>ID del vendedor</label>
+          <input type="text" name="sellerId" placeholder="UUID del vendedor" class="form-input">
+        </div>
+        <div class="form-group">
+          <label>Tasa (%)</label>
+          <input type="number" name="ratePercent" placeholder="0.0" min="0" max="100" step="0.1" class="form-input" style="width:100px">
+        </div>
+        <button type="submit" class="btn btn-primary">Agregar</button>
+      </div>
+    </form>
+
+    {% if config and config.length > 0 %}
+    <table class="data-table mt-4">
+      <thead><tr><th>Tipo</th><th>Referencia</th><th>Tasa</th><th></th></tr></thead>
+      <tbody>
+        {% for entry in config %}
+        {% if entry.type != 'GLOBAL' %}
+        <tr>
+          <td><span class="badge">{{ entry.type }}</span></td>
+          <td class="font-mono">{{ entry.referenceId or '—' }}</td>
+          <td>{{ entry.ratePercent }}%</td>
+          <td>
+            <form action="/commissions/config/{{ entry.id }}/delete" method="POST" onsubmit="return confirm('¿Eliminar?')">
+              <button class="btn btn-ghost btn-xs">Eliminar</button>
+            </form>
+          </td>
+        </tr>
+        {% endif %}
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Ledger tab -->
+<div class="tab-panel" id="tab-ledger" style="display:none">
+  {% if records and records.data.length > 0 %}
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr><th>Order ID</th><th>Vendedor</th><th>Monto</th><th>Tasa</th><th>Estado</th><th>Fecha</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for rec in records.data %}
+        <tr>
+          <td class="font-mono text-sm">{{ rec.orderId | truncate(12) }}</td>
+          <td class="font-mono text-sm">{{ rec.sellerId | truncate(12) }}</td>
+          <td>${{ rec.amount }}</td>
+          <td>{{ rec.ratePercent }}%</td>
+          <td><span class="status-badge status-{{ rec.status | lower }}">{{ rec.status }}</span></td>
+          <td>{{ rec.calculatedAt }}</td>
+          <td>
+            {% if rec.status == 'PENDING' %}
+            <form action="/commissions/records/{{ rec.id }}/mark-collected" method="POST">
+              <button class="btn btn-success btn-xs">Cobrado</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><span class="material-symbols-outlined">percent</span><p>Sin registros de comisiones</p></div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).style.display = '';
+    });
+  });
+</script>
+{% endblock %}

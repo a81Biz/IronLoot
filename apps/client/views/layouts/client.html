@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Mi cuenta — IronLoot{% endblock %}</title>
+  <link rel="stylesheet" href="/css/client.css">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><a href="/dashboard">⚡ IronLoot</a></div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <span class="nav-section-title">Comprador</span>
+        <a href="/dashboard" class="nav-item">🏠 Dashboard</a>
+        <a href="/auctions/won-auctions" class="nav-item">🏆 Ganadas</a>
+        <a href="/my-bids" class="nav-item">🎯 Mis ofertas</a>
+        <a href="/auctions/watchlist" class="nav-item">❤️ Watchlist</a>
+        <a href="/orders" class="nav-item">📦 Órdenes</a>
+        <a href="/wallet" class="nav-item">💰 Wallet</a>
+        <a href="/notifications" class="nav-item">🔔 Notificaciones</a>
+        <a href="/disputes" class="nav-item">⚖️ Disputas</a>
+        <a href="/reputation" class="nav-item">⭐ Reputación</a>
+      </div>
+      <div class="nav-section">
+        <span class="nav-section-title">Vendedor</span>
+        <a href="/seller/auctions" class="nav-item">🛍 Mis subastas</a>
+        <a href="/auctions/create" class="nav-item">➕ Crear subasta</a>
+        <a href="/seller/orders" class="nav-item">📋 Pedidos</a>
+        <a href="/seller/onboarding" class="nav-item">✅ Onboarding</a>
+      </div>
+      <div class="nav-section nav-bottom">
+        <a href="/profile" class="nav-item">👤 Perfil</a>
+        <a href="/settings" class="nav-item">⚙️ Configuración</a>
+        <a href="/auth/logout" class="nav-item nav-logout">🚪 Salir</a>
+      </div>
+    </nav>
+  </aside>
+
+  <div class="main-wrapper">
+    <header class="top-bar">
+      <div class="top-bar-title">{% block page_title %}{% endblock %}</div>
+      <div class="top-bar-actions">{% block top_bar_actions %}{% endblock %}</div>
+    </header>
+    <main class="page-content">
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

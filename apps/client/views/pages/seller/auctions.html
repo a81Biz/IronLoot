@@ -1,0 +1,30 @@
+{% extends "layouts/client.html" %}
+{% block title %}Mis subastas — IronLoot{% endblock %}
+{% block page_title %}Mis subastas{% endblock %}
+{% block top_bar_actions %}<a href="/auctions/create" class="btn btn-primary">+ Nueva subasta</a>{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="table-responsive">
+    <table>
+      <thead><tr><th>Título</th><th>Estado</th><th>Precio actual</th><th>Fin</th><th>Acciones</th></tr></thead>
+      <tbody>
+        {% if auctions and auctions.items %}
+          {% for a in auctions.items %}
+          <tr>
+            <td>{{ a.title }}</td>
+            <td><span class="badge badge-info">{{ a.status }}</span></td>
+            <td>MXN {{ a.currentPrice | default(a.startingPrice) }}</td>
+            <td>{{ a.endsAt | default('—') }}</td>
+            <td>
+              {% if a.status == 'DRAFT' %}<a href="/auctions/{{ a.id }}/edit" class="btn btn-sm btn-ghost">Editar</a>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="5" class="text-center text-muted">No tienes subastas. <a href="/auctions/create">Crear una</a></td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

@@ -32,6 +32,8 @@ enum AuctionStatus {
   ACTIVE
   CLOSED
   CANCELLED
+  SUSPENDED
+  PENDING_MODERATION
 }
 
 /// User - Main user entity
@@ -117,6 +119,9 @@ model Profile {
   country    String? @db.VarChar(100)
   postalCode String? @map("postal_code") @db.VarChar(20)
 
+  // Fiscal (Mexico)
+  rfc String? @db.VarChar(13)
+
   @@index([userId], name: "idx_profiles_user")
   @@map("profiles")
 }
@@ -170,6 +175,10 @@ model Auction {
 
   // Status
   status AuctionStatus @default(DRAFT)
+
+  // Admin fields
+  isBlocked  Boolean @default(false) @map("is_blocked")
+  adminNotes String? @map("admin_notes") @db.Text
 
   // Relations
   sellerId String @map("seller_id") @db.Uuid
@@ -255,10 +264,11 @@ model Order {
   sellerId String @map("seller_id") @db.Uuid
   seller   User   @relation("OrdersSeller", fields: [sellerId], references: [id])
 
-  payments Payment[]
-  shipment Shipment?
-  ratings  Rating[]
-  dispute  Dispute?
+  payments       Payment[]
+  shipment       Shipment?
+  ratings        Rating[]
+  dispute        Dispute?
+  refundRequest  RefundRequest?
 
   @@index([buyerId], name: "idx_orders_buyer")
   @@index([sellerId], name: "idx_orders_seller")
@@ -573,11 +583,16 @@ model RequestLog {
 
 /// SystemConfig - Key-value store for runtime configuration (payment providers, feature flags, etc.)
 model SystemConfig {
-  key       String   @id @db.VarChar(100)
-  value     String   @db.Text
-  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
-  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  key         String   @id @db.VarChar(100)
+  value       String   @db.Text
+  isSecret    Boolean  @default(false) @map("is_secret")
+  category    String   @default("general") @db.VarChar(50)
+  description String?  @db.Text
+  updatedBy   String?  @map("updated_by") @db.VarChar(255)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
+  @@index([category], name: "idx_system_config_category")
   @@map("system_config")
 }
 
@@ -646,4 +661,222 @@ model Ledger {
   @@index([walletId, createdAt(sort: Desc)], name: "idx_ledger_wallet_time")
   @@index([referenceId], name: "idx_ledger_reference")
   @@map("ledger")
+}
+
+// ===========================================
+// BACKOFFICE OPERATIONAL TABLES
+// ===========================================
+
+/// Commission type enum
+enum CommissionType {
+  GLOBAL
+  CATEGORY
+  SELLER
+}
+
+/// Commission status enum
+enum CommissionStatus {
+  PENDING
+  COLLECTED
+}
+
+/// CommissionConfig - Platform commission rate configuration
+model CommissionConfig {
+  id          String         @id @default(uuid()) @db.Uuid
+  type        CommissionType
+  referenceId String?        @map("reference_id") @db.VarChar(255)
+  ratePercent Decimal        @map("rate_percent") @db.Decimal(5, 2)
+  updatedBy   String         @map("updated_by") @db.VarChar(255)
+  createdAt   DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([type], name: "idx_commission_config_type")
+  @@map("commission_config")
+}
+
+/// CommissionRecord - Per-order commission ledger
+model CommissionRecord {
+  id          String           @id @default(uuid()) @db.Uuid
+  orderId     String           @unique @map("order_id") @db.Uuid
+  sellerId    String           @map("seller_id") @db.Uuid
+  amount      Decimal          @db.Decimal(10, 2)
+  ratePercent Decimal          @map("rate_percent") @db.Decimal(5, 2)
+  status      CommissionStatus @default(PENDING)
+  calculatedAt DateTime        @default(now()) @map("calculated_at") @db.Timestamptz
+
+  @@index([sellerId], name: "idx_commission_record_seller")
+  @@index([status], name: "idx_commission_record_status")
+  @@map("commission_records")
+}
+
+/// ModerationAction enum
+enum ModerationAction {
+  APPROVED
+  REJECTED
+}
+
+/// ModerationLog - Admin content moderation history
+model ModerationLog {
+  id         String           @id @default(uuid()) @db.Uuid
+  auctionId  String           @map("auction_id") @db.Uuid
+  action     ModerationAction
+  reasonCode String?          @map("reason_code") @db.VarChar(100)
+  notes      String?          @db.Text
+  reviewedBy String           @map("reviewed_by") @db.VarChar(255)
+  createdAt  DateTime         @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([auctionId], name: "idx_moderation_log_auction")
+  @@map("moderation_log")
+}
+
+/// CFDI status enum
+enum CfdiStatus {
+  PENDING
+  EMITTED
+  CANCELLED
+  ERROR
+}
+
+/// CfdiRecord - Mexico tax invoice records
+model CfdiRecord {
+  id           String     @id @default(uuid()) @db.Uuid
+  orderId      String     @unique @map("order_id") @db.Uuid
+  uuidSat      String?    @map("uuid_sat") @db.VarChar(100)
+  xmlPath      String?    @map("xml_path") @db.Text
+  pdfPath      String?    @map("pdf_path") @db.Text
+  status       CfdiStatus @default(PENDING)
+  errorMessage String?    @map("error_message") @db.Text
+  emittedAt    DateTime?  @map("emitted_at") @db.Timestamptz
+  cancelledAt  DateTime?  @map("cancelled_at") @db.Timestamptz
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([status], name: "idx_cfdi_record_status")
+  @@map("cfdi_records")
+}
+
+/// KYC status enum
+enum KycStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CORRECTION_NEEDED
+}
+
+/// KycSubmission - Seller KYC document verification
+model KycSubmission {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  status      KycStatus @default(PENDING)
+  docsJson    Json      @map("docs_json") @db.JsonB
+  reviewedBy  String?   @map("reviewed_by") @db.VarChar(255)
+  reviewNotes String?   @map("review_notes") @db.Text
+  submittedAt DateTime  @default(now()) @map("submitted_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([userId, status], name: "idx_kyc_submission_user_status")
+  @@index([status], name: "idx_kyc_submission_status")
+  @@map("kyc_submissions")
+}
+
+/// Notification segment enum
+enum NotificationSegment {
+  ALL
+  BUYERS
+  SELLERS
+  WINNERS
+  DEBTORS
+  SUSPENDED
+}
+
+/// Campaign status enum
+enum CampaignStatus {
+  DRAFT
+  SCHEDULED
+  SENT
+  FAILED
+}
+
+/// NotificationCampaign - Bulk notification campaigns
+model NotificationCampaign {
+  id             String              @id @default(uuid()) @db.Uuid
+  title          String              @db.VarChar(200)
+  body           String              @db.Text
+  segment        NotificationSegment
+  channelsJson   Json                @map("channels_json") @db.JsonB
+  scheduledAt    DateTime?           @map("scheduled_at") @db.Timestamptz
+  sentAt         DateTime?           @map("sent_at") @db.Timestamptz
+  status         CampaignStatus      @default(DRAFT)
+  recipientsCount Int                @default(0) @map("recipients_count")
+  sentBy         String              @map("sent_by") @db.VarChar(255)
+  createdAt      DateTime            @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([status], name: "idx_notification_campaign_status")
+  @@map("notification_campaigns")
+}
+
+// ===========================================
+// PT-013 — REFUNDS
+// ===========================================
+
+enum RefundStatus {
+  PENDING_REFUND
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model RefundRequest {
+  id          String       @id @default(uuid()) @db.Uuid
+  orderId     String       @unique @map("order_id") @db.Uuid
+  order       Order        @relation(fields: [orderId], references: [id])
+  amount      Decimal      @db.Decimal(10, 2)
+  currency    String       @default("MXN") @db.VarChar(3)
+  reason      String       @db.Text
+  status      RefundStatus @default(PENDING_REFUND)
+  initiatedBy String       @map("initiated_by") @db.VarChar(255)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  resolvedAt  DateTime?    @map("resolved_at") @db.Timestamptz
+
+  @@index([orderId], name: "idx_refund_requests_order_id")
+  @@index([status], name: "idx_refund_requests_status")
+  @@map("refund_requests")
+}
+
+// ===========================================
+// PT-013 — SEO CONFIG
+// ===========================================
+
+model SeoConfig {
+  id            String   @id @default(uuid()) @db.Uuid
+  page          String   @unique @db.VarChar(100)
+  title         String   @default("") @db.VarChar(200)
+  description   String   @default("") @db.VarChar(500)
+  ogTitle       String   @default("") @map("og_title") @db.VarChar(200)
+  ogDescription String   @default("") @map("og_description") @db.VarChar(500)
+  ogImage       String   @default("") @map("og_image") @db.VarChar(500)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy     String   @default("system") @map("updated_by") @db.VarChar(255)
+
+  @@map("seo_config")
+}
+
+// ===========================================
+// PT-013 — CMS CONTENT
+// ===========================================
+
+enum CmsContentType {
+  TEXT
+  HTML
+  JSON
+}
+
+model CmsContent {
+  id        String         @id @default(uuid()) @db.Uuid
+  key       String         @unique @db.VarChar(150)
+  value     String         @db.Text
+  type      CmsContentType @default(TEXT)
+  updatedAt DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy String         @default("system") @map("updated_by") @db.VarChar(255)
+
+  @@map("cms_content")
 }

@@ -1,0 +1,30 @@
+{% extends "layouts/base.html" %}
+{% block title %}Subastas — IronLoot{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1>Subastas activas</h1>
+</div>
+
+<form method="GET" action="/auctions" style="margin-bottom:1.5rem;display:flex;gap:.5rem;">
+  <input class="form-control" name="q" value="{{ q }}" placeholder="Buscar subastas..." style="max-width:320px;">
+  <button type="submit" class="btn btn-primary">Buscar</button>
+</form>
+
+{% if auctions and auctions.length > 0 %}
+  <div class="auctions-grid">
+    {% for auction in auctions %}
+      <div class="auction-card">
+        <div class="auction-card-body">
+          <h3>{{ auction.title }}</h3>
+          <div class="auction-price">MXN {{ auction.currentPrice | default(auction.startingPrice) }}</div>
+          <div class="auction-meta">Estado: {{ auction.status }}</div>
+          <a href="/auctions/{{ auction.id }}" class="btn btn-secondary mt-2">Ver detalle</a>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+{% else %}
+  <p class="text-center">No hay subastas disponibles{% if q %} para "{{ q }}"{% endif %}.</p>
+{% endif %}
+{% endblock %}

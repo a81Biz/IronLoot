@@ -12,6 +12,11 @@ import {
 } from '../../common/observability';
 import { CreateAuctionDto, UpdateAuctionDto, AuctionResponseDto } from './dto';
 import { nanoid } from 'nanoid';
+import { SystemConfigService } from '../system-config/system-config.service';
+import {
+  AuctionStateMachine,
+  AuctionStatus as CoreAuctionStatus,
+} from '@ironloot/core';
 
 @Injectable()
 export class AuctionsService {
@@ -21,6 +26,7 @@ export class AuctionsService {
     private readonly prisma: PrismaService,
     private readonly logger: StructuredLogger,
     private readonly ctx: RequestContextService,
+    private readonly systemConfig: SystemConfigService,
   ) {
     this.log = this.logger.child('AuctionsService');
   }
@@ -186,7 +192,12 @@ export class AuctionsService {
       throw new ForbiddenException('You can only update your own auctions');
     }
 
-    if (auction.status !== AuctionStatus.DRAFT) {
+    // Use AuctionStateMachine from @ironloot/core: only DRAFT auctions can receive edits
+    // (they are in the process of being published, so DRAFT → PUBLISHED is the next step).
+    if (!AuctionStateMachine.canTransition(
+      auction.status as unknown as CoreAuctionStatus,
+      CoreAuctionStatus.PUBLISHED,
+    )) {
       throw new ValidationException('Cannot update auction unless it is in DRAFT state');
     }
 
@@ -217,7 +228,11 @@ export class AuctionsService {
       throw new ForbiddenException('You can only publish your own auctions');
     }
 
-    if (auction.status !== AuctionStatus.DRAFT) {
+    // Use AuctionStateMachine from @ironloot/core to validate the DRAFT → PUBLISHED transition.
+    if (!AuctionStateMachine.canTransition(
+      auction.status as unknown as CoreAuctionStatus,
+      CoreAuctionStatus.PUBLISHED,
+    )) {
       throw new ValidationException('Auction is not in DRAFT state');
     }
 
@@ -230,16 +245,25 @@ export class AuctionsService {
 
     const newEndsAt = new Date(now.getTime() + finalDuration);
 
-    const updatedAuction = await this.prisma.auction.update({
+    // Check if admin moderation is required for new auctions
+    const requireModeration = await this.systemConfig.get('REQUIRE_AUCTION_MODERATION');
+    const targetStatus =
+      requireModeration === 'true' ? ('PENDING_MODERATION' as any) : AuctionStatus.PUBLISHED;
+
+    const updatedAuction = await (this.prisma.auction as any).update({
       where: { id },
       data: {
-        status: AuctionStatus.PUBLISHED,
-        startsAt: now,
-        endsAt: newEndsAt,
+        status: targetStatus,
+        startsAt: requireModeration === 'true' ? auction.startsAt : now,
+        endsAt: requireModeration === 'true' ? auction.endsAt : newEndsAt,
       },
     });
 
-    this.log.info('Auction published', { auctionId: id });
+    if (requireModeration === 'true') {
+      this.log.info('Auction submitted for moderation', { auctionId: id });
+    } else {
+      this.log.info('Auction published', { auctionId: id });
+    }
 
     return this.mapToResponse(updatedAuction);
   }

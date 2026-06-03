@@ -1,0 +1,77 @@
+/* IronLoot BASE — Public Site Styles */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, -apple-system, sans-serif; line-height: 1.6; color: #1a1a2e; background: #f8f9fa; }
+
+/* Nav */
+.site-header { background: #1a1a2e; box-shadow: 0 2px 8px rgba(0,0,0,.3); position: sticky; top: 0; z-index: 100; }
+.nav-container { max-width: 1200px; margin: 0 auto; padding: .75rem 1.5rem; display: flex; align-items: center; gap: 2rem; }
+.nav-brand { color: #e0a800; font-size: 1.4rem; font-weight: 700; text-decoration: none; }
+.nav-links { display: flex; gap: 1.5rem; flex: 1; }
+.nav-link { color: #c9d1d9; text-decoration: none; font-size: .95rem; }
+.nav-link:hover { color: #fff; }
+.nav-auth { display: flex; gap: .75rem; }
+
+/* Buttons */
+.btn { padding: .45rem 1rem; border-radius: 6px; text-decoration: none; font-size: .9rem; font-weight: 500; border: none; cursor: pointer; display: inline-block; }
+.btn-primary { background: #e0a800; color: #1a1a2e; }
+.btn-primary:hover { background: #c9970a; }
+.btn-ghost { background: transparent; color: #c9d1d9; border: 1px solid rgba(255,255,255,.2); }
+.btn-ghost:hover { background: rgba(255,255,255,.1); color: #fff; }
+.btn-secondary { background: #0d6efd; color: #fff; }
+.btn-secondary:hover { background: #0b5ed7; }
+
+/* Main */
+.main-content { max-width: 1200px; margin: 0 auto; padding: 2rem 1.5rem; min-height: calc(100vh - 140px); }
+
+/* Hero */
+.hero { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: #fff; padding: 4rem 2rem; border-radius: 12px; text-align: center; margin-bottom: 3rem; }
+.hero h1 { font-size: 2.5rem; margin-bottom: 1rem; color: #e0a800; }
+.hero p { font-size: 1.1rem; color: #c9d1d9; margin-bottom: 2rem; }
+.hero-actions { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; }
+
+/* Auction grid */
+.auctions-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem; }
+.auction-card { background: #fff; border: 1px solid #dee2e6; border-radius: 10px; overflow: hidden; transition: transform .2s, box-shadow .2s; }
+.auction-card:hover { transform: translateY(-4px); box-shadow: 0 8px 20px rgba(0,0,0,.1); }
+.auction-card-body { padding: 1.25rem; }
+.auction-card h3 { font-size: 1rem; margin-bottom: .5rem; }
+.auction-price { font-size: 1.3rem; font-weight: 700; color: #e0a800; }
+.auction-meta { font-size: .8rem; color: #6c757d; margin-top: .5rem; }
+
+/* Forms */
+.form-container { max-width: 480px; margin: 3rem auto; background: #fff; padding: 2.5rem; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,.08); }
+.form-title { font-size: 1.6rem; font-weight: 700; margin-bottom: 1.5rem; text-align: center; color: #1a1a2e; }
+.form-group { margin-bottom: 1.25rem; }
+.form-group label { display: block; font-size: .9rem; font-weight: 500; margin-bottom: .4rem; color: #495057; }
+.form-control { width: 100%; padding: .6rem .9rem; border: 1px solid #ced4da; border-radius: 6px; font-size: .95rem; }
+.form-control:focus { outline: none; border-color: #e0a800; box-shadow: 0 0 0 3px rgba(224,168,0,.2); }
+.form-submit { width: 100%; padding: .75rem; margin-top: .5rem; }
+.form-footer { text-align: center; margin-top: 1.25rem; font-size: .9rem; color: #6c757d; }
+.form-footer a { color: #0d6efd; text-decoration: none; }
+
+/* Static pages */
+.page-header { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid #dee2e6; }
+.page-header h1 { font-size: 2rem; }
+.prose p { margin-bottom: 1rem; }
+.prose h2 { font-size: 1.3rem; margin: 1.5rem 0 .75rem; }
+
+/* Footer */
+.site-footer { background: #1a1a2e; color: #c9d1d9; padding: 2rem 1.5rem; margin-top: 3rem; }
+.footer-container { max-width: 1200px; margin: 0 auto; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; }
+.footer-brand span { font-size: 1.2rem; font-weight: 700; color: #e0a800; }
+.footer-brand p { font-size: .85rem; margin-top: .5rem; }
+.footer-links { display: flex; flex-direction: column; gap: .5rem; }
+.footer-links a { color: #c9d1d9; text-decoration: none; font-size: .9rem; }
+.footer-links a:hover { color: #fff; }
+.footer-copy { max-width: 1200px; margin: 0 auto; font-size: .8rem; color: #6c757d; text-align: center; }
+
+/* Alert */
+.alert { padding: .75rem 1rem; border-radius: 6px; margin-bottom: 1rem; font-size: .9rem; }
+.alert-success { background: #d1e7dd; color: #0a3622; border: 1px solid #a3cfbb; }
+.alert-error { background: #f8d7da; color: #58151c; border: 1px solid #f1aeb5; }
+
+/* Section */
+.section-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 1.5rem; }
+.text-center { text-align: center; }
+.mt-2 { margin-top: 1rem; }
+.mb-2 { margin-bottom: 1rem; }

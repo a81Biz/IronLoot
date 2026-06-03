@@ -6,8 +6,10 @@
     <select name="status" class="form-select" onchange="this.form.submit()">
       <option value="">Todos los estados</option>
       <option value="DRAFT" {% if status == 'DRAFT' %}selected{% endif %}>Borrador</option>
+      <option value="PENDING_MODERATION" {% if status == 'PENDING_MODERATION' %}selected{% endif %}>Pendiente moderación</option>
       <option value="PUBLISHED" {% if status == 'PUBLISHED' %}selected{% endif %}>Publicada</option>
       <option value="ACTIVE" {% if status == 'ACTIVE' %}selected{% endif %}>Activa</option>
+      <option value="SUSPENDED" {% if status == 'SUSPENDED' %}selected{% endif %}>Suspendida</option>
       <option value="CLOSED" {% if status == 'CLOSED' %}selected{% endif %}>Cerrada</option>
       <option value="CANCELLED" {% if status == 'CANCELLED' %}selected{% endif %}>Cancelada</option>
     </select>
@@ -22,44 +24,81 @@
   <p>No hay subastas.</p>
 </div>
 {% else %}
-<div class="table-container">
-  <table>
+<div class="table-card">
+  <table class="data-table">
     <thead>
       <tr>
         <th>Título</th>
         <th>Vendedor</th>
         <th>Estado</th>
         <th>Precio actual</th>
-        <th>Termina</th>
+        <th>Inicio</th>
+        <th>Cierre</th>
         <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
       {% for a in result.data %}
       <tr>
-        <td>{{ a.title | truncate(40) }}</td>
-        <td class="text-sm text-muted">{{ a.seller.email }}</td>
         <td>
-          {% if a.status == 'ACTIVE' %}<span class="badge badge-success">Activa</span>
-          {% elif a.status == 'CLOSED' %}<span class="badge badge-muted">Cerrada</span>
-          {% elif a.status == 'CANCELLED' %}<span class="badge badge-danger">Cancelada</span>
-          {% elif a.status == 'DRAFT' %}<span class="badge badge-info">Borrador</span>
-          {% else %}<span class="badge badge-warning">{{ a.status }}</span>{% endif %}
+          <a href="/auctions/{{ a.id }}" class="link-primary">{{ a.title | truncate(40) }}</a>
+          {% if a.isBlocked %}<span class="badge badge-danger">BLOQUEADO</span>{% endif %}
         </td>
+        <td class="text-sm text-muted">{{ a.seller.email }}</td>
+        <td><span class="status-badge status-{{ a.status | lower }}">{{ a.status }}</span></td>
         <td>${{ a.currentPrice }}</td>
-        <td class="text-sm text-muted">{{ a.endsAt | truncate(16, true, '') }}</td>
+        <td class="text-sm text-muted">{{ a.startsAt | truncate(10, true, '') }}</td>
+        <td class="text-sm text-muted">{{ a.endsAt | truncate(10, true, '') }}</td>
         <td>
-          {% if a.status != 'CANCELLED' and a.status != 'CLOSED' %}
-          <form action="/auctions/{{ a.id }}/cancel" method="POST" style="display:inline">
-            <button type="submit" class="btn btn-danger btn-xs" onclick="return confirm('¿Cancelar subasta?')">Cancelar</button>
-          </form>
-          {% endif %}
+          <div class="action-group">
+            <a href="/auctions/{{ a.id }}" class="btn btn-ghost btn-xs">Ver</a>
+
+            {% if a.status == 'DRAFT' or a.status == 'PENDING_MODERATION' %}
+            <form action="/auctions/{{ a.id }}/approve" method="POST" style="display:inline">
+              <button class="btn btn-success btn-xs">Aprobar</button>
+            </form>
+            {% endif %}
+
+            {% if a.status == 'ACTIVE' %}
+            <form action="/auctions/{{ a.id }}/suspend" method="POST" style="display:inline">
+              <button class="btn btn-warning btn-xs">Suspender</button>
+            </form>
+            <form action="/auctions/{{ a.id }}/force-close" method="POST" style="display:inline"
+                  onsubmit="return confirm('¿Forzar cierre?')">
+              <button class="btn btn-danger btn-xs">Forzar cierre</button>
+            </form>
+            {% endif %}
+
+            {% if a.status == 'SUSPENDED' or a.status == 'CLOSED' %}
+            <form action="/auctions/{{ a.id }}/reopen" method="POST" style="display:inline">
+              <button class="btn btn-primary btn-xs">Reabrir</button>
+            </form>
+            {% endif %}
+
+            {% if a.status != 'CANCELLED' and a.status != 'CLOSED' %}
+            <form action="/auctions/{{ a.id }}/cancel" method="POST" style="display:inline"
+                  onsubmit="return confirm('¿Cancelar?')">
+              <button class="btn btn-ghost btn-xs">Cancelar</button>
+            </form>
+            {% endif %}
+          </div>
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
 </div>
-{% include "partials/pagination.html" ignore missing with { url: '/auctions', extra: ('&status=' + status) if status else '' } %}
+
+{% if result.meta %}
+<div class="pagination">
+  {% if result.meta.page > 1 %}
+  <a href="?page={{ result.meta.page - 1 }}{% if status %}&status={{ status }}{% endif %}" class="btn btn-ghost btn-sm">← Anterior</a>
+  {% endif %}
+  <span class="pagination-info">{{ result.meta.page }} / {{ result.meta.pages }} · {{ result.meta.total }} total</span>
+  {% if result.meta.page < result.meta.pages %}
+  <a href="?page={{ result.meta.page + 1 }}{% if status %}&status={{ status }}{% endif %}" class="btn btn-ghost btn-sm">Siguiente →</a>
+  {% endif %}
+</div>
+{% endif %}
 {% endif %}
 {% endblock %}

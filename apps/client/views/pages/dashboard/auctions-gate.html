@@ -1,0 +1,16 @@
+{% extends "layouts/client.html" %}
+{% block title %}Activar cuenta vendedor — IronLoot{% endblock %}
+{% block page_title %}Panel de vendedor{% endblock %}
+{% block content %}
+<div style="max-width:560px;margin:3rem auto;text-align:center;">
+  <div class="card">
+    <div style="font-size:3rem;margin-bottom:1rem;">🛍️</div>
+    <h2 style="font-size:1.4rem;margin-bottom:1rem;">¿Quieres vender en IronLoot?</h2>
+    <p class="text-muted mb-2">Para publicar subastas necesitas activar tu cuenta de vendedor. El proceso toma menos de 2 minutos.</p>
+    <a href="/seller/onboarding" class="btn btn-primary" style="margin-top:1rem;">Activar cuenta vendedor</a>
+    <div style="margin-top:1.5rem;">
+      <a href="/dashboard" class="text-muted" style="font-size:.9rem;">← Volver al dashboard</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

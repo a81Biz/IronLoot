@@ -1,0 +1,95 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if result and result.data.length > 0 %}
+<p class="text-muted mb-4">{{ result.meta.total }} subastas pendientes de revisión</p>
+
+<div class="table-card">
+  <table class="data-table">
+    <thead>
+      <tr>
+        <th>Preview</th>
+        <th>Título</th>
+        <th>Vendedor</th>
+        <th>Solicitado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in result.data %}
+      <tr>
+        <td>
+          {% set imgs = item.images %}
+          {% if imgs and imgs.length > 0 %}
+          <img src="{{ imgs[0] }}" class="lot-thumb" alt="preview">
+          {% else %}
+          <div class="lot-thumb lot-thumb-empty"><span class="material-symbols-outlined">image_not_supported</span></div>
+          {% endif %}
+        </td>
+        <td><a href="/auctions/{{ item.id }}" class="link-primary">{{ item.title }}</a></td>
+        <td>{{ item.seller.email }}</td>
+        <td>{{ item.updatedAt }}</td>
+        <td>
+          <div class="action-group">
+            <form action="/moderation/{{ item.id }}/approve" method="POST" style="display:inline">
+              <button type="submit" class="btn btn-success btn-xs">
+                <span class="material-symbols-outlined">check</span> Aprobar
+              </button>
+            </form>
+            <button class="btn btn-danger btn-xs" onclick="openRejectModal('{{ item.id }}', '{{ item.title | escape }}')">
+              <span class="material-symbols-outlined">close</span> Rechazar
+            </button>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <span class="material-symbols-outlined">check_circle</span>
+  <p>No hay subastas pendientes de moderación</p>
+</div>
+{% endif %}
+
+<!-- Reject modal -->
+<div id="reject-modal" class="modal-backdrop" style="display:none">
+  <div class="modal">
+    <h3>Rechazar subasta</h3>
+    <p id="reject-modal-title" class="text-muted"></p>
+    <form id="reject-form" method="POST">
+      <div class="form-group">
+        <label>Motivo</label>
+        <select name="reason_code" class="form-select" required>
+          <option value="Producto prohibido">Producto prohibido</option>
+          <option value="Información insuficiente">Información insuficiente</option>
+          <option value="Imágenes incorrectas">Imágenes incorrectas</option>
+          <option value="Riesgo legal">Riesgo legal</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Notas adicionales</label>
+        <textarea name="notes" class="form-input" rows="2" placeholder="Opcional"></textarea>
+      </div>
+      <div class="form-actions">
+        <button type="button" class="btn btn-ghost" onclick="closeRejectModal()">Cancelar</button>
+        <button type="submit" class="btn btn-danger">Confirmar rechazo</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  function openRejectModal(id, title) {
+    document.getElementById('reject-modal-title').textContent = title;
+    document.getElementById('reject-form').action = '/moderation/' + id + '/reject';
+    document.getElementById('reject-modal').style.display = 'flex';
+  }
+  function closeRejectModal() {
+    document.getElementById('reject-modal').style.display = 'none';
+  }
+</script>
+{% endblock %}

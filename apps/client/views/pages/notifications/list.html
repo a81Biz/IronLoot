@@ -1,0 +1,17 @@
+{% extends "layouts/client.html" %}
+{% block title %}Notificaciones — IronLoot{% endblock %}
+{% block page_title %}Notificaciones{% endblock %}
+{% block content %}
+<div class="card">
+  {% if notifications and notifications.items %}
+    {% for n in notifications.items %}
+    <div style="padding:.75rem;border-bottom:1px solid #f0f2f5;{% if not n.read %}background:#fffbf0;{% endif %}">
+      <div style="font-size:.9rem;{% if not n.read %}font-weight:600;{% endif %}">{{ n.message }}</div>
+      <div style="font-size:.75rem;color:#6c757d;margin-top:.25rem;">{{ n.createdAt }}</div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <p class="text-center text-muted">No tienes notificaciones.</p>
+  {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+<div class="tabs-bar">
+  <button class="tab-btn active" data-tab="compose">Componer</button>
+  <button class="tab-btn" data-tab="history">Historial</button>
+</div>
+
+<!-- Compose -->
+<div class="tab-panel active" id="tab-compose">
+  <div class="section-card">
+    {% if sent %}
+    <div class="alert alert-success">
+      <span class="material-symbols-outlined">check_circle</span> Campaña enviada exitosamente.
+    </div>
+    {% endif %}
+    <form action="/notifications/send" method="POST">
+      <div class="form-group">
+        <label>Asunto</label>
+        <input type="text" name="title" class="form-input" placeholder="Título de la notificación" required>
+      </div>
+      <div class="form-group">
+        <label>Mensaje</label>
+        <textarea name="body" class="form-input" rows="4" placeholder="Escribe el mensaje aquí..." required></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Segmento de destinatarios</label>
+          <select name="segment" class="form-select" required>
+            <option value="ALL">Todos los usuarios</option>
+            <option value="BUYERS">Solo compradores</option>
+            <option value="SELLERS">Solo vendedores</option>
+            <option value="SUSPENDED">Usuarios suspendidos</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Canales</label>
+          <div class="checkbox-group">
+            <label class="checkbox-label">
+              <input type="checkbox" name="channels[]" value="email" checked> Email
+            </label>
+            <label class="checkbox-label">
+              <input type="checkbox" name="channels[]" value="inApp" checked> In-App
+            </label>
+          </div>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary">
+          <span class="material-symbols-outlined">send</span> Enviar ahora
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- History -->
+<div class="tab-panel" id="tab-history" style="display:none">
+  {% if campaigns and campaigns.data.length > 0 %}
+  <div class="table-card">
+    <table class="data-table">
+      <thead>
+        <tr><th>Asunto</th><th>Segmento</th><th>Canales</th><th>Estado</th><th>Destinatarios</th><th>Enviado</th></tr>
+      </thead>
+      <tbody>
+        {% for c in campaigns.data %}
+        <tr>
+          <td>{{ c.title }}</td>
+          <td>{{ c.segment }}</td>
+          <td>{{ c.channelsJson | join(', ') }}</td>
+          <td><span class="status-badge status-{{ c.status | lower }}">{{ c.status }}</span></td>
+          <td>{{ c.recipientsCount }}</td>
+          <td>{{ c.sentAt or c.createdAt }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <span class="material-symbols-outlined">campaign</span>
+    <p>Sin campañas enviadas</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).style.display = '';
+    });
+  });
+</script>
+{% endblock %}

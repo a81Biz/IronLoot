@@ -26,7 +26,7 @@ export class DistributedLockService {
     try {
       // Use SET with NX (only if not exists) and EX (expiry)
       // Returns 'OK' if set, null if not set
-      const result = await this.redis.set(key, lockValue, 'NX', 'EX', ttlSeconds);
+      const result = await this.redis.set(key, lockValue, 'EX', ttlSeconds, 'NX');
 
       if (result === 'OK') {
         this.logger.debug(`Lock acquired: ${key} (TTL: ${ttlSeconds}s)`);
@@ -68,7 +68,9 @@ export class DistributedLockService {
         this.logger.debug(`Lock released: ${key}`);
         return true;
       } else {
-        this.logger.warn(`Lock value mismatch for ${key} - likely expired and reacquired by another instance`);
+        this.logger.warn(
+          `Lock value mismatch for ${key} - likely expired and reacquired by another instance`,
+        );
         return false;
       }
     } catch (error) {

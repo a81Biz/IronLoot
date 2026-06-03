@@ -1,0 +1,43 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+<div class="page-actions">
+  <form method="GET" class="filter-bar">
+    <select name="status" class="form-select" onchange="this.form.submit()">
+      <option value="PENDING" {% if status == 'PENDING' %}selected{% endif %}>Pendientes</option>
+      <option value="APPROVED" {% if status == 'APPROVED' %}selected{% endif %}>Aprobados</option>
+      <option value="REJECTED" {% if status == 'REJECTED' %}selected{% endif %}>Rechazados</option>
+      <option value="CORRECTION_NEEDED" {% if status == 'CORRECTION_NEEDED' %}selected{% endif %}>Corrección requerida</option>
+    </select>
+  </form>
+</div>
+
+{% if result and result.data.length > 0 %}
+<div class="table-card">
+  <table class="data-table">
+    <thead>
+      <tr><th>Solicitante</th><th>Email</th><th>Documentos</th><th>Estado</th><th>Enviado</th><th>Acciones</th></tr>
+    </thead>
+    <tbody>
+      {% for sub in result.data %}
+      <tr>
+        <td>{{ sub.user.displayName or sub.user.username }}</td>
+        <td>{{ sub.user.email }}</td>
+        <td>{{ sub.docsJson | length }} archivos</td>
+        <td><span class="status-badge status-{{ sub.status | lower }}">{{ sub.status }}</span></td>
+        <td>{{ sub.submittedAt }}</td>
+        <td>
+          <a href="/kyc/{{ sub.id }}" class="btn btn-ghost btn-xs">Ver</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="empty-state">
+  <span class="material-symbols-outlined">verified_user</span>
+  <p>No hay solicitudes KYC con este estado</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -10,9 +10,16 @@ import { Server, Socket } from 'socket.io';
 // import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 // For now, let's keep it open for reading (joining rooms) but strictly scoped.
 
+// PT-013: ALLOWED_ORIGINS parsed at startup to support base.localhost and client.localhost
+const wsOrigins = (process.env.ALLOWED_ORIGINS || '')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 @WebSocketGateway({
   cors: {
-    origin: '*', // Configure properly for production
+    origin: wsOrigins.length > 0 ? wsOrigins : '*',
+    credentials: true,
   },
   namespace: 'auctions',
 })

@@ -1,0 +1,47 @@
+{% extends "layouts/client.html" %}
+{% block title %}Editar subasta — IronLoot{% endblock %}
+{% block page_title %}Editar subasta{% endblock %}
+{% block content %}
+{% if auction and auction.status == 'DRAFT' %}
+<div class="card" style="max-width:680px;">
+  <form id="editForm">
+    <input type="hidden" id="auctionId" value="{{ auction.id }}">
+    <div class="form-group">
+      <label for="title">Título</label>
+      <input class="form-control" id="title" value="{{ auction.title }}" required>
+    </div>
+    <div class="form-group">
+      <label for="description">Descripción</label>
+      <textarea class="form-control" id="description" rows="4" style="resize:vertical;">{{ auction.description }}</textarea>
+    </div>
+    <div class="form-group">
+      <label for="startingPrice">Precio inicial (MXN)</label>
+      <input class="form-control" type="number" id="startingPrice" value="{{ auction.startingPrice }}" min="1" step="0.01">
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+    <div id="editMsg" class="alert" style="display:none;margin-top:.75rem;"></div>
+  </form>
+</div>
+{% elif auction %}
+  <div class="alert alert-error">Esta subasta no está en estado DRAFT y no puede editarse.</div>
+{% else %}
+  <p>Subasta no encontrada. <a href="/seller/auctions">Volver</a></p>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script>
+const API = '{{ apiUrl }}';
+document.getElementById('editForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const id = document.getElementById('auctionId').value;
+  const msgEl = document.getElementById('editMsg');
+  const res = await fetch(API + '/api/v1/auctions/' + id, {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+    body: JSON.stringify({ title: document.getElementById('title').value, description: document.getElementById('description').value, startingPrice: parseFloat(document.getElementById('startingPrice').value) }),
+  });
+  msgEl.className = 'alert ' + (res.ok ? 'alert-success' : 'alert-error');
+  msgEl.textContent = res.ok ? 'Subasta actualizada.' : 'Error al guardar.';
+  msgEl.style.display = 'block';
+});
+</script>
+{% endblock %}

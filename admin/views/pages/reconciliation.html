@@ -1,0 +1,67 @@
+{% extends "layouts/admin.html" %}
+{% block title %}Conciliación — IronLoot Admin{% endblock %}
+{% block content %}
+<h1 class="h3 mb-4">Conciliación de pagos</h1>
+<div class="card mb-4">
+  <div class="card-body">
+    <div class="row g-3 align-items-end">
+      <div class="col-auto">
+        <label class="form-label">Proveedor</label>
+        <select id="rcProvider" class="form-select">
+          <option value="MERCADO_PAGO">MercadoPago</option>
+          <option value="PAYPAL">PayPal</option>
+        </select>
+      </div>
+      <div class="col-auto">
+        <label class="form-label">Desde</label>
+        <input id="rcFrom" type="date" class="form-control">
+      </div>
+      <div class="col-auto">
+        <label class="form-label">Hasta</label>
+        <input id="rcTo" type="date" class="form-control">
+      </div>
+      <div class="col-auto">
+        <button class="btn btn-primary" onclick="loadReconciliation()">Conciliar</button>
+        <a id="csvExportBtn" href="#" class="btn btn-outline-secondary ms-2" style="display:none;">Exportar CSV</a>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="rcResults" style="display:none;">
+  <div class="row">
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-warning text-dark">Solo en sistema interno (<span id="internalCount">0</span>)</div>
+        <div class="card-body p-0"><div class="table-responsive"><table class="table mb-0 table-sm"><thead><tr><th>External ID</th><th>Monto</th></tr></thead><tbody id="internalTable"></tbody></table></div></div>
+      </div>
+    </div>
+    <div class="col-md-6">
+      <div class="card">
+        <div class="card-header bg-info text-dark">Solo en proveedor (<span id="providerCount">0</span>)</div>
+        <div class="card-body"><p id="providerNote" class="text-muted small mb-0"></p></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+const API = '/api/v1/admin';
+async function loadReconciliation() {
+  const provider = document.getElementById('rcProvider').value;
+  const from = document.getElementById('rcFrom').value;
+  const to = document.getElementById('rcTo').value;
+  if (!from || !to) { alert('Selecciona fechas'); return; }
+  const data = await (await fetch(`${API}/reconciliation?provider=${provider}&dateFrom=${from}&dateTo=${to}`)).json();
+  document.getElementById('rcResults').style.display = 'block';
+  document.getElementById('internalCount').textContent = data.internalCount;
+  document.getElementById('providerCount').textContent = data.providerOnly?.length ?? 0;
+  document.getElementById('providerNote').textContent = data.note || '';
+  document.getElementById('internalTable').innerHTML = (data.internalOnly || []).map(p => `<tr><td><code>${p.externalId || '—'}</code></td><td>MXN ${p.amount}</td></tr>`).join('');
+  const csvBtn = document.getElementById('csvExportBtn');
+  csvBtn.href = `${API}/reconciliation/export?provider=${provider}&dateFrom=${from}&dateTo=${to}`;
+  csvBtn.style.display = 'inline-block';
+}
+document.getElementById('rcTo').valueAsDate = new Date();
+const d = new Date(); d.setDate(d.getDate() - 30);
+document.getElementById('rcFrom').valueAsDate = d;
+</script>
+{% endblock %}

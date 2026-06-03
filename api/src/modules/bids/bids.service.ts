@@ -1,5 +1,7 @@
 import { Injectable, ForbiddenException, NotFoundException } from '@nestjs/common';
 import { Bid, AuctionStatus, NotificationType } from '@prisma/client';
+// PT-013: Import domain validation from @ironloot/core (CORE domain logic)
+import { BidValidation, AuctionStatus as CoreAuctionStatus } from '@ironloot/core';
 import { PrismaService } from '../../database/prisma.service';
 import {
   StructuredLogger,
@@ -60,21 +62,28 @@ export class BidsService {
         throw new AuctionNotActiveException(auctionId, auction.status);
       }
 
-      if (auction.sellerId === userId) {
-        throw new BidOnOwnAuctionException(auctionId);
+      // PT-017: Enforce CORE BidValidation — replaces duplicate seller and amount checks.
+      // Status check above (line 57) allows PUBLISHED in addition to ACTIVE; CORE only
+      // validates ACTIVE. For PUBLISHED auctions we skip the status error from CORE and
+      // only enforce the seller-restriction and amount rules.
+      const coreValidation = BidValidation.validate({
+        auctionStatus: auction.status as unknown as CoreAuctionStatus,
+        currentPrice: Number(auction.currentPrice),
+        bidderId: userId,
+        sellerId: auction.sellerId,
+        bidAmount: dto.amount,
+      });
+      if (!coreValidation.valid && coreValidation.reason !== 'Auction is not active') {
+        if (coreValidation.reason?.includes('Seller cannot bid')) {
+          throw new BidOnOwnAuctionException(auctionId);
+        }
+        throw new BidTooLowException(auctionId, dto.amount, Number(auction.currentPrice) + 1);
       }
 
-      // Check if user is outbidding themselves
+      // Check if user is outbidding themselves (self-outbid — not covered by BidValidation)
       const previousTopBid = auction.bids[0];
       if (previousTopBid && previousTopBid.bidderId === userId) {
         throw new BidOnOwnAuctionException(auctionId);
-      }
-
-      const currentPrice = Number(auction.currentPrice);
-      const minimumBid = currentPrice + 1.0;
-
-      if (dto.amount < minimumBid) {
-        throw new BidTooLowException(auctionId, dto.amount, minimumBid);
       }
 
       // 2. Hold Funds (Optimistic lock approach - hold first, then try to bid)

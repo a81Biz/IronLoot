@@ -1,0 +1,22 @@
+{% extends "layouts/client.html" %}
+{% block title %}Watchlist — IronLoot{% endblock %}
+{% block page_title %}Watchlist{% endblock %}
+{% block content %}
+<div class="card">
+  {% if items and items.length > 0 %}
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:1rem;">
+      {% for item in items %}
+      <div style="border:1px solid #dee2e6;border-radius:8px;padding:1rem;">
+        <h3 style="font-size:.95rem;margin-bottom:.5rem;">{{ item.auction.title }}</h3>
+        <div style="font-size:1.2rem;font-weight:700;color:#e0a800;">MXN {{ item.auction.currentPrice }}</div>
+        <div style="margin-top:.75rem;display:flex;gap:.5rem;">
+          <a href="{{ baseUrl }}/auctions/{{ item.auctionId }}" class="btn btn-sm btn-secondary">Ver subasta</a>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="text-center text-muted">No tienes subastas en tu watchlist. <a href="{{ baseUrl }}/auctions">Explorar subastas</a></p>
+  {% endif %}
+</div>
+{% endblock %}

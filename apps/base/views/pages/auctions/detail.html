@@ -1,0 +1,33 @@
+{% extends "layouts/base.html" %}
+{% block title %}{{ auction.title if auction else "Subasta" }} — IronLoot{% endblock %}
+
+{% block content %}
+{% if auction %}
+  <div class="page-header">
+    <h1>{{ auction.title }}</h1>
+    <p class="auction-meta">Estado: <strong>{{ auction.status }}</strong></p>
+  </div>
+  <div style="display:grid;grid-template-columns:2fr 1fr;gap:2rem;align-items:start;">
+    <div>
+      <p>{{ auction.description }}</p>
+    </div>
+    <div style="background:#fff;border-radius:10px;padding:1.5rem;border:1px solid #dee2e6;">
+      <div class="auction-price">MXN {{ auction.currentPrice | default(auction.startingPrice) }}</div>
+      <p class="auction-meta">Precio actual</p>
+      <hr style="margin:1rem 0;">
+      {% if auction.status == 'ACTIVE' %}
+        <a href="{{ clientUrl }}/auctions/{{ auction.id }}" class="btn btn-primary" style="width:100%;text-align:center;">
+          Pujar ahora (requiere cuenta)
+        </a>
+      {% else %}
+        <p>Esta subasta no está activa actualmente.</p>
+      {% endif %}
+      <div class="text-center mt-2">
+        <a href="{{ clientUrl }}/auth/register" style="font-size:.85rem;">¿No tienes cuenta? Regístrate</a>
+      </div>
+    </div>
+  </div>
+{% else %}
+  <p>Subasta no encontrada. <a href="/auctions">Volver al catálogo</a></p>
+{% endif %}
+{% endblock %}

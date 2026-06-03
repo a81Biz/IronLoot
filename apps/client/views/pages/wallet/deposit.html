@@ -1,0 +1,41 @@
+{% extends "layouts/client.html" %}
+{% block title %}Depositar fondos — IronLoot{% endblock %}
+{% block page_title %}Depositar fondos{% endblock %}
+{% block content %}
+<div class="card" style="max-width:480px;">
+  <form id="depositForm">
+    <div class="form-group">
+      <label for="amount">Monto a depositar (MXN)</label>
+      <input class="form-control" type="number" id="amount" min="50" step="0.01" placeholder="500.00" required>
+    </div>
+    <div class="form-group">
+      <label>Método de pago</label>
+      <select class="form-control" id="provider">
+        <option value="MERCADO_PAGO">MercadoPago</option>
+        <option value="PAYPAL">PayPal</option>
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Continuar al pago</button>
+    <div id="depositError" class="alert alert-error" style="display:none;margin-top:.75rem;"></div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const API = '{{ apiUrl }}';
+document.getElementById('depositForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errEl = document.getElementById('depositError');
+  errEl.style.display = 'none';
+  try {
+    const res = await fetch(API + '/api/v1/wallet/deposit', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ amount: parseFloat(document.getElementById('amount').value), provider: document.getElementById('provider').value }),
+    });
+    const data = await res.json();
+    if (res.ok && data.checkoutUrl) { window.location.href = data.checkoutUrl; }
+    else { errEl.textContent = data.message || 'Error al iniciar pago.'; errEl.style.display = 'block'; }
+  } catch { errEl.textContent = 'Error de conexión.'; errEl.style.display = 'block'; }
+});
+</script>
+{% endblock %}

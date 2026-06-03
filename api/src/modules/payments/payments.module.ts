@@ -11,7 +11,13 @@ import { WalletModule } from '../wallet/wallet.module';
 @Module({
   imports: [ConfigModule, forwardRef(() => WalletModule)],
   controllers: [PaymentsController],
-  providers: [PaymentsService, StripeProvider, MercadoPagoProvider, PaypalProvider, HeyBancoProvider],
+  providers: [
+    PaymentsService,
+    StripeProvider,
+    MercadoPagoProvider,
+    PaypalProvider,
+    HeyBancoProvider,
+  ],
   exports: [PaymentsService],
 })
 export class PaymentsModule {}

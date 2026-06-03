@@ -1,0 +1,126 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if not user %}
+<div class="alert alert-error">Usuario no encontrado.</div>
+{% else %}
+
+<div class="detail-header">
+  <a href="/users" class="btn btn-ghost btn-sm">
+    <span class="material-symbols-outlined">arrow_back</span> Usuarios
+  </a>
+  <span class="status-badge status-{{ user.state | lower }}">{{ user.state }}</span>
+  {% if user.isSeller %}<span class="badge badge-teal">Vendedor</span>{% endif %}
+</div>
+
+<div class="detail-grid">
+  <div class="detail-card detail-main">
+    <h2 class="card-title">{{ user.displayName or user.username }}</h2>
+    <div class="info-grid">
+      <div><span class="info-label">Email</span><span class="info-val">{{ user.email }}</span></div>
+      <div><span class="info-label">Username</span><span class="info-val">{{ user.username }}</span></div>
+      <div><span class="info-label">ID</span><span class="info-val font-mono">{{ user.id }}</span></div>
+      <div><span class="info-label">Registrado</span><span class="info-val">{{ user.createdAt }}</span></div>
+      {% if user.profile %}
+      <div><span class="info-label">Nombre legal</span><span class="info-val">{{ user.profile.legalName or '—' }}</span></div>
+      <div><span class="info-label">RFC</span><span class="info-val">{{ user.profile.rfc or '—' }}</span></div>
+      <div><span class="info-label">Teléfono</span><span class="info-val">{{ user.profile.phone or '—' }}</span></div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="detail-card detail-actions">
+    <h3 class="card-title">Acciones</h3>
+    {% if user.state == 'ACTIVE' %}
+    <form action="/users/{{ user.id }}/suspend" method="POST" class="action-form"
+          onsubmit="return confirm('¿Suspender temporalmente a este usuario?')">
+      <button type="submit" class="btn btn-warning btn-block">
+        <span class="material-symbols-outlined">pause_circle</span> Suspender usuario
+      </button>
+    </form>
+    <form action="/users/{{ user.id }}/ban" method="POST" class="action-form mt-4"
+          onsubmit="return confirm('¿Banear permanentemente a este usuario?')">
+      <button type="submit" class="btn btn-danger btn-block">
+        <span class="material-symbols-outlined">block</span> Banear usuario
+      </button>
+    </form>
+    {% endif %}
+    {% if user.state == 'BANNED' or user.state == 'SUSPENDED' %}
+    <form action="/users/{{ user.id }}/unban" method="POST" class="action-form">
+      <button type="submit" class="btn btn-success btn-block">
+        <span class="material-symbols-outlined">check_circle</span> Reactivar usuario
+      </button>
+    </form>
+    {% endif %}
+    {% if user.isSeller %}
+    <form action="/users/{{ user.id }}/disable-seller" method="POST" class="action-form mt-4">
+      <button type="submit" class="btn btn-warning btn-block">Deshabilitar venta</button>
+    </form>
+    {% else %}
+    <form action="/users/{{ user.id }}/enable-seller" method="POST" class="action-form mt-4">
+      <button type="submit" class="btn btn-primary btn-block">Habilitar como vendedor</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Tabs: Compras / Ofertas -->
+<div class="tabs-bar mt-4">
+  <button class="tab-btn active" data-tab="orders">Compras</button>
+  <button class="tab-btn" data-tab="bids">Ofertas</button>
+</div>
+
+<div class="tab-panel active" id="tab-orders">
+  {% if user.ordersAsBuyer and user.ordersAsBuyer.length > 0 %}
+  <table class="data-table">
+    <thead><tr><th>Subasta</th><th>Monto</th><th>Estado</th><th>Fecha</th></tr></thead>
+    <tbody>
+      {% for order in user.ordersAsBuyer %}
+      <tr>
+        <td>{{ order.auction.title }}</td>
+        <td>${{ order.totalAmount }}</td>
+        <td><span class="status-badge status-{{ order.status | lower }}">{{ order.status }}</span></td>
+        <td>{{ order.createdAt }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-muted">Sin compras registradas.</p>
+  {% endif %}
+</div>
+
+<div class="tab-panel" id="tab-bids" style="display:none">
+  {% if user.bids and user.bids.length > 0 %}
+  <table class="data-table">
+    <thead><tr><th>Subasta</th><th>Monto</th><th>Fecha</th></tr></thead>
+    <tbody>
+      {% for bid in user.bids %}
+      <tr>
+        <td>{{ bid.auction.title }}</td>
+        <td>${{ bid.amount }}</td>
+        <td>{{ bid.createdAt }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="text-muted">Sin ofertas registradas.</p>
+  {% endif %}
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+      btn.classList.add('active');
+      document.getElementById('tab-' + btn.dataset.tab).style.display = '';
+    });
+  });
+</script>
+{% endblock %}

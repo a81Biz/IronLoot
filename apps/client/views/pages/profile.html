@@ -1,0 +1,39 @@
+{% extends "layouts/client.html" %}
+{% block title %}Mi perfil — IronLoot{% endblock %}
+{% block page_title %}Mi perfil{% endblock %}
+{% block content %}
+<div class="card" style="max-width:600px;">
+  <form id="profileForm">
+    <div class="form-group">
+      <label>Nombre completo</label>
+      <input class="form-control" id="fullName" value="{{ profile.profile.fullName | default('') }}" placeholder="Tu nombre">
+    </div>
+    <div class="form-group">
+      <label>Teléfono</label>
+      <input class="form-control" id="phone" value="{{ profile.profile.phone | default('') }}" placeholder="+52 55 0000 0000">
+    </div>
+    <div class="form-group">
+      <label>Correo</label>
+      <input class="form-control" value="{{ profile.email }}" disabled>
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar cambios</button>
+    <div id="profileMsg" style="display:none;margin-top:.75rem;" class="alert"></div>
+  </form>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>
+const API = '{{ apiUrl }}';
+document.getElementById('profileForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const msg = document.getElementById('profileMsg');
+  const res = await fetch(API + '/api/v1/users/profile', {
+    method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+    body: JSON.stringify({ fullName: document.getElementById('fullName').value, phone: document.getElementById('phone').value }),
+  });
+  msg.className = 'alert ' + (res.ok ? 'alert-success' : 'alert-error');
+  msg.textContent = res.ok ? 'Perfil actualizado.' : 'Error al guardar.';
+  msg.style.display = 'block';
+});
+</script>
+{% endblock %}

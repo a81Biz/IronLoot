@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="{% block meta_description %}IronLoot — Plataforma de subastas en línea{% endblock %}">
+  <title>{% block title %}IronLoot{% endblock %}</title>
+  <link rel="stylesheet" href="/css/base.css">
+  {% block head_extra %}{% endblock %}
+</head>
+<body>
+  <header class="site-header">
+    <nav class="nav-container">
+      <a href="/" class="nav-brand">⚡ IronLoot</a>
+      <div class="nav-links">
+        <a href="/auctions" class="nav-link">Subastas</a>
+        <a href="/about" class="nav-link">Acerca de</a>
+      </div>
+      <div class="nav-auth">
+        <a href="/auth/login" class="btn btn-ghost">Iniciar sesión</a>
+        <a href="/auth/register" class="btn btn-primary">Registrarse</a>
+      </div>
+    </nav>
+  </header>
+
+  <main class="main-content">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-brand">
+        <span>⚡ IronLoot</span>
+        <p>Plataforma de subastas transparente y segura.</p>
+      </div>
+      <div class="footer-links">
+        <a href="/about">Acerca de</a>
+        <a href="/static/terms">Términos</a>
+        <a href="/privacy">Privacidad</a>
+      </div>
+    </div>
+    <p class="footer-copy">&copy; 2026 IronLoot. Todos los derechos reservados.</p>
+  </footer>
+
+  {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,44 @@
+{% extends "layouts/admin.html" %}
+
+{% block content %}
+{% if saved %}
+<div class="alert alert-success">
+  <span class="material-symbols-outlined">check_circle</span> Configuración CFDI guardada.
+</div>
+{% endif %}
+
+<div class="section-card">
+  <h3 class="card-title">Configuración del PAC (Proveedor Autorizado de Certificación)</h3>
+  <div class="alert alert-info">
+    <span class="material-symbols-outlined">info</span>
+    La integración con PAC requiere seleccionar e instalar una librería CFDI 4.0 compatible.
+    Consulta la tarea 84-85 en PENDING_TASKS.md antes de activar la generación de CFDIs.
+  </div>
+
+  <form action="/configuration/cfdi" method="POST">
+    <div class="form-grid">
+      <div class="form-group">
+        <label>RFC Emisor</label>
+        <input type="text" name="rfcEmisor" value="{{ config.rfcEmisor or '' }}"
+               class="form-input" placeholder="XAXX010101000" maxlength="13">
+      </div>
+      <div class="form-group">
+        <label>URL del PAC</label>
+        <input type="url" name="pacUrl" value="{{ config.pacUrl or '' }}"
+               class="form-input" placeholder="https://pac.ejemplo.com/api">
+      </div>
+      <div class="form-group">
+        <label>API Key del PAC</label>
+        <input type="password" name="pacApiKey" value=""
+               class="form-input" placeholder="Dejar vacío para no cambiar">
+        <span class="form-hint">El valor actual está enmascarado por seguridad</span>
+      </div>
+    </div>
+    <div class="form-actions mt-4">
+      <button type="submit" class="btn btn-primary">
+        <span class="material-symbols-outlined">save</span> Guardar configuración PAC
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

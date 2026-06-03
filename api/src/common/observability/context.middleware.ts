@@ -3,8 +3,11 @@ import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { RequestContextService } from './request-context.service';
 
-// Header name for trace ID
+// Header names for observability
 const TRACE_ID_HEADER = 'x-trace-id';
+const REQUEST_ID_HEADER = 'x-request-id';
+const CORRELATION_ID_HEADER = 'x-correlation-id';
+const AUDIT_ID_HEADER = 'x-audit-id';
 
 /**
  * Extend Express Request to include our properties
@@ -38,7 +41,7 @@ export class ContextMiddleware implements NestMiddleware {
   constructor(private readonly requestContext: RequestContextService) {}
 
   use(req: Request, res: Response, next: NextFunction): void {
-    // Get or generate trace ID
+    // Get or generate trace ID (existing behaviour — unchanged)
     const traceId = this.getOrCreateTraceId(req);
 
     // Attach to request object for easy access
@@ -46,6 +49,11 @@ export class ContextMiddleware implements NestMiddleware {
 
     // Add to response headers
     res.setHeader(TRACE_ID_HEADER, traceId);
+
+    // Cross-service observability headers (propagate if present, generate if absent)
+    res.setHeader(REQUEST_ID_HEADER, this.getOrCreate(req, REQUEST_ID_HEADER));
+    res.setHeader(CORRELATION_ID_HEADER, this.getOrCreate(req, CORRELATION_ID_HEADER));
+    res.setHeader(AUDIT_ID_HEADER, this.getOrCreate(req, AUDIT_ID_HEADER));
 
     // Create context
     const context = this.requestContext.createContext(traceId, {
@@ -71,6 +79,17 @@ export class ContextMiddleware implements NestMiddleware {
       return headerValue;
     }
 
+    return uuidv4();
+  }
+
+  /**
+   * Get header value from request or generate a new UUID
+   */
+  private getOrCreate(req: Request, header: string): string {
+    const value = req.headers[header];
+    if (value && typeof value === 'string' && this.isValidTraceId(value)) {
+      return value;
+    }
     return uuidv4();
   }
 

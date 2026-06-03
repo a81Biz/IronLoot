@@ -1,11 +1,14 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../database/prisma.service';
-
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { WalletService } from '../wallet/wallet.service';
 import { AuctionStatus, OrderStatus, NotificationType } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { DistributedLockService } from '../../common/redis/distributed-lock.service';
+import { SystemConfigService } from '../system-config/system-config.service';
+// PT-013: Domain events from @ironloot/core
+import { AuctionClosedEvent } from '@ironloot/core';
 
 @Injectable()
 export class AuctionSchedulerService {
@@ -26,6 +29,8 @@ export class AuctionSchedulerService {
     private readonly walletService: WalletService,
     private readonly notificationsService: NotificationsService,
     private readonly distributedLockService: DistributedLockService,
+    private readonly systemConfig: SystemConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -37,7 +42,10 @@ export class AuctionSchedulerService {
 
     // CRITICAL: Acquire distributed lock before closing auctions
     // Prevents race conditions in multi-instance deployments
-    const closeLock = await this.distributedLockService.acquireLock('lock:auction-close', this.lockTtl);
+    const closeLock = await this.distributedLockService.acquireLock(
+      'lock:auction-close',
+      this.lockTtl,
+    );
     if (!closeLock) {
       this.logger.log('auction-close: lock held by another instance, skipping');
       return;
@@ -55,7 +63,10 @@ export class AuctionSchedulerService {
       throw error;
     } finally {
       // Always release lock, even if execution fails
-      const released = await this.distributedLockService.releaseLock('lock:auction-close', closeLock);
+      const released = await this.distributedLockService.releaseLock(
+        'lock:auction-close',
+        closeLock,
+      );
       if (!released) {
         this.logger.warn('auction-close: lock release failed (possibly expired and reacquired)');
       } else {
@@ -65,11 +76,11 @@ export class AuctionSchedulerService {
   }
 
   /**
-   * Published -> Active
+   * Published -> Active (excludes PENDING_MODERATION)
    */
   async startScheduledAuctions() {
     const now = new Date();
-    const result = await this.prisma.auction.updateMany({
+    const result = await (this.prisma.auction as any).updateMany({
       where: {
         status: AuctionStatus.PUBLISHED,
         startsAt: { lte: now },
@@ -82,6 +93,10 @@ export class AuctionSchedulerService {
     if (result.count > 0) {
       this.logger.log(`Started ${result.count} auctions`);
     }
+  }
+
+  async getSoftCloseWindowSec(): Promise<number> {
+    return this.systemConfig.getNumber('AUCTION_SOFT_CLOSE_WINDOW_SEC', 120);
   }
 
   /**
@@ -235,6 +250,23 @@ export class AuctionSchedulerService {
             // TODO: Admin alert mechanism
           }
         }
+      // PT-013: Emit domain event via EventEmitter2 after auction close
+      // This satisfies CORE architecture requirement (AC-M3) without removing existing direct calls
+      try {
+        const winningBid = auction.bids[0];
+        const closedEvent: AuctionClosedEvent = {
+          eventName: 'auction.closed',
+          auctionId: auction.id,
+          winnerId: winningBid?.bidderId ?? null,
+          winningBidId: winningBid?.id ?? null,
+          finalPrice: winningBid ? Number(winningBid.amount) : null,
+          occurredAt: new Date(),
+        };
+        this.eventEmitter.emit('auction.closed', closedEvent);
+      } catch (emitError) {
+        this.logger.warn(`Failed to emit auction.closed event for ${auction.id}`, emitError);
+      }
+
       } catch (error) {
         this.logger.error(`Failed to close auction ${auction.id}`, error);
       }

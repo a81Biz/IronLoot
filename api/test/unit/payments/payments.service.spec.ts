@@ -5,6 +5,7 @@ import { PaymentsService } from '../../../src/modules/payments/payments.service'
 import { MercadoPagoProvider } from '../../../src/modules/payments/providers/mercadopago.provider';
 import { PaypalProvider } from '../../../src/modules/payments/providers/paypal.provider';
 import { StripeProvider } from '../../../src/modules/payments/providers/stripe.provider';
+import { HeyBancoProvider } from '../../../src/modules/payments/providers/heybanco.provider';
 import { PrismaService } from '../../../src/database/prisma.service';
 import { WalletService } from '../../../src/modules/wallet/wallet.service';
 
@@ -64,6 +65,15 @@ describe('PaymentsService', () => {
             createPayment: jest
               .fn()
               .mockResolvedValue({ externalId: 'sess_123', redirectUrl: 'http://stripe.com' }),
+          },
+        },
+        {
+          provide: HeyBancoProvider,
+          useValue: {
+            checkStatus: jest.fn().mockReturnValue(true),
+            createPayment: jest
+              .fn()
+              .mockResolvedValue({ externalId: 'hb_123', redirectUrl: 'http://heybanco.com' }),
           },
         },
       ],

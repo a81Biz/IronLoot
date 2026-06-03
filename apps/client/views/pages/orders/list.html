@@ -1,0 +1,28 @@
+{% extends "layouts/client.html" %}
+{% block title %}Mis órdenes — IronLoot{% endblock %}
+{% block page_title %}Mis órdenes{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="table-responsive">
+    <table>
+      <thead><tr><th>Orden</th><th>Subasta</th><th>Monto</th><th>Estado</th><th>Fecha</th><th></th></tr></thead>
+      <tbody>
+        {% if orders and orders.items %}
+          {% for order in orders.items %}
+          <tr>
+            <td><code>{{ order.id[:8] }}…</code></td>
+            <td>{{ order.auction.title | default('—') }}</td>
+            <td>MXN {{ order.totalAmount }}</td>
+            <td><span class="badge badge-info">{{ order.status }}</span></td>
+            <td>{{ order.createdAt }}</td>
+            <td><a href="/orders/{{ order.id }}" class="btn btn-sm btn-ghost">Detalle</a></td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="6" class="text-center text-muted">Sin órdenes registradas.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

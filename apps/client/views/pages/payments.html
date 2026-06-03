@@ -1,0 +1,26 @@
+{% extends "layouts/client.html" %}
+{% block title %}Mis pagos — IronLoot{% endblock %}
+{% block page_title %}Mis pagos{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="table-responsive">
+    <table>
+      <thead><tr><th>Fecha</th><th>Tipo</th><th>Monto</th><th>Estado</th></tr></thead>
+      <tbody>
+        {% if history and history.transactions %}
+          {% for tx in history.transactions %}
+          <tr>
+            <td>{{ tx.createdAt }}</td>
+            <td>{{ tx.type }}</td>
+            <td>MXN {{ tx.amount }}</td>
+            <td><span class="badge badge-success">{{ tx.status }}</span></td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="4" class="text-center text-muted">Sin pagos registrados.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

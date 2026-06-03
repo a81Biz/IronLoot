@@ -32,13 +32,25 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { UploadModule } from './modules/upload/upload.module';
-import { WebViewsModule } from './modules/web-views/web-views.module';
+// WebViewsModule removed in PT-013 G6 — migrated to apps/base/ and apps/client/
 import { WatchlistModule } from './modules/watchlist/watchlist.module';
 import { SystemCleanupModule } from './modules/system-cleanup/system-cleanup.module';
 import { AdminModule } from './modules/admin/admin.module';
+import { SystemConfigModule } from './modules/system-config/system-config.module';
+import { CommissionsModule } from './modules/commissions/commissions.module';
+import { KycModule } from './modules/kyc/kyc.module';
+import { CfdiModule } from './modules/cfdi/cfdi.module';
+import { RefundsModule } from './modules/refunds/refunds.module';
+import { SeoModule } from './modules/seo/seo.module';
+import { CmsModule } from './modules/cms/cms.module';
+import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
 @Module({
   imports: [
+    // Domain events bus (PT-013: scheduler uses this to emit AuctionClosedEvent)
+    EventEmitterModule.forRoot(),
+
     // Configuration module (loads .env and validates)
     ConfigModule.forRoot({
       isGlobal: true,
@@ -95,10 +107,18 @@ import { AdminModule } from './modules/admin/admin.module';
     NotificationsModule,
     WalletModule,
     UploadModule,
-    WebViewsModule,
     WatchlistModule,
     SystemCleanupModule,
+    // WebViewsModule removed — PT-013 G6 (deprecated routes migrated to apps/base/ and apps/client/)
     AdminModule,
+    SystemConfigModule,
+    CommissionsModule,
+    KycModule,
+    CfdiModule,
+    RefundsModule,
+    SeoModule,
+    CmsModule,
+    FeatureFlagsModule,
 
     // Serve Static Uploads
     ServeStaticModule.forRoot({

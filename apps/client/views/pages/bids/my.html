@@ -1,0 +1,29 @@
+{% extends "layouts/client.html" %}
+{% block title %}Mis ofertas — IronLoot{% endblock %}
+{% block page_title %}Mis ofertas{% endblock %}
+{% block content %}
+<div class="card">
+  <div class="table-responsive">
+    <table>
+      <thead><tr><th>Subasta</th><th>Mi oferta</th><th>Precio actual</th><th>Estado</th></tr></thead>
+      <tbody>
+        {% if bids and bids.items %}
+          {% for bid in bids.items %}
+          <tr>
+            <td>{{ bid.auction.title | default(bid.auctionId) }}</td>
+            <td>MXN {{ bid.amount }}</td>
+            <td>MXN {{ bid.auction.currentPrice | default('—') }}</td>
+            <td>
+              {% if bid.isWinning %}<span class="badge badge-success">Ganando</span>
+              {% else %}<span class="badge badge-warning">Superada</span>{% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="4" class="text-center text-muted">Aún no has hecho ninguna oferta.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
