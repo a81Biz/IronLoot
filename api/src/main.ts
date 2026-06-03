@@ -33,13 +33,10 @@ async function bootstrap(): Promise<void> {
     .map((o) => o.trim())
     .filter(Boolean);
 
+  // If ALLOWED_ORIGINS is set, enforce it in all environments (matches WS gateway behavior).
+  // Empty ALLOWED_ORIGINS falls back to true (allow all) for local dev without .env.
   app.enableCors({
-    origin:
-      env === 'production' && allowedOrigins.length > 0
-        ? allowedOrigins
-        : env === 'development'
-          ? true
-          : (config.get('CORS_ORIGIN') ?? true),
+    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
     credentials: true,
   });
 

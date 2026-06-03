@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiSecurity } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
 import { AdminService } from './admin.service';
 import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
 import { Public } from '../auth/decorators';
@@ -27,6 +28,7 @@ import { RefundStatus, CmsContentType } from '@prisma/client';
 @ApiSecurity('x-admin-key')
 @UseGuards(AdminApiKeyGuard)
 @Public()
+@SkipThrottle()
 @Controller('admin')
 export class AdminController {
   constructor(
