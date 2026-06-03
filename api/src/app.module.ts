@@ -32,7 +32,6 @@ import { ServeStaticModule } from '@nestjs/serve-static';
 import { join } from 'path';
 import { WalletModule } from './modules/wallet/wallet.module';
 import { UploadModule } from './modules/upload/upload.module';
-// WebViewsModule removed in PT-013 G6 — migrated to apps/base/ and apps/client/
 import { WatchlistModule } from './modules/watchlist/watchlist.module';
 import { SystemCleanupModule } from './modules/system-cleanup/system-cleanup.module';
 import { AdminModule } from './modules/admin/admin.module';
@@ -109,7 +108,6 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
     UploadModule,
     WatchlistModule,
     SystemCleanupModule,
-    // WebViewsModule removed — PT-013 G6 (deprecated routes migrated to apps/base/ and apps/client/)
     AdminModule,
     SystemConfigModule,
     CommissionsModule,

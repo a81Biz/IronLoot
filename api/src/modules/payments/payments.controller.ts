@@ -11,6 +11,7 @@ import {
 } from '@nestjs/common';
 
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards';
 import { CurrentUser, AuthenticatedUser } from '../auth/decorators';
 import { PaymentsService } from './payments.service';
@@ -42,6 +43,7 @@ export class PaymentsController {
   }
 
   @Post('webhook/:provider')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Webhook endpoint', description: 'Receive payment updates' })
   @Log()
   async webhook(
