@@ -1,5 +1,5 @@
-import { Controller, Get, Param, Query, Render, Req, UseGuards } from '@nestjs/common';
-import { Request } from 'express';
+import { Controller, Get, Param, Query, Render, Req, Res, UseGuards } from '@nestjs/common';
+import { Request, Response } from 'express';
 import { ClientAuthGuard } from './common/guards/client-auth.guard';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
@@ -29,12 +29,19 @@ export class AppController {
   @Render('pages/dashboard.html')
   async dashboard(@Req() req: Request) {
     const token = getToken(req);
-    const [profile, bids, auctions] = await Promise.all([
+    const [profile, wallet, bids, auctions] = await Promise.all([
       apiGet(token, '/api/v1/users/me'),
+      apiGet(token, '/api/v1/wallet'),
       apiGet(token, '/api/v1/bids/my?limit=5'),
       apiGet(token, '/api/v1/auctions?status=ACTIVE&limit=6'),
     ]);
-    return { profile, bids, auctions, apiUrl: API_URL, baseUrl: BASE_URL };
+    return { profile, wallet, bids, auctions, apiUrl: API_URL, baseUrl: BASE_URL };
+  }
+
+  @Get('/auth/logout')
+  logout(@Res() res: Response): void {
+    res.clearCookie('access_token');
+    res.redirect(`${BASE_URL}/auth/login`);
   }
 
   @Get('/profile')
