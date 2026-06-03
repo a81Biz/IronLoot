@@ -125,6 +125,8 @@ services:
       - ./api/package.json:/app/package.json
       - ./api/tsconfig.json:/app/tsconfig.json
       - ./api/nest-cli.json:/app/nest-cli.json
+      # @ironloot/core workspace package — mounted so the entrypoint can symlink it
+      - ./packages/core:/packages/core
       # Exclude node_modules to use container's version
       - /app/node_modules
     depends_on:

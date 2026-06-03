@@ -250,23 +250,22 @@ export class AuctionSchedulerService {
             // TODO: Admin alert mechanism
           }
         }
-      // PT-013: Emit domain event via EventEmitter2 after auction close
-      // This satisfies CORE architecture requirement (AC-M3) without removing existing direct calls
-      try {
-        const winningBid = auction.bids[0];
-        const closedEvent: AuctionClosedEvent = {
-          eventName: 'auction.closed',
-          auctionId: auction.id,
-          winnerId: winningBid?.bidderId ?? null,
-          winningBidId: winningBid?.id ?? null,
-          finalPrice: winningBid ? Number(winningBid.amount) : null,
-          occurredAt: new Date(),
-        };
-        this.eventEmitter.emit('auction.closed', closedEvent);
-      } catch (emitError) {
-        this.logger.warn(`Failed to emit auction.closed event for ${auction.id}`, emitError);
-      }
-
+        // PT-013: Emit domain event via EventEmitter2 after auction close
+        // This satisfies CORE architecture requirement (AC-M3) without removing existing direct calls
+        try {
+          const winningBid = auction.bids[0];
+          const closedEvent: AuctionClosedEvent = {
+            eventName: 'auction.closed',
+            auctionId: auction.id,
+            winnerId: winningBid?.bidderId ?? null,
+            winningBidId: winningBid?.id ?? null,
+            finalPrice: winningBid ? Number(winningBid.amount) : null,
+            occurredAt: new Date(),
+          };
+          this.eventEmitter.emit('auction.closed', closedEvent);
+        } catch (emitError) {
+          this.logger.warn(`Failed to emit auction.closed event for ${auction.id}`, emitError);
+        }
       } catch (error) {
         this.logger.error(`Failed to close auction ${auction.id}`, error);
       }

@@ -26,15 +26,13 @@
 
 {% block scripts %}
 <script>
-const API = '{{ apiUrl }}';
-const CLIENT = '{{ clientUrl }}';
 document.getElementById('registerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const errEl = document.getElementById('registerError');
   errEl.style.display = 'none';
   const body = { username: e.target.username.value, email: e.target.email.value, password: e.target.password.value };
   try {
-    const res = await fetch(API + '/api/v1/auth/register', {
+    const res = await fetch('/api/v1/auth/register', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body), credentials: 'include',
     });

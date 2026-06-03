@@ -26,7 +26,6 @@
 
 {% block scripts %}
 <script>
-const API = '{{ apiUrl }}';
 const CLIENT = '{{ clientUrl }}';
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -34,7 +33,7 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
   errEl.style.display = 'none';
   const body = { email: e.target.email.value, password: e.target.password.value };
   try {
-    const res = await fetch(API + '/api/v1/auth/login', {
+    const res = await fetch('/api/v1/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),

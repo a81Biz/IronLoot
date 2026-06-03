@@ -24,6 +24,23 @@ fi
 echo "✅ Database is ready!"
 echo ""
 
+# Link @ironloot/core from monorepo workspace mount (PT-019 fix)
+# packages/core is mounted at /packages/core via docker-compose volume
+if [ -d "/packages/core" ]; then
+  echo "🔄 Linking @ironloot/core workspace package..."
+  mkdir -p /app/node_modules/@ironloot
+  # Build core if dist doesn't exist yet
+  if [ ! -f "/packages/core/dist/index.js" ]; then
+    echo "  Building packages/core..."
+    cd /packages/core && npm install --ignore-scripts && npm run build && cd /app
+  fi
+  ln -sfn /packages/core /app/node_modules/@ironloot/core
+  echo "✅ @ironloot/core linked!"
+else
+  echo "⚠️ /packages/core not found — @ironloot/core will not be available"
+fi
+echo ""
+
 # CRITICAL: Generate Prisma client (required after volume mount)
 echo "🔄 Generating Prisma client..."
 npx prisma generate

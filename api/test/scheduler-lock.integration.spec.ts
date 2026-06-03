@@ -1,7 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
 import { DistributedLockService } from '../src/common/redis/distributed-lock.service';
-import { PrismaService } from '../src/database/prisma.service';
 import Redis from 'ioredis';
 
 /**

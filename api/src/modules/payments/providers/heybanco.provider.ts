@@ -1,3 +1,4 @@
+import { createHmac } from 'crypto';
 import { Injectable, Logger } from '@nestjs/common';
 import {
   PaymentProvider,
@@ -136,9 +137,7 @@ export class HeyBancoProvider implements PaymentProvider {
         throw new Error('Missing webhook signature');
       }
 
-      const crypto = require('crypto');
-      const expected = crypto
-        .createHmac('sha256', this.webhookSecret)
+      const expected = createHmac('sha256', this.webhookSecret)
         .update(JSON.stringify(p))
         .digest('hex');
 

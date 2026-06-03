@@ -13,10 +13,7 @@ import {
 import { CreateAuctionDto, UpdateAuctionDto, AuctionResponseDto } from './dto';
 import { nanoid } from 'nanoid';
 import { SystemConfigService } from '../system-config/system-config.service';
-import {
-  AuctionStateMachine,
-  AuctionStatus as CoreAuctionStatus,
-} from '@ironloot/core';
+import { AuctionStateMachine, AuctionStatus as CoreAuctionStatus } from '@ironloot/core';
 
 @Injectable()
 export class AuctionsService {
@@ -194,10 +191,12 @@ export class AuctionsService {
 
     // Use AuctionStateMachine from @ironloot/core: only DRAFT auctions can receive edits
     // (they are in the process of being published, so DRAFT → PUBLISHED is the next step).
-    if (!AuctionStateMachine.canTransition(
-      auction.status as unknown as CoreAuctionStatus,
-      CoreAuctionStatus.PUBLISHED,
-    )) {
+    if (
+      !AuctionStateMachine.canTransition(
+        auction.status as unknown as CoreAuctionStatus,
+        CoreAuctionStatus.PUBLISHED,
+      )
+    ) {
       throw new ValidationException('Cannot update auction unless it is in DRAFT state');
     }
 
@@ -229,10 +228,12 @@ export class AuctionsService {
     }
 
     // Use AuctionStateMachine from @ironloot/core to validate the DRAFT → PUBLISHED transition.
-    if (!AuctionStateMachine.canTransition(
-      auction.status as unknown as CoreAuctionStatus,
-      CoreAuctionStatus.PUBLISHED,
-    )) {
+    if (
+      !AuctionStateMachine.canTransition(
+        auction.status as unknown as CoreAuctionStatus,
+        CoreAuctionStatus.PUBLISHED,
+      )
+    ) {
       throw new ValidationException('Auction is not in DRAFT state');
     }
 

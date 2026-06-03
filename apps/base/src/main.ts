@@ -50,6 +50,8 @@ async function bootstrap() {
     createProxyMiddleware({
       target: apiTarget,
       changeOrigin: true,
+      // Express strips '/api' prefix before passing to middleware, so we add it back
+      pathRewrite: { '^/': '/api/' },
       selfHandleResponse: true,
       on: {
         proxyReq: (proxyReq, req) => {

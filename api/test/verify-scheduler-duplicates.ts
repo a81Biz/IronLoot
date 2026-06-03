@@ -13,7 +13,7 @@
  *   1 = Duplicates detected, test FAILED
  */
 
-import { PrismaClient, AuditEventType } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 
 async function verifyNoDuplicates() {
   const prisma = new PrismaClient();
@@ -26,22 +26,21 @@ async function verifyNoDuplicates() {
 
     const auditEvents = await prisma.auditEvent.findMany({
       where: {
-        type: AuditEventType.AUCTION_CLOSED,
-        timestamp: { gte: oneHourAgo },
+        eventType: 'auction.closed',
+        createdAt: { gte: oneHourAgo },
       },
       select: {
         id: true,
-        type: true,
+        eventType: true,
         entityId: true,
         entityType: true,
-        userId: true,
-        action: true,
-        timestamp: true,
+        actorUserId: true,
+        createdAt: true,
       },
-      orderBy: { timestamp: 'asc' },
+      orderBy: { createdAt: 'asc' },
     });
 
-    console.log(`📊 Found ${auditEvents.length} AUCTION_CLOSED events in past 1 hour\n`);
+    console.log(`📊 Found ${auditEvents.length} auction.closed events in past 1 hour\n`);
 
     if (auditEvents.length === 0) {
       console.log('ℹ️  No auction closure events found. Test inconclusive.');
@@ -66,7 +65,7 @@ async function verifyNoDuplicates() {
       if (events.length > 1) {
         console.log(`❌ DUPLICATE: Auction ${auctionId} has ${events.length} closure events:`);
         events.forEach((e, i) => {
-          console.log(`   Event ${i + 1}: ${e.timestamp.toISOString()}`);
+          console.log(`   Event ${i + 1}: ${e.createdAt.toISOString()}`);
         });
         console.log('');
         duplicates.push({ auctionId, count: events.length, events });
@@ -98,6 +97,6 @@ async function verifyNoDuplicates() {
 }
 
 // Run verification
-verifyNoDuplicates().then((result) => {
+void verifyNoDuplicates().then((result) => {
   process.exit(result.passed ? 0 : 1);
 });

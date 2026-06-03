@@ -849,7 +849,15 @@ export class AdminService {
       where: { id: disputeId },
       include: {
         creator: { select: { id: true, email: true, username: true } },
-        order: { select: { id: true, totalAmount: true, status: true, buyer: { select: { email: true } }, seller: { select: { email: true } } } },
+        order: {
+          select: {
+            id: true,
+            totalAmount: true,
+            status: true,
+            buyer: { select: { email: true } },
+            seller: { select: { email: true } },
+          },
+        },
       },
     });
   }

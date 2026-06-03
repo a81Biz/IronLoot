@@ -16,7 +16,12 @@ export class RefundsService {
     if (!order) throw new NotFoundException(`Order ${orderId} not found`);
     if (order.refundRequest) throw new BadRequestException('Refund already exists for this order');
 
-    if (!OrderStateMachine.canTransition(order.status as unknown as CoreOrderStatus, CoreOrderStatus.REFUNDED)) {
+    if (
+      !OrderStateMachine.canTransition(
+        order.status as unknown as CoreOrderStatus,
+        CoreOrderStatus.REFUNDED,
+      )
+    ) {
       throw new BadRequestException(`Order cannot be refunded from status: ${order.status}`);
     }
 

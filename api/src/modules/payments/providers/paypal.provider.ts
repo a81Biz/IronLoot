@@ -80,8 +80,7 @@ export class PaypalProvider implements PaymentProvider {
     ).toString();
 
     const mode = process.env.PAYPAL_MODE || 'sandbox';
-    const ipnHost =
-      mode === 'production' ? 'ipnpb.paypal.com' : 'ipnpb.sandbox.paypal.com';
+    const ipnHost = mode === 'production' ? 'ipnpb.paypal.com' : 'ipnpb.sandbox.paypal.com';
 
     // Use CORE to build the verification payload; provider executes the HTTP POST.
     const verificationPayload = buildIpnVerificationPayload(rawBody);
@@ -124,7 +123,9 @@ export class PaypalProvider implements PaymentProvider {
 
       const req = https.request(options, (res) => {
         let data = '';
-        res.on('data', (chunk: string) => { data += chunk; });
+        res.on('data', (chunk: string) => {
+          data += chunk;
+        });
         res.on('end', () => resolve(data));
       });
 

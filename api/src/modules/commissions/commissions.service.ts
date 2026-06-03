@@ -34,7 +34,7 @@ export class CommissionsService {
     this.logger.log(`Commission calculated for order ${orderId}: ${amount} MXN (${rate}%)`);
   }
 
-  private async resolveRate(sellerId: string, auctionId?: string): Promise<Decimal> {
+  private async resolveRate(sellerId: string, _auctionId?: string): Promise<Decimal> {
     const sellerOverride = await (this.prisma as any).commissionConfig.findFirst({
       where: { type: 'SELLER', referenceId: sellerId },
     });

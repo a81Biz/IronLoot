@@ -180,11 +180,7 @@ export class WalletService {
       // Use WalletCalculation from @ironloot/core to validate fund availability.
       // wallet.balance stores the available (spendable) balance; heldFunds are tracked separately.
       if (!WalletCalculation.canLockFunds(currentBalance.toNumber(), 0, amount)) {
-        throw new InsufficientBalanceException(
-          userId,
-          amount,
-          currentBalance.toNumber(),
-        );
+        throw new InsufficientBalanceException(userId, amount, currentBalance.toNumber());
       }
 
       const newBalance = currentBalance.minus(amountDecimal);
