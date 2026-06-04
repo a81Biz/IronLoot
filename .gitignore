@@ -242,6 +242,9 @@ Zone.identifier
 !.vscode/extensions.json
 !.vscode/settings.json
 
+QA/
+.graphify_*
+
 # =====================================================
 # END OF GITIGNORE
 # =====================================================

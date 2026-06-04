@@ -4,6 +4,7 @@ import { ClientAuthGuard } from './common/guards/client-auth.guard';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5174';
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
 
 async function apiGet<T>(token: string, path: string): Promise<T | null> {
   try {
@@ -40,7 +41,7 @@ export class AppController {
 
   @Get('/auth/logout')
   logout(@Res() res: Response): void {
-    res.clearCookie('access_token');
+    res.clearCookie('access_token', { domain: COOKIE_DOMAIN, path: '/' });
     res.redirect(`${BASE_URL}/auth/login`);
   }
 

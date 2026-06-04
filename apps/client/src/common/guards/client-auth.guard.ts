@@ -4,6 +4,7 @@ import * as jwt from 'jsonwebtoken';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5174';
 const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
+const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
 
 @Injectable()
 export class ClientAuthGuard implements CanActivate {
@@ -22,7 +23,7 @@ export class ClientAuthGuard implements CanActivate {
       (req as any).user = payload;
       return true;
     } catch {
-      res.clearCookie('access_token');
+      res.clearCookie('access_token', { domain: COOKIE_DOMAIN, path: '/' });
       res.redirect(`${BASE_URL}/auth/login`);
       return false;
     }
