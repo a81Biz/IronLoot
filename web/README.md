@@ -1,5 +1,16 @@
 # Iron Loot - Web Frontend
 
+> **⚠️ CONGELADO — No modificar.**
+>
+> Este servicio fue congelado el **2026-06-03** como parte de la migración arquitectónica PT-025 (Fase 7 Estabilización).
+>
+> El tráfico fue migrado a:
+> - **Sitio público**: `http://base.ironloot.local` (`apps/base/`, port 5174)
+> - **Portal privado**: `http://client.ironloot.local` (`apps/client/`, port 5175)
+>
+> Este directorio se mantiene como referencia histórica de la arquitectura v0.x.
+> Los nuevos desarrollos deben realizarse en `apps/base/` y `apps/client/`.
+
 Frontend de la plataforma de subastas Iron Loot.
 
 ## 🛠️ Desarrollo Local
