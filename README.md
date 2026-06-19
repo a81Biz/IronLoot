@@ -68,7 +68,9 @@ IronLoot corre como cinco contenedores Docker independientes, más infraestructu
 | **Redis** | Cache y sesiones | 6379 | — |
 | **Mailhog** | Servidor SMTP para captura de emails de prueba | 8025 (UI) / 1025 (SMTP) | — |
 
-> **CORE** (`packages/core/`) es una librería TypeScript compartida, no tiene puerto ni contenedor propio.
+> **CORE** (`src/packages/core/`) es una librería TypeScript compartida, no tiene puerto ni contenedor propio.
+>
+> **Nota de estructura (2026-06-19):** todo el código de aplicación vive bajo `src/` (`src/api`, `src/apps`, `src/admin`, `src/packages`, `src/nginx`). La documentación queda en la raíz (`docs/`, `implementation/`). El frontend legacy `web/` fue retirado (tráfico ya migrado a BASE/CLIENT).
 
 ---
 
@@ -724,7 +726,7 @@ Una vez dentro, registrar el servidor con los parámetros de la sección anterio
 Desde la máquina anfitriona, si Node.js está instalado:
 
 ```bash
-cd api
+cd src/api
 npm run db:studio
 ```
 

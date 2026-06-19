@@ -1,7 +1,7 @@
 services:
   # ===========================================
   # Nginx Reverse Proxy (subdomains)
-  # localhost        → web:5173
+  # localhost        → base:5174  (web/ legacy retirado)
   # api.localhost    → api:3000
   # admin.localhost  → admin:3001
   # base.localhost   → base:5174  (PT-015 activated)
@@ -9,13 +9,12 @@ services:
   # ===========================================
   nginx:
     build:
-      context: ./nginx
+      context: ./src/nginx
       dockerfile: Dockerfile
     container_name: ironloot-nginx
     ports:
       - "80:80"
     depends_on:
-      - web
       - api
       - admin
       - base
@@ -29,7 +28,7 @@ services:
   # ===========================================
   admin:
     build:
-      context: ./admin
+      context: ./src/admin
       dockerfile: Dockerfile.dev
     container_name: ironloot-admin
     ports:
@@ -43,12 +42,12 @@ services:
       - ADMIN_PASSWORD=${ADMIN_PASSWORD:-admin}
       - ADMIN_SESSION_SECRET=${ADMIN_SESSION_SECRET:-admin-dev-secret-change-me}
     volumes:
-      - ./admin/src:/app/src
-      - ./admin/views:/app/views
-      - ./admin/public:/app/public
-      - ./admin/package.json:/app/package.json
-      - ./admin/tsconfig.json:/app/tsconfig.json
-      - ./admin/nest-cli.json:/app/nest-cli.json
+      - ./src/admin/src:/app/src
+      - ./src/admin/views:/app/views
+      - ./src/admin/public:/app/public
+      - ./src/admin/package.json:/app/package.json
+      - ./src/admin/tsconfig.json:/app/tsconfig.json
+      - ./src/admin/nest-cli.json:/app/nest-cli.json
       - /app/node_modules
     depends_on:
       - api
@@ -61,43 +60,11 @@ services:
     restart: unless-stopped
 
   # ===========================================
-  # Iron Loot Web (NestJS SSR)
-  # ===========================================
-  web:
-    build:
-      context: ./web
-      dockerfile: Dockerfile.dev
-    container_name: ironloot-web
-    ports:
-      - "${WEB_PORT:-5173}:5173"
-    environment:
-      - VITE_API_URL=http://api:3000
-    env_file:
-      - ./api/.env
-    volumes:
-      - ./web/src:/app/src
-      - ./web/public:/app/public
-      - ./web/views:/app/views
-      - ./web/package.json:/app/package.json
-      - ./web/tsconfig.json:/app/tsconfig.json
-      # Exclude node_modules
-      - /app/node_modules
-    depends_on:
-      - api
-    networks:
-      - ironloot-network
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-    restart: unless-stopped
-
-  # ===========================================
   # Iron Loot API (NestJS)
   # ===========================================
   api:
     build:
-      context: ./api
+      context: ./src/api
       dockerfile: Dockerfile.dev
     container_name: ironloot-api
     ports:
@@ -117,16 +84,16 @@ services:
       - MAIL_FROM="Iron Loot <noreply@ironloot.com>"
     # Load additional env vars from project .env into the container
     env_file:
-      - ./api/.env
+      - ./src/api/.env
     volumes:
-      - ./api/src:/app/src
-      - ./api/prisma:/app/prisma
-      - ./api/test:/app/test
-      - ./api/package.json:/app/package.json
-      - ./api/tsconfig.json:/app/tsconfig.json
-      - ./api/nest-cli.json:/app/nest-cli.json
+      - ./src/api/src:/app/src
+      - ./src/api/prisma:/app/prisma
+      - ./src/api/test:/app/test
+      - ./src/api/package.json:/app/package.json
+      - ./src/api/tsconfig.json:/app/tsconfig.json
+      - ./src/api/nest-cli.json:/app/nest-cli.json
       # @ironloot/core workspace package — mounted so the entrypoint can symlink it
-      - ./packages/core:/packages/core
+      - ./src/packages/core:/packages/core
       # Exclude node_modules to use container's version
       - /app/node_modules
     depends_on:
@@ -156,7 +123,7 @@ services:
       POSTGRES_DB: ${DB_NAME:-ironloot_db}
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./api/scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+      - ./src/api/scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
     networks:
       - ironloot-network
     healthcheck:
@@ -234,7 +201,7 @@ services:
   # ===========================================
   base:
     build:
-      context: ./apps/base
+      context: ./src/apps/base
       dockerfile: Dockerfile.dev
     container_name: ironloot-base
     ports:
@@ -244,15 +211,15 @@ services:
       - BASE_PORT=5174
       - API_URL=http://api:3000
       - CLIENT_URL=http://client.localhost
-      - COOKIE_DOMAIN=${COOKIE_DOMAIN:-localhost}
+      - COOKIE_DOMAIN=${COOKIE_DOMAIN}
       - COOKIE_SAMESITE=${COOKIE_SAMESITE:-Lax}
     volumes:
-      - ./apps/base/src:/app/src
-      - ./apps/base/views:/app/views
-      - ./apps/base/public:/app/public
-      - ./apps/base/package.json:/app/package.json
-      - ./apps/base/tsconfig.json:/app/tsconfig.json
-      - ./apps/base/nest-cli.json:/app/nest-cli.json
+      - ./src/apps/base/src:/app/src
+      - ./src/apps/base/views:/app/views
+      - ./src/apps/base/public:/app/public
+      - ./src/apps/base/package.json:/app/package.json
+      - ./src/apps/base/tsconfig.json:/app/tsconfig.json
+      - ./src/apps/base/nest-cli.json:/app/nest-cli.json
       - /app/node_modules
     depends_on:
       - api
@@ -270,7 +237,7 @@ services:
   # ===========================================
   client:
     build:
-      context: ./apps/client
+      context: ./src/apps/client
       dockerfile: Dockerfile.dev
     container_name: ironloot-client
     ports:
@@ -281,15 +248,15 @@ services:
       - API_URL=http://api:3000
       - BASE_URL=http://base.localhost
       - JWT_SECRET=${JWT_SECRET:-change-me-min-32-chars}
-      - COOKIE_DOMAIN=${COOKIE_DOMAIN:-localhost}
+      - COOKIE_DOMAIN=${COOKIE_DOMAIN}
       - COOKIE_SAMESITE=${COOKIE_SAMESITE:-Lax}
     volumes:
-      - ./apps/client/src:/app/src
-      - ./apps/client/views:/app/views
-      - ./apps/client/public:/app/public
-      - ./apps/client/package.json:/app/package.json
-      - ./apps/client/tsconfig.json:/app/tsconfig.json
-      - ./apps/client/nest-cli.json:/app/nest-cli.json
+      - ./src/apps/client/src:/app/src
+      - ./src/apps/client/views:/app/views
+      - ./src/apps/client/public:/app/public
+      - ./src/apps/client/package.json:/app/package.json
+      - ./src/apps/client/tsconfig.json:/app/tsconfig.json
+      - ./src/apps/client/nest-cli.json:/app/nest-cli.json
       - /app/node_modules
     depends_on:
       - api

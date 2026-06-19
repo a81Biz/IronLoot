@@ -4,7 +4,7 @@
 export PATH="/usr/local/bin:$PATH"
 
 # Run checks in api directory
-cd api
+cd src/api
 
 # Run lint-staged on staged files
 npx lint-staged
