@@ -21,6 +21,7 @@ import { CreateBidDto } from './dto';
 import { WalletService } from '../wallet/wallet.service';
 import { AuditPersistenceService } from '../audit/audit-persistence.service';
 import { AuctionsGateway } from '../auctions/auctions.gateway';
+import { SystemConfigService } from '../system-config/system-config.service';
 
 @Injectable()
 export class BidsService {
@@ -34,6 +35,7 @@ export class BidsService {
     private readonly notificationsService: NotificationsService,
     private readonly audit: AuditPersistenceService,
     private readonly auctionsGateway: AuctionsGateway,
+    private readonly systemConfigService: SystemConfigService,
   ) {
     this.log = this.logger.child('BidsService');
   }
@@ -95,16 +97,14 @@ export class BidsService {
       );
 
       // Variables for WebSocket (needs to be available outside tx)
-      const EXTENSION_MS = 5 * 60 * 1000;
+      const extensionMs =
+        (await this.systemConfigService.getNumber('AUCTION_SOFT_CLOSE_WINDOW_SEC', 120)) * 1000;
       let timeRemaining = 0;
       let newEndsAt = auction.endsAt;
 
-      // Calculate extension before tx/inside tx logic if needed, but for logging/events we need it out here.
-      // But `auction.endsAt` is fixed snapshot. `now` is fixed.
-      // So we can calculate it here safely since we hold the optimistic lock or just assume standard flow.
       timeRemaining = auction.endsAt.getTime() - now.getTime();
-      if (timeRemaining < EXTENSION_MS) {
-        newEndsAt = new Date(auction.endsAt.getTime() + EXTENSION_MS);
+      if (timeRemaining < extensionMs) {
+        newEndsAt = new Date(auction.endsAt.getTime() + extensionMs);
       }
 
       // 3. Database Transaction
@@ -171,7 +171,7 @@ export class BidsService {
         createdAt: result.createdAt,
       });
 
-      if (timeRemaining < EXTENSION_MS) {
+      if (timeRemaining < extensionMs) {
         this.auctionsGateway.emitAuctionExtended(auctionId, newEndsAt);
       }
 
