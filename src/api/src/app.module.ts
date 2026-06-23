@@ -1,6 +1,8 @@
 import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
+import Redis from 'ioredis';
 import { APP_GUARD } from '@nestjs/core';
 
 // Configuration
@@ -44,11 +46,24 @@ import { SeoModule } from './modules/seo/seo.module';
 import { CmsModule } from './modules/cms/cms.module';
 import { FeatureFlagsModule } from './modules/feature-flags/feature-flags.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
     // Domain events bus (PT-013: scheduler uses this to emit AuctionClosedEvent)
     EventEmitterModule.forRoot(),
+
+    // BullMQ — shared Redis connection (PT-038)
+    BullModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          host: config.get<string>('REDIS_HOST', 'localhost'),
+          port: config.get<number>('REDIS_PORT', 6379),
+          password: config.get<string>('REDIS_PASSWORD') || undefined,
+        },
+      }),
+    }),
 
     // Configuration module (loads .env and validates)
     ConfigModule.forRoot({
@@ -58,7 +73,7 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
       envFilePath: ['.env', '.env.local'],
     }),
 
-    // Rate limiting (global)
+    // Rate limiting (global) — Redis storage for shared counters across instances (PT-030)
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -68,6 +83,13 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
             limit: config.get<number>('RATE_LIMIT_MAX', 100),
           },
         ],
+        storage: new ThrottlerStorageRedisService(
+          new Redis({
+            host: config.get<string>('REDIS_HOST', 'localhost'),
+            port: config.get<number>('REDIS_PORT', 6379),
+            password: config.get<string>('REDIS_PASSWORD') || undefined,
+          }),
+        ),
       }),
     }),
 
