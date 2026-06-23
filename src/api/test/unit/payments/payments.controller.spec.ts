@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsController } from '../../../src/modules/payments/payments.controller';
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
-import { AuthenticatedUser } from '../../../src/modules/auth/decorators';
+import { AuthenticatedUser, Role } from '../../../src/modules/auth/decorators';
 import { InitiatePaymentDto } from '../../../src/modules/payments/dto/initiate-payment.dto';
 import { CreateCheckoutDto } from '../../../src/modules/payments/dto/create-checkout.dto';
 import { JwtAuthGuard } from '../../../src/modules/auth/guards/jwt-auth.guard';
@@ -21,6 +21,7 @@ describe('PaymentsController', () => {
     email: 'test@example.com',
     username: 'test',
     state: 'ACTIVE',
+    role: Role.USER,
     isSeller: false,
     emailVerified: true,
   };

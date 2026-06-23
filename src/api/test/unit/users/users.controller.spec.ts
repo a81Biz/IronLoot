@@ -3,6 +3,7 @@ import { UserState } from '@prisma/client';
 import { UsersController } from '@/modules/users/users.controller';
 import { UsersService } from '@/modules/users/users.service';
 import { JwtAuthGuard } from '@/modules/auth/guards/jwt-auth.guard';
+import { Role } from '@/modules/auth/decorators';
 
 describe('UsersController', () => {
   let controller: UsersController;
@@ -13,6 +14,7 @@ describe('UsersController', () => {
     email: 'test@example.com',
     username: 'testuser',
     state: UserState.ACTIVE,
+    role: Role.USER,
     isSeller: false,
     emailVerified: true,
     displayName: 'testuser',

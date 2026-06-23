@@ -34,7 +34,7 @@ import {
   UserResponseDto,
 } from './dto';
 import { Prisma } from '@prisma/client';
-import { JwtPayload, AuthenticatedUser } from './decorators';
+import { JwtPayload, AuthenticatedUser, Role } from './decorators';
 
 /**
  * AuthService
@@ -361,6 +361,7 @@ export class AuthService {
       email: user.email,
       username: user.username,
       state: user.state,
+      role: user.isSeller ? Role.SELLER : Role.USER,
       displayName: uDto.displayName,
       avatarUrl: uDto.avatarUrl,
       isSeller: uDto.isSeller,
@@ -636,12 +637,13 @@ export class AuthService {
       return null;
     }
 
-    // Map to AuthenticatedUser
+    // Map to AuthenticatedUser — role derived from isSeller (no role column in DB)
     return {
       id: user.id,
       email: user.email,
       username: user.username,
       state: user.state,
+      role: user.isSeller ? Role.SELLER : Role.USER,
       displayName: user.displayName || undefined,
       avatarUrl: user.avatarUrl || undefined,
       isSeller: user.isSeller,
@@ -693,6 +695,7 @@ export class AuthService {
       email: user.email,
       username: user.username,
       state: user.state,
+      role: user.isSeller ? Role.SELLER : Role.USER,
       displayName: dto.displayName,
       avatarUrl: dto.avatarUrl,
       isSeller: dto.isSeller,

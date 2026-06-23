@@ -63,6 +63,16 @@ export class PaymentsController {
     return this.paymentsService.initiatePayment(user.id, user.email, dto.amount, dto.provider);
   }
 
+  @Get('providers')
+  @ApiOperation({
+    summary: 'List available payment providers',
+    description: 'Returns only providers that are configured and active',
+  })
+  @ApiResponse({ status: 200, description: 'Array of enabled provider keys' })
+  getAvailableProviders(): { providers: string[] } {
+    return { providers: this.paymentsService.getAvailableProviders() };
+  }
+
   @Get('methods')
   @ApiOperation({
     summary: 'List Mercado Pago Payment Methods',

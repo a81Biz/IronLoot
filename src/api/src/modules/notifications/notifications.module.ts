@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { BullModule } from '@nestjs/bullmq';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -6,9 +7,13 @@ import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { EmailService } from './email.service';
 import { EventsGateway } from './events.gateway';
+import { NOTIFICATION_QUEUE } from './notification-queue.producer';
+import { NotificationQueueProducer } from './notification-queue.producer';
+import { NotificationQueueWorker } from './notification-queue.worker';
 
 @Module({
   imports: [
+    BullModule.registerQueue({ name: NOTIFICATION_QUEUE }),
     MailerModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -37,7 +42,13 @@ import { EventsGateway } from './events.gateway';
     }),
   ],
   controllers: [NotificationsController],
-  providers: [NotificationsService, EmailService, EventsGateway],
-  exports: [NotificationsService, EmailService, EventsGateway],
+  providers: [
+    NotificationsService,
+    EmailService,
+    EventsGateway,
+    NotificationQueueProducer,
+    NotificationQueueWorker,
+  ],
+  exports: [NotificationsService, EmailService, EventsGateway, NotificationQueueProducer],
 })
 export class NotificationsModule {}

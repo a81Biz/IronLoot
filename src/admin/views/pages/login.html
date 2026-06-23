@@ -40,6 +40,15 @@
             <input type="password" id="password" name="password" placeholder="••••••••" required>
           </div>
         </div>
+        {% if requiresTotp %}
+        <div class="form-group">
+          <label for="totp">Código TOTP</label>
+          <div class="input-wrap">
+            <span class="material-symbols-outlined input-icon">phonelink_lock</span>
+            <input type="text" id="totp" name="totp" placeholder="123456" maxlength="6" autocomplete="one-time-code" inputmode="numeric" required>
+          </div>
+        </div>
+        {% endif %}
         <button type="submit" class="btn btn-primary btn-block">
           <span class="material-symbols-outlined">login</span>
           Ingresar

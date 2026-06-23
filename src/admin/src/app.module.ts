@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { SharedModule } from './shared/shared.module';
 import { AuditModule } from './modules/audit/audit.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
@@ -22,6 +23,7 @@ import { AuctionsAdminModule } from './modules/auctions/auctions.module';
 
 @Module({
   imports: [
+    SharedModule,
     AuditModule,
     ReportsModule,
     NotificationsModule,

@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { UserState } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from '@modules/auth/auth.service';
+import { Role } from '@modules/auth/decorators';
 import { PrismaService } from '@/database/prisma.service';
 import {
   StructuredLogger,
@@ -221,6 +222,7 @@ describe('AuthService', () => {
         email: mockUser.email,
         username: mockUser.username,
         state: mockUser.state,
+        role: Role.USER,
         isSeller: mockUser.isSeller,
         emailVerified: !!mockUser.emailVerifiedAt,
       };
@@ -234,6 +236,7 @@ describe('AuthService', () => {
         email: mockUser.email,
         username: mockUser.username,
         state: mockUser.state,
+        role: Role.USER,
         displayName: mockUser.displayName,
         isSeller: mockUser.isSeller,
         emailVerified: !!mockUser.emailVerifiedAt,
@@ -248,6 +251,7 @@ describe('AuthService', () => {
         email: mockUser.email,
         username: mockUser.username,
         state: UserState.BANNED,
+        role: Role.USER,
         isSeller: mockUser.isSeller,
         emailVerified: !!mockUser.emailVerifiedAt,
       };

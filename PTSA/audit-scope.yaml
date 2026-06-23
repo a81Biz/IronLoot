@@ -1,0 +1,79 @@
+# PTSA V3 — Alcance de auditoría y delta sync
+# Sistema: IronLoot — Plataforma de Subastas (v1.0.0)
+# Generado: 2026-06-23 (S-001)
+
+system: IronLoot
+ptsa_version: "3.0"
+domain: "Plataforma de subastas en tiempo real — mercado mexicano (MXN)"
+
+auditable_patterns:
+  # API principal
+  - "src/api/src/**/*.ts"
+  - "src/api/src/**/*.service.ts"
+  - "src/api/src/**/*.controller.ts"
+  - "src/api/src/**/*.module.ts"
+  - "src/api/src/main.ts"
+  # Base de datos
+  - "src/api/prisma/schema.prisma"
+  - "src/api/prisma/migrations/**/*.sql"
+  # Librería core
+  - "src/packages/core/src/**/*.ts"
+  # Aplicaciones SSR
+  - "src/apps/base/src/**/*.ts"
+  - "src/apps/client/src/**/*.ts"
+  - "src/apps/base/views/**/*.html"
+  - "src/apps/client/views/**/*.html"
+  # Admin backoffice
+  - "src/admin/src/**/*.ts"
+  - "src/admin/views/**/*.html"
+  # Infraestructura
+  - "docker-compose.yml"
+  - ".env.example"
+  - "src/nginx/nginx.conf"
+  # Documentación crítica
+  - "CLAUDE.md"
+  - "docs/enterprise-documentation/02-PRD.md"
+  - "docs/enterprise-documentation/03-TRD.md"
+  - "docs/enterprise-documentation/09-Security-Architecture.md"
+
+ignore_patterns:
+  - "**/node_modules/**"
+  - "**/dist/**"
+  - "**/*.test.ts"
+  - "**/*.spec.ts"
+  - "graphify-out/**"
+  - "docs/methodology/**"
+  - "docs/implementation/**"
+  - "PTSA/**"
+  - "changes/**"
+  - "**/*.js.map"
+  - "**/*.d.ts"
+
+coverage_targets:
+  products: all        # 12 productos identificados
+  endpoints: all       # ~84 endpoints REST
+  services: all        # 26 feature services + 7 infrastructure
+  tables: all          # 27 modelos Prisma
+  prompts: "N/A"       # Sistema determinístico, sin prompts LLM
+  migrations: all      # 12 migraciones
+  docs:
+    - CLAUDE.md
+    - docs/enterprise-documentation/02-PRD.md
+    - docs/enterprise-documentation/03-TRD.md
+    - docs/enterprise-documentation/09-Security-Architecture.md
+    - docs/enterprise-documentation/06-Backend-Architecture.md
+
+audit_due_policy:
+  CRITICA: 30d
+  ALTA: 60d
+  MEDIA: 90d
+  BAJA: 180d
+
+ci_checkpoints:
+  - D2    # tests + schema + vulnerabilidades
+  - D3    # trazabilidad + logging
+  - D5    # Success/Retry/Failure Rate (métricas determinísticas)
+  - "D1.N1"  # Domain Rules as Code (reglas de negocio objetivas)
+
+# Nota: Nivel 4 (Guardrails IA) = NO_APLICA — sistema determinístico sin LLM
+# D5 Hallucination Rate = NO_APLICA, Output Drift = NO_APLICA

@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuctionsController } from '@/modules/auctions/auctions.controller';
 import { AuctionsService } from '@/modules/auctions/auctions.service';
-import { AuthenticatedUser } from '@/modules/auth/decorators';
+import { AuthenticatedUser, Role } from '@/modules/auth/decorators';
 import { JwtAuthGuard, OptionalJwtAuthGuard } from '@/modules/auth/guards';
 import { AuctionStatus, UserState } from '@prisma/client';
 
@@ -13,6 +13,7 @@ describe('AuctionsController', () => {
     email: 'test@example.com',
     username: 'testuser',
     state: UserState.ACTIVE,
+    role: Role.USER,
     isSeller: false,
     emailVerified: true,
     displayName: 'Test User',

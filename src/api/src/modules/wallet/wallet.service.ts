@@ -1,6 +1,6 @@
 import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
-import { LedgerType, Wallet, Ledger } from '@prisma/client';
+import { LedgerType, Wallet, Ledger, Prisma } from '@prisma/client';
 import { Decimal } from '@prisma/client/runtime/library';
 import {
   StructuredLogger,
@@ -278,8 +278,9 @@ export class WalletService {
     amount: number,
     referenceId: string, // AuctionId/OrderId
     description: string,
+    outerTx?: Prisma.TransactionClient,
   ): Promise<void> {
-    return this.prisma.$transaction(async (tx) => {
+    const execute = async (tx: Prisma.TransactionClient) => {
       const amountDecimal = new Decimal(amount);
       const feePercentage = new Decimal(0.1); // 10% Platform Fee
       const feeAmount = amountDecimal.mul(feePercentage);
@@ -376,7 +377,12 @@ export class WalletService {
         amount: amount,
         fee: feeAmount.toNumber(),
       });
-    });
+    };
+
+    if (outerTx) {
+      return execute(outerTx);
+    }
+    return this.prisma.$transaction(execute);
   }
 
   async getHistory(userId: string, limit = 10, types?: LedgerType[]): Promise<Ledger[]> {

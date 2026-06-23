@@ -7,6 +7,46 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { StructuredLogger } from './common/observability';
 
+const PLACEHOLDER_SECRETS = new Set([
+  'dev-admin-key',
+  'change-me',
+  'secret',
+  'your-secret-here',
+  'your-jwt-secret',
+  'changeme',
+]);
+
+function validateStartupConfig(config: ConfigService, env: string): void {
+  if (env !== 'production') return;
+
+  const errors: string[] = [];
+
+  const adminKey = config.get<string>('ADMIN_API_KEY', '');
+  if (!adminKey || PLACEHOLDER_SECRETS.has(adminKey)) {
+    errors.push('ADMIN_API_KEY must not be a placeholder value in production');
+  }
+
+  const jwtSecret = config.get<string>('JWT_SECRET', '');
+  if (!jwtSecret || jwtSecret.length < 32 || PLACEHOLDER_SECRETS.has(jwtSecret)) {
+    errors.push('JWT_SECRET must be set and at least 32 characters in production');
+  }
+
+  const sessionSecret = config.get<string>('SESSION_SECRET', '');
+  if (!sessionSecret || sessionSecret.length < 32 || PLACEHOLDER_SECRETS.has(sessionSecret)) {
+    errors.push('SESSION_SECRET must be set and at least 32 characters in production');
+  }
+
+  if (!process.env.ALLOWED_ORIGINS) {
+    errors.push('ALLOWED_ORIGINS must be explicitly set in production (cannot allow all origins)');
+  }
+
+  if (errors.length > 0) {
+    console.error('STARTUP CONFIGURATION ERRORS:');
+    errors.forEach((e) => console.error(`  - ${e}`));
+    process.exit(1);
+  }
+}
+
 async function bootstrap(): Promise<void> {
   // Create application
   const app = await NestFactory.create(AppModule, {
@@ -23,6 +63,9 @@ async function bootstrap(): Promise<void> {
   const port = config.get<number>('API_PORT', 3000);
   const env = config.get<string>('NODE_ENV', 'development');
 
+  // Fail fast on insecure production configuration
+  validateStartupConfig(config, env);
+
   // Security
   app.use(helmet());
 
@@ -33,10 +76,12 @@ async function bootstrap(): Promise<void> {
     .map((o) => o.trim())
     .filter(Boolean);
 
-  // If ALLOWED_ORIGINS is set, enforce it in all environments (matches WS gateway behavior).
-  // Empty ALLOWED_ORIGINS falls back to true (allow all) for local dev without .env.
+  // Production requires explicit origins. Development falls back to allow-all.
+  const corsOrigin =
+    allowedOrigins.length > 0 ? allowedOrigins : env === 'production' ? false : true;
+
   app.enableCors({
-    origin: allowedOrigins.length > 0 ? allowedOrigins : true,
+    origin: corsOrigin,
     credentials: true,
   });
 

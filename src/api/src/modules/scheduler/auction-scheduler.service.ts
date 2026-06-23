@@ -123,64 +123,46 @@ export class AuctionSchedulerService {
       this.logger.log(`Processing expired auction ${auction.id}`);
 
       try {
-        await this.prisma.$transaction(async (tx) => {
-          // 1. Mark as CLOSED
-          await tx.auction.update({
-            where: { id: auction.id },
-            data: { status: AuctionStatus.CLOSED },
-          });
-
-          // 2. Check for winner
-          const winnerBid = auction.bids[0];
-
-          if (winnerBid) {
-            // 3. Create Order
-            // We can't use ordersService.createFromAuction inside this tx easily unless refactored,
-            // so we replicate minimal logic or assume ordersService handles idempotency.
-            // Actually, verifyFunds/Hold logic is in WalletService.
-
-            // Create Order directly to ensure transaction safety
-            await tx.order.create({
-              data: {
-                auctionId: auction.id,
-                buyerId: winnerBid.bidderId,
-                sellerId: auction.sellerId,
-                totalAmount: winnerBid.amount,
-                status: OrderStatus.PAID, // Mark as PAID immediately as we capture funds
-              },
+        // Atomic: mark closed + create order + capture funds in one TX (PT-033)
+        await this.prisma.$transaction(
+          async (tx) => {
+            // 1. Mark as CLOSED
+            await tx.auction.update({
+              where: { id: auction.id },
+              data: { status: AuctionStatus.CLOSED },
             });
 
-            // 4. Capture Funds
-            // This needs to call WalletService.captureHeldFunds.
-            // But WalletService uses its own transaction.
-            // We can call it BEFORE or AFTER this tx?
-            // Ideally we want atomic.
-            // Since we can't easily nest, let's do this:
-            // Main TX: Update Auction, Create Order.
-            // Then: Capture Funds.
-            // If Capture fails? Order is PAID but money not captured? Bad.
-            // If we do Capture first? Money gone, Order not created? Bad.
+            const winnerBid = auction.bids[0];
+            if (winnerBid) {
+              // 2. Create Order (PAID — funds captured atomically below)
+              await tx.order.create({
+                data: {
+                  auctionId: auction.id,
+                  buyerId: winnerBid.bidderId,
+                  sellerId: auction.sellerId,
+                  totalAmount: winnerBid.amount,
+                  status: OrderStatus.PAID,
+                },
+              });
 
-            // Solution: Move Capture inside if possible, or accept slight risk and handle error.
-            // Given limitations, let's execute Capture first? No.
+              // 3. Capture Funds (atomic with order creation — pass outer tx)
+              await this.walletService.captureHeldFunds(
+                winnerBid.bidderId,
+                auction.sellerId,
+                Number(winnerBid.amount),
+                auction.id,
+                `Auction Won: ${auction.title}`,
+                tx,
+              );
+            }
+          },
+          { timeout: 15000 },
+        );
 
-            // Let's rely on distributed consistency (Saga-ish) or correct nesting.
-            // For this audit fix, let's keep it simple: call Capture separate, but log critical error if fails.
-          }
-        });
-
-        // Post-transaction handling (Funds Capture & Notification)
+        // Post-transaction: notifications and loser fund releases (non-atomic, failures are tolerated)
         const winnerBid = auction.bids[0];
         if (winnerBid) {
           try {
-            await this.walletService.captureHeldFunds(
-              winnerBid.bidderId,
-              auction.sellerId, // Pass sellerId for credit
-              Number(winnerBid.amount),
-              auction.id,
-              `Auction Won: ${auction.title}`,
-            );
-
             // Notify Winner
             this.notificationsService
               .create(
@@ -246,8 +228,7 @@ export class AuctionSchedulerService {
               }
             }
           } catch (e) {
-            this.logger.error(`CRITICAL: Failed to capture funds for auction ${auction.id}`, e);
-            // TODO: Admin alert mechanism
+            this.logger.error(`Failed post-TX notifications/releases for auction ${auction.id}`, e);
           }
         }
         // PT-013: Emit domain event via EventEmitter2 after auction close

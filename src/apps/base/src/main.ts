@@ -9,16 +9,18 @@ import * as nunjucks from 'nunjucks';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const cookieParser = require('cookie-parser');
 import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
+import helmet from 'helmet';
 
 // COOKIE_DOMAIN controls cross-subdomain SSO. Set to `.ironloot.local` for local dev
 // with hosts-file entries, or `.ironloot.com` for production.
 // If empty or unset, the cookie is scoped to the host that set it (no cross-subdomain SSO).
 // Note: `domain=localhost` (without leading dot) does NOT propagate to subdomains in Chrome ≥ 90.
 const cookieDomain = process.env.COOKIE_DOMAIN || undefined;
+const isProd = process.env.NODE_ENV === 'production';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: process.env.NODE_ENV === 'production',
+  secure: isProd,
   sameSite: (process.env.COOKIE_SAMESITE || 'Lax') as 'Lax' | 'Strict' | 'None',
   ...(cookieDomain ? { domain: cookieDomain } : {}),
   maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -31,6 +33,29 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.use(cookieParser());
+
+  // Security headers via Helmet (PT-030.5 / H-009)
+  // CSRF note: BASE has no SSR POST routes — all state changes go through /api BFF proxy
+  // to the REST API which uses JWT Bearer tokens (immune to CSRF by design).
+  // sameSite: Lax on auth cookies provides browser-level CSRF protection.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'"], // Nunjucks templates may have inline event handlers
+          styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+          fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'"],
+          frameSrc: ["'none'"],
+          objectSrc: ["'none'"],
+          upgradeInsecureRequests: isProd ? [] : null,
+        },
+      },
+      crossOriginEmbedderPolicy: false, // allow Google Fonts cross-origin
+    }),
+  );
 
   const viewsPath = join(__dirname, '..', 'views');
   nunjucks.configure(viewsPath, {

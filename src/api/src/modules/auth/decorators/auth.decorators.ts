@@ -24,6 +24,7 @@ export interface JwtPayload {
   email: string;
   username: string;
   state: UserState;
+  role: Role;
   // Expanded fields matching UserResponseDto
   displayName?: string;
   avatarUrl?: string;
@@ -50,6 +51,7 @@ export interface AuthenticatedUser {
   email: string;
   username: string;
   state: UserState;
+  role: Role;
 
   displayName?: string;
   avatarUrl?: string;

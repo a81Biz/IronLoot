@@ -4,6 +4,7 @@ import { SystemConfigService } from '../system-config/system-config.service';
 import { CommissionsService } from '../commissions/commissions.service';
 import { KycService } from '../kyc/kyc.service';
 import { CfdiService } from '../cfdi/cfdi.service';
+import { NotificationQueueProducer } from '../notifications/notification-queue.producer';
 
 @Injectable()
 export class AdminService {
@@ -13,6 +14,7 @@ export class AdminService {
     private readonly commissions: CommissionsService,
     private readonly kyc: KycService,
     private readonly cfdi: CfdiService,
+    private readonly notificationQueue: NotificationQueueProducer,
   ) {}
 
   async getStats() {
@@ -724,7 +726,7 @@ export class AdminService {
         body,
         segment: segment as any,
         channelsJson: channels,
-        status: 'SENT',
+        status: 'QUEUED',
         sentAt: new Date(),
         recipientsCount: users.length,
         sentBy: adminUser,
@@ -732,15 +734,16 @@ export class AdminService {
     });
 
     if (channels.includes('inApp')) {
-      await this.prisma.notification.createMany({
-        data: users.map((u) => ({
-          userId: u.id,
-          type: 'SYSTEM',
-          title,
-          message: body,
-        })),
-        skipDuplicates: true,
-      });
+      await Promise.all(
+        users.map((u) =>
+          this.notificationQueue.addCampaignNotificationJob({
+            campaignId: campaign.id as string,
+            userId: u.id,
+            title,
+            body,
+          }),
+        ),
+      );
     }
 
     return campaign;

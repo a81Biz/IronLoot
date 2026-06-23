@@ -17,16 +17,18 @@ import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiSecurity } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { AdminService } from './admin.service';
-import { AdminApiKeyGuard } from './guards/admin-api-key.guard';
+import { AdminDualAuthGuard } from './guards/admin-dual-auth.guard';
 import { Public } from '../auth/decorators';
 import { RefundsService } from '../refunds/refunds.service';
 import { SeoService } from '../seo/seo.service';
 import { CmsService } from '../cms/cms.service';
+import { NotificationQueueProducer } from '../notifications/notification-queue.producer';
+import { WebhookRetryProducer } from '../payments/webhook-retry.producer';
 import { RefundStatus, CmsContentType } from '@prisma/client';
 
 @ApiTags('admin')
-@ApiSecurity('x-admin-key')
-@UseGuards(AdminApiKeyGuard)
+@ApiSecurity('admin-bearer')
+@UseGuards(AdminDualAuthGuard)
 @Public()
 @SkipThrottle()
 @Controller('admin')
@@ -36,6 +38,8 @@ export class AdminController {
     private readonly refundsService: RefundsService,
     private readonly seoService: SeoService,
     private readonly cmsService: CmsService,
+    private readonly notificationQueue: NotificationQueueProducer,
+    private readonly webhookRetryQueue: WebhookRetryProducer,
   ) {}
 
   // ─── Dashboard ───────────────────────────────────────────────────────────
@@ -717,5 +721,19 @@ export class AdminController {
       body.type ?? CmsContentType.TEXT,
       body.adminUser ?? 'admin',
     );
+  }
+
+  // ─── Queue Health (PT-038) ───────────────────────────────────────────────
+
+  @Get('queues')
+  @ApiOperation({
+    summary: 'Queue health — waiting/active/completed/failed/delayed counts per queue',
+  })
+  async getQueueStats() {
+    const [notifications, webhooks] = await Promise.all([
+      this.notificationQueue.getQueueStats(),
+      this.webhookRetryQueue.getQueueStats(),
+    ]);
+    return { queues: [notifications, webhooks] };
   }
 }

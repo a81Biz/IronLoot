@@ -15,10 +15,14 @@ services:
     ports:
       - "80:80"
     depends_on:
-      - api
-      - admin
-      - base
-      - client
+      api:
+        condition: service_healthy
+      admin:
+        condition: service_started
+      base:
+        condition: service_started
+      client:
+        condition: service_started
     networks:
       - ironloot-network
     restart: unless-stopped
@@ -50,7 +54,14 @@ services:
       - ./src/admin/nest-cli.json:/app/nest-cli.json
       - /app/node_modules
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - ironloot-network
     deploy:
@@ -100,7 +111,13 @@ services:
       db:
         condition: service_healthy
       redis:
-        condition: service_started
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3000/api/v1/health', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - ironloot-network
     deploy:
@@ -150,6 +167,12 @@ services:
     networks:
       - ironloot-network
     command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     deploy:
       resources:
         limits:
@@ -222,7 +245,14 @@ services:
       - ./src/apps/base/nest-cli.json:/app/nest-cli.json
       - /app/node_modules
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5174/', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - ironloot-network
     deploy:
@@ -259,7 +289,14 @@ services:
       - ./src/apps/client/nest-cli.json:/app/nest-cli.json
       - /app/node_modules
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:5175/', (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     networks:
       - ironloot-network
     deploy:

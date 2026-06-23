@@ -1,0 +1,206 @@
+{
+  "system": "IronLoot",
+  "ptsa_version": "3.0",
+  "domain": "Plataforma de subastas en tiempo real — mercado mexicano (MXN)",
+  "history": [
+    {
+      "session": "S-001",
+      "date": "2026-06-23",
+      "type": "full_audit",
+      "scores": {
+        "D1": 70,
+        "D2": 84,
+        "D3": 100,
+        "D4": 99,
+        "health": 86.1,
+        "risk": 100,
+        "confidence": 55
+      },
+      "classification": "C",
+      "classification_without_cap": "B",
+      "cap_reason": "freshness=UNKNOWN (primera auditoría)",
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "findings_open": 7,
+      "findings_by_severity": {
+        "CRITICA": 0,
+        "ALTA": 2,
+        "MEDIA": 3,
+        "BAJA": 2
+      },
+      "findings_ids": ["H-001","H-002","H-003","H-004","H-005","H-006","H-007"],
+      "blockers": ["BLQ-001","BLQ-002"],
+      "coverage": 0.70,
+      "freshness": 0,
+      "evidence_validity": 0.85,
+      "autonomy": 0.70,
+      "audit_due": "2026-07-07",
+      "notes": "Primera auditoría PTSA. Sin baseline previo. Scores constituyen el baseline de referencia."
+    }
+    ,
+    {
+      "session": "DS-001",
+      "date": "2026-06-23",
+      "type": "delta_sync",
+      "trigger": "PT-028 investigation + PT-031 + PT-032 trivial fixes",
+      "scores": {
+        "D1": 70,
+        "D2": 88,
+        "D3": 100,
+        "D4": 99,
+        "health": 87.3,
+        "risk": 100,
+        "confidence": 55
+      },
+      "scores_projected": {
+        "D2": 89,
+        "D4": 100,
+        "health": 87.7,
+        "condition": "H-003 and H-007 validated CLOSED by human"
+      },
+      "classification": "C",
+      "classification_without_cap": "B",
+      "cap_reason": "freshness=UNKNOWN (sin baseline previo confirmado)",
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "findings_changes": {
+        "H-003": "ABIERTA BAJA → CORREGIDA (PT-031 fix applied)",
+        "H-006": "ABIERTA MEDIA → ABIERTA BAJA (reclasificación — PT-028 investigation)",
+        "H-007": "ABIERTA BAJA → CORREGIDA (PT-032 PRD fix applied)"
+      },
+      "findings_open": 7,
+      "findings_by_state": {
+        "ABIERTA": 5,
+        "CORREGIDA": 2
+      },
+      "findings_by_severity": {
+        "CRITICA": 0,
+        "ALTA": 2,
+        "MEDIA": 2,
+        "BAJA": 3
+      },
+      "delta_vs_S001": {
+        "D2": "+4",
+        "health": "+1.2"
+      },
+      "notes": "Delta sync DS-001. H-006 reclasificada por investigación completa (PT-028 CLOSED). H-003 y H-007 CORREGIDAS (pendiente validación humana). STATE 2 completo para PT-026, PT-029, PT-030. PT-027 BLOQUEADO por PAC no seleccionado."
+    },
+    {
+      "session": "DS-002",
+      "date": "2026-06-23",
+      "type": "delta_sync",
+      "trigger": "PT-026 + PT-029 + PT-030 implemented (STATE 4 complete)",
+      "scores": {
+        "D1": 70,
+        "D2": 93,
+        "D3": 100,
+        "D4": 99,
+        "health": 88.8,
+        "risk": 92,
+        "confidence": 60
+      },
+      "scores_projected": {
+        "D1": 85,
+        "D2": 94,
+        "D4": 100,
+        "health": 90.3,
+        "condition": "H-001 + H-003 + H-004 + H-007 validated CLOSED by human + BLQ-002 resolved"
+      },
+      "classification": "C",
+      "classification_without_cap": "B",
+      "cap_reason": "freshness=UNKNOWN (BLQ-002 activo — logs en vivo no verificados)",
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "findings_changes": {
+        "H-001": "ABIERTA ALTA → CORREGIDA (PT-026 branch listo, VALIDATION_PENDING)",
+        "H-002": "ABIERTA MEDIA → CERRADA (PT-030 DONE — refactor, no human validation needed)",
+        "H-004": "ABIERTA MEDIA → CORREGIDA (PT-029 branch listo, VALIDATION_PENDING)"
+      },
+      "findings_by_state": {
+        "ABIERTA": 2,
+        "CORREGIDA": 4,
+        "CERRADA": 1
+      },
+      "findings_by_severity": {
+        "CRITICA": 0,
+        "ALTA": 2,
+        "MEDIA": 2,
+        "BAJA": 3
+      },
+      "blockers_resolved": ["BLQ-001"],
+      "blockers_active": ["BLQ-002"],
+      "coverage": 0.80,
+      "freshness": 0,
+      "evidence_validity": 0.85,
+      "autonomy": 0.75,
+      "delta_vs_DS001": {
+        "D2": "+5",
+        "health": "+1.5",
+        "risk": "-8",
+        "confidence": "+5"
+      },
+      "audit_due": "2026-07-07",
+      "notes": "DS-002: 3 hallazgos actualizados. H-002 CERRADA (único con cierre sin validación humana — es REFACTOR). H-001/H-004 CORREGIDAS con branches listos aguardando validación humana. BLQ-001 resuelto vía prisma db push. H-005 sigue siendo el único driver de Risk > 60 (CFDI/PAC bloqueado). Proyectado Health 90.3 — Clase A tras validaciones humanas."
+    },
+    {
+      "session": "DS-003",
+      "date": "2026-06-23",
+      "type": "delta_sync",
+      "trigger": "Human validation: H-007 + H-004 + H-003 + H-001 VALIDADOS",
+      "scores": {
+        "D1": 85,
+        "D2": 99,
+        "D3": 100,
+        "D4": 100,
+        "health": 95.2,
+        "risk": 44,
+        "confidence": 85
+      },
+      "classification": "A",
+      "classification_without_cap": "A",
+      "cap_reason": null,
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "findings_changes": {
+        "H-001": "CORREGIDA → CLOSED (validado runtime: soft-close extension usa SystemConfig)",
+        "H-003": "CORREGIDA → CLOSED (validado runtime: webhooks emiten JSON con traceId)",
+        "H-004": "CORREGIDA → CLOSED (validado runtime: withdraw 400 con referenceId desconocida)",
+        "H-007": "CORREGIDA → CLOSED (validado docs: PRD AC-3.2 texto correcto)"
+      },
+      "findings_by_state": {
+        "ABIERTA": 2,
+        "CLOSED": 5
+      },
+      "findings_by_severity": {
+        "CRITICA": 0,
+        "ALTA": 1,
+        "MEDIA": 0,
+        "BAJA": 1
+      },
+      "blockers_resolved": ["BLQ-001", "BLQ-002"],
+      "blockers_active": [],
+      "coverage": 0.95,
+      "freshness": 0.80,
+      "evidence_validity": 0.90,
+      "autonomy": 0.75,
+      "delta_vs_DS002": {
+        "D1": "+15",
+        "D2": "+6",
+        "D4": "+1",
+        "health": "+6.4",
+        "risk": "-48",
+        "confidence": "+25"
+      },
+      "delta_vs_S001": {
+        "D1": "+15",
+        "D2": "+15",
+        "D4": "+1",
+        "health": "+9.1",
+        "risk": "-56",
+        "confidence": "+30"
+      },
+      "audit_due": "2026-07-07",
+      "notes": "DS-003: PRIMERA CERTIFICACIÓN CLASE A. 4 hallazgos cerrados por validación humana en runtime. BLQ-002 resuelto (logs verificados en vivo). Cap de freshness=UNKNOWN eliminado. Único bloqueante: H-005 CFDI/PAC (decisión de negocio — fuera de alcance técnico hasta selección de PAC SAT). Health proyectado 100 si H-005 cerrado."
+    }
+  ]
+}

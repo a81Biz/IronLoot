@@ -1,41 +1,19 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { AdminApiClient } from '../../shared/admin-api-client.service';
 
 @Injectable()
 export class ModerationService {
-  private readonly logger = new Logger(ModerationService.name);
-  private readonly apiUrl = process.env.ADMIN_API_URL || 'http://localhost:3000';
-  private readonly apiKey = process.env.ADMIN_API_KEY || 'dev-admin-key';
-
-  private async call<T>(method: string, path: string, body?: unknown): Promise<T | null> {
-    try {
-      const res = await fetch(`${this.apiUrl}/api/v1${path}`, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Admin-Key': this.apiKey,
-        },
-        body: body ? JSON.stringify(body) : undefined,
-      });
-      if (!res.ok) {
-        this.logger.warn(`Admin API ${method} ${path} → ${res.status}`);
-        return null;
-      }
-      return res.json() as Promise<T>;
-    } catch (e) {
-      this.logger.error(`Admin API call failed: ${method} ${path}`, e);
-      return null;
-    }
-  }
+  constructor(private readonly apiClient: AdminApiClient) {}
 
   getModerationQueue(page = 1) {
-    return this.call('GET', `/admin/moderation?page=${page}`);
+    return this.apiClient.call('GET', `/admin/moderation?page=${page}`);
   }
 
   approveModeration(id: string, adminUser: string) {
-    return this.call('PATCH', `/admin/moderation/${id}/approve`, { adminUser });
+    return this.apiClient.call('PATCH', `/admin/moderation/${id}/approve`, { adminUser });
   }
 
   rejectModeration(id: string, reason_code: string, notes: string | undefined, adminUser: string) {
-    return this.call('PATCH', `/admin/moderation/${id}/reject`, { reason_code, notes, adminUser });
+    return this.apiClient.call('PATCH', `/admin/moderation/${id}/reject`, { reason_code, notes, adminUser });
   }
 }

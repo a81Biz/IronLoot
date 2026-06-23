@@ -30,15 +30,7 @@ export class RolesGuard implements CanActivate {
       throw new ForbiddenException('Access denied');
     }
 
-    // For now, we check based on user state
-    // This can be expanded to check actual roles from database
-    const userRoles: Role[] = [Role.USER];
-
-    // Check if user is seller
-    // Note: This would require fetching from DB or including in JWT
-    // For now, we'll skip seller check here
-
-    const hasRole = requiredRoles.some((role) => userRoles.includes(role));
+    const hasRole = requiredRoles.some((role) => role === user.role);
 
     if (!hasRole) {
       throw new ForbiddenException('Insufficient permissions');
