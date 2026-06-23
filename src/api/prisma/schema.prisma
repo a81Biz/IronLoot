@@ -92,6 +92,7 @@ model User {
   receivedRatings Rating[]       @relation("RatingTarget")
   createdDisputes Dispute[]      @relation("DisputeCreator")
   notifications   Notification[]
+  paymentMethods  UserPaymentMethod[]
 
   @@index([email], name: "idx_users_email")
   @@index([username], name: "idx_users_username")
@@ -606,10 +607,9 @@ enum LedgerType {
   WITHDRAWAL
   HOLD_BID
   RELEASE_BID
-  PURCHASE        // Keep for backward compatibility or alias to DEBIT_ORDER if needed, but Spec says DEBIT_ORDER
-  DEBIT_ORDER     // New
-  CREDIT_SALE     // New
-  FEE_PLATFORM    // New
+  DEBIT_ORDER
+  CREDIT_SALE
+  FEE_PLATFORM
   REFUND
   ADJUSTMENT
 }
@@ -627,7 +627,7 @@ model Wallet {
   // Balance
   balance   Decimal @default(0) @db.Decimal(12, 2) // Available funds
   heldFunds Decimal @default(0) @map("held_funds") @db.Decimal(12, 2) // Locked in active bids
-  currency  String  @default("USD") @db.VarChar(3)
+  currency  String  @default("MXN") @db.VarChar(3)
 
   // System State
   isActive Boolean @default(false) @map("is_active") // Requires initial deposit
@@ -879,4 +879,18 @@ model CmsContent {
   updatedBy String         @default("system") @map("updated_by") @db.VarChar(255)
 
   @@map("cms_content")
+}
+
+/// UserPaymentMethod — registered withdrawal methods for a user (PT-029)
+model UserPaymentMethod {
+  id          String   @id @default(uuid()) @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  userId      String   @map("user_id") @db.Uuid
+  referenceId String   @map("reference_id") @db.VarChar(255)
+  isActive    Boolean  @default(true) @map("is_active")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, referenceId])
+  @@map("user_payment_methods")
 }

@@ -13,6 +13,9 @@ const mockPrismaService = {
   payment: {
     create: jest.fn().mockResolvedValue({ id: 'payment-uuid' }),
   },
+  userPaymentMethod: {
+    findFirst: jest.fn(),
+  },
 };
 
 const mockWalletService = {
@@ -81,6 +84,29 @@ describe('PaymentsService', () => {
 
   it('should be defined', () => {
     expect(service).toBeDefined();
+  });
+
+  describe('getUserPaymentMethod (PT-029)', () => {
+    it('should return null for unknown referenceId', async () => {
+      mockPrismaService.userPaymentMethod.findFirst.mockResolvedValue(null);
+      const result = await service.getUserPaymentMethod('user-1', 'ref_unknown');
+      expect(result).toBeNull();
+    });
+
+    it('should return the method when it exists and is active', async () => {
+      const mockMethod = { id: 'pm-1', userId: 'user-1', referenceId: 'ref_valid', isActive: true };
+      mockPrismaService.userPaymentMethod.findFirst.mockResolvedValue(mockMethod);
+      const result = await service.getUserPaymentMethod('user-1', 'ref_valid');
+      expect(result).toEqual(mockMethod);
+    });
+
+    it('should query with userId, referenceId, and isActive: true', async () => {
+      mockPrismaService.userPaymentMethod.findFirst.mockResolvedValue(null);
+      await service.getUserPaymentMethod('user-1', 'ref_valid');
+      expect(mockPrismaService.userPaymentMethod.findFirst).toHaveBeenCalledWith({
+        where: { userId: 'user-1', referenceId: 'ref_valid', isActive: true },
+      });
+    });
   });
 
   describe('createCheckoutSession', () => {

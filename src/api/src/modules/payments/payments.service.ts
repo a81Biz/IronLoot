@@ -1,11 +1,12 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
+import { UserPaymentMethod } from '@prisma/client';
 import { StripeProvider } from './providers/stripe.provider';
 import { MercadoPagoProvider } from './providers/mercadopago.provider';
 import { PaypalProvider } from './providers/paypal.provider';
 import { HeyBancoProvider } from './providers/heybanco.provider';
 import { PaymentProviderEnum } from './interfaces';
 import { WalletService } from '../wallet/wallet.service';
-
+import { PrismaService } from '../../database/prisma.service';
 import { StructuredLogger } from '../../common/observability';
 
 export interface PaymentVerification {
@@ -19,12 +20,22 @@ export interface PaymentVerification {
 export class PaymentsService {
   constructor(
     private readonly logger: StructuredLogger,
+    private readonly prisma: PrismaService,
     private readonly stripeProvider: StripeProvider,
     private readonly mercadopagoProvider: MercadoPagoProvider,
     private readonly paypalProvider: PaypalProvider,
     private readonly heyBancoProvider: HeyBancoProvider,
     private readonly walletService: WalletService,
   ) {}
+
+  async getUserPaymentMethod(
+    userId: string,
+    referenceId: string,
+  ): Promise<UserPaymentMethod | null> {
+    return this.prisma.userPaymentMethod.findFirst({
+      where: { userId, referenceId, isActive: true },
+    });
+  }
 
   /**
    * Initiate a payment flow (Deposit)
@@ -163,10 +174,14 @@ export class PaymentsService {
             this.logger.info(`Crediting wallet for user ${userId} amount ${amount}`);
             await this.walletService.deposit(userId, amount, result.externalId, 'DEPOSIT');
           } catch (e) {
-            this.logger.error(`Failed to credit wallet for ${result.externalId}`, { error: e as Error });
+            this.logger.error(`Failed to credit wallet for ${result.externalId}`, {
+              error: e as Error,
+            });
           }
         } else {
-          this.logger.error(`Cannot credit wallet: amount not found in webhook metadata`, { data: result as unknown as Record<string, unknown> });
+          this.logger.error(`Cannot credit wallet: amount not found in webhook metadata`, {
+            data: result as unknown as Record<string, unknown>,
+          });
         }
       }
     }
