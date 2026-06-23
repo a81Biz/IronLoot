@@ -122,9 +122,9 @@ export class WalletController {
   @ApiResponse({ status: 201, description: 'Withdrawal successful' })
   @ApiResponse({ status: 400, description: 'Invalid amount or payment method' })
   async withdraw(@Request() req: AuthenticatedRequest, @Body() dto: WithdrawDto) {
-    // 1. Validate Payment Method (Mock for now, should verify if user has this method registered)
-    // const method = await this.paymentsService.getUserPaymentMethod(req.user.id, dto.referenceId);
-    // if (!method) throw new BadRequestException('Invalid payment method');
+    // 1. Validate Payment Method
+    const method = await this.paymentsService.getUserPaymentMethod(req.user.id, dto.referenceId);
+    if (!method) throw new BadRequestException('Invalid payment method');
 
     // 2. Verify Limits
     const DAILY_LIMIT = 5000;
