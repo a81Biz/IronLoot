@@ -6,7 +6,8 @@ import { HeyBancoProvider } from './providers/heybanco.provider';
 import { PaymentProviderEnum } from './interfaces';
 import { WalletService } from '../wallet/wallet.service';
 
-import { Logger } from '@nestjs/common';
+import { StructuredLogger } from '../../common/observability';
+
 export interface PaymentVerification {
   status: 'COMPLETED' | 'PENDING' | 'FAILED';
   amount: number;
@@ -16,9 +17,8 @@ export interface PaymentVerification {
 
 @Injectable()
 export class PaymentsService {
-  private readonly logger = new Logger(PaymentsService.name);
-
   constructor(
+    private readonly logger: StructuredLogger,
     private readonly stripeProvider: StripeProvider,
     private readonly mercadopagoProvider: MercadoPagoProvider,
     private readonly paypalProvider: PaypalProvider,
@@ -160,18 +160,25 @@ export class PaymentsService {
 
         if (amount > 0) {
           try {
-            this.logger.log(`Crediting wallet for user ${userId} amount ${amount}`);
+            this.logger.info(`Crediting wallet for user ${userId} amount ${amount}`);
             await this.walletService.deposit(userId, amount, result.externalId, 'DEPOSIT');
           } catch (e) {
-            this.logger.error(`Failed to credit wallet for ${result.externalId}`, e);
+            this.logger.error(`Failed to credit wallet for ${result.externalId}`, { error: e as Error });
           }
         } else {
-          this.logger.error(`Cannot credit wallet: amount not found in webhook metadata`, result);
+          this.logger.error(`Cannot credit wallet: amount not found in webhook metadata`, { data: result as unknown as Record<string, unknown> });
         }
       }
     }
 
     return { received: true };
+  }
+
+  getAvailableProviders(): string[] {
+    const providers: string[] = [PaymentProviderEnum.MERCADO_PAGO, PaymentProviderEnum.PAYPAL];
+    if (this.stripeProvider.checkStatus()) providers.push(PaymentProviderEnum.STRIPE);
+    if (this.heyBancoProvider.checkStatus()) providers.push(PaymentProviderEnum.HEY_BANCO);
+    return providers;
   }
 
   async getMercadoPagoMethods() {

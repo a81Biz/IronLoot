@@ -1,13 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
-// import { BadRequestException } from '@nestjs/common';
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
-// import { PaymentsController } from '../../../src/modules/payments/payments.controller';
 import { MercadoPagoProvider } from '../../../src/modules/payments/providers/mercadopago.provider';
 import { PaypalProvider } from '../../../src/modules/payments/providers/paypal.provider';
 import { StripeProvider } from '../../../src/modules/payments/providers/stripe.provider';
 import { HeyBancoProvider } from '../../../src/modules/payments/providers/heybanco.provider';
 import { PrismaService } from '../../../src/database/prisma.service';
 import { WalletService } from '../../../src/modules/wallet/wallet.service';
+import { StructuredLogger } from '../../../src/common/observability';
 
 // Mock Dependencies
 const mockPrismaService = {
@@ -54,10 +53,8 @@ describe('PaymentsService', () => {
           },
         },
         { provide: PrismaService, useValue: mockPrismaService },
-
         { provide: WalletService, useValue: mockWalletService },
-        { provide: 'StructuredLogger', useValue: mockLogger }, // If token is string, or remove if unused in service (we removed it)
-        // { provide: StructuredLogger, useValue: mockLogger }, // Removed from service
+        { provide: StructuredLogger, useValue: mockLogger },
         {
           provide: StripeProvider,
           useValue: {
