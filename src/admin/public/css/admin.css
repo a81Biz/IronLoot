@@ -5,13 +5,14 @@
 :root {
   --sidebar-w: 240px;
   --topbar-h: 60px;
-  --sidebar-bg: #1e2530;
-  --sidebar-hover: #2a3444;
-  --sidebar-active: #3b4d6b;
-  --sidebar-text: #8b95a5;
+  --sidebar-bg: #151515;
+  --sidebar-hover: rgba(200, 155, 60, 0.1);
+  --sidebar-active: rgba(200, 155, 60, 0.18);
+  --sidebar-text: rgba(246, 246, 246, 0.6);
   --sidebar-text-active: #ffffff;
-  --primary: #4f46e5;
-  --primary-dark: #3730a3;
+  --primary: #C89B3C;
+  --primary-dark: #a8832e;
+  --ff-heading: 'Montserrat', system-ui, sans-serif;
   --success: #10b981;
   --danger: #ef4444;
   --warning: #f59e0b;
@@ -73,7 +74,8 @@ a { text-decoration: none; color: inherit; }
   z-index: 50;
 }
 
-.page-title { font-size: 1.125rem; font-weight: 600; }
+.page-title { font-family: var(--ff-heading); font-size: 1.125rem; font-weight: 600; }
+h1, h2, h3, h4 { font-family: var(--ff-heading); }
 
 .top-bar-right { display: flex; align-items: center; gap: 8px; }
 
@@ -91,7 +93,7 @@ a { text-decoration: none; color: inherit; }
 
 .sidebar-logo-icon {
   font-size: 28px;
-  color: #818cf8;
+  color: #C89B3C;
   font-variation-settings: 'FILL' 1;
 }
 
@@ -113,7 +115,7 @@ a { text-decoration: none; color: inherit; }
 }
 
 .nav-item:hover { background: var(--sidebar-hover); color: #cbd5e1; }
-.nav-item.active { background: var(--sidebar-active); color: var(--sidebar-text-active); }
+.nav-item.active { background: var(--sidebar-active); color: #C89B3C; }
 .nav-item .material-symbols-outlined { font-size: 20px; font-variation-settings: 'FILL' 0, 'wght' 400; flex-shrink: 0; }
 .nav-item.active .material-symbols-outlined { font-variation-settings: 'FILL' 1, 'wght' 500; }
 
@@ -246,7 +248,7 @@ a { text-decoration: none; color: inherit; }
   box-shadow: var(--shadow);
 }
 
-.quick-card:hover { border-color: var(--primary); color: var(--primary); background: #f5f3ff; transform: translateY(-1px); }
+.quick-card:hover { border-color: var(--primary); color: var(--primary); background: rgba(200, 155, 60, 0.05); transform: translateY(-1px); }
 .quick-card .material-symbols-outlined { font-size: 28px; font-variation-settings: 'FILL' 0; }
 
 /* ── Tables ───────────────────────────────────────── */
@@ -375,7 +377,7 @@ tr:hover td { background: #fafbfc; }
   transition: border-color .15s;
 }
 .provider-card:hover { border-color: #c7d2fe; }
-.provider-enabled { border-color: var(--primary); background: #f5f3ff; }
+.provider-enabled { border-color: var(--primary); background: rgba(200, 155, 60, 0.04); }
 
 .provider-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .checkbox-label { display: flex; align-items: center; gap: 8px; cursor: pointer; font-weight: 600; font-size: var(--text-sm); }
@@ -409,7 +411,7 @@ tr:hover td { background: #fafbfc; }
 }
 
 .login-header { text-align: center; margin-bottom: 32px; }
-.login-icon { font-size: 48px; color: #818cf8; display: block; margin-bottom: 12px; font-variation-settings: 'FILL' 1; }
+.login-icon { font-size: 48px; color: #C89B3C; display: block; margin-bottom: 12px; font-variation-settings: 'FILL' 1; }
 .login-header h1 { color: #fff; font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
 .login-header p  { color: #8b949e; font-size: var(--text-sm); }
 
@@ -574,7 +576,7 @@ tr:hover td { background: #fafbfc; }
 /* Icon colors */
 .icon-teal { background: #ccfbf1; color: #0f766e; }
 .icon-amber { background: #fef3c7; color: #92400e; }
-.icon-indigo { background: #e0e7ff; color: #4338ca; }
+.icon-indigo { background: rgba(200, 155, 60, 0.12); color: #C89B3C; }
 
 /* Checkbox group */
 .checkbox-group { display: flex; gap: 16px; align-items: center; padding: 8px 0; }
