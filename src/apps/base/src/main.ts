@@ -5,6 +5,7 @@ import { NestFactory } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { join } from 'path';
 import { AppModule } from './app.module';
+import { NotFoundExceptionFilter } from './common/filters/not-found.filter';
 import * as nunjucks from 'nunjucks';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const cookieParser = require('cookie-parser');
@@ -33,6 +34,7 @@ async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.use(cookieParser());
+  app.useGlobalFilters(new NotFoundExceptionFilter());
 
   // Security headers via Helmet (PT-030.5 / H-009)
   // CSRF note: BASE has no SSR POST routes — all state changes go through /api BFF proxy
