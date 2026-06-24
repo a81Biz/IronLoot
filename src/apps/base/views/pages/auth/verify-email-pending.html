@@ -2,16 +2,31 @@
 {% block title %}Revisa tu correo — IronLoot{% endblock %}
 
 {% block content %}
-<div class="form-container" style="text-align:center;">
-  <h1 class="form-title" style="font-size:1.4rem;">📧 Revisa tu correo</h1>
-  <p style="color:#6c757d;margin-bottom:1.5rem;">
-    Te enviamos un enlace de verificación. Haz clic en él para activar tu cuenta.
-  </p>
-  <p style="font-size:.9rem;color:#6c757d;">
-    ¿No lo ves? Revisa la carpeta de spam. El enlace expira en 24 horas.
-  </p>
-  <div style="margin-top:2rem;">
-    <a href="/auth/login" class="btn btn-ghost">Volver a inicio de sesión</a>
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="auth-header">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 52" width="44" height="52" class="auth-logo" aria-label="Iron Loot">
+        <path d="M3,3 L41,3 L41,31 Q41,49 22,51 Q3,49 3,31 Z" fill="#151515" stroke="#C89B3C" stroke-width="2" stroke-linejoin="round"/>
+        <rect x="11" y="13" width="22" height="3.5" rx="1" fill="#C89B3C"/>
+        <rect x="19" y="13" width="6" height="20" rx="1" fill="#C89B3C"/>
+        <rect x="11" y="29.5" width="22" height="3.5" rx="1" fill="#C89B3C"/>
+        <circle cx="22" cy="42" r="5.5" fill="none" stroke="#C89B3C" stroke-width="1.5"/>
+        <line x1="22" y1="36.8" x2="22" y2="38.2" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="27.2" y1="42" x2="25.8" y2="42" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="16.8" y1="42" x2="18.2" y2="42" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="22" cy="42" r="1.5" fill="#C89B3C"/>
+      </svg>
+      <h1 class="auth-title">Revisa tu correo</h1>
+    </div>
+
+    <div class="auth-message">
+      <p>Te enviamos un enlace de verificación. Haz clic en él para activar tu cuenta.</p>
+      <p style="font-size:.875rem;margin-top:.75rem;">¿No lo ves? Revisa la carpeta de spam. El enlace expira en 24 horas.</p>
+    </div>
+
+    <div class="auth-footer">
+      <a href="/auth/login" class="btn btn-ghost btn-full">Volver a inicio de sesión</a>
+    </div>
   </div>
 </div>
 {% endblock %}
