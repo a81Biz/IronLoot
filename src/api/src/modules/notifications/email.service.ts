@@ -14,7 +14,7 @@ export class EmailService {
     private readonly logger: StructuredLogger,
   ) {
     this.log = this.logger.child('EmailService');
-    this.frontendUrl = this.configService.get<string>('CLIENT_URL', 'http://localhost:5173');
+    this.frontendUrl = this.configService.get<string>('BASE_URL', 'http://localhost:5174');
   }
 
   async sendVerificationEmail(to: string, token: string): Promise<void> {
