@@ -93,6 +93,7 @@ services:
       - MAIL_USER=test
       - MAIL_PASSWORD=test
       - MAIL_FROM="Iron Loot <noreply@ironloot.com>"
+      - BASE_URL=http://base.localhost
     # Load additional env vars from project .env into the container
     env_file:
       - ./src/api/.env
