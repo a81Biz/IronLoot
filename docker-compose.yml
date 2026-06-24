@@ -94,7 +94,7 @@ services:
       - MAIL_PASSWORD=test
       - MAIL_FROM="Iron Loot <noreply@ironloot.com>"
       - BASE_URL=http://base.localhost
-      - JWT_SECRET=${JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET:-change-me-min-32-chars}
     # Load additional env vars from project .env into the container
     env_file:
       - ./src/api/.env
