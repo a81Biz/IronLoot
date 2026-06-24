@@ -4,36 +4,57 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Mi cuenta — IronLoot{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="/css/client.css">
   {% block head_extra %}{% endblock %}
 </head>
 <body>
   <aside class="sidebar">
-    <div class="sidebar-brand"><a href="/dashboard">⚡ IronLoot</a></div>
+    <div class="sidebar-brand">
+      <a href="/dashboard">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 52" width="30" height="35" aria-hidden="true">
+          <path d="M3,3 L41,3 L41,31 Q41,49 22,51 Q3,49 3,31 Z" fill="#151515" stroke="#C89B3C" stroke-width="2" stroke-linejoin="round"/>
+          <rect x="11" y="13" width="22" height="3.5" rx="1" fill="#C89B3C"/>
+          <rect x="19" y="13" width="6" height="20" rx="1" fill="#C89B3C"/>
+          <rect x="11" y="29.5" width="22" height="3.5" rx="1" fill="#C89B3C"/>
+          <circle cx="22" cy="42" r="5.5" fill="none" stroke="#C89B3C" stroke-width="1.5"/>
+          <line x1="22" y1="36.8" x2="22" y2="38.2" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="27.2" y1="42" x2="25.8" y2="42" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+          <line x1="16.8" y1="42" x2="18.2" y2="42" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+          <circle cx="22" cy="42" r="1.5" fill="#C89B3C"/>
+        </svg>
+        <span class="sidebar-brand-text">
+          <span class="sidebar-brand-name">IronLoot</span>
+          <span class="sidebar-brand-sub">Portal</span>
+        </span>
+      </a>
+    </div>
     <nav class="sidebar-nav">
       <div class="nav-section">
         <span class="nav-section-title">Comprador</span>
-        <a href="/dashboard" class="nav-item">🏠 Dashboard</a>
-        <a href="/auctions/won-auctions" class="nav-item">🏆 Ganadas</a>
-        <a href="/my-bids" class="nav-item">🎯 Mis ofertas</a>
-        <a href="/auctions/watchlist" class="nav-item">❤️ Watchlist</a>
-        <a href="/orders" class="nav-item">📦 Órdenes</a>
-        <a href="/wallet" class="nav-item">💰 Wallet</a>
-        <a href="/notifications" class="nav-item">🔔 Notificaciones</a>
-        <a href="/disputes" class="nav-item">⚖️ Disputas</a>
-        <a href="/reputation" class="nav-item">⭐ Reputación</a>
+        <a href="/dashboard" class="nav-item">Dashboard</a>
+        <a href="/auctions/won-auctions" class="nav-item">Ganadas</a>
+        <a href="/my-bids" class="nav-item">Mis ofertas</a>
+        <a href="/auctions/watchlist" class="nav-item">Watchlist</a>
+        <a href="/orders" class="nav-item">Órdenes</a>
+        <a href="/wallet" class="nav-item">Wallet</a>
+        <a href="/notifications" class="nav-item">Notificaciones</a>
+        <a href="/disputes" class="nav-item">Disputas</a>
+        <a href="/reputation" class="nav-item">Reputación</a>
       </div>
       <div class="nav-section">
         <span class="nav-section-title">Vendedor</span>
-        <a href="/seller/auctions" class="nav-item">🛍 Mis subastas</a>
-        <a href="/auctions/create" class="nav-item">➕ Crear subasta</a>
-        <a href="/seller/orders" class="nav-item">📋 Pedidos</a>
-        <a href="/seller/onboarding" class="nav-item">✅ Onboarding</a>
+        <a href="/seller/auctions" class="nav-item">Mis subastas</a>
+        <a href="/auctions/create" class="nav-item">Crear subasta</a>
+        <a href="/seller/orders" class="nav-item">Pedidos</a>
+        <a href="/seller/onboarding" class="nav-item">Onboarding</a>
       </div>
       <div class="nav-section nav-bottom">
-        <a href="/profile" class="nav-item">👤 Perfil</a>
-        <a href="/settings" class="nav-item">⚙️ Configuración</a>
-        <a href="/auth/logout" class="nav-item nav-logout">🚪 Salir</a>
+        <a href="/profile" class="nav-item">Perfil</a>
+        <a href="/settings" class="nav-item">Configuración</a>
+        <a href="/auth/logout" class="nav-item nav-logout">Salir</a>
       </div>
     </nav>
   </aside>

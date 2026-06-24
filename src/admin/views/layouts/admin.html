@@ -6,7 +6,7 @@
   <title>{{ title }} — Iron Loot Admin</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
   <link rel="stylesheet" href="/css/admin.css">
   {% block head %}{% endblock %}
@@ -16,7 +16,17 @@
   <!-- Sidebar -->
   <aside class="sidebar">
     <div class="sidebar-header">
-      <span class="material-symbols-outlined sidebar-logo-icon">bolt</span>
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 52" width="28" height="33" aria-hidden="true" class="sidebar-logo-icon">
+        <path d="M3,3 L41,3 L41,31 Q41,49 22,51 Q3,49 3,31 Z" fill="#151515" stroke="#C89B3C" stroke-width="2" stroke-linejoin="round"/>
+        <rect x="11" y="13" width="22" height="3.5" rx="1" fill="#C89B3C"/>
+        <rect x="19" y="13" width="6" height="20" rx="1" fill="#C89B3C"/>
+        <rect x="11" y="29.5" width="22" height="3.5" rx="1" fill="#C89B3C"/>
+        <circle cx="22" cy="42" r="5.5" fill="none" stroke="#C89B3C" stroke-width="1.5"/>
+        <line x1="22" y1="36.8" x2="22" y2="38.2" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="27.2" y1="42" x2="25.8" y2="42" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+        <line x1="16.8" y1="42" x2="18.2" y2="42" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+        <circle cx="22" cy="42" r="1.5" fill="#C89B3C"/>
+      </svg>
       <div>
         <div class="sidebar-brand">Iron Loot</div>
         <div class="sidebar-sub">Backoffice</div>

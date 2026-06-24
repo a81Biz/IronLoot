@@ -5,13 +5,32 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="{% block meta_description %}IronLoot — Plataforma de subastas en línea{% endblock %}">
   <title>{% block title %}IronLoot{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&display=swap">
   <link rel="stylesheet" href="/css/base.css">
   {% block head_extra %}{% endblock %}
 </head>
 <body>
   <header class="site-header">
     <nav class="nav-container">
-      <a href="/" class="nav-brand">⚡ IronLoot</a>
+      <a href="/" class="nav-brand">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 148 48" width="148" height="48" aria-label="Iron Loot">
+          <g transform="translate(4, 4) scale(0.769)">
+            <path d="M3,3 L41,3 L41,31 Q41,49 22,51 Q3,49 3,31 Z" fill="#151515" stroke="#C89B3C" stroke-width="2" stroke-linejoin="round"/>
+            <rect x="11" y="13" width="22" height="3.5" rx="1" fill="#C89B3C"/>
+            <rect x="19" y="13" width="6" height="20" rx="1" fill="#C89B3C"/>
+            <rect x="11" y="29.5" width="22" height="3.5" rx="1" fill="#C89B3C"/>
+            <circle cx="22" cy="42" r="5.5" fill="none" stroke="#C89B3C" stroke-width="1.5"/>
+            <line x1="22" y1="36.8" x2="22" y2="38.2" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="27.2" y1="42" x2="25.8" y2="42" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="16.8" y1="42" x2="18.2" y2="42" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="22" cy="42" r="1.5" fill="#C89B3C"/>
+          </g>
+          <text x="46" y="22" font-family="'Montserrat', system-ui, sans-serif" font-weight="700" font-size="15" letter-spacing="2" fill="#F6F6F6">IRON</text>
+          <text x="46" y="38" font-family="'Montserrat', system-ui, sans-serif" font-weight="600" font-size="13" letter-spacing="2.5" fill="#C89B3C">LOOT</text>
+        </svg>
+      </a>
       <div class="nav-links">
         <a href="/auctions" class="nav-link">Subastas</a>
         <a href="/about" class="nav-link">Acerca de</a>
@@ -29,14 +48,43 @@
 
   <footer class="site-footer">
     <div class="footer-container">
-      <div class="footer-brand">
-        <span>⚡ IronLoot</span>
-        <p>Plataforma de subastas transparente y segura.</p>
+      <div class="footer-col footer-col-brand">
+        <div class="footer-brand-logo">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 44 52" width="32" height="38" aria-label="Iron Loot">
+            <path d="M3,3 L41,3 L41,31 Q41,49 22,51 Q3,49 3,31 Z" fill="#151515" stroke="#C89B3C" stroke-width="2" stroke-linejoin="round"/>
+            <rect x="11" y="13" width="22" height="3.5" rx="1" fill="#C89B3C"/>
+            <rect x="19" y="13" width="6" height="20" rx="1" fill="#C89B3C"/>
+            <rect x="11" y="29.5" width="22" height="3.5" rx="1" fill="#C89B3C"/>
+            <circle cx="22" cy="42" r="5.5" fill="none" stroke="#C89B3C" stroke-width="1.5"/>
+            <line x1="22" y1="36.8" x2="22" y2="38.2" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="27.2" y1="42" x2="25.8" y2="42" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+            <line x1="16.8" y1="42" x2="18.2" y2="42" stroke="#C89B3C" stroke-width="1.5" stroke-linecap="round"/>
+            <circle cx="22" cy="42" r="1.5" fill="#C89B3C"/>
+          </svg>
+        </div>
+        <p class="footer-tagline">Plataforma de subastas transparente y segura. Compra y vende con confianza.</p>
       </div>
-      <div class="footer-links">
-        <a href="/about">Acerca de</a>
-        <a href="/static/terms">Términos</a>
-        <a href="/privacy">Privacidad</a>
+      <div class="footer-col">
+        <h4>Plataforma</h4>
+        <nav class="footer-links">
+          <a href="/auctions">Subastas activas</a>
+          <a href="/about">Cómo funciona</a>
+          <a href="/auth/register">Crear cuenta</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4>Soporte</h4>
+        <nav class="footer-links">
+          <a href="/about">Acerca de</a>
+          <a href="/contact">Contacto</a>
+        </nav>
+      </div>
+      <div class="footer-col">
+        <h4>Legal</h4>
+        <nav class="footer-links">
+          <a href="/static/terms">Términos de uso</a>
+          <a href="/privacy">Privacidad</a>
+        </nav>
       </div>
     </div>
     <p class="footer-copy">&copy; 2026 IronLoot. Todos los derechos reservados.</p>
