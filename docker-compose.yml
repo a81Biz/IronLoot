@@ -94,6 +94,7 @@ services:
       - MAIL_PASSWORD=test
       - MAIL_FROM="Iron Loot <noreply@ironloot.com>"
       - BASE_URL=http://base.localhost
+      - JWT_SECRET=${JWT_SECRET}
     # Load additional env vars from project .env into the container
     env_file:
       - ./src/api/.env
@@ -235,7 +236,7 @@ services:
       - BASE_PORT=5174
       - API_URL=http://api:3000
       - CLIENT_URL=http://client.localhost
-      - COOKIE_DOMAIN=${COOKIE_DOMAIN}
+      - COOKIE_DOMAIN=${COOKIE_DOMAIN:-.localhost}
       - COOKIE_SAMESITE=${COOKIE_SAMESITE:-Lax}
     volumes:
       - ./src/apps/base/src:/app/src
@@ -279,7 +280,7 @@ services:
       - API_URL=http://api:3000
       - BASE_URL=http://base.localhost
       - JWT_SECRET=${JWT_SECRET:-change-me-min-32-chars}
-      - COOKIE_DOMAIN=${COOKIE_DOMAIN}
+      - COOKIE_DOMAIN=${COOKIE_DOMAIN:-.localhost}
       - COOKIE_SAMESITE=${COOKIE_SAMESITE:-Lax}
     volumes:
       - ./src/apps/client/src:/app/src
