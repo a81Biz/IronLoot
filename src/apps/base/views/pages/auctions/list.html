@@ -2,29 +2,145 @@
 {% block title %}Subastas — IronLoot{% endblock %}
 
 {% block content %}
-<div class="page-header">
-  <h1>Subastas activas</h1>
-</div>
+<div class="page-container">
+  <div class="list-layout">
 
-<form method="GET" action="/auctions" style="margin-bottom:1.5rem;display:flex;gap:.5rem;">
-  <input class="form-control" name="q" value="{{ q }}" placeholder="Buscar subastas..." style="max-width:320px;">
-  <button type="submit" class="btn btn-primary">Buscar</button>
-</form>
+    {# ── Sidebar de filtros ────────────────────────────── #}
+    <aside class="filter-sidebar">
+      <form method="GET" action="/auctions">
+        {% if q %}
+          <input type="hidden" name="q" value="{{ q }}">
+        {% endif %}
 
-{% if auctions and auctions.length > 0 %}
-  <div class="auctions-grid">
-    {% for auction in auctions %}
-      <div class="auction-card">
-        <div class="auction-card-body">
-          <h3>{{ auction.title }}</h3>
-          <div class="auction-price">MXN {{ auction.currentPrice | default(auction.startingPrice) }}</div>
-          <div class="auction-meta">Estado: {{ auction.status }}</div>
-          <a href="/auctions/{{ auction.id }}" class="btn btn-secondary mt-2">Ver detalle</a>
+        <div class="filter-group">
+          <p class="filter-title">Categorías</p>
+          <ul class="filter-list">
+            <li><a href="/auctions" class="{% if not category %}active{% endif %}">Todas</a></li>
+            <li><a href="/auctions?category=collectibles">Coleccionables</a></li>
+            <li><a href="/auctions?category=electronics">Electrónica</a></li>
+            <li><a href="/auctions?category=art">Arte</a></li>
+            <li><a href="/auctions?category=jewelry">Joyería</a></li>
+            <li><a href="/auctions?category=vehicles">Vehículos</a></li>
+          </ul>
         </div>
+
+        <div class="filter-group">
+          <p class="filter-title">Estado de subasta</p>
+          <ul class="filter-list">
+            <li>
+              <label class="filter-checkbox">
+                <input type="checkbox" name="status" value="ACTIVE" {% if status == 'ACTIVE' %}checked{% endif %}>
+                Activas
+              </label>
+            </li>
+            <li>
+              <label class="filter-checkbox">
+                <input type="checkbox" name="status" value="PUBLISHED" {% if status == 'PUBLISHED' %}checked{% endif %}>
+                Próximas
+              </label>
+            </li>
+            <li>
+              <label class="filter-checkbox">
+                <input type="checkbox" name="status" value="CLOSED" {% if status == 'CLOSED' %}checked{% endif %}>
+                Cerradas
+              </label>
+            </li>
+          </ul>
+        </div>
+
+        <div class="filter-group">
+          <p class="filter-title">Precio (MXN)</p>
+          <div class="price-range">
+            <input type="number" name="minPrice" placeholder="Min" class="form-control" value="{{ minPrice }}">
+            <span>—</span>
+            <input type="number" name="maxPrice" placeholder="Max" class="form-control" value="{{ maxPrice }}">
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <p class="filter-title">Vendedor</p>
+          <label class="verified-toggle">
+            <input type="checkbox" name="verified" value="true" {% if verified %}checked{% endif %}>
+            Solo verificados
+          </label>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full">Aplicar filtros</button>
+      </form>
+    </aside>
+
+    {# ── Área de resultados ────────────────────────────── #}
+    <div class="auction-results">
+      <div style="margin-bottom:1.25rem;">
+        <form method="GET" action="/auctions" style="display:flex;gap:.5rem;margin-bottom:1rem;">
+          {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
+          <input class="form-control" name="q" value="{{ q }}" placeholder="Buscar subastas..." style="flex:1;">
+          <button type="submit" class="btn btn-primary">Buscar</button>
+        </form>
       </div>
-    {% endfor %}
+
+      <div class="results-header">
+        <span class="results-count">
+          {% if auctions %}{{ auctions.length }} resultado(s){% endif %}
+          {% if q %} para "<strong>{{ q }}</strong>"{% endif %}
+        </span>
+        <select class="sort-select" onchange="window.location.search = '?sort='+this.value{% if q %}+'&q={{ q }}'{% endif %}">
+          <option value="createdAt_desc">Más recientes</option>
+          <option value="price_asc">Menor precio</option>
+          <option value="price_desc">Mayor precio</option>
+          <option value="endDate_asc">Próximas a cerrar</option>
+        </select>
+      </div>
+
+      {% if auctions and auctions.length > 0 %}
+        <div class="auctions-grid">
+          {% for auction in auctions %}
+            <div class="auction-card">
+              <div class="card-image card-image--placeholder">
+                {% if auction.imageUrl %}
+                  <img src="{{ auction.imageUrl }}" alt="{{ auction.title }}">
+                {% endif %}
+                <div class="card-badges">
+                  {% if auction.status == 'ACTIVE' %}
+                    <span class="badge badge-active">Activa</span>
+                  {% elif auction.status == 'PUBLISHED' %}
+                    <span class="badge badge-info">Próxima</span>
+                  {% elif auction.status == 'CLOSED' %}
+                    <span class="badge badge-closed">Cerrada</span>
+                  {% endif %}
+                </div>
+              </div>
+              <div class="card-body">
+                <h3 class="card-title">{{ auction.title }}</h3>
+                <div class="price-info">
+                  <div class="current-price">MXN {{ auction.currentPrice | default(auction.startingPrice) }}</div>
+                  <div class="start-price">Inicio: MXN {{ auction.startingPrice }}</div>
+                </div>
+                <div class="card-meta">
+                  {% if auction.totalBids %}{{ auction.totalBids }} oferta(s){% endif %}
+                </div>
+                <a href="/auctions/{{ auction.id }}" class="btn btn-primary btn-full">Ver subasta</a>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+        <div class="pagination">
+          {% if page and page > 1 %}
+            <a href="/auctions?page={{ page - 1 }}{% if q %}&q={{ q }}{% endif %}">← Anterior</a>
+          {% endif %}
+          <span class="current-page">{{ page | default(1) }}</span>
+          {% if auctions.length >= 12 %}
+            <a href="/auctions?page={{ (page | default(1)) + 1 }}{% if q %}&q={{ q }}{% endif %}">Siguiente →</a>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <p>No hay subastas disponibles{% if q %} para "{{ q }}"{% endif %}.</p>
+          <a href="/auctions" class="btn btn-primary">Ver todas</a>
+        </div>
+      {% endif %}
+    </div>
+
   </div>
-{% else %}
-  <p class="text-center">No hay subastas disponibles{% if q %} para "{{ q }}"{% endif %}.</p>
-{% endif %}
+</div>
 {% endblock %}

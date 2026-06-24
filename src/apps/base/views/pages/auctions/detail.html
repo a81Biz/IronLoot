@@ -2,32 +2,92 @@
 {% block title %}{{ auction.title if auction else "Subasta" }} — IronLoot{% endblock %}
 
 {% block content %}
-{% if auction %}
-  <div class="page-header">
-    <h1>{{ auction.title }}</h1>
-    <p class="auction-meta">Estado: <strong>{{ auction.status }}</strong></p>
-  </div>
-  <div style="display:grid;grid-template-columns:2fr 1fr;gap:2rem;align-items:start;">
-    <div>
-      <p>{{ auction.description }}</p>
-    </div>
-    <div style="background:#fff;border-radius:10px;padding:1.5rem;border:1px solid #dee2e6;">
-      <div class="auction-price">MXN {{ auction.currentPrice | default(auction.startingPrice) }}</div>
-      <p class="auction-meta">Precio actual</p>
-      <hr style="margin:1rem 0;">
-      {% if auction.status == 'ACTIVE' %}
-        <a href="{{ clientUrl }}/auctions/{{ auction.id }}" class="btn btn-primary" style="width:100%;text-align:center;">
-          Pujar ahora (requiere cuenta)
-        </a>
-      {% else %}
-        <p>Esta subasta no está activa actualmente.</p>
-      {% endif %}
-      <div class="text-center mt-2">
-        <a href="{{ clientUrl }}/auth/register" style="font-size:.85rem;">¿No tienes cuenta? Regístrate</a>
+<div class="page-container">
+
+  {% if auction %}
+
+    <div class="detail-layout">
+
+      {# ── Columna principal ─────────────────────────── #}
+      <div class="detail-main">
+        <div class="detail-gallery">
+          {% if auction.imageUrl %}
+            <img src="{{ auction.imageUrl }}" alt="{{ auction.title }}">
+          {% endif %}
+        </div>
+
+        <div class="detail-info">
+          <div class="detail-meta" style="margin-bottom:0.75rem;">
+            {% if auction.status == 'ACTIVE' %}
+              <span class="badge badge-active">Activa</span>
+            {% elif auction.status == 'PUBLISHED' %}
+              <span class="badge badge-info">Próxima</span>
+            {% elif auction.status == 'CLOSED' %}
+              <span class="badge badge-closed">Cerrada</span>
+            {% else %}
+              <span class="badge badge-muted">{{ auction.status }}</span>
+            {% endif %}
+          </div>
+
+          <h1>{{ auction.title }}</h1>
+
+          {% if auction.description %}
+            <p class="detail-description">{{ auction.description }}</p>
+          {% endif %}
+
+          <div class="detail-meta">
+            {% if auction.totalBids %}
+              <span>{{ auction.totalBids }} oferta(s)</span>
+            {% endif %}
+            {% if auction.endDate %}
+              <span>Cierra: {{ auction.endDate }}</span>
+            {% endif %}
+          </div>
+        </div>
       </div>
+
+      {# ── Panel de puja ─────────────────────────────── #}
+      <div class="bid-panel">
+        <div class="bid-panel-inner">
+          <div class="current-price-block">
+            <p class="price-label">Precio actual</p>
+            <div class="price-value">MXN {{ auction.currentPrice | default(auction.startingPrice) }}</div>
+          </div>
+
+          <hr class="bid-divider">
+
+          <div class="bid-stats">
+            {% if auction.totalBids %}
+              <span>{{ auction.totalBids }} oferta(s)</span>
+            {% else %}
+              <span>Sin ofertas aún</span>
+            {% endif %}
+            <span>Inicio: MXN {{ auction.startingPrice }}</span>
+          </div>
+
+          {% if auction.status == 'ACTIVE' %}
+            <a href="{{ clientUrl }}/auctions/{{ auction.id }}" class="btn btn-primary btn-full btn-lg">
+              Pujar ahora
+            </a>
+            <p class="bid-note">Se requiere cuenta para pujar</p>
+          {% else %}
+            <p class="auction-closed-msg">Esta subasta no está activa actualmente.</p>
+          {% endif %}
+
+          <a href="{{ clientUrl }}/auth/register" class="register-link">¿No tienes cuenta? Regístrate gratis</a>
+        </div>
+      </div>
+
     </div>
-  </div>
-{% else %}
-  <p>Subasta no encontrada. <a href="/auctions">Volver al catálogo</a></p>
-{% endif %}
+
+  {% else %}
+    <div class="empty-state">
+      <p>Subasta no encontrada.</p>
+      <a href="/auctions" class="btn btn-primary">Volver al catálogo</a>
+    </div>
+  {% endif %}
+
+</div>
 {% endblock %}
+
+{% block scripts %}{% endblock %}

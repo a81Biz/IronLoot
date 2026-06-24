@@ -2,37 +2,150 @@
 {% block title %}IronLoot — Subastas en línea{% endblock %}
 
 {% block content %}
-<section class="hero">
-  <h1>⚡ IronLoot</h1>
-  <p>Compra y vende en subastas transparentes y en tiempo real.</p>
-  <div class="hero-actions">
-    <a href="/auctions" class="btn btn-primary">Ver subastas activas</a>
-    <a href="{{ clientUrl }}/seller/onboarding" class="btn btn-ghost">Vender ahora</a>
+
+{# ── Sección 1: Hero ────────────────────────────────────── #}
+<section class="hero section-inner">
+  <div class="hero-content">
+    <span class="hero-eyebrow">Plataforma de subastas en línea</span>
+    <h1 class="hero-headline">
+      Donde el valor cambia de manos con<em> total confianza</em>
+    </h1>
+    <p class="hero-sub">
+      Compra y vende en subastas transparentes y en tiempo real. Fondos protegidos,
+      pujas verificadas y entrega garantizada.
+    </p>
+    <div class="hero-actions">
+      <a href="/auctions" class="btn btn-primary btn-lg">Ver subastas activas</a>
+      <a href="{{ clientUrl }}/seller/onboarding" class="btn btn-ghost btn-lg">Vender ahora</a>
+    </div>
+  </div>
+  <div class="hero-visual">
+    <img src="/images/logo-3d.png" alt="Iron Loot" class="hero-logo-3d">
   </div>
 </section>
 
-<section>
-  <h2 class="section-title">Subastas activas</h2>
+{# ── Sección 2: Pilares de confianza ─────────────────────── #}
+<section class="trust-pillars">
+  <div class="pillars-grid">
+    <div class="pillar-item">
+      <div class="pillar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#C89B3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <h3 class="pillar-title">Pagos protegidos</h3>
+      <p class="pillar-text">Tus fondos quedan retenidos de forma segura hasta confirmar la entrega. Nunca pierdes dinero por una subasta fallida.</p>
+    </div>
+    <div class="pillar-item">
+      <div class="pillar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#C89B3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <h3 class="pillar-title">Pujas en tiempo real</h3>
+      <p class="pillar-text">Seguimiento en vivo del precio con WebSockets. Recibes notificaciones al instante si alguien supera tu oferta.</p>
+    </div>
+    <div class="pillar-item">
+      <div class="pillar-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="#C89B3C" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"/>
+        </svg>
+      </div>
+      <h3 class="pillar-title">Vendedores verificados</h3>
+      <p class="pillar-text">Los vendedores pasan por un proceso KYC riguroso. Compras solo a personas y empresas validadas.</p>
+    </div>
+  </div>
+</section>
+
+{# ── Sección 3: Subastas activas ─────────────────────────── #}
+<section class="active-auctions">
+  <div class="section-header" style="max-width:1200px;margin:0 auto 2rem;padding:0 1.5rem;">
+    <h2>Subastas activas</h2>
+    <a href="/auctions" class="section-link">Ver todas →</a>
+  </div>
   {% if auctions and auctions.length > 0 %}
-    <div class="auctions-grid">
+    <div class="auctions-grid" style="max-width:1200px;margin:0 auto;padding:0 1.5rem;">
       {% for auction in auctions %}
         <div class="auction-card">
-          <div class="auction-card-body">
-            <h3>{{ auction.title }}</h3>
-            <div class="auction-price">MXN {{ auction.currentPrice | default(auction.startingPrice) }}</div>
-            <div class="auction-meta">
+          <div class="card-image card-image--placeholder">
+            {% if auction.imageUrl %}
+              <img src="{{ auction.imageUrl }}" alt="{{ auction.title }}">
+            {% endif %}
+          </div>
+          <div class="card-body">
+            <h3 class="card-title">{{ auction.title }}</h3>
+            <div class="price-info">
+              <div class="current-price">MXN {{ auction.currentPrice | default(auction.startingPrice) }}</div>
+              <div class="start-price">Precio inicial: MXN {{ auction.startingPrice }}</div>
+            </div>
+            <div class="card-meta">
               {% if auction.totalBids %}{{ auction.totalBids }} oferta(s){% endif %}
             </div>
-            <a href="/auctions/{{ auction.id }}" class="btn btn-secondary mt-2">Ver subasta</a>
+            <a href="/auctions/{{ auction.id }}" class="btn btn-primary btn-full">Ver subasta</a>
           </div>
         </div>
       {% endfor %}
     </div>
   {% else %}
-    <p class="text-center">No hay subastas activas en este momento. <a href="/auth/register">¡Regístrate</a> y sé el primero en publicar.</p>
+    <div class="empty-state">
+      <p>No hay subastas activas en este momento.</p>
+      <a href="/auth/register" class="btn btn-primary">Regístrate y publica la primera</a>
+    </div>
   {% endif %}
-  <div class="text-center mt-2">
-    <a href="/auctions" class="btn btn-primary">Ver todas las subastas</a>
+</section>
+
+{# ── Sección 4: Cómo funciona ─────────────────────────────── #}
+<section class="how-it-works">
+  <div class="how-inner">
+    <h2>¿Cómo funciona?</h2>
+    <div class="steps-grid">
+      <div class="step">
+        <div class="step-number">01</div>
+        <h3 class="step-title">Crea tu cuenta</h3>
+        <p>Regístrate gratis en minutos. Vendedores completan una verificación de identidad adicional para garantizar la confianza en la plataforma.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">02</div>
+        <h3 class="step-title">Puja o publica</h3>
+        <p>Explora subastas activas y realiza pujas en tiempo real, o crea tu propia subasta con fotos, descripción y precio de salida.</p>
+      </div>
+      <div class="step">
+        <div class="step-number">03</div>
+        <h3 class="step-title">Paga y recibe</h3>
+        <p>El ganador paga de forma segura. El vendedor despacha el artículo. Los fondos se liberan al confirmar la entrega.</p>
+      </div>
+    </div>
   </div>
 </section>
+
+{# ── Sección 5: Partners (placeholder) ───────────────────── #}
+<section class="partners">
+  <p class="partners-label">Socios y aliados estratégicos</p>
+  <div class="partners-logos">
+    <span class="partner-placeholder">PayPal</span>
+    <span class="partner-placeholder">Mercado Pago</span>
+    <span class="partner-placeholder">DHL</span>
+    <span class="partner-placeholder">FedEx</span>
+  </div>
+</section>
+
+{# ── Sección 6: Newsletter ────────────────────────────────── #}
+<section class="newsletter">
+  <div class="newsletter-inner">
+    <h2>Mantente al día</h2>
+    <p>Recibe alertas de nuevas subastas, artículos de colección y ofertas exclusivas directamente en tu correo.</p>
+    <form class="newsletter-form" action="#" method="post">
+      <input
+        type="email"
+        name="email"
+        placeholder="tu@correo.com"
+        class="form-control newsletter-input"
+        required
+      >
+      <button type="submit" class="btn btn-primary">Suscribirme</button>
+    </form>
+  </div>
+</section>
+
 {% endblock %}
