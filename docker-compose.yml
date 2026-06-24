@@ -235,8 +235,8 @@ services:
       - NODE_ENV=development
       - BASE_PORT=5174
       - API_URL=http://api:3000
-      - CLIENT_URL=http://client.localhost
-      - COOKIE_DOMAIN=${COOKIE_DOMAIN:-.localhost}
+      - CLIENT_URL=http://client.ironloot.local
+      - COOKIE_DOMAIN=${COOKIE_DOMAIN:-.ironloot.local}
       - COOKIE_SAMESITE=${COOKIE_SAMESITE:-Lax}
     volumes:
       - ./src/apps/base/src:/app/src
@@ -278,9 +278,9 @@ services:
       - NODE_ENV=development
       - CLIENT_PORT=5175
       - API_URL=http://api:3000
-      - BASE_URL=http://base.localhost
+      - BASE_URL=http://base.ironloot.local
       - JWT_SECRET=${JWT_SECRET:-change-me-min-32-chars}
-      - COOKIE_DOMAIN=${COOKIE_DOMAIN:-.localhost}
+      - COOKIE_DOMAIN=${COOKIE_DOMAIN:-.ironloot.local}
       - COOKIE_SAMESITE=${COOKIE_SAMESITE:-Lax}
     volumes:
       - ./src/apps/client/src:/app/src
