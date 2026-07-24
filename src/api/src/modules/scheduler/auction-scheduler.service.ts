@@ -7,6 +7,7 @@ import { AuctionStatus, OrderStatus, NotificationType } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { DistributedLockService } from '../../common/redis/distributed-lock.service';
 import { SystemConfigService } from '../system-config/system-config.service';
+import { CommissionsService } from '../commissions/commissions.service';
 // PT-013: Domain events from @ironloot/core
 import { AuctionClosedEvent } from '@ironloot/core';
 
@@ -31,6 +32,7 @@ export class AuctionSchedulerService {
     private readonly distributedLockService: DistributedLockService,
     private readonly systemConfig: SystemConfigService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly commissionsService: CommissionsService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -146,6 +148,9 @@ export class AuctionSchedulerService {
               });
 
               // 3. Capture Funds (atomic with order creation — pass outer tx)
+              // PT-042 (AUD-005): charge the admin-configured commission rate (seller override →
+              // global → default 10) instead of a hardcoded 10%, so admin config affects the charge.
+              const feePercent = await this.commissionsService.resolveRatePercent(auction.sellerId);
               await this.walletService.captureHeldFunds(
                 winnerBid.bidderId,
                 auction.sellerId,
@@ -153,6 +158,7 @@ export class AuctionSchedulerService {
                 auction.id,
                 `Auction Won: ${auction.title}`,
                 tx,
+                feePercent,
               );
             }
           },

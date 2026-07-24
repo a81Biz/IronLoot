@@ -279,10 +279,13 @@ export class WalletService {
     referenceId: string, // AuctionId/OrderId
     description: string,
     outerTx?: Prisma.TransactionClient,
+    // PT-042 (AUD-005): platform commission percent (0–100). The orchestrator passes the
+    // admin-configured rate so the actual charge is no longer a hardcoded magic number.
+    feePercent = 10,
   ): Promise<void> {
     const execute = async (tx: Prisma.TransactionClient) => {
       const amountDecimal = new Decimal(amount);
-      const feePercentage = new Decimal(0.1); // 10% Platform Fee
+      const feePercentage = new Decimal(feePercent).div(100); // configurable platform fee
       const feeAmount = amountDecimal.mul(feePercentage);
       // const sellerNet = amountDecimal.minus(feeAmount); // Unused
 

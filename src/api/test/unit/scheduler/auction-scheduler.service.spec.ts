@@ -6,6 +6,7 @@ import { WalletService } from '@/modules/wallet/wallet.service';
 import { NotificationsService } from '@/modules/notifications/notifications.service';
 import { DistributedLockService } from '@/common/redis/distributed-lock.service';
 import { SystemConfigService } from '@/modules/system-config/system-config.service';
+import { CommissionsService } from '@/modules/commissions/commissions.service';
 import { AuctionStatus, OrderStatus } from '@prisma/client';
 
 describe('AuctionSchedulerService — TX atomicity (PT-033)', () => {
@@ -50,6 +51,10 @@ describe('AuctionSchedulerService — TX atomicity (PT-033)', () => {
     emit: jest.fn(),
   };
 
+  const mockCommissionsService = {
+    resolveRatePercent: jest.fn().mockResolvedValue(10),
+  };
+
   const expiredAuction = {
     id: 'auction-1',
     title: 'Test Auction',
@@ -77,6 +82,7 @@ describe('AuctionSchedulerService — TX atomicity (PT-033)', () => {
         { provide: DistributedLockService, useValue: mockDistributedLockService },
         { provide: SystemConfigService, useValue: mockSystemConfigService },
         { provide: EventEmitter2, useValue: mockEventEmitter },
+        { provide: CommissionsService, useValue: mockCommissionsService },
       ],
     }).compile();
 
@@ -113,6 +119,7 @@ describe('AuctionSchedulerService — TX atomicity (PT-033)', () => {
         expiredAuction.id,
         expect.any(String),
         mockTx,
+        10, // PT-042 (AUD-005): configured commission rate passed to the capture
       );
     });
 
