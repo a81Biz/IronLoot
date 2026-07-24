@@ -13,17 +13,8 @@ import { Log } from '../../common/observability/decorators';
 export class OrdersController {
   constructor(private readonly ordersService: OrdersService) {}
 
-  /*
-  @Post()
-  @ApiOperation({
-    summary: 'Create order (DISABLED)',
-    description: 'Order creation is now handled automatically by the backend scheduler.',
-  })
-  @ApiResponse({ status: 410, description: 'Endpoint disabled' })
-  async create(): Promise<void> {
-    throw new ForbiddenException('Order creation is handled automatically');
-  }
-  */
+  // PT-047 (AUD-033): order creation is handled automatically by the auction-close scheduler;
+  // there is no manual creation endpoint.
 
   @Get()
   @ApiOperation({ summary: 'List orders', description: 'Get orders by role (buyer|seller)' })

@@ -5,5 +5,13 @@
   "workspaces": [
     "src/apps/*",
     "src/packages/*"
-  ]
+  ],
+  "scripts": {
+    "postinstall": "npm --prefix src/api install --no-audit --no-fund",
+    "lint:check": "npm --prefix src/api run lint:check",
+    "typecheck": "npm --prefix src/api run typecheck",
+    "test": "npm --prefix src/api run test",
+    "test:e2e": "npm --prefix src/api run test:e2e",
+    "build": "npm --prefix src/api run build"
+  }
 }

@@ -9,7 +9,7 @@
 | **Código usado** | api, base, client, admin, core, prisma, docker, nginx |
 | **Nivel de confianza** | Alto |
 
-> **✅ REMEDIADO (2026-07-23):** 33/36 hallazgos corregidos y **fusionados a master** (PTs 036–046). Abiertos: **AUD-016** (PAC externo), **AUD-028** (CI, validación de entorno), **AUD-033** (menor). Detalle: [../Informe-Remediacion.md](../Informe-Remediacion.md). La tabla inferior conserva el estado original de la auditoría; la columna de recomendación indica el PT que lo resolvió.
+> **✅ REMEDIADO (2026-07-23):** 36/36 hallazgos corregidos y **fusionados a master** (PTs 036–047). Cierres finales (PT-047): **AUD-016** → interruptor `CFDI_ENABLED` (OFF por defecto; `generate()` responde 503 claro y el admin lo prende/apaga desde la UI); la integración real del PAC queda como dependencia externa a contratar. **AUD-028** → scripts de CI en el `package.json` raíz. **AUD-033** → código muerto eliminado. Detalle: [../Informe-Remediacion.md](../Informe-Remediacion.md). La tabla inferior conserva el estado original de la auditoría; la columna de recomendación indica el PT que lo resolvió.
 >
 > **Estado real, no ideal.** 36 hallazgos entre documentación y realidad. En conflicto doc↔código **gana el código**. Los hallazgos de dominio/seguridad **no se cierran** sin validación humana ni evidencia post-fix (se corrigen bajo FDGE). El **detalle completo por hallazgo** (descripción, ubicación, evidencia, impacto, recomendación) está en `audit/deliverables/01-Registro-de-Hallazgos.md`; aquí queda el registro canónico resumido.
 
