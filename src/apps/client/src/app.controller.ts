@@ -194,4 +194,18 @@ export class AppController {
     const auction = await apiGet(getToken(req), `/api/v1/auctions/${id}`);
     return { auction, apiUrl: API_URL };
   }
+
+  // ── Bidding page (PT-044 / AUD-002) ───────────────────────────────────
+  // Must be declared AFTER the specific /auctions/* routes so ":id" does not shadow them.
+  @Get('/auctions/:id')
+  @Render('pages/auction/detail.html')
+  async auctionDetail(@Req() req: Request, @Param('id') id: string) {
+    const token = getToken(req);
+    const [auction, wallet, bids] = await Promise.all([
+      apiGet(token, `/api/v1/auctions/${id}`),
+      apiGet(token, '/api/v1/wallet'),
+      apiGet(token, `/api/v1/auctions/${id}/bids`),
+    ]);
+    return { auction, wallet, bids, apiUrl: API_URL };
+  }
 }

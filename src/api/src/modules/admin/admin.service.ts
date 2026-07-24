@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { SystemConfigService } from '../system-config/system-config.service';
 import { CommissionsService } from '../commissions/commissions.service';
@@ -371,7 +371,20 @@ export class AdminService {
     return auction;
   }
 
+  /**
+   * PT-041 (AUD-011): admin moderation transitions are intentional overrides outside the
+   * buyer/seller state machine, but a finished (terminal) auction must not be re-moderated.
+   */
+  private async assertAuctionModifiable(id: string): Promise<void> {
+    const a = await this.prisma.auction.findUnique({ where: { id }, select: { status: true } });
+    if (!a) throw new NotFoundException('Auction not found');
+    if (a.status === 'CLOSED' || a.status === 'CANCELLED') {
+      throw new BadRequestException(`Cannot moderate a ${a.status} auction`);
+    }
+  }
+
   async approveAuction(id: string, adminUser: string) {
+    await this.assertAuctionModifiable(id);
     const auction = await this.prisma.auction.findUnique({ where: { id } });
     if (!auction) throw new NotFoundException('Auction not found');
     const result = await (this.prisma.auction as any).update({
@@ -386,6 +399,7 @@ export class AdminService {
   }
 
   async rejectAuction(id: string, reason: string, adminUser: string) {
+    await this.assertAuctionModifiable(id);
     const result = await (this.prisma.auction as any).update({
       where: { id },
       data: { status: 'DRAFT', adminNotes: `Rejected by ${adminUser}: ${reason}` },
@@ -395,6 +409,7 @@ export class AdminService {
   }
 
   async suspendAuction(id: string, adminUser: string) {
+    await this.assertAuctionModifiable(id);
     const result = await (this.prisma.auction as any).update({
       where: { id },
       data: {
@@ -407,6 +422,7 @@ export class AdminService {
   }
 
   async forceCloseAuction(id: string, adminUser: string) {
+    await this.assertAuctionModifiable(id);
     const result = await (this.prisma.auction as any).update({
       where: { id },
       data: {

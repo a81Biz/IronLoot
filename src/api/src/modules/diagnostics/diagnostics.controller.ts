@@ -17,7 +17,8 @@ import { DevelopmentOnlyGuard } from '../../common/guards/development-only.guard
 @ApiTags('diagnostics')
 @Controller('diagnostics')
 @UseGuards(DevelopmentOnlyGuard)
-// @Public() // Diagnostics endpoints are public (TODO: restrict in production)
+// PT-040 (AUD-025): intentionally NOT @Public — DevelopmentOnlyGuard (class-level) already
+// throws ForbiddenException when NODE_ENV=production, so diagnostics are dev-only.
 export class DiagnosticsController {
   constructor(
     private readonly prisma: PrismaService,

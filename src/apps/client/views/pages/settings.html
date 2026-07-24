@@ -20,8 +20,8 @@
 const API = '{{ apiUrl }}';
 document.getElementById('settingsForm').addEventListener('submit', async (e) => {
   e.preventDefault();
-  await fetch(API + '/api/v1/users/settings', {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+  await fetch('/api/v1/users/me/settings', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
     body: JSON.stringify({ emailOnBid: document.getElementById('emailBids').checked, emailOnWin: document.getElementById('emailWon').checked }),
   });
   alert('Preferencias guardadas.');

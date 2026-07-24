@@ -8,11 +8,37 @@ import { AppModule } from './app.module';
 import * as nunjucks from 'nunjucks';
 import * as cookieParser from 'cookie-parser';
 import * as session from 'express-session';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
 
   app.use(cookieParser());
+
+  // PT-040 (AUD-007): security headers for the backoffice (previously missing). CSP allows the
+  // Chart.js CDN used by the dashboard; inline scripts/styles kept for the existing templates.
+  app.use(
+    helmet({
+      contentSecurityPolicy: {
+        directives: {
+          defaultSrc: ["'self'"],
+          scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.jsdelivr.net'],
+          styleSrc: [
+            "'self'",
+            "'unsafe-inline'",
+            'https://fonts.googleapis.com',
+            'https://cdn.jsdelivr.net',
+          ],
+          fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
+          imgSrc: ["'self'", 'data:', 'https:'],
+          connectSrc: ["'self'"],
+          frameSrc: ["'none'"],
+          objectSrc: ["'none'"],
+        },
+      },
+      crossOriginEmbedderPolicy: false,
+    }),
+  );
 
   // PT-013: Redis session store for admin (BRECHA-8 resolved)
   // Falls back to in-memory store if Redis is unavailable (dev without Redis)
@@ -38,6 +64,9 @@ async function bootstrap() {
       cookie: {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
+        // PT-040 (AUD-014/AUD-007): SameSite=Lax blocks the admin session cookie on cross-site
+        // POSTs — a solid CSRF mitigation for the backoffice without per-form tokens.
+        sameSite: 'lax',
         maxAge: 8 * 60 * 60 * 1000,
       },
     }),

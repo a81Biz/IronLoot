@@ -23,7 +23,7 @@ const API = '{{ apiUrl }}';
 document.getElementById('disputeForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msgEl = document.getElementById('disputeMsg');
-  const res = await fetch(API + '/api/v1/disputes', {
+  const res = await fetch('/api/v1/disputes', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
     body: JSON.stringify({ orderId: document.getElementById('orderId').value, reason: document.getElementById('reason').value }),
   });

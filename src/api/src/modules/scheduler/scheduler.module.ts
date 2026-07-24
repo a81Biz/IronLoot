@@ -8,6 +8,7 @@ import { WalletModule } from '../wallet/wallet.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { DistributedLockService } from '../../common/redis/distributed-lock.service';
 import { SystemConfigModule } from '../system-config/system-config.module';
+import { CommissionsModule } from '../commissions/commissions.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { SystemConfigModule } from '../system-config/system-config.module';
     WalletModule,
     NotificationsModule,
     SystemConfigModule,
+    CommissionsModule,
   ],
   providers: [AuctionSchedulerService, SystemCleanupService, DistributedLockService],
   exports: [AuctionSchedulerService],

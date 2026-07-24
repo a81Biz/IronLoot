@@ -46,6 +46,15 @@ export class CommissionsService {
     return globalRate?.ratePercent ?? new Decimal(10);
   }
 
+  /**
+   * PT-042 (AUD-005): public rate resolver so the settlement path (scheduler) can charge the
+   * admin-configured commission rate (seller override → global → default 10) instead of a
+   * hardcoded percentage — a single source of truth for the platform commission rate.
+   */
+  async resolveRatePercent(sellerId: string): Promise<number> {
+    return Number(await this.resolveRate(sellerId));
+  }
+
   async getConfig(): Promise<any[]> {
     return (this.prisma as any).commissionConfig.findMany({ orderBy: { type: 'asc' } });
   }

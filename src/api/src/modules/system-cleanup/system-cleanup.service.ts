@@ -19,8 +19,9 @@ export class SystemCleanupService {
   async cleanOldLogs() {
     this.logger.info('Starting system cleanup...');
     const now = new Date();
-    // Keep logs for 30 days
-    const retentionDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    // PT-043 (AUD-018): single authoritative retention, configurable (default 90 days).
+    const retentionDays = Number(process.env.LOG_RETENTION_DAYS) || 90;
+    const retentionDate = new Date(now.getTime() - retentionDays * 24 * 60 * 60 * 1000);
 
     try {
       const deletedAudit = await this.prisma.auditEvent.deleteMany({

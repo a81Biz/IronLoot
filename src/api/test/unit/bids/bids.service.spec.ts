@@ -48,7 +48,12 @@ const mockRequestContext = {
 };
 
 const mockSystemConfigService = {
-  getNumber: jest.fn().mockResolvedValue(120),
+  // PT-041 (AUD-009): key-aware — soft-close window (120) vs minimum bid increment (10).
+  getNumber: jest
+    .fn()
+    .mockImplementation((key: string) =>
+      Promise.resolve(key === 'AUCTION_MIN_INCREMENT_AMOUNT' ? 10 : 120),
+    ),
 };
 
 const mockWalletService = {
@@ -120,7 +125,9 @@ describe('BidsService', () => {
       mockPrismaService.auction.findUnique.mockResolvedValue(buildAuction(auctionEndsAt));
       mockPrismaService.bid.create.mockResolvedValue(mockBid);
       mockPrismaService.auction.update.mockResolvedValue({});
-      mockSystemConfigService.getNumber.mockResolvedValue(120);
+      mockSystemConfigService.getNumber.mockImplementation((key: string) =>
+        Promise.resolve(key === 'AUCTION_MIN_INCREMENT_AMOUNT' ? 10 : 120),
+      );
 
       await service.placeBid('buyer-1', 'auction-1', { amount: 200 });
 
@@ -151,7 +158,9 @@ describe('BidsService', () => {
       mockPrismaService.auction.findUnique.mockResolvedValue(buildAuction(auctionEndsAt));
       mockPrismaService.bid.create.mockResolvedValue(mockBid);
       mockPrismaService.auction.update.mockResolvedValue({});
-      mockSystemConfigService.getNumber.mockResolvedValue(120);
+      mockSystemConfigService.getNumber.mockImplementation((key: string) =>
+        Promise.resolve(key === 'AUCTION_MIN_INCREMENT_AMOUNT' ? 10 : 120),
+      );
 
       await service.placeBid('buyer-1', 'auction-1', { amount: 200 });
 
@@ -161,6 +170,14 @@ describe('BidsService', () => {
           data: expect.objectContaining({ endsAt: auctionEndsAt }),
         }),
       );
+    });
+
+    it('should reject a bid below currentPrice + minimum increment (PT-041/AUD-009)', async () => {
+      const auctionEndsAt = new Date(Date.now() + 300 * 1000);
+      // currentPrice 100, increment 10 → minimum required 110; a bid of 105 must be rejected.
+      mockPrismaService.auction.findUnique.mockResolvedValue(buildAuction(auctionEndsAt));
+      await expect(service.placeBid('buyer-1', 'auction-1', { amount: 105 })).rejects.toThrow();
+      expect(mockPrismaService.bid.create).not.toHaveBeenCalled();
     });
   });
 });

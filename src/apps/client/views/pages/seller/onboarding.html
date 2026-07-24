@@ -28,7 +28,7 @@ const API = '{{ apiUrl }}';
 document.getElementById('onboardingForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msgEl = document.getElementById('onboardingMsg');
-  const res = await fetch(API + '/api/v1/users/enable-seller', {
+  const res = await fetch('/api/v1/users/me/enable-seller', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
     body: JSON.stringify({ legalName: document.getElementById('legalName').value, address: document.getElementById('address').value, phone: document.getElementById('phone').value }),
   });
