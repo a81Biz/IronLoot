@@ -29,6 +29,9 @@
     "db:seed": "npx prisma db seed",
     "setup": "cp -n .env.example .env || true && npm install && npx prisma generate"
   },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
   "dependencies": {
     "@ironloot/core": "file:../packages/core",
     "@nestjs-modules/mailer": "^2.0.2",

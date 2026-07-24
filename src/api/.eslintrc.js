@@ -15,7 +15,7 @@ module.exports = {
     node: true,
     jest: true,
   },
-  ignorePatterns: ['.eslintrc.js', 'dist/', 'node_modules/'],
+  ignorePatterns: ['.eslintrc.js', 'dist/', 'node_modules/', 'prisma/seed.ts'],
   rules: {
     // TypeScript specific
     '@typescript-eslint/interface-name-prefix': 'off',

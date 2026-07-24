@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../database/prisma.service';
 
 @Injectable()
@@ -9,9 +8,11 @@ export class SystemCleanupService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Delete audit events older than 90 days.
+   * PT-043 (AUD-018): disabled cron. Audit/log retention is handled by the single authoritative
+   * SystemCleanupService in the system-cleanup module (configurable LOG_RETENTION_DAYS). This
+   * duplicate 90-day cron previously conflicted with the 30-day one (effective retention 30d).
+   * Method kept (no @Cron) so it can be invoked manually if ever needed.
    */
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
   async cleanupAuditLogs() {
     this.logger.debug('Running audit log cleanup...');
     const retentionDays = 90;
