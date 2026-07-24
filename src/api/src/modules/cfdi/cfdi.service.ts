@@ -62,7 +62,9 @@ export class CfdiService {
       `CFDI generation for order ${orderId} — PAC integration pending implementation`,
     );
     throw new NotImplementedException(
-      'CFDI PAC integration is pending. Select and install a PAC library (see PENDING_TASKS.md task 84-85).',
+      'CFDI PAC integration is pending: implement a concrete ICfdiPacProvider (@ironloot/core ' +
+        'integrations) for a certified PAC and configure CFDI_PAC_URL/CFDI_PAC_API_KEY. ' +
+        'This is an external dependency (AUD-016).',
     );
   }
 
