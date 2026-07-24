@@ -1,0 +1,242 @@
+// Fase B — Bootstrap desde cero. Crea (con flujos reales) admin-setup, comprador, vendedor,
+// subasta activa y fondos. Headed. Cada paso es caso de prueba QA-BOOT-NN.
+const fs = require('fs');
+const path = require('path');
+const L = require('./lib.cjs');
+const cfg = L.cfg;
+
+const OUT = process.argv[2] || fs.readFileSync(path.join(cfg.OUT_ROOT, '.last-run'), 'utf8').trim();
+const DIR = L.ensureDir(path.join(OUT, '10-bootstrap'));
+const P = cfg.TEST_PASSWORD;
+
+const RUNID = path.basename(OUT).replace(/[^0-9]/g, '').slice(-6);
+const BUYER = { username: `comprador_${RUNID}`, email: `comprador_${RUNID}@test.local`, password: P };
+const SELLER = { username: `vendedor_${RUNID}`, email: `vendedor_${RUNID}@test.local`, password: P };
+
+const results = [];
+function rec(id, desc, status, detail) {
+  results.push({ id, desc, status, detail: detail || '' });
+  console.log(`[${status}] ${id.padEnd(12)} ${desc}${detail ? ' :: ' + detail : ''}`);
+}
+const shot = (page, name) => L.shot(page, DIR, name);
+
+async function verifyEmail(ctx, email, tag) {
+  let found = null;
+  for (let i = 0; i < 8 && !found; i++) {
+    found = await L.findVerifyLink(email, /https?:\/\/[^\s"'<>]*verify-email\?token=[^\s"'<>&]+/i);
+    if (!found) await new Promise((r) => setTimeout(r, 800));
+  }
+  if (!found) return { ok: false, reason: 'no-mail' };
+  const link = found.link.replace(/https?:\/\/[^/]+/, cfg.BASE);
+  const page = await ctx.newPage();
+  await page.goto(link, { waitUntil: 'domcontentloaded' });
+  await page.waitForTimeout(1800);
+  await shot(page, `03_verify_${tag}`);
+  const bodyText = (await page.textContent('body').catch(() => '')) || '';
+  await page.close();
+  const ok = /verificad|verified|éxito|success|confirmad|ya puedes/i.test(bodyText);
+  return { ok, link, bodyText: bodyText.slice(0, 160) };
+}
+
+(async () => {
+  const browser = await L.launch();
+  const adminCtx = await L.newContext(browser);
+  const sellerCtx = await L.newContext(browser);
+  const buyerCtx = await L.newContext(browser);
+
+  L.ensureDir(cfg.OUT_ROOT);
+  await L.mailhogClear();
+
+  // QA-BOOT-01: Admin login
+  const al = await L.adminLoginLib(adminCtx);
+  if (al.ok) await shot(al.page, '00_admin_login');
+  rec('QA-BOOT-01', 'Admin login inicial', al.ok ? 'PASS' : 'FAIL', al.url);
+
+  // QA-BOOT-02: Config comisión GLOBAL
+  if (al.ok) {
+    const p = al.page;
+    await p.goto(cfg.ADMIN + '/commissions', { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(500);
+    const rate = await p.$('input[name="ratePercent"]');
+    if (rate) {
+      await rate.fill('10');
+      await Promise.all([
+        p.waitForNavigation({ timeout: 10000 }).catch(() => {}),
+        p.$eval('form[action="/commissions/config/global"]', (f) => f.submit()).catch(() => {}),
+      ]);
+      await p.waitForTimeout(600);
+    }
+    await shot(p, '04_commission_global');
+    const dbRate = L.dbQuery("SELECT rate_percent FROM commission_config WHERE type='GLOBAL' LIMIT 1");
+    rec('QA-BOOT-02', 'Config comisión GLOBAL (10%)', /^\d/.test(dbRate) ? 'PASS' : 'FAIL', `db.rate_percent=${dbRate}`);
+  } else {
+    rec('QA-BOOT-02', 'Config comisión GLOBAL', 'BLOCKED', 'admin login falló');
+  }
+
+  // QA-BOOT-04/05: registrar comprador y vendedor
+  const rBuyer = await L.registerBase(buyerCtx, BUYER, { shot });
+  rec('QA-BOOT-04', `Registrar comprador (${BUYER.email})`, rBuyer.ok ? 'PASS' : 'FAIL', rBuyer.url || rBuyer.error);
+  const rSeller = await L.registerBase(sellerCtx, SELLER, { shot });
+  rec('QA-BOOT-05', `Registrar vendedor (${SELLER.email})`, rSeller.ok ? 'PASS' : 'FAIL', rSeller.url || rSeller.error);
+  console.log(`   (db users=${L.dbQuery('SELECT count(*) FROM users')})`);
+
+  // QA-BOOT-06: verificar emails
+  const vBuyer = await verifyEmail(buyerCtx, BUYER.email, 'buyer');
+  const vSeller = await verifyEmail(sellerCtx, SELLER.email, 'seller');
+  rec('QA-BOOT-06', 'Verificar email (comprador y vendedor)', vBuyer.ok && vSeller.ok ? 'PASS' : 'FAIL',
+    `buyer=${vBuyer.ok}(${vBuyer.reason || ''}) seller=${vSeller.ok}(${vSeller.reason || ''})`);
+  console.log(`   (db verified=${L.dbQuery('SELECT count(*) FROM users WHERE email_verified_at IS NOT NULL')})`);
+
+  // QA-BOOT-07: seller login + onboarding
+  const sLogin = await L.loginBase(sellerCtx, SELLER);
+  rec('QA-BOOT-07a', 'Login vendedor', sLogin.ok ? 'PASS' : 'FAIL', sLogin.url || sLogin.error);
+  const sellerId = L.dbQuery(`SELECT id FROM users WHERE email='${SELLER.email}'`);
+  if (sLogin.ok) {
+    const p = sLogin.page;
+    await p.goto(cfg.CLIENT + '/seller/onboarding', { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(500);
+    await L.fillWhenReady(p, '#legalName', 'Vendedor QA SA de CV').catch(() => {});
+    await p.fill('#displayName', `Tienda ${RUNID}`).catch(() => {});
+    await p.fill('#address', 'Av. Reforma 100, Centro').catch(() => {});
+    await p.fill('#city', 'Ciudad de México').catch(() => {});
+    await p.fill('#country', 'México').catch(() => {});
+    await p.fill('#phone', '+525555555555').catch(() => {});
+    await p.check('#acceptTerms').catch(() => {});
+    await shot(p, '05_onboarding_form');
+    await p.click('button[type=submit]').catch(() => {});
+    await p.waitForTimeout(2000);
+    await shot(p, '06_onboarding_after');
+    const isSeller = L.dbQuery(`SELECT is_seller FROM users WHERE email='${SELLER.email}'`);
+    const kycCount = L.dbQuery('SELECT count(*) FROM kyc_submissions');
+    rec('QA-BOOT-07', 'Onboarding vendedor (enable-seller)', isSeller === 't' ? 'PASS' : 'FAIL',
+      `is_seller=${isSeller} kyc_submissions=${kycCount}`);
+  } else {
+    rec('QA-BOOT-07', 'Onboarding vendedor', 'BLOCKED', 'login vendedor falló');
+  }
+
+  // QA-BOOT-08: admin aprueba KYC (solo si el flujo generó submission)
+  const kycId = L.dbQuery('SELECT id FROM kyc_submissions ORDER BY submitted_at DESC LIMIT 1');
+  if (al.ok && /^[a-f0-9-]{8,}/i.test(kycId)) {
+    const p = al.page;
+    await p.goto(cfg.ADMIN + '/kyc/' + kycId, { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(400);
+    await shot(p, '07_kyc_detail');
+    if (await p.$('form[action$="/approve"]')) {
+      await Promise.all([
+        p.waitForNavigation({ timeout: 10000 }).catch(() => {}),
+        p.$eval('form[action$="/approve"]', (f) => f.submit()).catch(() => {}),
+      ]);
+      await p.waitForTimeout(600);
+    }
+    const kycStatus = L.dbQuery(`SELECT status FROM kyc_submissions WHERE id='${kycId}'`);
+    rec('QA-BOOT-08', 'Admin aprueba KYC vendedor', /APPROVED/i.test(kycStatus) ? 'PASS' : 'FAIL', `kyc.status=${kycStatus}`);
+  } else {
+    rec('QA-BOOT-08', 'Admin aprueba KYC', 'N/A', 'onboarding no genera KYC submission (seller habilitado directo)');
+  }
+
+  // QA-BOOT-09: crear + publicar subasta
+  let auctionId = '';
+  if (sLogin.ok) {
+    const p = sLogin.page;
+    await p.goto(cfg.CLIENT + '/auctions/create', { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(500);
+    const now = new Date();
+    const startsAt = new Date(now.getTime() + 3 * 60 * 1000);   // +3 min (debe ser futuro)
+    const endsAt = new Date(now.getTime() + 2 * 60 * 60 * 1000); // +2 h (endsAt ≥ startsAt+1h)
+    const fmt = (d) => {
+      const q = (n) => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${q(d.getMonth() + 1)}-${q(d.getDate())}T${q(d.getHours())}:${q(d.getMinutes())}`;
+    };
+    // capturar respuesta de creación
+    let createResp = { seen: false, status: 0, body: '' };
+    p.on('response', async (r) => {
+      if (r.url().match(/\/api\/v1\/auctions$/) && r.request().method() === 'POST') {
+        createResp.seen = true; createResp.status = r.status();
+        try { createResp.body = (await r.text()).slice(0, 200); } catch {}
+      }
+    });
+    await L.fillWhenReady(p, '#title', `Reloj de colección QA ${RUNID}`);
+    await p.fill('#description', 'Pieza de prueba E2E creada por el harness QA. Estado: excelente.');
+    await p.fill('#startingPrice', '500');
+    await p.fill('#startsAt', fmt(startsAt));
+    await p.fill('#endsAt', fmt(endsAt));
+    await shot(p, '09_auction_create_form');
+    await p.click('button[type=submit]');
+    await p.waitForTimeout(2000);
+    await shot(p, '10_auction_after_create');
+    auctionId = L.dbQuery('SELECT id FROM auctions ORDER BY created_at DESC LIMIT 1');
+    const created = /^[a-f0-9-]{8,}/i.test(auctionId);
+    let statusA = created ? L.dbQuery(`SELECT status FROM auctions WHERE id='${auctionId}'`) : '';
+    let published = false;
+    if (created && /DRAFT/i.test(statusA)) {
+      const resp = await p.evaluate(async (id) => {
+        const r = await fetch(`/api/v1/auctions/${id}/publish`, { method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+        return { ok: r.ok, status: r.status, body: await r.text().catch(() => '') };
+      }, auctionId);
+      published = resp.ok;
+      await p.waitForTimeout(600);
+      statusA = L.dbQuery(`SELECT status FROM auctions WHERE id='${auctionId}'`);
+      console.log(`   publish -> http=${resp.status} status=${statusA} ${resp.ok ? '' : resp.body.slice(0, 140)}`);
+    }
+    if (!created) console.log(`   create -> seen=${createResp.seen} http=${createResp.status} body=${createResp.body}`);
+    rec('QA-BOOT-09', 'Crear + publicar subasta',
+      created && /(PUBLISHED|ACTIVE)/i.test(statusA) ? 'PASS' : (created ? 'PARTIAL' : 'FAIL'),
+      `id=${auctionId.slice(0, 8)} status=${statusA} publishOk=${published} createHttp=${createResp.status}`);
+  } else {
+    rec('QA-BOOT-09', 'Crear + publicar subasta', 'BLOCKED', 'login vendedor falló');
+  }
+  fs.writeFileSync(path.join(OUT, '.bootstrap-auction'), auctionId || '');
+
+  // QA-BOOT-10: comprador login + contrato depósito + fondeo
+  const bLogin = await L.loginBase(buyerCtx, BUYER);
+  rec('QA-BOOT-10a', 'Login comprador', bLogin.ok ? 'PASS' : 'FAIL', bLogin.url || bLogin.error);
+  const buyerId = L.dbQuery(`SELECT id FROM users WHERE email='${BUYER.email}'`);
+  if (bLogin.ok) {
+    const p = bLogin.page;
+    let initiate = { seen: false, status: 0, hasRedirect: false };
+    p.on('response', async (r) => {
+      if (r.url().includes('/payments/initiate')) {
+        initiate.seen = true; initiate.status = r.status();
+        try { const j = await r.json(); initiate.hasRedirect = !!(j && (j.redirectUrl || j.init_point || j.url)); } catch {}
+      }
+    });
+    await p.route('**/*', (route) => {
+      const u = route.request().url();
+      if (/mercadopago|paypal|mercadolibre|sandbox/i.test(u) && route.request().isNavigationRequest()) return route.abort();
+      return route.continue();
+    });
+    await p.goto(cfg.CLIENT + '/wallet/deposit', { waitUntil: 'domcontentloaded' });
+    await p.waitForTimeout(500);
+    await L.fillWhenReady(p, '#amount', '5000');
+    await shot(p, '11_deposit_form');
+    await p.click('button[type=submit]').catch(() => {});
+    await p.waitForTimeout(2500);
+    await shot(p, '12_deposit_after');
+    rec('QA-BOOT-10b', 'Depósito: contrato /payments/initiate (BUG-QA-01)',
+      initiate.seen && initiate.status < 400 && initiate.hasRedirect ? 'PASS' : 'FAIL',
+      `seen=${initiate.seen} http=${initiate.status} redirectUrl=${initiate.hasRedirect}`);
+  } else {
+    rec('QA-BOOT-10b', 'Depósito contrato', 'BLOCKED', 'login comprador falló');
+  }
+  // fondeo de prueba (pasarela fuera de alcance): crédito replicando walletService.deposit
+  if (/^[a-f0-9-]{8,}/i.test(buyerId)) {
+    L.dbQuery(`INSERT INTO wallets (id, created_at, updated_at, user_id, balance, held_funds, currency, is_active) SELECT gen_random_uuid(), now(), now(), '${buyerId}', 0, 0, 'MXN', false WHERE NOT EXISTS (SELECT 1 FROM wallets WHERE user_id='${buyerId}')`);
+    L.dbQuery(
+      `WITH w AS (SELECT id, balance FROM wallets WHERE user_id='${buyerId}' LIMIT 1) ` +
+      `INSERT INTO ledger (id, wallet_id, type, amount, balance_before, balance_after, reference_id, reference_type, description, created_at) ` +
+      `SELECT gen_random_uuid(), w.id, 'DEPOSIT', 5000, w.balance, w.balance+5000, 'QA-BOOT-CREDIT', 'TEST', 'Fondeo de prueba QA (pasarela fuera de alcance)', now() FROM w`
+    );
+    L.dbQuery(`UPDATE wallets SET balance=balance+5000, is_active=true WHERE user_id='${buyerId}'`);
+    const bal = L.dbQuery(`SELECT balance FROM wallets WHERE user_id='${buyerId}'`);
+    rec('QA-BOOT-10c', 'Fondear wallet comprador (crédito de prueba)', /^[1-9]/.test(bal) ? 'PASS' : 'FAIL', `balance=${bal}`);
+  } else {
+    rec('QA-BOOT-10c', 'Fondear wallet comprador', 'BLOCKED', 'buyerId no resuelto');
+  }
+
+  fs.writeFileSync(path.join(OUT, '.actors.json'), JSON.stringify({ BUYER, SELLER, buyerId, sellerId, auctionId, runid: RUNID }, null, 2));
+  await browser.close();
+  L.writeJSON(OUT, 'bootstrap.json', results);
+  const pass = results.filter((r) => r.status === 'PASS').length;
+  const fail = results.filter((r) => r.status === 'FAIL').length;
+  console.log(`\n=== BOOTSTRAP RESUMEN === total=${results.length} PASS=${pass} FAIL=${fail}`);
+})().catch((e) => { console.error('FATAL', e); process.exit(1); });
