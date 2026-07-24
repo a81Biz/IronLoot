@@ -16,6 +16,9 @@ const wsOrigins = (process.env.ALLOWED_ORIGINS || '')
   .map((o) => o.trim())
   .filter(Boolean);
 
+// PT-039 (AUD-006): validate auctionId before joining rooms (public read-only namespace).
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 @WebSocketGateway({
   cors: {
     origin: wsOrigins.length > 0 ? wsOrigins : '*',
@@ -39,6 +42,9 @@ export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   @SubscribeMessage('joinAuction')
   async handleJoinAuction(@MessageBody() auctionId: string, @ConnectedSocket() client: Socket) {
+    if (!auctionId || !UUID_RE.test(auctionId)) {
+      return { event: 'error', data: 'invalid auctionId' };
+    }
     const room = `auction:${auctionId}`;
     await client.join(room);
     this.logger.debug(`Client ${client.id} joined ${room}`);

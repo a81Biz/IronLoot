@@ -167,7 +167,8 @@ export class BidsService {
       this.auctionsGateway.emitNewBid(auctionId, {
         id: result.id,
         amount: Number(result.amount),
-        bidderName: userId, // ideally username
+        // PT-039 (AUD-006): do not broadcast the bidder's internal user id (PII) on the public
+        // `auctions` channel. A non-identifying display name can be added later if needed.
         createdAt: result.createdAt,
       });
 
