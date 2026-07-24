@@ -9,10 +9,15 @@ export class RefundsController {
   @Get('refunds')
   @UseGuards(AdminAuthGuard)
   async refunds(@Req() req, @Res() res) {
+    // PT-056: resolver la lista en servidor (antes fetch client-side → 404).
+    const statusFilter = (req.query.status as string) || '';
+    const { items } = await this.refundsService.listRefunds(statusFilter);
     return res.render('pages/refunds', {
       title: 'Reembolsos',
       adminUser: req.session.adminUser,
       activePage: 'refunds',
+      refunds: items,
+      statusFilter,
     });
   }
 
