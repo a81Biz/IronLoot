@@ -2,17 +2,31 @@ import { Controller, Post, Body, UnauthorizedException, HttpCode, Logger } from 
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { ApiTags, ApiOperation, ApiBody } from '@nestjs/swagger';
-import { SkipThrottle } from '@nestjs/throttler';
+import { Throttle } from '@nestjs/throttler';
 import { Public } from '../auth/decorators';
 import { authenticator } from 'otplib';
 import { AuditPersistenceService } from '../audit/audit-persistence.service';
 import { AuditEventType, EntityType, AuditResult } from '../../common/observability';
-import { randomUUID } from 'crypto';
+import { randomUUID, timingSafeEqual, createHash } from 'crypto';
+
+/**
+ * Comparación de credenciales en tiempo constante (PT-036 / AUD-004).
+ * Hashea ambos valores a 32 bytes para evitar fugas por longitud y cumplir
+ * el requisito de igual longitud de `timingSafeEqual`.
+ */
+function safeEqual(a: string, b: string): boolean {
+  const ha = createHash('sha256')
+    .update(a ?? '')
+    .digest();
+  const hb = createHash('sha256')
+    .update(b ?? '')
+    .digest();
+  return timingSafeEqual(ha, hb);
+}
 
 @ApiTags('admin')
 @Controller('admin/auth')
 @Public()
-@SkipThrottle()
 export class AdminAuthController {
   private readonly logger = new Logger(AdminAuthController.name);
 
@@ -23,6 +37,7 @@ export class AdminAuthController {
   ) {}
 
   @Post('login')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
   @HttpCode(200)
   @ApiOperation({ summary: 'Admin login — validates credentials + optional TOTP, returns JWT' })
   @ApiBody({
@@ -44,7 +59,9 @@ export class AdminAuthController {
     const totpSecret = this.config.get<string>('ADMIN_TOTP_SECRET', '');
     const traceId = randomUUID();
 
-    if (body.username !== expectedUser || body.password !== expectedPass) {
+    const userOk = safeEqual(body.username ?? '', expectedUser);
+    const passOk = safeEqual(body.password ?? '', expectedPass);
+    if (!userOk || !passOk) {
       this.logger.warn(`Admin login failed for user: ${body.username}`);
       await this.audit
         .recordAudit(

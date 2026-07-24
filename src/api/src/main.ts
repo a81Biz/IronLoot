@@ -6,46 +6,7 @@ import helmet from 'helmet';
 
 import { AppModule } from './app.module';
 import { StructuredLogger } from './common/observability';
-
-const PLACEHOLDER_SECRETS = new Set([
-  'dev-admin-key',
-  'change-me',
-  'secret',
-  'your-secret-here',
-  'your-jwt-secret',
-  'changeme',
-]);
-
-function validateStartupConfig(config: ConfigService, env: string): void {
-  if (env !== 'production') return;
-
-  const errors: string[] = [];
-
-  const adminKey = config.get<string>('ADMIN_API_KEY', '');
-  if (!adminKey || PLACEHOLDER_SECRETS.has(adminKey)) {
-    errors.push('ADMIN_API_KEY must not be a placeholder value in production');
-  }
-
-  const jwtSecret = config.get<string>('JWT_SECRET', '');
-  if (!jwtSecret || jwtSecret.length < 32 || PLACEHOLDER_SECRETS.has(jwtSecret)) {
-    errors.push('JWT_SECRET must be set and at least 32 characters in production');
-  }
-
-  const sessionSecret = config.get<string>('SESSION_SECRET', '');
-  if (!sessionSecret || sessionSecret.length < 32 || PLACEHOLDER_SECRETS.has(sessionSecret)) {
-    errors.push('SESSION_SECRET must be set and at least 32 characters in production');
-  }
-
-  if (!process.env.ALLOWED_ORIGINS) {
-    errors.push('ALLOWED_ORIGINS must be explicitly set in production (cannot allow all origins)');
-  }
-
-  if (errors.length > 0) {
-    console.error('STARTUP CONFIGURATION ERRORS:');
-    errors.forEach((e) => console.error(`  - ${e}`));
-    process.exit(1);
-  }
-}
+import { validateStartupConfig } from './common/config/validate-startup-config';
 
 async function bootstrap(): Promise<void> {
   // Create application
@@ -64,7 +25,12 @@ async function bootstrap(): Promise<void> {
   const env = config.get<string>('NODE_ENV', 'development');
 
   // Fail fast on insecure production configuration
-  validateStartupConfig(config, env);
+  const startupErrors = validateStartupConfig(config, env);
+  if (startupErrors.length > 0) {
+    console.error('STARTUP CONFIGURATION ERRORS:');
+    startupErrors.forEach((e) => console.error(`  - ${e}`));
+    process.exit(1);
+  }
 
   // Security
   app.use(helmet());
