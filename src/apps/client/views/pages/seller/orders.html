@@ -10,7 +10,7 @@
         {% if orders and orders.items %}
           {% for order in orders.items %}
           <tr>
-            <td><a href="/orders/{{ order.id }}"><code>{{ order.id[:8] }}…</code></a></td>
+            <td><a href="/orders/{{ order.id }}"><code>{{ order.id | truncate(8, true, '') }}…</code></a></td>
             <td>{{ order.buyer.username | default('—') }}</td>
             <td>MXN {{ order.totalAmount }}</td>
             <td><span class="badge badge-info">{{ order.status }}</span></td>
