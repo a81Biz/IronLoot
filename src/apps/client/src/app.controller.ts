@@ -1,6 +1,8 @@
 import { Controller, Get, Param, Query, Render, Req, Res, UseGuards } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { ClientAuthGuard } from './common/guards/client-auth.guard';
+import { WALLET_BALANCE_PATH, mapWalletBalance, WalletBalanceRaw } from './common/bff/wallet-view';
+import { MY_ACTIVE_BIDS_PATH, MY_BIDS_HISTORY_PATH, mapBidsList, BidRaw } from './common/bff/bids-view';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5174';
@@ -30,13 +32,13 @@ export class AppController {
   @Render('pages/dashboard.html')
   async dashboard(@Req() req: Request) {
     const token = getToken(req);
-    const [profile, wallet, bids, auctions] = await Promise.all([
+    const [profile, walletRaw, bidsRaw, auctions] = await Promise.all([
       apiGet(token, '/api/v1/users/me'),
-      apiGet(token, '/api/v1/wallet'),
-      apiGet(token, '/api/v1/bids/my?limit=5'),
+      apiGet<WalletBalanceRaw>(token, WALLET_BALANCE_PATH),
+      apiGet<BidRaw[]>(token, MY_ACTIVE_BIDS_PATH),
       apiGet(token, '/api/v1/auctions?status=ACTIVE&limit=6'),
     ]);
-    return { profile, wallet, bids, auctions, apiUrl: API_URL, baseUrl: BASE_URL };
+    return { profile, wallet: mapWalletBalance(walletRaw), bids: mapBidsList(bidsRaw), auctions, apiUrl: API_URL, baseUrl: BASE_URL };
   }
 
   @Get('/auth/logout')
@@ -62,8 +64,8 @@ export class AppController {
   @Get('/my-bids')
   @Render('pages/bids/my.html')
   async myBids(@Req() req: Request, @Query('page') page = 1) {
-    const bids = await apiGet(getToken(req), `/api/v1/bids/my?page=${page}`);
-    return { bids, page, apiUrl: API_URL };
+    const bidsRaw = await apiGet<BidRaw[]>(getToken(req), MY_BIDS_HISTORY_PATH);
+    return { bids: mapBidsList(bidsRaw), page, apiUrl: API_URL };
   }
 
   @Get('/auctions/won-auctions')
@@ -83,8 +85,8 @@ export class AppController {
   @Get('/wallet')
   @Render('pages/wallet.html')
   async wallet(@Req() req: Request) {
-    const wallet = await apiGet(getToken(req), '/api/v1/wallet');
-    return { wallet, apiUrl: API_URL };
+    const walletRaw = await apiGet<WalletBalanceRaw>(getToken(req), WALLET_BALANCE_PATH);
+    return { wallet: mapWalletBalance(walletRaw), apiUrl: API_URL };
   }
 
   @Get('/wallet/deposit')
@@ -201,11 +203,11 @@ export class AppController {
   @Render('pages/auction/detail.html')
   async auctionDetail(@Req() req: Request, @Param('id') id: string) {
     const token = getToken(req);
-    const [auction, wallet, bids] = await Promise.all([
+    const [auction, walletRaw, bids] = await Promise.all([
       apiGet(token, `/api/v1/auctions/${id}`),
-      apiGet(token, '/api/v1/wallet'),
+      apiGet<WalletBalanceRaw>(token, WALLET_BALANCE_PATH),
       apiGet(token, `/api/v1/auctions/${id}/bids`),
     ]);
-    return { auction, wallet, bids, apiUrl: API_URL };
+    return { auction, wallet: mapWalletBalance(walletRaw), bids, apiUrl: API_URL };
   }
 }
