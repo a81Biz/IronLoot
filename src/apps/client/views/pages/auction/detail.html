@@ -1,0 +1,112 @@
+{% extends "layouts/client.html" %}
+{% block title %}{% if auction %}{{ auction.title }}{% else %}Subasta{% endif %} — IronLoot{% endblock %}
+{% block page_title %}{% if auction %}{{ auction.title }}{% else %}Subasta{% endif %}{% endblock %}
+{% block content %}
+{% if auction %}
+<div class="auction-detail" style="max-width: 820px;">
+  {% if auction.images and auction.images.length %}
+  <img src="{{ auction.images[0] }}" alt="{{ auction.title }}"
+       style="max-width: 100%; border-radius: 8px; margin-bottom: 1rem;">
+  {% endif %}
+  <p>{{ auction.description }}</p>
+
+  <div class="bid-panel" style="border: 1px solid #31363F; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+    <p>Precio actual: <strong id="currentPrice">${{ auction.currentPrice }}</strong> MXN</p>
+    <p>Estado: <span id="auctionStatus">{{ auction.status }}</span></p>
+    <p>Cierra en: <span id="countdown" data-ends-at="{{ auction.endsAt }}">…</span></p>
+    <p>Tu saldo disponible: <strong>${{ wallet.balance if wallet else '0' }}</strong> MXN</p>
+
+    <form id="bidForm" style="display: flex; gap: .5rem; align-items: center;">
+      <input type="number" id="bidAmount" step="0.01" min="0" placeholder="Tu puja (MXN)" required
+             style="flex: 1;">
+      <button type="submit" class="btn btn-primary">Pujar ahora</button>
+    </form>
+    <div id="bidMsg" class="alert" style="display: none; margin-top: .5rem;"></div>
+  </div>
+
+  <h3>Pujas recientes</h3>
+  <ul id="bidList">
+    {% if bids and bids.length %}
+      {% for b in bids %}<li>${{ b.amount }} — {{ b.createdAt }}</li>{% endfor %}
+    {% else %}
+      <li id="noBids">Sé el primero en pujar.</li>
+    {% endif %}
+  </ul>
+</div>
+{% else %}
+<div class="alert alert-error">
+  La subasta no existe o no está disponible. <a href="/dashboard">Volver al panel</a>
+</div>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+{% if auction %}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script>
+  const API = '{{ apiUrl }}';
+  const auctionId = '{{ auction.id }}';
+
+  // Countdown timer
+  const cd = document.getElementById('countdown');
+  let endsAt = new Date(cd.dataset.endsAt).getTime();
+  function tick() {
+    const diff = endsAt - Date.now();
+    if (diff <= 0) { cd.textContent = 'Finalizada'; return; }
+    const h = Math.floor(diff / 3600000);
+    const m = Math.floor((diff % 3600000) / 60000);
+    const s = Math.floor((diff % 60000) / 1000);
+    cd.textContent = h + 'h ' + m + 'm ' + s + 's';
+  }
+  tick();
+  setInterval(tick, 1000);
+
+  // Live bid feed via Socket.io (public read-only namespace)
+  try {
+    const socket = io(API + '/auctions', { transports: ['websocket', 'polling'] });
+    socket.on('connect', () => socket.emit('joinAuction', { auctionId }));
+    socket.on('bid:new', (bid) => {
+      if (bid && bid.amount != null) {
+        document.getElementById('currentPrice').textContent = '$' + bid.amount;
+        const li = document.createElement('li');
+        li.textContent = '$' + bid.amount + ' — ' + (bid.createdAt || 'ahora');
+        const noBids = document.getElementById('noBids');
+        if (noBids) noBids.remove();
+        document.getElementById('bidList').prepend(li);
+      }
+    });
+    socket.on('auction:extended', (data) => {
+      if (data && data.newEndsAt) endsAt = new Date(data.newEndsAt).getTime();
+    });
+    socket.on('auction:ended', () => {
+      document.getElementById('auctionStatus').textContent = 'CLOSED';
+      cd.textContent = 'Finalizada';
+    });
+  } catch (e) {
+    /* live feed is optional; the page still works without it */
+  }
+
+  // Place a bid via the BFF proxy (relative path → server-side injects the Bearer token)
+  document.getElementById('bidForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const msg = document.getElementById('bidMsg');
+    const amount = parseFloat(document.getElementById('bidAmount').value);
+    try {
+      const res = await fetch('/api/v1/auctions/' + auctionId + '/bids', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ amount }),
+      });
+      const data = await res.json().catch(() => ({}));
+      msg.className = 'alert ' + (res.ok ? 'alert-success' : 'alert-error');
+      msg.textContent = res.ok ? '¡Puja realizada!' : (data.message || 'No se pudo realizar la puja.');
+      if (res.ok) document.getElementById('currentPrice').textContent = '$' + amount;
+    } catch (err) {
+      msg.className = 'alert alert-error';
+      msg.textContent = 'Error de conexión.';
+    }
+    msg.style.display = 'block';
+  });
+</script>
+{% endif %}
+{% endblock %}

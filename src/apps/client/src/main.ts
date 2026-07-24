@@ -30,11 +30,16 @@ async function bootstrap() {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"], // Nunjucks templates may have inline event handlers
+          // PT-044 (AUD-002): allow the Socket.io client CDN and the API WS origin for the live bid feed.
+          scriptSrc: ["'self'", "'unsafe-inline'", 'https://cdn.socket.io'],
           styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
           fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
           imgSrc: ["'self'", 'data:', 'https:'],
-          connectSrc: ["'self'"],
+          connectSrc: [
+            "'self'",
+            process.env.API_URL || 'http://localhost:3000',
+            (process.env.API_URL || 'http://localhost:3000').replace(/^http/, 'ws'),
+          ],
           frameSrc: ["'none'"],
           objectSrc: ["'none'"],
           upgradeInsecureRequests: isProd ? [] : null,
