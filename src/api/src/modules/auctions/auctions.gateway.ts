@@ -6,9 +6,13 @@ import {
   ConnectedSocket,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-// import { UseGuards } from '@nestjs/common';
-// import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-// For now, let's keep it open for reading (joining rooms) but strictly scoped.
+
+// PT-039 (AUD-006): the `auctions` namespace is intentionally PUBLIC read-only — the live bid
+// feed mirrors public REST data (GET /auctions/:id/bids). Placing a bid always requires REST +
+// JWT (POST /auctions/:auctionId/bids). Hardening applied instead of requiring a WS JWT (which
+// would break guest live-view on BASE): validate auctionId before joining a room to prevent
+// arbitrary/injected room joins, and never broadcast bidder PII (see BidsService payload).
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // PT-013: ALLOWED_ORIGINS parsed at startup to support base.localhost and client.localhost
 const wsOrigins = (process.env.ALLOWED_ORIGINS || '')
@@ -32,6 +36,9 @@ export class AuctionsGateway {
     @MessageBody() data: { auctionId: string },
     @ConnectedSocket() client: Socket,
   ) {
+    if (!data?.auctionId || !UUID_RE.test(data.auctionId)) {
+      return { event: 'error', message: 'invalid auctionId' };
+    }
     await client.join(`auction:${data.auctionId}`);
     return { event: 'joined', message: `Joined room auction:${data.auctionId}` };
   }
