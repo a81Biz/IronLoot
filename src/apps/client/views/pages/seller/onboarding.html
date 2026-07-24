@@ -10,12 +10,32 @@
       <input class="form-control" id="legalName" required placeholder="Como aparece en tu identificación">
     </div>
     <div class="form-group">
+      <label for="displayName">Nombre para mostrar</label>
+      <input class="form-control" id="displayName" required maxlength="50" placeholder="Nombre público de tu tienda">
+    </div>
+    <div class="form-group">
       <label for="address">Dirección</label>
-      <input class="form-control" id="address" required placeholder="Calle, número, colonia, ciudad">
+      <input class="form-control" id="address" required placeholder="Calle, número, colonia">
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+      <div class="form-group">
+        <label for="city">Ciudad</label>
+        <input class="form-control" id="city" required placeholder="Ciudad de México">
+      </div>
+      <div class="form-group">
+        <label for="country">País</label>
+        <input class="form-control" id="country" required placeholder="México">
+      </div>
     </div>
     <div class="form-group">
       <label for="phone">Teléfono de contacto</label>
-      <input class="form-control" id="phone" required placeholder="+52 55 0000 0000">
+      <input class="form-control" id="phone" required placeholder="+525500000000">
+    </div>
+    <div class="form-group">
+      <label style="display:flex;align-items:center;gap:.5rem;font-weight:normal;">
+        <input type="checkbox" id="acceptTerms" required>
+        Acepto los términos y condiciones de vendedor de IronLoot.
+      </label>
     </div>
     <button type="submit" class="btn btn-primary">Activar cuenta vendedor</button>
     <div id="onboardingMsg" class="alert" style="display:none;margin-top:.75rem;"></div>
@@ -28,13 +48,36 @@ const API = '{{ apiUrl }}';
 document.getElementById('onboardingForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msgEl = document.getElementById('onboardingMsg');
-  const res = await fetch('/api/v1/users/me/enable-seller', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-    body: JSON.stringify({ legalName: document.getElementById('legalName').value, address: document.getElementById('address').value, phone: document.getElementById('phone').value }),
-  });
-  msgEl.className = 'alert ' + (res.ok ? 'alert-success' : 'alert-error');
-  msgEl.textContent = res.ok ? '¡Cuenta de vendedor activada!' : 'Error al activar. Verifica tus datos.';
-  msgEl.style.display = 'block';
+  const show = (ok, txt) => { msgEl.className = 'alert ' + (ok ? 'alert-success' : 'alert-error'); msgEl.textContent = txt; msgEl.style.display = 'block'; };
+  try {
+    // 1) Guardar datos de perfil (nombre legal, dirección, teléfono sin espacios)
+    const profileRes = await fetch('/api/v1/users/me', {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({
+        // displayName es top-level; los demás datos van anidados en `profile`.
+        // El API exige displayName + address + city + country para habilitar vendedor.
+        displayName: document.getElementById('displayName').value.slice(0, 50),
+        profile: {
+          legalName: document.getElementById('legalName').value,
+          address: document.getElementById('address').value,
+          city: document.getElementById('city').value,
+          country: document.getElementById('country').value,
+          phone: document.getElementById('phone').value.replace(/\s+/g, ''),
+        },
+      }),
+    });
+    if (!profileRes.ok) {
+      const d = await profileRes.json().catch(() => ({}));
+      return show(false, d.message || 'Error al guardar tus datos. Verifica el formato del teléfono.');
+    }
+    // 2) Activar cuenta de vendedor (aceptación de términos)
+    const res = await fetch('/api/v1/users/me/enable-seller', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+      body: JSON.stringify({ acceptTerms: document.getElementById('acceptTerms').checked }),
+    });
+    if (res.ok) { show(true, '¡Cuenta de vendedor activada!'); setTimeout(() => { window.location.href = '/seller/auctions'; }, 1200); }
+    else { const d = await res.json().catch(() => ({})); show(false, d.message || 'Error al activar. Verifica tus datos.'); }
+  } catch { show(false, 'Error de conexión.'); }
 });
 </script>
 {% endblock %}
