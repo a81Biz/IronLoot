@@ -1,0 +1,18 @@
+# Override LOCAL para QA por navegador (no versionar como config oficial).
+# Reapunta los URLs de redirect/correo a localhost:puerto y vacía COOKIE_DOMAIN,
+# para poder probar los flujos autenticados sin depender de *.ironloot.local,
+# del archivo hosts, ni del puerto 80 (ocupado por otro proyecto).
+# Los `environment` se fusionan por clave con el docker-compose.yml base.
+services:
+  api:
+    environment:
+      # Base de los enlaces de correo (verificación, reset) → alcanzable desde el navegador
+      - BASE_URL=http://localhost:5174
+  base:
+    environment:
+      - CLIENT_URL=http://localhost:5175
+      - COOKIE_DOMAIN=
+  client:
+    environment:
+      - BASE_URL=http://localhost:5174
+      - COOKIE_DOMAIN=
