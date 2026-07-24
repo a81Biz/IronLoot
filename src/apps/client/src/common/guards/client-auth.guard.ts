@@ -3,7 +3,9 @@ import { Response, Request } from 'express';
 import * as jwt from 'jsonwebtoken';
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5174';
-const JWT_SECRET = process.env.JWT_SECRET || 'change-me';
+// PT-040 (AUD-026): no weak fallback secret. If JWT_SECRET is unset the guard fails closed
+// (jwt.verify throws → redirect to login) instead of trusting a known placeholder.
+const JWT_SECRET = process.env.JWT_SECRET || '';
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
 
 @Injectable()
