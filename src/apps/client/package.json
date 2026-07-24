@@ -8,7 +8,8 @@
     "start": "nest start",
     "start:dev": "nest build && nest start --watch",
     "start:prod": "node dist/main",
-    "lint": "eslint src --ext .ts"
+    "lint": "eslint src --ext .ts",
+    "test": "jest"
   },
   "dependencies": {
     "@nestjs/common": "^10.0.0",
