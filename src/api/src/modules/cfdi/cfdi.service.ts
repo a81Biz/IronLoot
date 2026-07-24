@@ -1,4 +1,9 @@
-import { Injectable, Logger, NotImplementedException } from '@nestjs/common';
+import {
+  Injectable,
+  Logger,
+  NotImplementedException,
+  ServiceUnavailableException,
+} from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { SystemConfigService } from '../system-config/system-config.service';
 
@@ -31,6 +36,15 @@ export class CfdiService {
   }
 
   async generate(orderId: string): Promise<any> {
+    // PT-047 (AUD-016): CFDI is OFF by default and can be toggled on in Admin > Configuration once
+    // a certified PAC is configured. While disabled, orders complete without a fiscal invoice.
+    const enabled = (await this.systemConfig.get('CFDI_ENABLED')) === 'true';
+    if (!enabled) {
+      throw new ServiceUnavailableException(
+        'CFDI está deshabilitado. Actívalo en Configuración (CFDI_ENABLED) cuando el PAC esté configurado.',
+      );
+    }
+
     const rfc = await this.systemConfig.get('CFDI_RFC_EMISOR');
     const pacUrl = await this.systemConfig.get('CFDI_PAC_URL');
 
@@ -77,6 +91,7 @@ export class CfdiService {
 
   async getConfig(): Promise<any> {
     return {
+      enabled: (await this.systemConfig.get('CFDI_ENABLED')) === 'true',
       rfcEmisor: (await this.systemConfig.get('CFDI_RFC_EMISOR')) ?? '',
       pacUrl: (await this.systemConfig.get('CFDI_PAC_URL')) ?? '',
       pacApiKey: '****',
@@ -84,9 +99,11 @@ export class CfdiService {
   }
 
   async updateConfig(
-    data: { rfcEmisor?: string; pacUrl?: string; pacApiKey?: string },
+    data: { enabled?: boolean; rfcEmisor?: string; pacUrl?: string; pacApiKey?: string },
     adminUser: string,
   ): Promise<void> {
+    if (data.enabled !== undefined)
+      await this.systemConfig.set('CFDI_ENABLED', String(data.enabled), adminUser);
     if (data.rfcEmisor !== undefined)
       await this.systemConfig.set('CFDI_RFC_EMISOR', data.rfcEmisor, adminUser);
     if (data.pacUrl !== undefined)

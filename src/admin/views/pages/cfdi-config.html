@@ -11,12 +11,19 @@
   <h3 class="card-title">Configuración del PAC (Proveedor Autorizado de Certificación)</h3>
   <div class="alert alert-info">
     <span class="material-symbols-outlined">info</span>
-    La integración con PAC requiere seleccionar e instalar una librería CFDI 4.0 compatible.
-    Consulta la tarea 84-85 en PENDING_TASKS.md antes de activar la generación de CFDIs.
+    La generación de CFDI está <strong>deshabilitada por defecto</strong>. Requiere seleccionar un PAC
+    certificado (implementar <code>ICfdiPacProvider</code> en @ironloot/core) y configurar la URL/API Key
+    del PAC. Actívala con el interruptor de abajo solo cuando el PAC esté listo.
   </div>
 
   <form action="/configuration/cfdi" method="POST">
     <div class="form-grid">
+      <div class="form-group">
+        <label>
+          <input type="checkbox" name="enabled" {% if config.enabled %}checked{% endif %}>
+          Habilitar generación de CFDI (requiere PAC configurado)
+        </label>
+      </div>
       <div class="form-group">
         <label>RFC Emisor</label>
         <input type="text" name="rfcEmisor" value="{{ config.rfcEmisor or '' }}"

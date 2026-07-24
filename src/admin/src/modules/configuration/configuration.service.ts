@@ -11,7 +11,7 @@ export class ConfigurationService {
   }
 
   getCfdiConfig() { return this.apiClient.call('GET', '/admin/configuration/cfdi'); }
-  updateCfdiConfig(data: Record<string, string | undefined>, adminUser: string) {
+  updateCfdiConfig(data: Record<string, string | boolean | undefined>, adminUser: string) {
     return this.apiClient.call('PUT', '/admin/configuration/cfdi', { ...data, adminUser });
   }
 

@@ -48,7 +48,12 @@ export class ConfigurationController {
   @UseGuards(AdminAuthGuard)
   async saveCfdiConfig(@Body() body: any, @Req() req, @Res() res) {
     await this.configurationService.updateCfdiConfig(
-      { rfcEmisor: body.rfcEmisor, pacUrl: body.pacUrl, pacApiKey: body.pacApiKey || undefined },
+      {
+        enabled: body.enabled === 'on' || body.enabled === 'true',
+        rfcEmisor: body.rfcEmisor,
+        pacUrl: body.pacUrl,
+        pacApiKey: body.pacApiKey || undefined,
+      },
       req.session.adminUser,
     );
     return res.redirect('/configuration/cfdi?saved=1');
