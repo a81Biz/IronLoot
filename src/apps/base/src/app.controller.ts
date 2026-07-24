@@ -1,4 +1,13 @@
-import { Controller, Get, Param, Query, Redirect, Render, Res } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  NotFoundException,
+  Param,
+  Query,
+  Redirect,
+  Render,
+  Res,
+} from '@nestjs/common';
 import { Response } from 'express';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
@@ -26,6 +35,13 @@ export class AppController {
   @Get('/about')
   @Render('pages/static/about.html')
   about() {
+    return { clientUrl: CLIENT_URL };
+  }
+
+  // PT-053 (FINDING-QA-07): the footer linked to /contact but no route existed → 404.
+  @Get('/contact')
+  @Render('pages/static/contact.html')
+  contact() {
     return { clientUrl: CLIENT_URL };
   }
 
@@ -57,6 +73,8 @@ export class AppController {
   @Render('pages/auctions/detail.html')
   async auctionDetail(@Param('id') id: string) {
     const auction = await fetchJson<any>(`${API_URL}/api/v1/auctions/${id}`);
+    // PT-054 (FINDING-QA-08): a missing auction must 404, not render an empty detail page with 200.
+    if (!auction) throw new NotFoundException();
     return { auction, clientUrl: CLIENT_URL, apiUrl: API_URL };
   }
 
