@@ -23,7 +23,7 @@ const API = '{{ apiUrl }}';
 document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msgEl = document.getElementById('withdrawMsg');
-  const res = await fetch(API + '/api/v1/wallet/withdraw', {
+  const res = await fetch('/api/v1/wallet/withdraw', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
     body: JSON.stringify({ amount: parseFloat(document.getElementById('amount').value), account: document.getElementById('account').value }),
   });

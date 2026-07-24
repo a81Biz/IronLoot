@@ -10,6 +10,8 @@ import * as nunjucks from 'nunjucks';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const cookieParser = require('cookie-parser');
 import helmet from 'helmet';
+import { createProxyMiddleware } from 'http-proxy-middleware';
+import { injectAuthHeader } from './common/bff/inject-auth-header';
 
 const isProd = process.env.NODE_ENV === 'production';
 
@@ -52,6 +54,24 @@ async function bootstrap() {
   app.useStaticAssets(join(__dirname, '..', 'public'));
   app.setBaseViewsDir(viewsPath);
   app.setViewEngine('html');
+
+  // BFF proxy (PT-038 / AUD-003) — forwards /api requests to the REST API and injects the
+  // Bearer token from the HttpOnly access_token cookie, so client-side writes authenticate
+  // without exposing the token to browser JS. Mirrors BASE (base/src/main.ts).
+  const apiTarget = process.env.API_URL || 'http://localhost:3000';
+  app.use(
+    '/api',
+    createProxyMiddleware({
+      target: apiTarget,
+      changeOrigin: true,
+      // Express strips '/api' before the middleware; re-add it so the API receives /api/v1/...
+      pathRewrite: { '^/': '/api/' },
+      on: {
+        proxyReq: (proxyReq, req) =>
+          injectAuthHeader(proxyReq, req as { cookies?: Record<string, string | undefined> }),
+      },
+    }),
+  );
 
   const port = process.env.CLIENT_PORT || 5175;
   await app.listen(port);

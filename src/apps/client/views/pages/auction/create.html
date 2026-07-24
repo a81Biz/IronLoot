@@ -56,7 +56,7 @@ document.getElementById('createAuctionForm').addEventListener('submit', async (e
     startsAt: new Date(document.getElementById('startsAt').value).toISOString(),
     endsAt: new Date(document.getElementById('endsAt').value).toISOString(),
   };
-  const res = await fetch(API + '/api/v1/auctions', {
+  const res = await fetch('/api/v1/auctions', {
     method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
     body: JSON.stringify(body),
   });
