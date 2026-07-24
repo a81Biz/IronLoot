@@ -88,6 +88,18 @@ export class BidsService {
         throw new BidOnOwnAuctionException(auctionId);
       }
 
+      // PT-041 (AUD-009): enforce the configured minimum bid increment. The bid must be at least
+      // currentPrice + AUCTION_MIN_INCREMENT_AMOUNT (default 10). Previously only "> currentPrice"
+      // was enforced, so the configurable increment had no effect.
+      const minIncrement = await this.systemConfigService.getNumber(
+        'AUCTION_MIN_INCREMENT_AMOUNT',
+        10,
+      );
+      const minRequired = Number(auction.currentPrice) + minIncrement;
+      if (dto.amount < minRequired) {
+        throw new BidTooLowException(auctionId, dto.amount, minRequired);
+      }
+
       // 2. Hold Funds (Optimistic lock approach - hold first, then try to bid)
       await this.walletService.holdFunds(
         userId,
