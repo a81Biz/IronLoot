@@ -27,8 +27,8 @@ const API = '{{ apiUrl }}';
 document.getElementById('profileForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msg = document.getElementById('profileMsg');
-  const res = await fetch(API + '/api/v1/users/profile', {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
+  const res = await fetch('/api/v1/users/me', {
+    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
     body: JSON.stringify({ fullName: document.getElementById('fullName').value, phone: document.getElementById('phone').value }),
   });
   msg.className = 'alert ' + (res.ok ? 'alert-success' : 'alert-error');

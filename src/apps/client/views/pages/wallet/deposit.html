@@ -28,7 +28,7 @@ document.getElementById('depositForm').addEventListener('submit', async (e) => {
   const errEl = document.getElementById('depositError');
   errEl.style.display = 'none';
   try {
-    const res = await fetch(API + '/api/v1/wallet/deposit', {
+    const res = await fetch('/api/v1/wallet/deposit', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
       body: JSON.stringify({ amount: parseFloat(document.getElementById('amount').value), provider: document.getElementById('provider').value }),
     });
