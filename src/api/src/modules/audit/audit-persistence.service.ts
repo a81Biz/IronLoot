@@ -38,6 +38,19 @@ export class AuditPersistenceService implements OnModuleInit {
     this.isProd = this.env === 'production';
   }
 
+  // PT-049 (BUG-QA-02): audit/error/request-log tables store actor_user_id and entity_id as `@db.Uuid`.
+  // When a non-UUID identifier is supplied (e.g. the admin session username "admin", or a synthetic
+  // order id), Prisma throws "Error creating UUID" and the whole audit write fails, breaking the audit
+  // trail platform-wide and surfacing as HTTP 500 on otherwise-successful operations. These helpers
+  // coerce non-UUID values to null / the nil UUID so the event is still recorded.
+  private static readonly UUID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  private static readonly NIL_UUID = '00000000-0000-0000-0000-000000000000';
+
+  private toUuidOrNull(value?: string | null): string | null {
+    return value && AuditPersistenceService.UUID_RE.test(value) ? value : null;
+  }
+
   /**
    * Wire up persistence callbacks to observability module
    */
@@ -78,6 +91,16 @@ export class AuditPersistenceService implements OnModuleInit {
     payload?: Record<string, unknown>;
   }): Promise<void> {
     try {
+      const actorUserId = this.toUuidOrNull(data.actorUserId);
+      const entityId = this.toUuidOrNull(data.entityId) ?? AuditPersistenceService.NIL_UUID;
+      // Preserve non-UUID references (e.g. admin username) in the payload so no information is lost.
+      const payload = {
+        ...(data.payload || {}),
+        ...(data.actorUserId && !actorUserId ? { _actorRef: data.actorUserId } : {}),
+        ...(data.entityId && entityId === AuditPersistenceService.NIL_UUID
+          ? { _entityRef: data.entityId }
+          : {}),
+      };
       await this.prisma.auditEvent.create({
         data: {
           eventType: data.eventType,
@@ -85,12 +108,12 @@ export class AuditPersistenceService implements OnModuleInit {
           env: this.env,
           service: this.serviceName,
           actorType: data.actorType,
-          actorUserId: data.actorUserId,
+          actorUserId,
           entityType: data.entityType,
-          entityId: data.entityId || '00000000-0000-0000-0000-000000000000',
+          entityId,
           result: data.result,
           reasonCode: data.reasonCode,
-          payload: (data.payload || {}) as Prisma.InputJsonValue,
+          payload: payload as Prisma.InputJsonValue,
           payloadVersion: 1,
         },
       });
@@ -119,6 +142,15 @@ export class AuditPersistenceService implements OnModuleInit {
     },
   ): Promise<string | null> {
     try {
+      const actorUserId = this.toUuidOrNull(options?.actorUserId);
+      const safeEntityId = this.toUuidOrNull(entityId) ?? AuditPersistenceService.NIL_UUID;
+      const payload = {
+        ...(options?.payload || {}),
+        ...(options?.actorUserId && !actorUserId ? { _actorRef: options.actorUserId } : {}),
+        ...(entityId && safeEntityId === AuditPersistenceService.NIL_UUID
+          ? { _entityRef: entityId }
+          : {}),
+      };
       const event = await this.prisma.auditEvent.create({
         data: {
           eventType,
@@ -126,12 +158,12 @@ export class AuditPersistenceService implements OnModuleInit {
           env: this.env,
           service: this.serviceName,
           actorType: options?.actorUserId ? ActorType.USER : ActorType.SYSTEM,
-          actorUserId: options?.actorUserId,
+          actorUserId,
           entityType,
-          entityId,
+          entityId: safeEntityId,
           result,
           reasonCode: options?.reasonCode,
-          payload: (options?.payload || {}) as Prisma.InputJsonValue,
+          payload: payload as Prisma.InputJsonValue,
           payloadVersion: 1,
         },
       });
@@ -180,9 +212,9 @@ export class AuditPersistenceService implements OnModuleInit {
           isBusinessError: data.isBusinessError,
           httpMethod: data.httpMethod,
           httpPath: data.httpPath,
-          actorUserId: data.actorUserId,
+          actorUserId: this.toUuidOrNull(data.actorUserId),
           entityType: data.entityType,
-          entityId: data.entityId,
+          entityId: this.toUuidOrNull(data.entityId),
           details: this.sanitizeDetails(data.details || {}) as Prisma.InputJsonValue,
           stack: this.isProd ? this.truncateStack(data.stack) : data.stack,
         },
@@ -229,10 +261,10 @@ export class AuditPersistenceService implements OnModuleInit {
           httpPath: data.httpPath,
           httpStatus: data.httpStatus,
           durationMs: data.durationMs,
-          actorUserId: data.actorUserId,
+          actorUserId: this.toUuidOrNull(data.actorUserId),
           actorState: data.actorState,
           entityType: data.entityType,
-          entityId: data.entityId,
+          entityId: this.toUuidOrNull(data.entityId),
         },
       });
     } catch (error) {

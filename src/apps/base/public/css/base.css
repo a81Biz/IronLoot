@@ -1133,3 +1133,13 @@ img { max-width: 100%; display: block; }
 .justify-between { justify-content: space-between; }
 .gap-1 { gap: 0.5rem; }
 .gap-2 { gap: 1rem; }
+
+/* PT-055 (FINDING-QA-13): header responsive — evitar overflow horizontal en móvil.
+   El nav no tenía reglas para viewports estrechos y .nav-auth se desbordaba (>375px). */
+@media (max-width: 640px) {
+  .nav-container { gap: 0.6rem; padding: 0 0.75rem; }
+  .nav-links { display: none; }
+  .nav-brand svg { height: 26px; width: auto; }
+  .nav-auth { gap: 0.4rem; }
+  .nav-auth .btn { padding: 0.4rem 0.6rem; font-size: 0.75rem; letter-spacing: 0; }
+}

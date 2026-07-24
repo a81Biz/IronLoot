@@ -742,7 +742,10 @@ export class AdminService {
         body,
         segment: segment as any,
         channelsJson: channels,
-        status: 'QUEUED',
+        // PT-051 (BUG-QA-12): 'QUEUED' is not a member of the CampaignStatus enum
+        // (DRAFT | SCHEDULED | SENT | FAILED) → Prisma threw and the broadcast failed silently
+        // while the admin UI reported success. It is dispatched synchronously here, so 'SENT' is correct.
+        status: 'SENT',
         sentAt: new Date(),
         recipientsCount: users.length,
         sentBy: adminUser,

@@ -14,8 +14,8 @@
         {% if disputes and disputes.items %}
           {% for d in disputes.items %}
           <tr>
-            <td><code>{{ d.id[:8] }}…</code></td>
-            <td>{{ d.orderId[:8] }}…</td>
+            <td><code>{{ d.id | truncate(8, true, '') }}…</code></td>
+            <td>{{ d.orderId | truncate(8, true, '') }}…</td>
             <td><span class="badge badge-warning">{{ d.status }}</span></td>
             <td>{{ d.createdAt }}</td>
             <td><a href="/disputes/{{ d.id }}" class="btn btn-sm btn-ghost">Ver</a></td>

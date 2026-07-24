@@ -17,15 +17,6 @@
         <label for="startingPrice">Precio inicial (MXN)</label>
         <input class="form-control" type="number" id="startingPrice" min="1" step="0.01" required placeholder="500.00">
       </div>
-      <div class="form-group">
-        <label for="condition">Condición</label>
-        <select class="form-control" id="condition">
-          <option value="NEW">Nuevo</option>
-          <option value="LIKE_NEW">Como nuevo</option>
-          <option value="GOOD">Bueno</option>
-          <option value="FAIR">Regular</option>
-        </select>
-      </div>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
       <div class="form-group">
@@ -52,7 +43,6 @@ document.getElementById('createAuctionForm').addEventListener('submit', async (e
     title: document.getElementById('title').value,
     description: document.getElementById('description').value,
     startingPrice: parseFloat(document.getElementById('startingPrice').value),
-    condition: document.getElementById('condition').value,
     startsAt: new Date(document.getElementById('startsAt').value).toISOString(),
     endsAt: new Date(document.getElementById('endsAt').value).toISOString(),
   };
