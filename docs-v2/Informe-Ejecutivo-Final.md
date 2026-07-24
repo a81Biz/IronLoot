@@ -1,5 +1,7 @@
 # Informe Ejecutivo Final — Auditoría y Reconstrucción Documental IronLoot
 
+> **📌 NOTA DE ESTADO (2026-07-23):** Este informe es la **foto de cierre de la auditoría** (estado pre-remediación). Los **36 hallazgos** que describe fueron **remediados en su totalidad y fusionados a master** (PTs 036–047) el mismo día. Las secciones «Trabajo pendiente» y «Conclusión» reflejan el estado en el momento de la auditoría; para el estado actual ver [Informe-Remediacion.md](Informe-Remediacion.md) y [Registro de Hallazgos](transversal/Registro-de-Hallazgos.md). Único trabajo restante: decisión de negocio de contratar un PAC SAT para activar CFDI real (hoy tras interruptor `CFDI_ENABLED`, apagado).
+
 | Metadato | Valor |
 |---|---|
 | **Origen** | Cierre de la auditoría integral doc↔código (Fases 1–5) + reconstrucción `docs-v2/` |

@@ -1,6 +1,6 @@
 # IronLoot — Documentación Oficial (docs-v2)
 
-> **✅ REMEDIACIÓN APLICADA Y FUSIONADA A MASTER (2026-07-23):** 33/36 hallazgos resueltos (código + doc); abiertos: AUD-016 (PAC externo), AUD-028 (CI), AUD-033 (menor). Ver [Informe-Remediacion.md](Informe-Remediacion.md). Verificación: API 177 tests · core 134 · builds OK.
+> **✅ REMEDIACIÓN COMPLETA Y FUSIONADA A MASTER (2026-07-23):** 36/36 hallazgos resueltos (código + doc), PTs 036–047, sin abiertos. AUD-016 cerrado como interruptor `CFDI_ENABLED` (la integración real del PAC queda como decisión de negocio a contratar). Ver [Informe-Remediacion.md](Informe-Remediacion.md). Verificación: API `tsc` 0 + **181 tests** · core 134 · CLIENT/ADMIN builds OK.
 >
 > **Esta carpeta es la única fuente de verdad del proyecto.** Sustituye funcionalmente a `docs/enterprise-documentation/` como documentación oficial. La documentación anterior (`docs/`, `PTSA/`, `changes/`) permanece intacta como insumo histórico y de evidencia.
 
