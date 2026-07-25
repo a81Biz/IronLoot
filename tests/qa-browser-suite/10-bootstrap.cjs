@@ -216,28 +216,25 @@ async function verifyEmail(ctx, email, tag) {
   const buyerId = L.dbQuery(`SELECT id FROM users WHERE email='${BUYER.email}'`);
   if (bLogin.ok) {
     const p = bLogin.page;
-    let initiate = { seen: false, status: 0, hasRedirect: false };
-    p.on('response', async (r) => {
-      if (r.url().includes('/payments/initiate')) {
-        initiate.seen = true; initiate.status = r.status();
-        try { const j = await r.json(); initiate.hasRedirect = !!(j && (j.redirectUrl || j.init_point || j.url)); } catch {}
-      }
-    });
-    await p.route('**/*', (route) => {
-      const u = route.request().url();
-      if (/mercadopago|paypal|mercadolibre|sandbox/i.test(u) && route.request().isNavigationRequest()) return route.abort();
-      return route.continue();
-    });
+    // Evidencia visual del formulario de depósito
     await p.goto(cfg.CLIENT + '/wallet/deposit', { waitUntil: 'domcontentloaded' });
     await p.waitForTimeout(500);
     await L.fillWhenReady(p, '#amount', '5000');
     await shot(p, '11_deposit_form');
-    await p.click('button[type=submit]').catch(() => {});
-    await p.waitForTimeout(2500);
+    // PT-073 — Verificación DETERMINISTA del contrato: se llama al endpoint por el BFF y se inspecciona
+    // el JSON (igual que hace deposit.html). Evita la carrera del submit del form con window.location→abort.
+    const initiate = await p.evaluate(async () => {
+      const r = await fetch('/api/v1/payments/initiate', {
+        method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount: 5000, provider: 'MERCADO_PAGO' }),
+      });
+      let data = null; try { data = await r.json(); } catch {}
+      return { status: r.status, ok: r.ok, hasRedirect: !!(data && (data.redirectUrl || data.init_point || data.url)) };
+    });
     await shot(p, '12_deposit_after');
-    rec('QA-BOOT-10b', 'Depósito: contrato /payments/initiate (BUG-QA-01)',
-      initiate.seen && initiate.status < 400 && initiate.hasRedirect ? 'PASS' : 'FAIL',
-      `seen=${initiate.seen} http=${initiate.status} redirectUrl=${initiate.hasRedirect}`);
+    rec('QA-BOOT-10b', 'Depósito: contrato /payments/initiate devuelve redirectUrl',
+      initiate.ok && initiate.hasRedirect ? 'PASS' : 'FAIL',
+      `http=${initiate.status} redirectUrl=${initiate.hasRedirect}`);
   } else {
     rec('QA-BOOT-10b', 'Depósito contrato', 'BLOCKED', 'login comprador falló');
   }
