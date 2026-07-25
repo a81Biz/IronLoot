@@ -13,7 +13,7 @@ import {
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards';
-import { CurrentUser, AuthenticatedUser } from '../auth/decorators';
+import { CurrentUser, AuthenticatedUser, Public } from '../auth/decorators';
 import { PaymentsService } from './payments.service';
 import { CreateCheckoutDto, ProcessPaymentDto } from './dto';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
@@ -43,6 +43,7 @@ export class PaymentsController {
   }
 
   @Post('webhook/:provider')
+  @Public() // Los webhooks de pasarela no envían JWT; deben saltar el guard global (firma HMAC valida)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
   @ApiOperation({ summary: 'Webhook endpoint', description: 'Receive payment updates' })
   @Log()
