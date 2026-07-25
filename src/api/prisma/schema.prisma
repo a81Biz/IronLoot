@@ -886,6 +886,37 @@ model CmsContent {
 }
 
 /// UserPaymentMethod — registered withdrawal methods for a user (PT-029)
+/// PT-072 — Estados del retiro (payout manual con aprobación admin)
+enum WithdrawalStatus {
+  REQUESTED
+  APPROVED
+  PROCESSING
+  PAID
+  REJECTED
+  FAILED
+}
+
+/// PT-072 — Solicitud de retiro del vendedor. Los fondos se reservan al solicitar
+/// (se descuentan del disponible + asiento WITHDRAWAL); si se rechaza, se reintegran.
+model WithdrawalRequest {
+  id              String           @id @default(uuid()) @db.Uuid
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+  userId          String           @map("user_id") @db.Uuid
+  paymentMethodId String           @map("payment_method_id") @db.VarChar(255)
+  amount          Decimal          @db.Decimal(12, 2)
+  status          WithdrawalStatus @default(REQUESTED)
+  reviewedBy      String?          @map("reviewed_by") @db.VarChar(255)
+  reviewedAt      DateTime?        @map("reviewed_at") @db.Timestamptz
+  paidAt          DateTime?        @map("paid_at") @db.Timestamptz
+  payoutReference String?          @map("payout_reference") @db.VarChar(255)
+  notes           String?          @db.Text
+
+  @@index([userId], name: "idx_withdrawal_user")
+  @@index([status], name: "idx_withdrawal_status")
+  @@map("withdrawal_requests")
+}
+
 model UserPaymentMethod {
   id          String   @id @default(uuid()) @db.Uuid
   createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz

@@ -17,6 +17,7 @@ import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiSecurity } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { AdminService } from './admin.service';
+import { WithdrawalsService } from '../wallet/withdrawals.service';
 import { AdminDualAuthGuard } from './guards/admin-dual-auth.guard';
 import { Public } from '../auth/decorators';
 import { RefundsService } from '../refunds/refunds.service';
@@ -40,6 +41,7 @@ export class AdminController {
     private readonly cmsService: CmsService,
     private readonly notificationQueue: NotificationQueueProducer,
     private readonly webhookRetryQueue: WebhookRetryProducer,
+    private readonly withdrawalsService: WithdrawalsService,
   ) {}
 
   // ─── Dashboard ───────────────────────────────────────────────────────────
@@ -507,6 +509,38 @@ export class AdminController {
     @Body() body: { notes: string; adminUser?: string },
   ) {
     return this.adminService.requestKycCorrection(id, body.notes, body.adminUser ?? 'admin');
+  }
+
+  // ─── Withdrawals (PT-072) — aprobación manual del retiro del vendedor ──────
+
+  @Get('withdrawals')
+  @ApiOperation({ summary: 'List withdrawal requests (queue)' })
+  getWithdrawals(@Query('status') status?: string) {
+    return this.withdrawalsService.listQueue(status);
+  }
+
+  @Patch('withdrawals/:id/approve')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Approve a withdrawal request' })
+  approveWithdrawal(@Param('id') id: string, @Body() body: { adminUser?: string }) {
+    return this.withdrawalsService.approve(id, body.adminUser ?? 'admin');
+  }
+
+  @Patch('withdrawals/:id/reject')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Reject a withdrawal request (refunds reserved funds)' })
+  rejectWithdrawal(@Param('id') id: string, @Body() body: { reason?: string; adminUser?: string }) {
+    return this.withdrawalsService.reject(id, body.adminUser ?? 'admin', body.reason ?? '');
+  }
+
+  @Patch('withdrawals/:id/mark-paid')
+  @HttpCode(200)
+  @ApiOperation({ summary: 'Mark withdrawal as PAID after manual SPEI transfer' })
+  markWithdrawalPaid(
+    @Param('id') id: string,
+    @Body() body: { reference?: string; adminUser?: string },
+  ) {
+    return this.withdrawalsService.markPaid(id, body.adminUser ?? 'admin', body.reference);
   }
 
   // ─── CFDI ────────────────────────────────────────────────────────────────

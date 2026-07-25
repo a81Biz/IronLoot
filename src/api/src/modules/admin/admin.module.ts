@@ -16,6 +16,7 @@ import { SeoModule } from '../seo/seo.module';
 import { CmsModule } from '../cms/cms.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { PaymentsModule } from '../payments/payments.module';
+import { WalletModule } from '../wallet/wallet.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { PaymentsModule } from '../payments/payments.module';
     CmsModule,
     NotificationsModule,
     PaymentsModule,
+    WalletModule, // PT-072 retiros
   ],
   controllers: [AdminController, AdminAuthController],
   providers: [AdminService, AdminJwtGuard, AdminDualAuthGuard],

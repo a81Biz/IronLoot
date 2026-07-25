@@ -61,6 +61,32 @@ export class WalletService {
   }
 
   /**
+   * PT-072 — Reintegra a disponible un retiro reservado que fue rechazado (reversa).
+   */
+  async refundWithdrawal(userId: string, amount: number, referenceId: string): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const wallet = await tx.wallet.findUnique({ where: { userId } });
+      if (!wallet) throw new NotFoundException('Wallet not found');
+      const amt = new Decimal(amount);
+      const before = new Decimal(wallet.balance);
+      const after = before.plus(amt);
+      await tx.ledger.create({
+        data: {
+          walletId: wallet.id,
+          type: LedgerType.ADJUSTMENT,
+          amount: amt,
+          balanceBefore: before,
+          balanceAfter: after,
+          referenceId,
+          referenceType: 'WITHDRAWAL_REFUND',
+          description: `Withdrawal refund for ${referenceId}`,
+        },
+      });
+      await tx.wallet.update({ where: { id: wallet.id }, data: { balance: after } });
+    });
+  }
+
+  /**
    * PT-071 — Libera el neto de una venta desde pendingBalance a disponible (balance),
    * al confirmarse la recepción o vencer la ventana de disputa. Registra SETTLEMENT_RELEASE.
    */

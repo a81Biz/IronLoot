@@ -15,6 +15,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery } from '@ne
 import { DepositDto, WithdrawDto, WalletBalanceDto, TransactionHistoryDto } from './dto/wallet.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WalletService } from './wallet.service';
+import { WithdrawalsService } from './withdrawals.service';
 import { PrismaService } from '../../database/prisma.service';
 import {
   Log,
@@ -39,6 +40,7 @@ export class WalletController {
     private readonly walletService: WalletService,
     private readonly prisma: PrismaService,
     private readonly paymentsService: PaymentsService,
+    private readonly withdrawalsService: WithdrawalsService,
   ) {}
 
   // ... (existing methods)
@@ -127,29 +129,37 @@ export class WalletController {
     return this.paymentsService.listPaymentMethods(req.user.id);
   }
 
+  // PT-072 — Solicitud de retiro (reemplaza el retiro inmediato: ahora requiere aprobación admin).
+  @Post('withdrawals')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @AuditedAction(AuditEventType.PAYMENT_INITIATED, EntityType.USER, (args) => args[0].user.id, [
+    'amount',
+  ])
+  @ApiOperation({ summary: 'Request a withdrawal (requires admin approval)' })
+  async requestWithdrawal(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: { amount: number; paymentMethodId: string },
+  ) {
+    return this.withdrawalsService.request(req.user.id, dto);
+  }
+
+  @Get('withdrawals')
+  @ApiOperation({ summary: 'List my withdrawal requests' })
+  async myWithdrawals(@Request() req: AuthenticatedRequest) {
+    return this.withdrawalsService.listMine(req.user.id);
+  }
+
+  // Compat: el antiguo POST /withdraw ahora crea una solicitud (no descuenta sin aprobación).
   @Post('withdraw')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
-  @AuditedAction(
-    AuditEventType.PAYMENT_INITIATED,
-    EntityType.USER,
-    (args) => args[0].user.id, // req is 1st arg
-    ['amount'],
-  )
-  @ApiOperation({ summary: 'Withdraw funds' })
-  @ApiResponse({ status: 201, description: 'Withdrawal successful' })
-  @ApiResponse({ status: 400, description: 'Invalid amount or payment method' })
+  @AuditedAction(AuditEventType.PAYMENT_INITIATED, EntityType.USER, (args) => args[0].user.id, [
+    'amount',
+  ])
+  @ApiOperation({ summary: 'Deprecated — use POST /wallet/withdrawals' })
   async withdraw(@Request() req: AuthenticatedRequest, @Body() dto: WithdrawDto) {
-    // 1. Validate Payment Method
-    const method = await this.paymentsService.getUserPaymentMethod(req.user.id, dto.referenceId);
-    if (!method) throw new BadRequestException('Invalid payment method');
-
-    // 2. Verify Limits
-    const DAILY_LIMIT = 5000;
-    const dailyWithdrawn = await this.walletService.getDailyWithdrawals(req.user.id);
-    if (dailyWithdrawn + dto.amount > DAILY_LIMIT) {
-      throw new BadRequestException('Daily withdrawal limit exceeded');
-    }
-
-    return this.walletService.withdraw(req.user.id, dto.amount, dto.referenceId);
+    return this.withdrawalsService.request(req.user.id, {
+      amount: dto.amount,
+      paymentMethodId: dto.referenceId,
+    });
   }
 }
