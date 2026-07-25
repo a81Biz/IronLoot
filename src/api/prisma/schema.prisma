@@ -254,6 +254,8 @@ model Order {
   // Info
   totalAmount Decimal     @map("total_amount") @db.Decimal(10, 2)
   status      OrderStatus @default(PENDING_PAYMENT)
+  sellerNet       Decimal?  @map("seller_net") @db.Decimal(12, 2) // PT-071 neto acreditado al vendedor (pending)
+  sellerSettledAt DateTime? @map("seller_settled_at") @db.Timestamptz // PT-071 cuando se liberó a disponible
 
   // Relations
   auctionId String  @unique @map("auction_id") @db.Uuid
@@ -612,6 +614,7 @@ enum LedgerType {
   FEE_PLATFORM
   REFUND
   ADJUSTMENT
+  SETTLEMENT_RELEASE
 }
 
 /// Wallet - User's financial account
@@ -625,9 +628,10 @@ model Wallet {
   user   User   @relation(fields: [userId], references: [id])
 
   // Balance
-  balance   Decimal @default(0) @db.Decimal(12, 2) // Available funds
-  heldFunds Decimal @default(0) @map("held_funds") @db.Decimal(12, 2) // Locked in active bids
-  currency  String  @default("MXN") @db.VarChar(3)
+  balance        Decimal @default(0) @db.Decimal(12, 2) // Available funds
+  heldFunds      Decimal @default(0) @map("held_funds") @db.Decimal(12, 2) // Locked in active bids
+  pendingBalance Decimal @default(0) @map("pending_balance") @db.Decimal(12, 2) // PT-071 — ventas sin liquidar (holdback)
+  currency       String  @default("MXN") @db.VarChar(3)
 
   // System State
   isActive Boolean @default(false) @map("is_active") // Requires initial deposit

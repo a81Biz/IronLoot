@@ -136,6 +136,12 @@ export class AuctionSchedulerService {
 
             const winnerBid = auction.bids[0];
             if (winnerBid) {
+              // PT-042 (AUD-005): charge the admin-configured commission rate.
+              const feePercent = await this.commissionsService.resolveRatePercent(auction.sellerId);
+              // PT-071 — neto del vendedor (bruto − comisión), que entra a pendingBalance.
+              const gross = Number(winnerBid.amount);
+              const sellerNet = Number((gross - (gross * feePercent) / 100).toFixed(2));
+
               // 2. Create Order (PAID — funds captured atomically below)
               await tx.order.create({
                 data: {
@@ -144,13 +150,11 @@ export class AuctionSchedulerService {
                   sellerId: auction.sellerId,
                   totalAmount: winnerBid.amount,
                   status: OrderStatus.PAID,
+                  sellerNet, // PT-071
                 },
               });
 
               // 3. Capture Funds (atomic with order creation — pass outer tx)
-              // PT-042 (AUD-005): charge the admin-configured commission rate (seller override →
-              // global → default 10) instead of a hardcoded 10%, so admin config affects the charge.
-              const feePercent = await this.commissionsService.resolveRatePercent(auction.sellerId);
               await this.walletService.captureHeldFunds(
                 winnerBid.bidderId,
                 auction.sellerId,
@@ -255,6 +259,45 @@ export class AuctionSchedulerService {
         }
       } catch (error) {
         this.logger.error(`Failed to close auction ${auction.id}`, error);
+      }
+    }
+  }
+
+  /**
+   * PT-071 — Libera a disponible el neto de ventas cuya retención maduró:
+   * pedido DELIVERED (recepción confirmada) O vencida la ventana de disputa.
+   */
+  @Cron(CronExpression.EVERY_30_MINUTES)
+  async releaseMaturedSettlements(): Promise<void> {
+    const disputeDays = Number(process.env.DISPUTE_WINDOW_DAYS || 14);
+    const cutoff = new Date(Date.now() - disputeDays * 24 * 60 * 60 * 1000);
+
+    const matured = await this.prisma.order.findMany({
+      where: {
+        sellerSettledAt: null,
+        sellerNet: { not: null },
+        OR: [{ status: OrderStatus.DELIVERED }, { createdAt: { lte: cutoff } }],
+      },
+      select: { id: true, sellerId: true, sellerNet: true },
+    });
+
+    for (const order of matured) {
+      try {
+        await this.prisma.$transaction(async (tx) => {
+          await this.walletService.releaseSettlement(
+            order.sellerId,
+            Number(order.sellerNet),
+            order.id,
+            tx,
+          );
+          await tx.order.update({
+            where: { id: order.id },
+            data: { sellerSettledAt: new Date() },
+          });
+        });
+        this.logger.log(`Settlement released for order ${order.id} (net ${order.sellerNet})`);
+      } catch (e) {
+        this.logger.error(`Failed to release settlement for order ${order.id}`, e as Error);
       }
     }
   }

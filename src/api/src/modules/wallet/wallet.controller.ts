@@ -52,6 +52,7 @@ export class WalletController {
     return {
       available: Number(balance.available),
       held: Number(balance.held),
+      pending: Number(balance.pending),
       currency: balance.currency,
       isActive: balance.isActive,
     };
