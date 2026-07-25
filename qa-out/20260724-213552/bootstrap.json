@@ -1,0 +1,74 @@
+[
+  {
+    "id": "QA-BOOT-01",
+    "desc": "Admin login inicial",
+    "status": "PASS",
+    "detail": "http://localhost:3001/"
+  },
+  {
+    "id": "QA-BOOT-02",
+    "desc": "Config comisión GLOBAL (10%)",
+    "status": "PASS",
+    "detail": "db.rate_percent=10.00"
+  },
+  {
+    "id": "QA-BOOT-04",
+    "desc": "Registrar comprador (comprador_213552@test.local)",
+    "status": "PASS",
+    "detail": "http://localhost:5174/auth/verify-email-pending"
+  },
+  {
+    "id": "QA-BOOT-05",
+    "desc": "Registrar vendedor (vendedor_213552@test.local)",
+    "status": "PASS",
+    "detail": "http://localhost:5174/auth/verify-email-pending"
+  },
+  {
+    "id": "QA-BOOT-06",
+    "desc": "Verificar email (comprador y vendedor)",
+    "status": "PASS",
+    "detail": "buyer=true() seller=true()"
+  },
+  {
+    "id": "QA-BOOT-07a",
+    "desc": "Login vendedor",
+    "status": "PASS",
+    "detail": "http://localhost:5175/dashboard"
+  },
+  {
+    "id": "QA-BOOT-07",
+    "desc": "Onboarding vendedor (enable-seller)",
+    "status": "PASS",
+    "detail": "is_seller=t kyc_submissions=0"
+  },
+  {
+    "id": "QA-BOOT-08",
+    "desc": "Admin aprueba KYC",
+    "status": "N/A",
+    "detail": "onboarding no genera KYC submission (seller habilitado directo)"
+  },
+  {
+    "id": "QA-BOOT-09",
+    "desc": "Crear + publicar subasta",
+    "status": "PASS",
+    "detail": "id=c5e0644b status=PUBLISHED publishOk=true createHttp=201"
+  },
+  {
+    "id": "QA-BOOT-10a",
+    "desc": "Login comprador",
+    "status": "PASS",
+    "detail": "http://localhost:5175/dashboard"
+  },
+  {
+    "id": "QA-BOOT-10b",
+    "desc": "Depósito: contrato /payments/initiate (BUG-QA-01)",
+    "status": "FAIL",
+    "detail": "seen=true http=201 redirectUrl=false"
+  },
+  {
+    "id": "QA-BOOT-10c",
+    "desc": "Fondear wallet comprador (crédito de prueba)",
+    "status": "PASS",
+    "detail": "balance=5000.00"
+  }
+]
