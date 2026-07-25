@@ -57,6 +57,17 @@
 ### Moderar subastas
 - Aprobar/rechazar/suspender desde `auctions`. ⚠️ Estas acciones cambian el estado directamente sin pasar por las reglas de transición de dominio (`AUD-011`) — usar con criterio.
 
+### Aprobar KYC del vendedor (PT-069)
+1. `kyc` → revisar los documentos de la solicitud (estado PENDING).
+2. **Aprobar** (`PATCH /admin/kyc/:id/approve`) habilita `isSeller` y desbloquea vender y retirar (`RN-62`). Rechazar/pedir corrección según el caso.
+
+### Procesar un retiro del vendedor (PT-072) — payout manual
+1. `GET /admin/withdrawals[?status=REQUESTED]` → cola de solicitudes. Cada una muestra vendedor, monto y método (CLABE + titular).
+2. **Aprobar** (`PATCH /admin/withdrawals/:id/approve`): REQUESTED→APPROVED (los fondos ya están reservados desde que el vendedor solicitó, `RN-65`).
+3. **Ejecutar la transferencia SPEI manualmente** desde la banca a la CLABE del titular.
+4. **Marcar pagado** (`PATCH /admin/withdrawals/:id/mark-paid`): APPROVED→PAID; registra `payoutReference`. ⚠️ Marca PAID **sólo tras** confirmar el SPEI (`RN-66`, `PayoutProvider` manual).
+5. **Rechazar** (`PATCH /admin/withdrawals/:id/reject`, motivo): REQUESTED/APPROVED→REJECTED y **reintegra** el saldo al vendedor automáticamente. La dispersión automática llegará en Fase 2 (`RN-67`).
+
 ## 4. Configuración de plataforma (runtime)
 
 Desde **configuration/platform** (persistido en SystemConfig): soft-close, moderación obligatoria, incremento mínimo (⚠️ no aplicado, `AUD-009`), duración de subasta, verificación de email, KYC obligatorio, expiración de pago, ventana de disputa. También SMTP, storage, pasarelas y CFDI.

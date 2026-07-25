@@ -41,8 +41,10 @@
 | **Rating** | `ratings` | N:1 Order/author/target | `score` SmallInt (1-5, no forzado en BD) | ✅ | `:370` |
 | **Dispute** | `disputes` | 1:1 Order; N:1 creator | — | ✅ | `:404` |
 | **Notification** | `notifications` | N:1 User | — | ✅ | `:436` |
-| **Wallet** | `wallets` | 1:1 User; 1:N Ledger | `balance`,`heldFunds` Decimal(12,2); `currency` MXN | ✅ | `:618` |
+| **Wallet** | `wallets` | 1:1 User; 1:N Ledger | `balance`,`heldFunds`,**`pendingBalance`** Decimal(12,2); `currency` MXN | ✅ | `:618` |
 | **Ledger** | `ledger` | N:1 Wallet (Restrict) | `amount`,`balanceBefore`,`balanceAfter` Decimal(12,2) | ✅ | `:642` |
+| **WithdrawalRequest** | `withdrawal_requests` | N:1 User; ref `paymentMethodId` | `amount`; `status` WithdrawalStatus; FSM REQUESTED→APPROVED→PAID/REJECTED (PT-072) | ✅ | retiro real |
+| **UserPaymentMethod** | `user_payment_methods` | N:1 User | `clabe`(18, verificador RN-63),`holderName`,`bankName`,`isVerified` | ✅ | PT-070 |
 | **CommissionConfig** | `commission_config` | referenceId libre | `ratePercent` Decimal(5,2) | ✗ | `:684` **AUD-001** |
 | **CommissionRecord** | `commission_records` | orderId único (ref libre, sin FK) | `amount` Decimal(10,2) sin currency | ✗ | `:698` **AUD-001** |
 | **ModerationLog** | `moderation_log` | auctionId (ref libre) | — | ✗ | `:719` |
@@ -72,7 +74,8 @@
 | ShipmentProvider | DHL, FEDEX, ESTAFETA, UPS, CUSTOM | manual (AUD-024) |
 | DisputeStatus | OPEN, IN_MEDIATION, RESOLVED, CLOSED | — |
 | NotificationType | AUCTION_WON, AUCTION_LOST, BID_OUTBID, ORDER_PAID, ORDER_SHIPPED, DISPUTE_UPDATE, SYSTEM | — |
-| LedgerType | DEPOSIT, WITHDRAWAL, HOLD_BID, RELEASE_BID, DEBIT_ORDER, CREDIT_SALE, FEE_PLATFORM, REFUND, ADJUSTMENT | evolución limpia (mig. 9→11→13) |
+| LedgerType | DEPOSIT, WITHDRAWAL, HOLD_BID, RELEASE_BID, DEBIT_ORDER, CREDIT_SALE, FEE_PLATFORM, REFUND, ADJUSTMENT, **SETTLEMENT_RELEASE** | evolución limpia (mig. 9→11→13→liberación PT-071) |
+| WithdrawalStatus | REQUESTED, APPROVED, PAID, REJECTED, FAILED | retiro real PT-072 |
 | CommissionType / CommissionStatus | GLOBAL,CATEGORY,SELLER / PENDING,COLLECTED | sin migración |
 | ModerationAction | APPROVED, REJECTED | sin migración |
 | CfdiStatus | PENDING, EMITTED, CANCELLED, ERROR | sin migración |
@@ -89,10 +92,13 @@
 
 **Dispute:** `OPEN→{IN_MEDIATION,CLOSED}` · `IN_MEDIATION→{RESOLVED,CLOSED}` · `RESOLVED→{CLOSED}` · CLOSED terminal; ventana 14 días. (`dispute-state-machine.ts:5-37`)
 
-> **Estado real:** las operaciones admin escriben estado con `prisma.update` crudo, **sin** invocar estas FSM (AUD-011).
+**Withdrawal (PT-072):** `REQUESTED→{APPROVED,REJECTED}` · `APPROVED→{PAID,REJECTED}` · `REJECTED`/`PAID`/`FAILED` terminales. Aprobación **manual admin**; solicitar reserva fondos, rechazar los reintegra. (`withdrawals.service.ts`)
+
+> **Estado real:** las operaciones admin escriben estado con `prisma.update` crudo, **sin** invocar estas FSM (AUD-011). La FSM de retiro sí se aplica en servicio (guardas por estado en approve/reject/markPaid).
 
 ## 5. Modelo de dinero
 
 - Precisión: Wallet/Ledger `Decimal(12,2)`; Payment/Order/Refund/Commission `Decimal(10,2)`. Sin columna currency en Auction/Order/Ledger/Bid/CommissionRecord (moneda implícita MXN).
 - Value object `Money` (centavos enteros, currency-safe) existe en core con 30 tests pero **el API no lo usa** (usa `Decimal`) — AUD-012.
-- Ledger es el registro inmutable de todo movimiento; tipos: HOLD_BID/RELEASE_BID (pujas), DEBIT_ORDER/CREDIT_SALE/FEE_PLATFORM (cierre), DEPOSIT/WITHDRAWAL, REFUND, ADJUSTMENT.
+- Ledger es el registro inmutable de todo movimiento; tipos: HOLD_BID/RELEASE_BID (pujas), DEBIT_ORDER/CREDIT_SALE/FEE_PLATFORM (cierre), DEPOSIT/WITHDRAWAL, REFUND, ADJUSTMENT, **SETTLEMENT_RELEASE** (liberación de holdback pending→disponible).
+- **Tres saldos (PT-071):** `balance` (disponible/retirable), `heldFunds` (bloqueado por pujas activas), `pendingBalance` (liquidación de ventas **retenida** hasta entrega o vencimiento de disputa). El neto de una venta entra a `pendingBalance` y sólo pasa a `balance` vía `SETTLEMENT_RELEASE`. Sólo `balance` es retirable.

@@ -20,17 +20,18 @@
 | Capa | Suites | Bloques aprox | Cobertura |
 |---|---|---|---|
 | core dominio | 12 | ~104 (157 casos) | Money, wallet-calc, FSM auction/order/dispute, bid-validation, HMAC/IPN, 4 use-cases |
-| api unit/integ | 30 | ~161 | users(21), auctions(11), lock(11), auth(9), wallet(8), disputes(7), scheduler-lock(7)… |
+| api unit/integ | 30+ | ~175 | users(21), auctions(11), lock(11), auth(9), wallet(8→13), disputes(7), scheduler-lock(7)… **+retiro real (PT-069..072): kyc.service(4), clabe.util(3), settlement(2), withdrawals.service(5)** |
 | api e2e | 15 | ~79 | watchlist(9), auth(8), settings(7), bids(7), auctions(6), wallet(5), orders(5)… |
-| frontends | 0 | 0 | **ninguna** |
+| **QA navegador (Playwright)** | 1 harness | ~135 checks | smoke + bootstrap del mundo + 41 rutas autenticadas + E2E puja/superado + admin writes + **MP real (Orders API + webhook firmado)** + **historial** + **flujo de retiro end-to-end (KYC→método→venta→holdback→liberación→solicitud→admin approve/mark-paid)** |
+| frontends | 0 | 0 | **ninguna (unit)** |
 
 ## 3. Mapa de cobertura por módulo (estado real)
 
 | Estado | Módulos |
 |---|---|
-| **TESTED** | auth, users, auctions, disputes, shipments, ratings, notifications, wallet*, health, redis-lock |
-| **PARTIAL** | bids (fund-lock, 4 unit), payments (webhook idempotencia), orders (1 unit), scheduler (cierre 3 unit), diagnostics, watchlist (sólo e2e) |
-| **UNTESTED** | **refunds**, **commissions**, kyc, cfdi, cms, audit, feature-flags, seo, system-cleanup, system-config, upload, admin, **todo el frontend** |
+| **TESTED** | auth, users, auctions, disputes, shipments, ratings, notifications, wallet*, health, redis-lock, **kyc (PT-069), withdrawals/settlement/clabe (PT-070..072)** |
+| **PARTIAL** | bids (fund-lock, 4 unit), payments (webhook idempotencia), orders (1 unit), scheduler (cierre 3 unit + liberación holdback), diagnostics, watchlist (sólo e2e) |
+| **UNTESTED** | **refunds**, **commissions**, cfdi, cms, audit, feature-flags, seo, system-cleanup, system-config, upload, admin, **todo el frontend (unit)** |
 
 ## 4. Veredicto de caminos críticos financieros
 

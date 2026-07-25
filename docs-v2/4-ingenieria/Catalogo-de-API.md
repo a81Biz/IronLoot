@@ -37,16 +37,26 @@
 | GET | /auctions/:auctionId/bids | Public |
 | GET | /bids/my-active \| /bids/my-history | JWT |
 
-## Wallet (`/wallet`) — 4 · Payments (`/payments`) — 6
+## Wallet (`/wallet`) — 8 · Payments (`/payments`) — 6 · KYC (`/kyc`) — 2
 | Método | Ruta | Guard | Throttle |
 |---|---|---|---|
 | GET | /wallet/balance \| /wallet/history | JWT | default |
 | POST | /wallet/deposit | JWT | 10/60s |
 | POST | /wallet/withdraw | JWT | 5/60s |
+| GET/POST | /wallet/payment-methods | JWT | default |
+| GET/POST | /wallet/withdrawals | JWT | default |
+| POST | /kyc · GET /kyc/me | JWT | default |
 | POST | /payments/checkout | JWT | default |
 | POST | /payments/webhook/:provider | **Public** | 20/60s |
 | POST | /payments/initiate \| /payments/process | JWT | default |
 | GET | /payments/providers \| /payments/methods | Public | default |
+
+> **Retiro del vendedor (PT-069..072).** `GET /wallet/balance` expone ahora `{ balance, held, pending }`
+> (`pending` = liquidaciones retenidas). `POST /wallet/payment-methods` registra la CLABE (validada, RN-63).
+> `POST /wallet/withdrawals {amount, paymentMethodId}` crea la solicitud y **reserva** el saldo (RN-65);
+> `GET /wallet/withdrawals` lista las del vendedor. Lado admin: `GET /admin/withdrawals[?status]`,
+> `PATCH /admin/withdrawals/:id/approve|reject|mark-paid` (RN-66). KYC: `POST /kyc` (submission→PENDING),
+> `GET /kyc/me`; aprobación admin `PATCH /admin/kyc/:id/approve` (habilita venta y retiro, RN-62).
 
 ## Orders — 2 · Shipments — 3 · Ratings — 2 · Disputes — 3
 | Método | Ruta | Guard |

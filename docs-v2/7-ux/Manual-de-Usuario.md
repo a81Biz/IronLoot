@@ -38,7 +38,7 @@
 | Watchlist | `/auctions/watchlist` | Subastas seguidas |
 | Wallet | `/wallet` | Saldo disponible y retenido |
 | Depositar | `/wallet/deposit` | Añadir fondos (⚠️ `AUD-003`) |
-| Retirar | `/wallet/withdraw` | Retirar (máx. 5.000 MXN/día, método registrado) (⚠️ `AUD-003`) |
+| Retirar | `/wallet/withdrawals` | Solicitar retiro (requiere KYC aprobado + CLABE registrada; máx. diario configurable) — pasa por aprobación del admin |
 | Historial | `/wallet/history` | Movimientos del ledger |
 | Órdenes | `/orders`, `/orders/:id` | Tus compras/ventas |
 | Notificaciones | `/notifications` | Alertas (superado, ganada, etc.) |
@@ -62,10 +62,17 @@
 | Pedidos | `/seller/orders` | Gestionar ventas |
 
 ### Vender paso a paso
-1. Habilítate como vendedor (onboarding + KYC si aplica).
+1. Habilítate como vendedor: onboarding + **KYC obligatorio** (envía tus documentos; el admin aprueba).
 2. Crea la subasta (borrador) y **publícala**.
 3. Al cerrar con ganador, se crea la orden pagada.
 4. **Registra el envío** y actualiza a entregado.
+
+### Cobrar tus ventas (retiro)
+1. El **neto** de cada venta (importe − comisión) entra a tu wallet como **saldo retenido** (`pending`), no retirable de inmediato.
+2. Se libera a **saldo disponible** cuando el pedido queda **entregado** o vence la ventana de disputa (14 días), lo que ocurra.
+3. Registra tu **cuenta bancaria (CLABE)** en métodos de pago.
+4. Solicita el retiro desde `/wallet/withdrawals`. Al solicitar, el importe se **reserva** de tu disponible.
+5. El **admin aprueba** y realiza la transferencia **SPEI**; verás el retiro como **PAID**. Si lo rechaza, el importe se te **reintegra**.
 5. Cobras el importe **menos la comisión** de la plataforma.
 6. Puedes **calificar** al comprador tras la entrega.
 

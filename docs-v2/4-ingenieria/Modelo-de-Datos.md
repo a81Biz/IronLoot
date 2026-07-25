@@ -36,7 +36,7 @@
 
 ## 3. Migraciones (14, cronológico)
 
-1–9: módulos base (auth/auctions/bids/orders/payments/shipments/ratings/disputes/notifications/wallet). · 10 `audit_fixes_v0_3_0`: +`AUCTION_LOST`, +`STRIPE`, 2FA cols, índice compuesto bids. · 11 `update_ledger_types`: HOLD→HOLD_BID, RELEASE→RELEASE_BID, +DEBIT_ORDER/CREDIT_SALE/FEE_PLATFORM. · 12 `fix_wallet_currency_default_to_mxn`: wallets USD→MXN (default+backfill). · 13 `remove_purchase_ledger_type`: elimina PURCHASE. · 14 `add_user_payment_methods`: tabla UserPaymentMethod.
+1–9: módulos base (auth/auctions/bids/orders/payments/shipments/ratings/disputes/notifications/wallet). · 10 `audit_fixes_v0_3_0`: +`AUCTION_LOST`, +`STRIPE`, 2FA cols, índice compuesto bids. · 11 `update_ledger_types`: HOLD→HOLD_BID, RELEASE→RELEASE_BID, +DEBIT_ORDER/CREDIT_SALE/FEE_PLATFORM. · 12 `fix_wallet_currency_default_to_mxn`: wallets USD→MXN (default+backfill). · 13 `remove_purchase_ledger_type`: elimina PURCHASE. · 14 `add_user_payment_methods`: tabla UserPaymentMethod. · **15–18 (retiro real PT-070..072):** `+bank fields UserPaymentMethod` (bank_name, clabe, holder_name, alias, is_verified) · `+Wallet.pendingBalance` · `+Order.sellerNet/sellerSettledAt` + `LedgerType.SETTLEMENT_RELEASE` · `+WithdrawalRequest` (tabla) + `WithdrawalStatus` (enum REQUESTED/APPROVED/PAID/REJECTED/FAILED).
 
 ## 4. Drift esquema↔migraciones (AUD-001) — CRÍTICO
 
@@ -50,8 +50,11 @@
 
 ## 5. Modelo de dinero (detalle)
 
-- **Wallet:** `balance`, `heldFunds` `Decimal(12,2)`, `currency` MXN, `isActive` (requiere depósito inicial).
-- **Ledger:** inmutable, append-only; `type` (LedgerType 9 valores), `amount/balanceBefore/balanceAfter`; sin currency propio (hereda wallet).
+- **Wallet:** `balance` (disponible), `heldFunds` (bloqueado por pujas), **`pendingBalance`** (liquidación retenida, no retirable — PT-071) `Decimal(12,2)`, `currency` MXN, `isActive` (requiere depósito inicial). `getBalance` expone `{ balance, held, pending }`.
+- **Ledger:** inmutable, append-only; `type` (LedgerType **10 valores**, +`SETTLEMENT_RELEASE`); `amount/balanceBefore/balanceAfter`; sin currency propio (hereda wallet).
+- **WithdrawalRequest (PT-072):** `userId`, `paymentMethodId`, `amount`, `status` (`WithdrawalStatus`), `reviewedBy/reviewedAt`, `paidAt`, `payoutReference`, `notes`. FSM REQUESTED→APPROVED→PAID / (REQUESTED,APPROVED)→REJECTED. Reserva de fondos al crear (asiento `WITHDRAWAL`); reintegro al rechazar (`ADJUSTMENT`).
+- **UserPaymentMethod (retiro):** `bankName`, `clabe` (18 díg., verificador validado RN-63), `holderName`, `alias`, `isVerified` (false al alta).
+- **Order (holdback):** `sellerNet` (neto tras comisión, acreditado a `pendingBalance` al capturar), `sellerSettledAt` (fecha de liberación a disponible; null = retenido).
 - **Payment:** `currency` **default DB `USD`** (`migration ...123540:13`) vs esquema `MXN` (`schema.prisma:304`) → **AUD-008**.
 - **CommissionRecord/RefundRequest:** `amount` sin/con currency; sin migración → integridad no verificable (`AUD-001`).
 

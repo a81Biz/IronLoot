@@ -49,7 +49,7 @@
 | RN-22 | Bloqueo de fondos hold-first: verifica disponibilidad, wallet activa, mueve balance→held atómicamente. | ✅ Cumple | `wallet.service.ts:164-215` | AUD-013 (race no probado) |
 | RN-23 | Superado libera fondos del líder anterior + notificación BID_OUTBID. | ✅ Cumple | `bids.service.ts:137` | — |
 | RN-24 | Depósito acredita el **monto verificado** del proveedor, no el input del usuario (`PaymentMismatchException`). | ✅ Cumple | `wallet.controller.ts:104` | AUD-003 (auth UI) |
-| RN-25 | Retiro: límite diario 5000 MXN (hard-coded) + método de pago registrado. | ✅ Cumple (valor fijo) | `wallet.controller.ts:126-134` | — |
+| RN-25 | **Retiro del vendedor (PT-072):** flujo de **solicitud con aprobación manual del admin** (REQUESTED→APPROVED→PAID / REJECTED). Reserva fondos al solicitar (disponible↓ + `WITHDRAWAL`); el rechazo reintegra (`ADJUSTMENT`). Límite diario `WITHDRAWAL_DAILY_LIMIT` (def 5000). Ver RN-62..67. | ✅ Cumple | `withdrawals.service.ts`, `wallet.controller.ts` | PT-072 (VALIDATION_PENDING) |
 | RN-26 | Ledger inmutable, sólo-inserción; correcciones vía ADJUSTMENT. | ✅ Cumple | `wallet.service.ts` | AUD-018 (retención audit) |
 | RN-27 | Moneda MXN global; `Decimal` no `Float`. | ⚠️ `payments.currency` default DB `USD` (esquema dice MXN). | `schema.prisma:304`, `migration ...123540:13` | **AUD-008** |
 
@@ -83,7 +83,7 @@
 | RN-53 | Puerta de secretos en prod: `JWT_SECRET`/`SESSION_SECRET`/`ADMIN_API_KEY`/`ALLOWED_ORIGINS` no placeholder o `process.exit(1)`. | ⚠️ Parcial en master; **PT-036 (VALIDATION_PENDING)** añade el gate de `ADMIN_USERNAME/PASSWORD`. | `main.ts`, `common/config/validate-startup-config.ts` | **AUD-004** |
 | RN-54 | CSRF. | ⚠️ **Contradictorio:** doc afirma doble-cookie; BASE/CLIENT confían en Bearer+SameSite; **ADMIN no tiene CSRF ni CSP**. | `09-Security §6`, `admin/src/main.ts` | **AUD-014, AUD-007** |
 | RN-55 | Gateways WebSocket. | ⚠️ **Sin autenticación** (guard comentado). | `auctions.gateway.ts:9` | **AUD-006** |
-| RN-56 | Onboarding vendedor: aceptar términos, estado ACTIVE, email verificado, displayName y dirección/ciudad/país. | ✅ Cumple | `users.service.ts:377-414` | — |
+| RN-56 | Onboarding vendedor: aceptar términos, estado ACTIVE, email verificado, displayName, dirección/ciudad/país **y KYC APPROVED (PT-069, obligatorio)**. | ✅ Cumple | `users.service.ts:377-414` + gate KYC en `enableSeller` | PT-069 (cierra OBS-01) |
 
 ## Reglas de retención / operación
 
@@ -91,6 +91,21 @@
 |---|---|---|---|---|
 | RN-60 | Retención de logs de auditoría. | ⚠️ **Dos crons en conflicto** (90d vs 30d) → efectiva 30d. | `system-cleanup` (×2) | **AUD-018** |
 | RN-61 | `PAYMENT_EXPIRATION_HOURS` (72h) para órdenes impagas. | Config presente; aplicación no verificada en runtime. | `configuration.ts:68` | — |
+
+## 8. Retiro del vendedor, KYC y liquidación (PT-069..072)
+
+> MVP de **retiro real con payout manual (SPEI)** y aprobación admin. Decisiones de producto:
+> mecanismo manual (Fase 1), holdback liberado por entrega **o** vencimiento de disputa, aprobación
+> **siempre manual**, KYC **obligatorio**. Dispersión bancaria automática = Fase 2 (ver RN-67).
+
+| ID | Regla | Estado real | Evidencia | PT |
+|---|---|---|---|---|
+| RN-62 | **KYC obligatorio para vender.** El vendedor envía documentos (`POST /api/v1/kyc` → `KycSubmission` PENDING). `enable-seller` exige **KYC APPROVED**; la aprobación admin (`PATCH /admin/kyc/:id/approve`) habilita `isSeller`. | ✅ Cumple | `kyc.controller.ts`, `users.service.ts` (gate) | **PT-069** (cierra OBS-01) |
+| RN-63 | **Método de pago bancario (destino del retiro).** CLABE de 18 dígitos con **dígito verificador válido** (módulo 10 ponderado 3-7-1); nombre del titular obligatorio; una CLABE única por usuario; `is_verified=false` al alta. | ✅ Cumple | `clabe.util.ts`, `payments.service.ts addBankAccount` | **PT-070** |
+| RN-64 | **Retención de liquidación (holdback).** El neto de una venta (bruto − comisión) entra a `wallet.pendingBalance` (NO disponible). Se libera a disponible cuando el pedido está **DELIVERED** o vence la **ventana de disputa** (`DISPUTE_WINDOW_DAYS`=14), lo que ocurra; asiento `SETTLEMENT_RELEASE`. Cron `EVERY_30_MINUTES`. | ✅ Cumple | `wallet.service.captureHeldFunds/releaseSettlement`, `auction-scheduler.releaseMaturedSettlements` | **PT-071** |
+| RN-65 | **Solicitud de retiro reserva fondos.** Al solicitar se descuenta del **disponible** (no del pending) + asiento `WITHDRAWAL`. Gates: KYC APPROVED + método válido + saldo disponible suficiente + límite diario. | ✅ Cumple | `withdrawals.service.request` | **PT-072** |
+| RN-66 | **Aprobación de retiro siempre manual (admin).** Estados REQUESTED→APPROVED→PAID; rechazo (REQUESTED/APPROVED)→REJECTED **reintegra** los fondos (`ADJUSTMENT`). El admin marca **PAID** tras ejecutar el SPEI manual. | ✅ Cumple | `withdrawals.service.{approve,reject,markPaid}`, `admin.controller` | **PT-072** |
+| RN-67 | **Dispersión bancaria automática** (SPEI vía API / MP disbursement): **NO implementada** (Fase 2). El `PayoutProvider` abstrae el mecanismo; MVP usa `ManualPayoutProvider` (el admin transfiere y marca PAID). | ⏳ Pendiente (Fase 2) | `payout/payout-provider.ts` | **PT-072** (out-of-scope) |
 
 ---
 

@@ -44,9 +44,12 @@
 - **Excepción:** monto verificado ≠ solicitado → `PaymentMismatchException`; firma inválida o secreto ausente → rechazo.
 - **⚠️ Estado real:** el formulario client-side de depósito llama al API cross-origin sin ruta de auth válida (`AUD-003`).
 
-## UC-09 — Retirar del monedero ⚠️
-- **Happy:** `POST /wallet/withdraw` → verifica método de pago registrado + límite diario 5.000 MXN (`RN-25`) + saldo suficiente → asiento WITHDRAWAL.
-- **Excepción:** sin método registrado → rechazo; excede límite diario → rechazo; saldo insuficiente → rechazo. `[wallet.controller.ts:113-137]` · **⚠️** auth UI (`AUD-003`).
+## UC-09 — Retirar del monedero (vendedor, con aprobación admin) ✅
+- **Precondición:** KYC APPROVED (`RN-62`) + método bancario con CLABE válida (`RN-63`) + saldo **disponible** suficiente (el `pendingBalance` retenido no cuenta, `RN-64`).
+- **Happy (solicitud):** `POST /wallet/withdrawals {amount, paymentMethodId}` → valida gates → crea `WithdrawalRequest` REQUESTED y **reserva** los fondos (disponible↓ + asiento `WITHDRAWAL`, `RN-65`). El vendedor ve el estado en `GET /wallet/withdrawals`.
+- **Happy (admin):** `GET /admin/withdrawals` → `PATCH .../:id/approve` (REQUESTED→APPROVED) → el admin ejecuta el **SPEI manual** → `PATCH .../:id/mark-paid` (APPROVED→PAID, `PayoutProvider` manual, `RN-66`).
+- **Excepción:** sin KYC/método/saldo o excede límite diario → 400; **rechazo** admin (`PATCH .../:id/reject`) → REJECTED y **reintegra** los fondos (`ADJUSTMENT`). `[withdrawals.service.ts, admin.controller.ts]`
+- **Nota:** el viejo `POST /wallet/withdraw` inmediato ahora **delega** en la solicitud (ya no mueve dinero directo). Dispersión bancaria automática = Fase 2 (`RN-67`).
 
 ## UC-16 — Abrir disputa
 - **Actor:** Comprador/Vendedor (participante) · **Precondición:** orden PAID/SHIPPED/DELIVERED, dentro de 14 días de entrega.
