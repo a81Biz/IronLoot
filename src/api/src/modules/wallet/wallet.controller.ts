@@ -110,6 +110,22 @@ export class WalletController {
     return this.walletService.deposit(req.user.id, payment.amount, dto.referenceId);
   }
 
+  // PT-070 — Métodos de pago bancarios (destino del retiro)
+  @Post('payment-methods')
+  @ApiOperation({ summary: 'Register a bank account (CLABE) for withdrawals' })
+  async addPaymentMethod(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: { bankName?: string; clabe: string; holderName: string; alias?: string },
+  ) {
+    return this.paymentsService.addBankAccount(req.user.id, dto);
+  }
+
+  @Get('payment-methods')
+  @ApiOperation({ summary: 'List my registered payment methods' })
+  async listPaymentMethods(@Request() req: AuthenticatedRequest) {
+    return this.paymentsService.listPaymentMethods(req.user.id);
+  }
+
   @Post('withdraw')
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   @AuditedAction(

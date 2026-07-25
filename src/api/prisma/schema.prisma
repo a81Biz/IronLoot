@@ -889,6 +889,13 @@ model UserPaymentMethod {
   referenceId String   @map("reference_id") @db.VarChar(255)
   isActive    Boolean  @default(true) @map("is_active")
 
+  // PT-070 — Cuenta bancaria real (SPEI/MX). El destino del retiro.
+  bankName   String?  @map("bank_name") @db.VarChar(120)
+  clabe      String?  @db.VarChar(18)
+  holderName String?  @map("holder_name") @db.VarChar(255)
+  alias      String?  @db.VarChar(80)
+  isVerified Boolean  @default(false) @map("is_verified")
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, referenceId])
