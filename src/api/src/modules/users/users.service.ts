@@ -15,6 +15,7 @@ import {
   AuditResult,
 } from '../../common/observability';
 import { AuditPersistenceService } from '../audit/audit-persistence.service';
+import { KycService } from '../kyc/kyc.service';
 import {
   UpdateProfileDto,
   EnableSellerDto,
@@ -45,6 +46,7 @@ export class UsersService {
     private readonly ctx: RequestContextService,
     private readonly metrics: MetricsService,
     private readonly audit: AuditPersistenceService,
+    private readonly kyc: KycService,
   ) {
     this.log = this.logger.child('UsersService');
   }
@@ -331,6 +333,15 @@ export class UsersService {
     if (requirements.length > 0) {
       throw new ValidationException('Requirements not met to become a seller', {
         missingRequirements: requirements,
+      });
+    }
+
+    // PT-069 — KYC obligatorio: sólo se habilita vendedor con KYC APPROVED.
+    const kycStatus = await this.kyc.getUserKycStatus(userId);
+    if (!this.kyc.isApproved(kycStatus)) {
+      throw new ValidationException('KYC approval required to become a seller', {
+        kycStatus: kycStatus ?? 'NOT_SUBMITTED',
+        missingRequirements: ['Approved KYC verification'],
       });
     }
 
