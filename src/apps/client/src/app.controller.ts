@@ -174,8 +174,10 @@ export class AppController {
   @Get('/seller/auctions')
   @Render('pages/seller/auctions.html')
   async sellerAuctions(@Req() req: Request, @Query('page') page = 1) {
-    const auctions = await apiGet(getToken(req), `/api/v1/auctions?role=seller&page=${page}`);
-    return { auctions, page, apiUrl: API_URL };
+    // La API usa `mine=true` (no `role=seller`) para devolver TODAS las subastas del vendedor
+    // (incluye DRAFT/CLOSED); responde `{data,total}` → toItems lo normaliza a `{items}`.
+    const auctions = await apiGet(getToken(req), `/api/v1/auctions?mine=true&page=${page}`);
+    return { auctions: toItems(auctions), page, apiUrl: API_URL };
   }
 
   @Get('/seller/orders')
