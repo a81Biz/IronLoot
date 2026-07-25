@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { ClientAuthGuard } from './common/guards/client-auth.guard';
 import { WALLET_BALANCE_PATH, mapWalletBalance, WalletBalanceRaw } from './common/bff/wallet-view';
 import { MY_ACTIVE_BIDS_PATH, MY_BIDS_HISTORY_PATH, mapBidsList, BidRaw } from './common/bff/bids-view';
+import { toItems } from './common/bff/list-view';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
 const BASE_URL = process.env.BASE_URL || 'http://localhost:5174';
@@ -72,7 +73,7 @@ export class AppController {
   @Render('pages/won-auctions.html')
   async wonAuctions(@Req() req: Request) {
     const orders = await apiGet(getToken(req), '/api/v1/orders?role=buyer');
-    return { orders, apiUrl: API_URL };
+    return { orders: toItems(orders), apiUrl: API_URL };
   }
 
   @Get('/auctions/watchlist')
@@ -119,7 +120,7 @@ export class AppController {
   @Render('pages/orders/list.html')
   async orders(@Req() req: Request, @Query('page') page = 1) {
     const orders = await apiGet(getToken(req), `/api/v1/orders?page=${page}`);
-    return { orders, page, apiUrl: API_URL };
+    return { orders: toItems(orders), page, apiUrl: API_URL };
   }
 
   @Get('/orders/:id')
@@ -173,15 +174,17 @@ export class AppController {
   @Get('/seller/auctions')
   @Render('pages/seller/auctions.html')
   async sellerAuctions(@Req() req: Request, @Query('page') page = 1) {
-    const auctions = await apiGet(getToken(req), `/api/v1/auctions?role=seller&page=${page}`);
-    return { auctions, page, apiUrl: API_URL };
+    // La API usa `mine=true` (no `role=seller`) para devolver TODAS las subastas del vendedor
+    // (incluye DRAFT/CLOSED); responde `{data,total}` → toItems lo normaliza a `{items}`.
+    const auctions = await apiGet(getToken(req), `/api/v1/auctions?mine=true&page=${page}`);
+    return { auctions: toItems(auctions), page, apiUrl: API_URL };
   }
 
   @Get('/seller/orders')
   @Render('pages/seller/orders.html')
   async sellerOrders(@Req() req: Request, @Query('page') page = 1) {
     const orders = await apiGet(getToken(req), `/api/v1/orders?role=seller&page=${page}`);
-    return { orders, page, apiUrl: API_URL };
+    return { orders: toItems(orders), page, apiUrl: API_URL };
   }
 
   @Get('/auctions/create')
