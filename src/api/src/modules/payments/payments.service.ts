@@ -1,5 +1,6 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
 import { UserPaymentMethod } from '@prisma/client';
+import { isValidClabe } from '../wallet/clabe.util';
 import { StripeProvider } from './providers/stripe.provider';
 import { MercadoPagoProvider } from './providers/mercadopago.provider';
 import { PaypalProvider } from './providers/paypal.provider';
@@ -34,6 +35,47 @@ export class PaymentsService {
   ): Promise<UserPaymentMethod | null> {
     return this.prisma.userPaymentMethod.findFirst({
       where: { userId, referenceId, isActive: true },
+    });
+  }
+
+  /**
+   * PT-070 — Registrar una cuenta bancaria (CLABE) como método de pago para retiros.
+   * Valida el dígito verificador de la CLABE y exige nombre del titular.
+   */
+  async addBankAccount(
+    userId: string,
+    dto: { bankName?: string; clabe: string; holderName: string; alias?: string },
+  ): Promise<UserPaymentMethod> {
+    if (!isValidClabe(dto.clabe)) {
+      throw new BadRequestException('CLABE inválida (18 dígitos con verificador)');
+    }
+    if (!dto.holderName || !dto.holderName.trim()) {
+      throw new BadRequestException('El nombre del titular es requerido');
+    }
+    const existing = await this.prisma.userPaymentMethod.findFirst({
+      where: { userId, referenceId: dto.clabe },
+    });
+    if (existing) {
+      throw new BadRequestException('Esta CLABE ya está registrada');
+    }
+    return this.prisma.userPaymentMethod.create({
+      data: {
+        userId,
+        referenceId: dto.clabe, // la CLABE identifica el método
+        bankName: dto.bankName ?? null,
+        clabe: dto.clabe,
+        holderName: dto.holderName.trim(),
+        alias: dto.alias ?? null,
+        isVerified: false,
+        isActive: true,
+      },
+    });
+  }
+
+  async listPaymentMethods(userId: string): Promise<UserPaymentMethod[]> {
+    return this.prisma.userPaymentMethod.findMany({
+      where: { userId, isActive: true },
+      orderBy: { createdAt: 'desc' },
     });
   }
 

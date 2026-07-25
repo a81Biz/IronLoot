@@ -80,4 +80,21 @@ export class KycService {
       },
     });
   }
+
+  /**
+   * PT-069 — Estado KYC más reciente del usuario (para el gate de vendedor/retiro).
+   * Devuelve el status de la última submission, o null si no hay ninguna.
+   */
+  async getUserKycStatus(userId: string): Promise<string | null> {
+    const latest = await (this.prisma as any).kycSubmission.findFirst({
+      where: { userId },
+      orderBy: { submittedAt: 'desc' },
+      select: { status: true },
+    });
+    return latest ? latest.status : null;
+  }
+
+  isApproved(status: string | null): boolean {
+    return status === 'APPROVED';
+  }
 }

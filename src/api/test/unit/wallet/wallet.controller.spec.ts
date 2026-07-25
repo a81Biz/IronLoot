@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import { WalletController } from '../../../src/modules/wallet/wallet.controller';
 import { WalletService } from '../../../src/modules/wallet/wallet.service';
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
+import { WithdrawalsService } from '../../../src/modules/wallet/withdrawals.service';
 import { PrismaService } from '../../../src/database/prisma.service';
 import { DepositDto, WithdrawDto } from '../../../src/modules/wallet/dto/wallet.dto';
 import { JwtAuthGuard } from '../../../src/modules/auth/guards/jwt-auth.guard';
@@ -27,6 +28,11 @@ describe('WalletController', () => {
     },
   };
 
+  const mockWithdrawalsService = {
+    request: jest.fn(),
+    listMine: jest.fn(),
+  };
+
   const mockRequest = { user: { id: 'user-123' } } as any;
 
   beforeEach(async () => {
@@ -43,6 +49,7 @@ describe('WalletController', () => {
           },
         },
         { provide: PrismaService, useValue: mockPrismaService },
+        { provide: WithdrawalsService, useValue: mockWithdrawalsService },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -58,11 +65,18 @@ describe('WalletController', () => {
       mockWalletService.getBalance.mockResolvedValue({
         available: 100,
         held: 0,
+        pending: 0,
         currency: 'USD',
         isActive: true,
       });
       const result = await controller.getBalance(mockRequest);
-      expect(result).toEqual({ available: 100, held: 0, currency: 'USD', isActive: true });
+      expect(result).toEqual({
+        available: 100,
+        held: 0,
+        pending: 0,
+        currency: 'USD',
+        isActive: true,
+      });
       expect(service.getBalance).toHaveBeenCalledWith('user-123');
     });
   });
@@ -75,26 +89,23 @@ describe('WalletController', () => {
     });
   });
 
-  describe('withdraw (PT-029)', () => {
-    it('should return 400 when payment method is not registered', async () => {
-      // getUserPaymentMethod returns null — unregistered method
+  describe('withdraw (PT-072 — delega en solicitud con aprobación)', () => {
+    it('propaga el 400 de la solicitud cuando el método es inválido', async () => {
+      mockWithdrawalsService.request.mockRejectedValueOnce(
+        new BadRequestException('Método de pago inválido'),
+      );
       const dto: WithdrawDto = { amount: 100, referenceId: 'ref_invalid' };
       await expect(controller.withdraw(mockRequest, dto)).rejects.toThrow(BadRequestException);
     });
 
-    it('should proceed when payment method is registered', async () => {
-      const mockMethod = {
-        id: 'pm-1',
-        userId: 'user-123',
-        referenceId: 'ref_valid',
-        isActive: true,
-      };
-      const paymentsService = module.get(PaymentsService);
-      jest.spyOn(paymentsService, 'getUserPaymentMethod').mockResolvedValue(mockMethod as any);
-      mockWalletService.withdraw.mockResolvedValue({ success: true });
-
+    it('crea una solicitud (REQUESTED) mapeando referenceId → paymentMethodId', async () => {
+      mockWithdrawalsService.request.mockResolvedValueOnce({ id: 'w1', status: 'REQUESTED' });
       const dto: WithdrawDto = { amount: 100, referenceId: 'ref_valid' };
       const result = await controller.withdraw(mockRequest, dto);
+      expect(mockWithdrawalsService.request).toHaveBeenCalledWith('user-123', {
+        amount: 100,
+        paymentMethodId: 'ref_valid',
+      });
       expect(result).toBeDefined();
     });
   });

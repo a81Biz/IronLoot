@@ -32,6 +32,9 @@ export class WalletBalanceDto {
   @ApiProperty()
   held: number;
 
+  @ApiProperty({ description: 'PT-071 — ventas sin liquidar (holdback)' })
+  pending: number;
+
   @ApiProperty()
   currency: string;
 

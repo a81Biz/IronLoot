@@ -43,16 +43,86 @@ export class WalletService {
   /**
    * Get wallet balance
    */
-  async getBalance(
-    userId: string,
-  ): Promise<{ available: Decimal; held: Decimal; currency: string; isActive: boolean }> {
+  async getBalance(userId: string): Promise<{
+    available: Decimal;
+    held: Decimal;
+    pending: Decimal;
+    currency: string;
+    isActive: boolean;
+  }> {
     const wallet = await this.getWallet(userId);
     return {
       available: wallet.balance,
       held: wallet.heldFunds,
+      pending: wallet.pendingBalance, // PT-071 — ventas sin liquidar
       currency: wallet.currency,
       isActive: wallet.isActive,
     };
+  }
+
+  /**
+   * PT-072 — Reintegra a disponible un retiro reservado que fue rechazado (reversa).
+   */
+  async refundWithdrawal(userId: string, amount: number, referenceId: string): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const wallet = await tx.wallet.findUnique({ where: { userId } });
+      if (!wallet) throw new NotFoundException('Wallet not found');
+      const amt = new Decimal(amount);
+      const before = new Decimal(wallet.balance);
+      const after = before.plus(amt);
+      await tx.ledger.create({
+        data: {
+          walletId: wallet.id,
+          type: LedgerType.ADJUSTMENT,
+          amount: amt,
+          balanceBefore: before,
+          balanceAfter: after,
+          referenceId,
+          referenceType: 'WITHDRAWAL_REFUND',
+          description: `Withdrawal refund for ${referenceId}`,
+        },
+      });
+      await tx.wallet.update({ where: { id: wallet.id }, data: { balance: after } });
+    });
+  }
+
+  /**
+   * PT-071 — Libera el neto de una venta desde pendingBalance a disponible (balance),
+   * al confirmarse la recepción o vencer la ventana de disputa. Registra SETTLEMENT_RELEASE.
+   */
+  async releaseSettlement(
+    sellerId: string,
+    amount: number,
+    referenceId: string,
+    outerTx?: Prisma.TransactionClient,
+  ): Promise<void> {
+    const run = async (tx: Prisma.TransactionClient) => {
+      const wallet = await tx.wallet.findUnique({ where: { userId: sellerId } });
+      if (!wallet) throw new NotFoundException('Seller wallet not found');
+      const amt = new Decimal(amount);
+      const pendingBefore = new Decimal(wallet.pendingBalance);
+      if (pendingBefore.lessThan(amt)) return; // idempotencia: nada que liberar
+      const balanceBefore = new Decimal(wallet.balance);
+      const balanceAfter = balanceBefore.plus(amt);
+      await tx.ledger.create({
+        data: {
+          walletId: wallet.id,
+          type: LedgerType.SETTLEMENT_RELEASE,
+          amount: amt,
+          balanceBefore,
+          balanceAfter,
+          referenceId,
+          referenceType: 'ORDER',
+          description: `Settlement released for ${referenceId}`,
+        },
+      });
+      await tx.wallet.update({
+        where: { id: wallet.id },
+        data: { balance: balanceAfter, pendingBalance: pendingBefore.minus(amt), isActive: true },
+      });
+    };
+    if (outerTx) return run(outerTx);
+    return this.prisma.$transaction(run);
   }
 
   /**
@@ -335,44 +405,45 @@ export class WalletService {
         });
       }
 
-      const sellerBalanceBefore = new Decimal(sellerWallet.balance);
-      const sellerBalanceAfterSale = sellerBalanceBefore.plus(amountDecimal);
+      // PT-071 — Holdback: el ingreso de venta NO va a disponible; entra a pendingBalance
+      // hasta que se libere (confirmación de recepción o vencimiento de la ventana de disputa).
+      // El saldo DISPONIBLE del vendedor no cambia aquí.
+      const sellerAvailable = new Decimal(sellerWallet.balance);
+      const sellerNet = amountDecimal.minus(feeAmount);
 
-      // Credit Sale
+      // Credit Sale (a pending; disponible sin cambio)
       await tx.ledger.create({
         data: {
           walletId: sellerWallet.id,
           type: LedgerType.CREDIT_SALE,
           amount: amountDecimal,
-          balanceBefore: sellerBalanceBefore,
-          balanceAfter: sellerBalanceAfterSale,
+          balanceBefore: sellerAvailable,
+          balanceAfter: sellerAvailable,
           referenceId,
           referenceType: 'ORDER',
-          description: `Sale proceeds for ${referenceId}`,
+          description: `Sale proceeds (pending clearance) for ${referenceId}`,
         },
       });
 
-      // Use intermediate balance
-      const sellerBalanceAfterFee = sellerBalanceAfterSale.minus(feeAmount);
-
-      // Debit Fee
+      // Debit Fee (informativo; se descuenta del neto pendiente)
       await tx.ledger.create({
         data: {
           walletId: sellerWallet.id,
           type: LedgerType.FEE_PLATFORM,
           amount: feeAmount,
-          balanceBefore: sellerBalanceAfterSale,
-          balanceAfter: sellerBalanceAfterFee,
+          balanceBefore: sellerAvailable,
+          balanceAfter: sellerAvailable,
           referenceId,
           referenceType: 'FEE',
-          description: `Platform fee (10%) for ${referenceId}`,
+          description: `Platform fee for ${referenceId}`,
         },
       });
 
-      // Update Seller Wallet
+      // Update Seller Wallet: neto a pendingBalance
+      const newPending = new Decimal(sellerWallet.pendingBalance).plus(sellerNet);
       await tx.wallet.update({
         where: { id: sellerWallet.id },
-        data: { balance: sellerBalanceAfterFee },
+        data: { pendingBalance: newPending, isActive: true },
       });
 
       this.log.info(`Captured funds: Buyer ${buyerId} -> Seller ${sellerId} (Fee: ${feeAmount})`, {
