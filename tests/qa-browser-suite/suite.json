@@ -1,0 +1,77 @@
+{
+  "BASE": {
+    "port": 5174,
+    "auth": false,
+    "routes": [
+      { "path": "/", "expect": "ok" },
+      { "path": "/about", "expect": "ok" },
+      { "path": "/contact", "expect": "ok" },
+      { "path": "/privacy", "expect": "ok" },
+      { "path": "/terms", "expect": "ok" },
+      { "path": "/static/terms", "expect": "ok" },
+      { "path": "/auctions", "expect": "ok" },
+      { "path": "/auth/login", "expect": "ok" },
+      { "path": "/auth/register", "expect": "ok" },
+      { "path": "/auth/recovery", "expect": "ok" },
+      { "path": "/auth/reset-password", "expect": "ok" },
+      { "path": "/auth/verify-email-pending", "expect": "ok" },
+      { "path": "/auth/verify-email?token=invalido123", "expect": "any" },
+      { "path": "/auth/reset-password?token=invalido123", "expect": "ok" },
+      { "path": "/auctions/00000000-0000-0000-0000-000000000000", "expect": "notfound" },
+      { "path": "/ruta-que-no-existe-xyz", "expect": "notfound" }
+    ]
+  },
+  "CLIENT": {
+    "port": 5175,
+    "auth": true,
+    "routes": [
+      { "path": "/dashboard", "expect": "guard" },
+      { "path": "/profile", "expect": "guard" },
+      { "path": "/settings", "expect": "guard" },
+      { "path": "/my-bids", "expect": "guard" },
+      { "path": "/auctions/won-auctions", "expect": "guard" },
+      { "path": "/auctions/watchlist", "expect": "guard" },
+      { "path": "/wallet", "expect": "guard" },
+      { "path": "/wallet/deposit", "expect": "guard" },
+      { "path": "/wallet/withdraw", "expect": "guard" },
+      { "path": "/wallet/history", "expect": "guard" },
+      { "path": "/payments", "expect": "guard" },
+      { "path": "/orders", "expect": "guard" },
+      { "path": "/notifications", "expect": "guard" },
+      { "path": "/disputes", "expect": "guard" },
+      { "path": "/disputes/create", "expect": "guard" },
+      { "path": "/reputation", "expect": "guard" },
+      { "path": "/seller/onboarding", "expect": "guard" },
+      { "path": "/seller/auctions", "expect": "guard" },
+      { "path": "/seller/orders", "expect": "guard" },
+      { "path": "/auctions/create", "expect": "guard" }
+    ]
+  },
+  "ADMIN": {
+    "port": 3001,
+    "auth": true,
+    "routes": [
+      { "path": "/login", "expect": "ok" },
+      { "path": "/", "expect": "guard" },
+      { "path": "/users", "expect": "guard" },
+      { "path": "/auctions", "expect": "guard" },
+      { "path": "/lots", "expect": "guard" },
+      { "path": "/moderation", "expect": "guard" },
+      { "path": "/orders", "expect": "guard" },
+      { "path": "/disputes", "expect": "guard" },
+      { "path": "/refunds", "expect": "guard" },
+      { "path": "/payments", "expect": "guard" },
+      { "path": "/kyc", "expect": "guard" },
+      { "path": "/commissions", "expect": "guard" },
+      { "path": "/cfdi", "expect": "guard" },
+      { "path": "/cms", "expect": "guard" },
+      { "path": "/seo", "expect": "guard" },
+      { "path": "/audit", "expect": "guard" },
+      { "path": "/reports", "expect": "guard" },
+      { "path": "/reconciliation", "expect": "guard" },
+      { "path": "/notifications", "expect": "guard" },
+      { "path": "/configuration/platform", "expect": "guard" },
+      { "path": "/settings", "expect": "guard" }
+    ]
+  }
+}
