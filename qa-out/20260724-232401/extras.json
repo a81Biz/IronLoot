@@ -1,0 +1,98 @@
+[
+  {
+    "id": "QA-AUTH-06",
+    "desc": "Login inválido → error, sin sesión",
+    "status": "PASS",
+    "detail": "err=\"Credenciales incorrectas.\" url=/auth/login"
+  },
+  {
+    "id": "QA-AUTH-03",
+    "desc": "Registro con email duplicado → error controlado",
+    "status": "PASS",
+    "detail": "err=\"Error al registrar.\""
+  },
+  {
+    "id": "QA-AUTH-02",
+    "desc": "Validación de registro (email/pass inválidos)",
+    "status": "PASS",
+    "detail": "emailValid=false passValid=false"
+  },
+  {
+    "id": "QA-AUTH-13",
+    "desc": "Token en cookie HttpOnly (no accesible por JS)",
+    "status": "PASS",
+    "detail": "cookie=access_token httpOnly=true jsLeak=false"
+  },
+  {
+    "id": "QA-AUTH-12",
+    "desc": "Logout limpia sesión (dashboard→login)",
+    "status": "PASS",
+    "detail": "url=/auth/login"
+  },
+  {
+    "id": "QA-X-04-base-movil",
+    "desc": "Responsive BASE home @375px (sin overflow horizontal)",
+    "status": "PASS",
+    "detail": "overflowX=0px"
+  },
+  {
+    "id": "QA-X-04-base-tablet",
+    "desc": "Responsive BASE home @768px (sin overflow horizontal)",
+    "status": "PASS",
+    "detail": "overflowX=0px"
+  },
+  {
+    "id": "QA-X-04-base-desktop",
+    "desc": "Responsive BASE home @1366px (sin overflow horizontal)",
+    "status": "PASS",
+    "detail": "overflowX=0px"
+  },
+  {
+    "id": "QA-X-04-client-movil",
+    "desc": "Responsive CLIENT dashboard @375px",
+    "status": "PASS",
+    "detail": "overflowX=0px"
+  },
+  {
+    "id": "QA-X-04-client-tablet",
+    "desc": "Responsive CLIENT dashboard @768px",
+    "status": "PASS",
+    "detail": "overflowX=0px"
+  },
+  {
+    "id": "QA-X-04-client-desktop",
+    "desc": "Responsive CLIENT dashboard @1366px",
+    "status": "PASS",
+    "detail": "overflowX=0px"
+  },
+  {
+    "id": "QA-X-07-BASE",
+    "desc": "Cabecera CSP presente (BASE)",
+    "status": "PASS",
+    "detail": "csp=sí xFrameOptions=SAMEORIGIN"
+  },
+  {
+    "id": "QA-X-07-CLIENT",
+    "desc": "Cabecera CSP presente (CLIENT)",
+    "status": "PASS",
+    "detail": "csp=sí xFrameOptions=SAMEORIGIN"
+  },
+  {
+    "id": "QA-X-07-ADMIN",
+    "desc": "Cabecera CSP presente (ADMIN)",
+    "status": "PASS",
+    "detail": "csp=sí xFrameOptions=SAMEORIGIN"
+  },
+  {
+    "id": "QA-X-05-firefox",
+    "desc": "Cross-browser BASE home (firefox)",
+    "status": "PASS",
+    "detail": "http=200 title=\"IronLoot — Subastas en línea\""
+  },
+  {
+    "id": "QA-X-05-webkit",
+    "desc": "Cross-browser BASE home (webkit)",
+    "status": "PASS",
+    "detail": "http=200 title=\"IronLoot — Subastas en línea\""
+  }
+]

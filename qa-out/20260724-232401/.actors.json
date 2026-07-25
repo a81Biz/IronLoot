@@ -1,0 +1,16 @@
+{
+  "BUYER": {
+    "username": "comprador_232401",
+    "email": "comprador_232401@test.local",
+    "password": "Passw0rd!2026"
+  },
+  "SELLER": {
+    "username": "vendedor_232401",
+    "email": "vendedor_232401@test.local",
+    "password": "Passw0rd!2026"
+  },
+  "buyerId": "4318f545-5a74-4ce2-b6f2-2392fd42d870",
+  "sellerId": "ec1464ea-8483-4e47-884f-7dd9a71fc4f5",
+  "auctionId": "3a00418a-03b0-40c1-bde5-80cc3c2b8201",
+  "runid": "232401"
+}
