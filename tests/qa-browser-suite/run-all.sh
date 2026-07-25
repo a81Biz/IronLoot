@@ -25,21 +25,24 @@ done
 
 log "3) Fase 00 — Smoke (crea OUT + .last-run)"
 node 00-smoke.cjs || exit 1
-OUT=$(cat "$ROOT/.last-run")
+OUT=$(cat "$ROOT/.last-run" | tr '\\' '/')   # normalizar a forward-slashes para los node -e siguientes
 echo "   OUT=$OUT"
 
 run_phase(){ log "$1"; node "$2" || echo "   (fase $2 terminó con error, continúo)"; }
 
 run_phase "4) Fase 10 — Bootstrap del mundo (KYC-gated seller)" 10-bootstrap.cjs
 run_phase "5) Fase 20 — Rutas autenticadas" 20-authed.cjs
-run_phase "6) Fase 30 — E2E puja + bloqueo de fondos" 30-e2e.cjs
-run_phase "7) Fase 31 — Outbid + liberación" 31-outbid.cjs
-run_phase "8) Fase 40 — Extras (auth/responsive/CSP/cross-browser)" 40-extras.cjs
-run_phase "9) Fase 50 — Escrituras admin" 50-admin-writes.cjs
-run_phase "10) Fase 60 — RETIRO REAL DEL VENDEDOR (KYC→CLABE→holdback→solicitud→admin)" 60-withdrawal.cjs
+run_phase "6) Fase 30 — E2E puja + bloqueo + outbid + liberación (incluye E2E-6)" 30-e2e.cjs
+# PT-074 — 31-outbid.cjs es un re-run AISLADO de E2E-6 (requiere subasta fresca); no va en la secuencia
+#          porque 30-e2e ya deja el precio en 700 (re-pujar 700 sobre 700 se rechaza, esperado).
+#          Se conserva como herramienta standalone: `node 31-outbid.cjs`.
+run_phase "7) Fase 40 — Extras (auth/responsive/CSP/cross-browser)" 40-extras.cjs
+run_phase "8) Fase 50 — Escrituras admin" 50-admin-writes.cjs
+run_phase "9) Fase 60 — RETIRO REAL DEL VENDEDOR (KYC→CLABE→holdback→solicitud→admin)" 60-withdrawal.cjs
 
-log "11) Historial comprador + vendedor"
-node -e "const fs=require('fs');const a=JSON.parse(fs.readFileSync('$OUT/.actors.json','utf8'));fs.mkdirSync('C:/tmp',{recursive:true});fs.writeFileSync('C:/tmp/act.json',JSON.stringify({buyer:a.BUYER,seller:a.SELLER},null,2));console.log('   act.json escrito');"
+log "10) Historial comprador + vendedor"
+# Leer OUT y actores dentro de node desde .last-run (evita backslashes de Windows en el string del shell)
+node -e "const fs=require('fs');const out=fs.readFileSync('C:/DevOps/Desarrollos/IronLoot/qa-out/.last-run','utf8').trim();const a=JSON.parse(fs.readFileSync(out+'/.actors.json','utf8'));fs.mkdirSync('C:/tmp',{recursive:true});fs.writeFileSync('C:/tmp/act.json',JSON.stringify({buyer:a.BUYER,seller:a.SELLER},null,2));console.log('   act.json escrito');"
 node hist-check.cjs || echo "   (hist-check con error)"
 
 log "RESUMEN FINAL"

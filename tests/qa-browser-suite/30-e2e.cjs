@@ -45,14 +45,17 @@ async function bidViaUI(ctx, user, amount, tag) {
   const browser = await L.launch();
 
   // --- estado inicial de la subasta ---
-  const aStatus = L.dbQuery(`SELECT status FROM auctions WHERE id='${AID}'`);
+  // PT-075 — Una subasta recién publicada puede seguir PUBLISHED si aún no llega starts_at (el scheduler
+  // la activaría al pasar la hora). Para determinismo del E2E la activamos ANTES de aseverar, en vez de
+  // marcar FAIL por una precondición temporal válida.
+  let aStatus = L.dbQuery(`SELECT status FROM auctions WHERE id='${AID}'`);
   const startPrice = L.dbQuery(`SELECT starting_price FROM auctions WHERE id='${AID}'`);
-  rec('E2E-3', 'Subasta activa disponible para pujar', /ACTIVE/i.test(aStatus) ? 'PASS' : 'FAIL', `status=${aStatus} start=${startPrice}`);
-  if (!/ACTIVE/i.test(aStatus)) {
-    // intentar activar si sigue PUBLISHED (start ya pasó): mover starts_at al pasado y marcar ACTIVE
+  if (/PUBLISHED/i.test(aStatus)) {
     L.dbQuery(`UPDATE auctions SET starts_at=now()-interval '1 minute', status='ACTIVE' WHERE id='${AID}' AND status='PUBLISHED'`);
-    console.log('   (forzada activación PUBLISHED→ACTIVE para E2E)');
+    aStatus = L.dbQuery(`SELECT status FROM auctions WHERE id='${AID}'`);
+    console.log('   (activada PUBLISHED→ACTIVE para E2E)');
   }
+  rec('E2E-3', 'Subasta activa disponible para pujar', /ACTIVE/i.test(aStatus) ? 'PASS' : 'FAIL', `status=${aStatus} start=${startPrice}`);
 
   // --- comprador2 (andamiaje): API register + verificación/fondeo por DB ---
   const B2 = { username: `comprador2_${RUNID}`, email: `comprador2_${RUNID}@test.local`, password: cfg.TEST_PASSWORD };
