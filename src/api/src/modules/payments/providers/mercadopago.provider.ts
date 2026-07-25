@@ -96,12 +96,23 @@ export class MercadoPagoProvider implements PaymentProvider {
             failure: `${process.env.CLIENT_URL || 'http://localhost:5173'}/wallet/failure`,
             pending: `${process.env.CLIENT_URL || 'http://localhost:5173'}/wallet/pending`,
           },
+          // Per-preference webhook target. Overrides the app-level dashboard URL so
+          // deposits notify the configured endpoint (e.g. a tunnel in local/QA).
+          ...(process.env.MERCADO_PAGO_NOTIFICATION_URL
+            ? { notification_url: process.env.MERCADO_PAGO_NOTIFICATION_URL }
+            : {}),
         },
       });
 
+      // En modo sandbox (credenciales de prueba) MP exige sandbox_init_point;
+      // el init_point productivo falla con "una parte es de prueba, la URL es productiva".
+      const useSandbox = process.env.MERCADO_PAGO_SANDBOX === 'true';
+      const redirectUrl =
+        useSandbox && result.sandbox_init_point ? result.sandbox_init_point : result.init_point!;
+
       return {
         externalId: result.id,
-        redirectUrl: result.init_point!,
+        redirectUrl,
         metadata: { mode: 'preference', orderId },
         isIntegrated: this.checkStatus(),
       };
@@ -183,11 +194,30 @@ export class MercadoPagoProvider implements PaymentProvider {
     // Process Payload
     // If validation passed or skipped
     if (payload.type === 'payment' || payload.type === 'order') {
-      // Logic to fetch updated status would go here
-      // For now returning basic info
-      const payment = new Payment(this.client);
-      const paymentInfo = await payment.get({ id: payload.data.id });
+      const rawId = String(payload.data.id);
 
+      // Orders API (formato ORD.../PAY...): la Payments API legacy (payment.get) no
+      // resuelve estos IDs. Se consulta la Orders API. MP está migrando a Orders API,
+      // por lo que ambos formatos deben soportarse.
+      if (/^(ORD|PAY)/i.test(rawId)) {
+        const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
+        const res = await fetch(`https://api.mercadopago.com/v1/orders/${rawId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const order: any = await res.json();
+        const accredited = order.status === 'processed' || order.status_detail === 'accredited';
+        return {
+          paymentId: String(order.id),
+          externalId: String(order.external_reference),
+          status: accredited ? 'COMPLETED' : 'PENDING',
+          // el service acredita usando metadata.transaction_amount
+          metadata: { ...order, transaction_amount: Number(order.total_paid_amount) } as any,
+        };
+      }
+
+      // Payments API legacy (IDs numéricos)
+      const payment = new Payment(this.client);
+      const paymentInfo = await payment.get({ id: rawId });
       return {
         paymentId: String(paymentInfo.id),
         externalId: String(paymentInfo.external_reference),
