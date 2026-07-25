@@ -145,6 +145,19 @@ export class PaymentsService {
     headers: any = {},
     query: any = {},
   ): Promise<{ received: boolean }> {
+    // Normalizar el proveedor: la URL del webhook puede llegar en minúsculas y sin guion bajo
+    // (p. ej. /webhook/mercadopago) mientras el enum interno es MERCADO_PAGO. toUpperCase() no
+    // basta ('mercadopago' → 'MERCADOPAGO' ≠ 'MERCADO_PAGO'); se usa un mapa de alias.
+    const providerAliases: Record<string, string> = {
+      MERCADOPAGO: 'MERCADO_PAGO',
+      MERCADO_PAGO: 'MERCADO_PAGO',
+      PAYPAL: 'PAYPAL',
+      STRIPE: 'STRIPE',
+      HEYBANCO: 'HEY_BANCO',
+      HEY_BANCO: 'HEY_BANCO',
+    };
+    const normalizedProvider = (provider || '').toUpperCase();
+    provider = providerAliases[normalizedProvider] ?? normalizedProvider;
     let result;
     if (provider === 'STRIPE') {
       result = await this.stripeProvider.handleWebhook(payload);
@@ -158,9 +171,11 @@ export class PaymentsService {
 
     if (result && result.status === 'COMPLETED') {
       // Extract UserId from Reference (DEP-UserId-Timestamp)
-      const parts = result.externalId.split('-');
-      if (parts.length >= 3 && parts[0] === 'DEP') {
-        const userId = parts[1];
+      // Referencia: DEP-<userId>-<timestamp>. userId es un UUID (con guiones), por lo que
+      // no se puede usar split('-')[1]; se extrae todo entre "DEP-" y el "-<timestamp>" final.
+      const refMatch = /^DEP-(.+)-\d+$/.exec(result.externalId);
+      if (refMatch) {
+        const userId = refMatch[1];
         // Extract amount from webhook metadata — avoids re-calling the provider API
         // MP: transaction_amount, PayPal IPN: mc_gross, Stripe: amount_total (cents)
         const rawAmount =
