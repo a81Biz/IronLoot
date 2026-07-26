@@ -245,20 +245,21 @@ export class PaymentsService {
   }
 
   /**
-   * Acredita el depósito una sola vez por evento de la pasarela.
+   * Acredita el depósito una sola vez por pago de la pasarela.
    *
-   * PayPal reentrega hasta 25 veces a lo largo de 3 días hasta recibir un 2xx, así que
-   * sin deduplicación cada reintento acreditaría de nuevo. Se «reserva» el evento
-   * insertando su id: la restricción única `(provider, eventId)` es el punto de
-   * serialización entre entregas concurrentes, y una violación significa
+   * La clave es el identificador de **pago** del proveedor, no el de la notificación
+   * (PT-078). Mercado Pago emite varias notificaciones distintas sobre un mismo pago
+   * (`payment.created`, `payment.updated`), cada una con su propio id: deduplicar por
+   * notificación dejaría pasar la segunda y acreditaría dos veces el mismo dinero.
+   *
+   * Se «reserva» el pago insertando su id. La restricción única `(provider, paymentId)`
+   * es el punto de serialización entre entregas concurrentes, y una violación significa
    * «ya procesado».
    *
    * No es una transacción única con la acreditación porque `WalletService.deposit()`
    * abre la suya propia y no admite un cliente externo. Por eso, si la acreditación
-   * falla, la reserva se libera para que el reintento de la pasarela pueda repetirla.
-   *
-   * Los proveedores que no informan `eventId` (Mercado Pago, Stripe, Hey Banco)
-   * mantienen la ruta anterior sin cambios.
+   * falla, la reserva se libera y el error se propaga: la pasarela reintentará y el
+   * reintento podrá acreditar.
    */
   private async creditOnce(
     provider: string,
@@ -266,22 +267,27 @@ export class PaymentsService {
     userId: string,
     amount: number,
   ): Promise<void> {
-    const eventId = result.eventId;
+    const paymentId = result.paymentId;
 
-    if (!eventId) {
-      // Comportamiento histórico intacto: se registra el fallo y se responde 200.
-      // Cambiarlo aquí alteraría Mercado Pago, ya validado con dinero real (PT-063..065).
+    if (!paymentId) {
+      // Fail-open deliberado: sin id de pago no se puede deduplicar, pero se prefiere una
+      // acreditación duplicada —detectable y corregible por ADJUSTMENT en el ledger— a un
+      // depósito legítimo que nunca aparece. No se propaga el fallo: sin reserva, reintentar
+      // duplicaría de verdad.
+      this.logger.error('Webhook without paymentId — crediting without deduplication', {
+        data: result as unknown as Record<string, unknown>,
+      });
       await this.creditWallet(userId, amount, result.externalId).catch(() => undefined);
       return;
     }
 
     try {
       await this.prisma.processedWebhookEvent.create({
-        data: { provider: provider as PaymentProvider, eventId },
+        data: { provider: provider as PaymentProvider, paymentId },
       });
     } catch (e) {
       if ((e as { code?: string }).code === 'P2002') {
-        this.logger.info(`Webhook ${eventId} already processed — skipping duplicate credit`);
+        this.logger.info(`Payment ${paymentId} already credited — skipping duplicate`);
         return;
       }
       throw e;
@@ -290,9 +296,11 @@ export class PaymentsService {
     try {
       await this.creditWallet(userId, amount, result.externalId);
     } catch (e) {
-      // Se libera la reserva para no dejar el evento marcado como procesado sin haber acreditado.
+      // Se libera la reserva para no dejar el pago marcado como acreditado sin haberlo estado.
       await this.prisma.processedWebhookEvent
-        .delete({ where: { provider_eventId: { provider: provider as PaymentProvider, eventId } } })
+        .delete({
+          where: { provider_paymentId: { provider: provider as PaymentProvider, paymentId } },
+        })
         .catch(() => undefined);
       throw e;
     }

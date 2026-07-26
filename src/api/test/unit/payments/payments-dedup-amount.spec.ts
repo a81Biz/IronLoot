@@ -9,13 +9,13 @@ import { WalletService } from '../../../src/modules/wallet/wallet.service';
 import { StructuredLogger } from '../../../src/common/observability';
 
 /**
- * PT-076.5 — PaymentsService: disponibilidad de proveedores, extracción de importe
- * y deduplicación de webhooks reentregados.
+ * PaymentsService — disponibilidad de proveedores, extracción de importe y deduplicación.
  *
- * Cubre T-03, T-04, T-26..T-33 de changes/PT-076-paypal-orders-v2/test-scenarios.md
- * y los criterios CA-01, CA-09, CA-12 y CA-15.
+ * PT-076 introdujo la extracción de importe normalizada y la disponibilidad derivada de
+ * configuración. PT-078 cambió la clave de deduplicación de identificador de notificación
+ * a identificador de pago y la extendió a los cuatro proveedores.
  *
- * T-27 y T-28 son **guardas de regresión**: verifican que MercadoPago y Stripe
+ * T-27, T-28 y D-18 son **guardas de regresión**: verifican que Mercado Pago y Stripe
  * conservan exactamente su extracción histórica de importe desde `metadata`.
  */
 
@@ -26,7 +26,7 @@ const REFERENCE = `DEP-${UUID}-1784948505855`;
 const uniqueViolation = (): Error & { code: string } =>
   Object.assign(new Error('Unique constraint failed'), { code: 'P2002' });
 
-describe('PaymentsService — PT-076 (importe, disponibilidad y deduplicación)', () => {
+describe('PaymentsService — importe, disponibilidad y deduplicación', () => {
   let service: PaymentsService;
   let walletDeposit: jest.Mock;
   let eventCreate: jest.Mock;
@@ -114,7 +114,7 @@ describe('PaymentsService — PT-076 (importe, disponibilidad y deduplicación)'
     });
   });
 
-  // ── T-26..T-30 — extracción de importe (CA-09, CA-15) ────────────────
+  // ── T-26..T-30 / D-18 — extracción de importe (CA-09, CA-15) ─────────
 
   describe('extracción de importe', () => {
     it('T-26: PayPal acredita usando el campo amount normalizado', async () => {
@@ -123,7 +123,6 @@ describe('PaymentsService — PT-076 (importe, disponibilidad y deduplicación)'
         externalId: REFERENCE,
         status: 'COMPLETED',
         amount: 500,
-        eventId: 'WH-1',
       });
 
       await fireWebhook('PAYPAL');
@@ -145,7 +144,7 @@ describe('PaymentsService — PT-076 (importe, disponibilidad y deduplicación)'
     it('T-28 (regresión): Stripe sigue acreditando por metadata.amountTotal en centavos', async () => {
       providerStatus.stripe.mockReturnValue(true);
       handlers.stripe.mockResolvedValue({
-        paymentId: 'pi_1',
+        paymentId: 'cs_test_1',
         externalId: REFERENCE,
         status: 'COMPLETED',
         metadata: { amountTotal: 12345 },
@@ -161,7 +160,6 @@ describe('PaymentsService — PT-076 (importe, disponibilidad y deduplicación)'
         externalId: REFERENCE,
         status: 'COMPLETED',
         metadata: {},
-        eventId: 'WH-1',
       });
 
       await fireWebhook('PAYPAL');
@@ -174,7 +172,6 @@ describe('PaymentsService — PT-076 (importe, disponibilidad y deduplicación)'
         externalId: REFERENCE,
         status: 'COMPLETED',
         amount: 99.99,
-        eventId: 'WH-1',
       });
 
       await fireWebhook('PAYPAL');
@@ -182,41 +179,124 @@ describe('PaymentsService — PT-076 (importe, disponibilidad y deduplicación)'
     });
   });
 
-  // ── T-31..T-33 — deduplicación (CA-12) ───────────────────────────────
+  // ── D-01..D-17 — deduplicación por identificador de pago (PT-078) ────
+  //
+  // La clave es `paymentId`, no el identificador de notificación: Mercado Pago emite varias
+  // notificaciones distintas sobre el mismo pago (payment.created, payment.updated), cada una
+  // con su propio id. Solo el id de pago impide acreditar dos veces el mismo dinero.
 
-  describe('deduplicación de reentregas', () => {
-    const completedEvent = (eventId: string) => ({
-      paymentId: 'CAPTURE-1',
+  describe('deduplicación por identificador de pago', () => {
+    const completed = (paymentId: string, extra: Record<string, unknown> = {}) => ({
+      paymentId,
       externalId: REFERENCE,
       status: 'COMPLETED' as const,
       amount: 500,
-      eventId,
+      ...extra,
     });
 
-    it('T-31: reserva el evento antes de acreditar', async () => {
-      handlers.paypal.mockResolvedValue(completedEvent('WH-1'));
+    const enableAll = (): void => {
+      providerStatus.stripe.mockReturnValue(true);
+      providerStatus.heybanco.mockReturnValue(true);
+    };
+
+    // ── Deduplicación en los cuatro proveedores (criterio 1) ──
+
+    it.each([
+      ['PAYPAL', 'paypal', 'CAPTURE-1'],
+      ['MERCADO_PAGO', 'mp', '112233445'],
+      ['STRIPE', 'stripe', 'cs_test_1'],
+      ['HEY_BANCO', 'heybanco', 'HB-REF-1'],
+    ])('D-01..04: %s no acredita dos veces el mismo pago', async (route, key, paymentId) => {
+      enableAll();
+      handlers[key].mockResolvedValue(completed(paymentId));
+      eventCreate.mockResolvedValueOnce({}).mockRejectedValueOnce(uniqueViolation());
+
+      await fireWebhook(route);
+      await fireWebhook(route);
+
+      expect(walletDeposit).toHaveBeenCalledTimes(1);
+    });
+
+    it('D-05: la reserva se inserta con el proveedor y el id de pago', async () => {
+      handlers.paypal.mockResolvedValue(completed('CAPTURE-1'));
 
       await fireWebhook('PAYPAL');
 
       expect(eventCreate).toHaveBeenCalledWith({
-        data: { provider: 'PAYPAL', eventId: 'WH-1' },
+        data: { provider: 'PAYPAL', paymentId: 'CAPTURE-1' },
       });
       expect(walletDeposit).toHaveBeenCalledTimes(1);
     });
 
-    it('T-31b: una reentrega del mismo evento no vuelve a acreditar', async () => {
-      handlers.paypal.mockResolvedValue(completedEvent('WH-1'));
-      eventCreate.mockRejectedValueOnce(uniqueViolation());
+    // ── El caso que motiva el PT (criterio 2) ──
 
-      const response = await fireWebhook('PAYPAL');
+    it('D-06: dos notificaciones distintas de MP sobre el mismo pago acreditan una vez', async () => {
+      // payment.created y payment.updated: notificaciones distintas, mismo pago aprobado.
+      handlers.mp
+        .mockResolvedValueOnce(completed('112233445', { metadata: { action: 'payment.created' } }))
+        .mockResolvedValueOnce(completed('112233445', { metadata: { action: 'payment.updated' } }));
+      eventCreate.mockResolvedValueOnce({}).mockRejectedValueOnce(uniqueViolation());
 
-      expect(walletDeposit).not.toHaveBeenCalled();
-      // Debe responder 200 para que PayPal deje de reintentar.
-      expect(response).toEqual({ received: true });
+      await fireWebhook('MERCADO_PAGO');
+      await fireWebhook('MERCADO_PAGO');
+
+      expect(walletDeposit).toHaveBeenCalledTimes(1);
     });
 
-    it('T-32: ante dos entregas concurrentes solo una acredita', async () => {
-      handlers.paypal.mockResolvedValue(completedEvent('WH-1'));
+    it('D-07: el mismo pago por Orders API y por Payments API legacy acredita una vez', async () => {
+      handlers.mp.mockResolvedValue(completed('ORD01ABC'));
+      eventCreate.mockResolvedValueOnce({}).mockRejectedValueOnce(uniqueViolation());
+
+      await fireWebhook('MERCADO_PAGO');
+      await fireWebhook('mercadopago');
+
+      expect(walletDeposit).toHaveBeenCalledTimes(1);
+    });
+
+    // ── Casos legítimos que NO deben bloquearse (criterio 3) ──
+
+    it('D-08: dos pagos distintos del mismo usuario acreditan por separado', async () => {
+      handlers.paypal.mockResolvedValueOnce(completed('CAPTURE-1'));
+      await fireWebhook('PAYPAL');
+
+      handlers.paypal.mockResolvedValueOnce(completed('CAPTURE-2'));
+      await fireWebhook('PAYPAL');
+
+      expect(walletDeposit).toHaveBeenCalledTimes(2);
+    });
+
+    it('D-09: el mismo id de pago en proveedores distintos no colisiona', async () => {
+      handlers.paypal.mockResolvedValue(completed('12345'));
+      handlers.mp.mockResolvedValue(completed('12345'));
+
+      await fireWebhook('PAYPAL');
+      await fireWebhook('MERCADO_PAGO');
+
+      expect(eventCreate).toHaveBeenNthCalledWith(1, {
+        data: { provider: 'PAYPAL', paymentId: '12345' },
+      });
+      expect(eventCreate).toHaveBeenNthCalledWith(2, {
+        data: { provider: 'MERCADO_PAGO', paymentId: '12345' },
+      });
+      expect(walletDeposit).toHaveBeenCalledTimes(2);
+    });
+
+    it('D-10: un reintento del usuario con la misma referencia pero otro pago sí acredita', async () => {
+      // La clave es el pago, no la referencia DEP-<userId>-<ts>: deduplicar por referencia
+      // habría bloqueado este caso legítimo.
+      handlers.paypal.mockResolvedValueOnce(completed('CAPTURE-FALLIDO'));
+      await fireWebhook('PAYPAL');
+
+      handlers.paypal.mockResolvedValueOnce(completed('CAPTURE-REINTENTO'));
+      await fireWebhook('PAYPAL');
+
+      expect(walletDeposit).toHaveBeenCalledTimes(2);
+    });
+
+    // ── Concurrencia (criterio 4) ──
+
+    it('D-11: dos entregas concurrentes del mismo pago acreditan una sola vez', async () => {
+      handlers.paypal.mockResolvedValue(completed('CAPTURE-1'));
       eventCreate.mockResolvedValueOnce({}).mockRejectedValueOnce(uniqueViolation());
 
       await Promise.all([fireWebhook('PAYPAL'), fireWebhook('PAYPAL')]);
@@ -224,51 +304,79 @@ describe('PaymentsService — PT-076 (importe, disponibilidad y deduplicación)'
       expect(walletDeposit).toHaveBeenCalledTimes(1);
     });
 
-    it('T-32b: si la acreditación falla, libera la reserva y propaga para que PayPal reintente', async () => {
-      handlers.paypal.mockResolvedValue(completedEvent('WH-1'));
+    it('D-12: la entrega duplicada responde 200 para que la pasarela deje de reintentar', async () => {
+      handlers.paypal.mockResolvedValue(completed('CAPTURE-1'));
+      eventCreate.mockRejectedValueOnce(uniqueViolation());
+
+      await expect(fireWebhook('PAYPAL')).resolves.toEqual({ received: true });
+      expect(walletDeposit).not.toHaveBeenCalled();
+    });
+
+    // ── Fail-open sin identificador de pago (AD-02) ──
+
+    it('D-13: sin paymentId acredita igualmente y registra el error', async () => {
+      handlers.paypal.mockResolvedValue({
+        externalId: REFERENCE,
+        status: 'COMPLETED',
+        amount: 500,
+      });
+
+      await fireWebhook('PAYPAL');
+
+      expect(eventCreate).not.toHaveBeenCalled();
+      expect(walletDeposit).toHaveBeenCalledTimes(1);
+    });
+
+    it('D-14: con paymentId vacío se comporta igual que sin él', async () => {
+      handlers.paypal.mockResolvedValue(completed(''));
+
+      await fireWebhook('PAYPAL');
+
+      expect(eventCreate).not.toHaveBeenCalled();
+      expect(walletDeposit).toHaveBeenCalledTimes(1);
+    });
+
+    it('D-14b: sin reserva no se propaga el fallo, porque reintentar duplicaría', async () => {
+      handlers.paypal.mockResolvedValue({
+        externalId: REFERENCE,
+        status: 'COMPLETED',
+        amount: 500,
+      });
+      walletDeposit.mockRejectedValueOnce(new Error('wallet down'));
+
+      await expect(fireWebhook('PAYPAL')).resolves.toEqual({ received: true });
+    });
+
+    // ── Propagación unificada de fallos (AD-04) ──
+
+    it('D-15: un fallo de acreditación en MercadoPago libera la reserva y propaga', async () => {
+      handlers.mp.mockResolvedValue(completed('112233445'));
+      walletDeposit.mockRejectedValueOnce(new Error('wallet down'));
+
+      await expect(fireWebhook('MERCADO_PAGO')).rejects.toThrow('wallet down');
+
+      expect(eventDelete).toHaveBeenCalledWith({
+        where: { provider_paymentId: { provider: 'MERCADO_PAGO', paymentId: '112233445' } },
+      });
+    });
+
+    it('D-16: un fallo de acreditación en PayPal libera la reserva y propaga', async () => {
+      handlers.paypal.mockResolvedValue(completed('CAPTURE-1'));
       walletDeposit.mockRejectedValueOnce(new Error('wallet down'));
 
       await expect(fireWebhook('PAYPAL')).rejects.toThrow('wallet down');
 
       expect(eventDelete).toHaveBeenCalledWith({
-        where: { provider_eventId: { provider: 'PAYPAL', eventId: 'WH-1' } },
+        where: { provider_paymentId: { provider: 'PAYPAL', paymentId: 'CAPTURE-1' } },
       });
     });
 
-    it('T-32c (regresión): un fallo de acreditación en MercadoPago NO propaga (200 como antes)', async () => {
-      handlers.mp.mockResolvedValue({
-        paymentId: 'ORDTST1',
-        externalId: REFERENCE,
-        status: 'COMPLETED',
-        metadata: { transaction_amount: 500 },
-      });
-      walletDeposit.mockRejectedValueOnce(new Error('wallet down'));
+    it('D-17: un error de BD distinto de P2002 propaga sin acreditar', async () => {
+      handlers.paypal.mockResolvedValue(completed('CAPTURE-1'));
+      eventCreate.mockRejectedValueOnce(new Error('connection lost'));
 
-      await expect(fireWebhook('MERCADO_PAGO')).resolves.toEqual({ received: true });
-    });
-
-    it('T-33: dos eventos distintos del mismo usuario acreditan por separado', async () => {
-      handlers.paypal.mockResolvedValueOnce(completedEvent('WH-1'));
-      await fireWebhook('PAYPAL');
-
-      handlers.paypal.mockResolvedValueOnce(completedEvent('WH-2'));
-      await fireWebhook('PAYPAL');
-
-      expect(walletDeposit).toHaveBeenCalledTimes(2);
-    });
-
-    it('T-33b: los proveedores sin eventId acreditan sin pasar por la reserva', async () => {
-      handlers.mp.mockResolvedValue({
-        paymentId: 'ORDTST1',
-        externalId: REFERENCE,
-        status: 'COMPLETED',
-        metadata: { transaction_amount: 500 },
-      });
-
-      await fireWebhook('MERCADO_PAGO');
-
-      expect(eventCreate).not.toHaveBeenCalled();
-      expect(walletDeposit).toHaveBeenCalledTimes(1);
+      await expect(fireWebhook('PAYPAL')).rejects.toThrow('connection lost');
+      expect(walletDeposit).not.toHaveBeenCalled();
     });
   });
 });

@@ -249,7 +249,6 @@ export class PaypalProvider implements PaymentProvider {
           externalId: resource.custom_id ?? '',
           status: 'COMPLETED',
           amount: resource.amount ? Number(resource.amount.value) : undefined,
-          eventId: event.id,
           metadata: resource as unknown as Record<string, unknown>,
         };
       }
