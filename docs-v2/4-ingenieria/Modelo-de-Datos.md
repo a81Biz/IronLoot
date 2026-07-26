@@ -44,6 +44,12 @@ identificador de **pago** del proveedor, no el de la notificacion.
 (REQUESTED/CONFIRMED/SETTLED/FAILED/ANOMALY/EXPIRED). Tabla propia y **no** `payments`, porque
 `Payment.orderId` es obligatorio con FK a `Order` y los depositos de wallet no tienen orden
 (TD-008). `payments` sigue sin escribirse.
+· **22 (PT-085):** `Payment.orderId` y `RefundRequest.orderId` pasan a **opcionales** con
+`reference` al ciclo. Mientras fueron obligatorios nadie pudo escribir `payments`, y el panel
+financiero del admin —que la consulta en seis sitios— mostraba ceros (TD-008).
+· **23 (PT-086):** `PaymentCycleEvent` gana `direction`, `step`, `endpoint`, `httpStatus`,
+`durationMs`, `traceId`, `reference` y `redactedFields`: pasa de registrar solo notificaciones a
+ser la **traza completa** de la transaccion.
 
 ## 4. Drift esquema↔migraciones (AUD-001) — CRÍTICO
 

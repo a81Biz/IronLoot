@@ -74,7 +74,7 @@
 - Health: `/health`, `/health/detailed` (Public).
 
 ## Admin (`/admin`) — ~61 (todos `AdminDualAuthGuard`)
-`POST /admin/auth/login` es **Public + @SkipThrottle** (`AUD-004`). Bloques: dashboard/stats · users · auctions(moderación) · lots · orders/payments · financial/commissions · reports(financial/operational/fiscal) · configuration(platform/smtp/storage/cfdi/payment) · disputes(resolve-buyer/seller/request-evidence) · audit-logs · moderation · kyc · **cfdi(generate ✗ stub)** · notifications/campaigns · refunds · **reconciliation (PT-080: operativa, lee `payment_cycles`)** · **payments/anomalies (PT-080: cola de revision)** · seo/cms · queues. Detalle de rutas en `audit/raw/B §1`.
+`POST /admin/auth/login` es **Public + @SkipThrottle** (`AUD-004`). Bloques: dashboard/stats · users · auctions(moderación) · lots · orders/payments · financial/commissions · reports(financial/operational/fiscal) · configuration(platform/smtp/storage/cfdi/payment) · disputes(resolve-buyer/seller/request-evidence) · audit-logs · moderation · kyc · **cfdi(generate ✗ stub)** · notifications/campaigns · refunds · **reconciliation (PT-080: operativa, lee `payment_cycles`)** · **payments/anomalies (PT-080: cola de revision)** · **payments/trace/:reference (PT-086: traza completa de la transaccion)** · seo/cms · queues. Detalle de rutas en `audit/raw/B §1`.
 
 ## Diagnostics (`/diagnostics`) — 9 (`DevOnly`)
 Logs/metrics/errors dev-only; TODO restringir en prod (`AUD-025`).

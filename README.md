@@ -42,7 +42,9 @@ IronLoot es una **plataforma de subastas en línea** donde compradores compiten 
   de verificar contra sandbox). Desde PT-080 el depósito sigue un **ciclo de tres fases**
   —solicitud, confirmación y persistencia— que debe cuadrar en usuario, importe y moneda, y una
   **vía garantizada**: si la notificación de la pasarela no llega, un proceso periódico consulta
-  y acredita igualmente. Ningún pago cobrado queda sin acreditar ni se acredita dos veces.
+  y acredita igualmente. Ningún pago cobrado queda sin acreditar ni se acredita dos veces. De cada transacción queda una
+  **traza completa** —por dónde pasó y qué datos se enviaron en cada paso— como respaldo ante
+  cualquier disputa con la pasarela.
 
 ---
 

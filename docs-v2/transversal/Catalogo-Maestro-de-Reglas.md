@@ -116,6 +116,9 @@
 | RN-75 | **Primera respuesta gana**, positiva o negativa. Las posteriores se cancelan y quedan registradas con su identificador. Un rechazo no «mejora» con una notificacion posterior. | ✅ Cumple | `payment-cycle.service.evaluate` | **PT-080** |
 | RN-76 | **Una referencia, un pago.** Varios cobros bajo una misma referencia son una anomalia, no un caso de negocio: implica que la pasarela cobro de mas. Queda en la cola de revision del admin. | ✅ Cumple | `payment-cycle.service`, `GET /admin/payments/anomalies` | **PT-080** |
 | RN-77 | **Ningun pago cobrado queda sin acreditar.** Si la notificacion no llega, la consulta periodica lo encuentra. Si no se resuelve en 72 h, EXPIRED: se asume no resuelto y no acredita. | ✅ Cumple (verificado: pago real de 412.30 MXN acreditado sin notificacion) | `payment-reconciliation.service` | **PT-080** |
+| RN-78 | **De cada pago queda traza completa**: solicitud, lo que se envio a la pasarela y su respuesta, notificaciones con cabeceras, validacion de firma, decision y acreditacion con saldos. Es el respaldo ante una disputa. | ✅ Cumple (verificado contra la pasarela real) | `payment-trace.service`, `GET /admin/payments/trace/:reference` | **PT-086** |
+| RN-79 | **Ninguna credencial se persiste en la traza.** Se redactan por lista explicita y lo redactado se MARCA, no se borra en silencio: quien lea la traza debe saber que ese campo existia. | ✅ Cumple | `payment-trace.service.redact` | **PT-086** |
+| RN-80 | **La trazabilidad nunca bloquea el cobro.** Si escribir la traza o el registro contable falla, la acreditacion sigue adelante: el saldo del usuario no depende de un apunte de reporting. | ✅ Cumple | `payment-trace.service`, `payment-cycle.service` | **PT-085 / PT-086** |
 
 ---
 

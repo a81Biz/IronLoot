@@ -57,3 +57,23 @@
 - **Definir umbral de cobertura** (hoy ND-004, no fijado) y activarlo en CI.
 
 > Matriz requisito×prueba en [Matriz-Requisito-Prueba.md](Matriz-Requisito-Prueba.md). Defectos = [Registro de Hallazgos](../transversal/Registro-de-Hallazgos.md).
+
+
+## Fase 70 — Pago real por Mercado Pago y traza completa (PT-080 / PT-085 / PT-086)
+
+`tests/qa-browser-suite/70-payment-trace.cjs`, integrada en `run-all.sh`. **16 casos**, todos
+contra la pasarela real:
+
+| Bloque | Qué verifica |
+|---|---|
+| QA-TR-01..02 | La solicitud abre el ciclo en `REQUESTED` |
+| QA-TR-03..04 | Se crea un cobro **aprobado de verdad** en Mercado Pago y se resuelve su identificador canónico |
+| QA-TR-05..07 | La notificación firmada se acepta, el wallet se acredita por el importe exacto y el ciclo queda `SETTLED` |
+| QA-TR-08 | El pago queda registrado en `payments` — la tabla que antes estaba siempre vacía |
+| QA-TR-09..11 | La traza contiene los **siete pasos**, en orden, y las llamadas salientes registran su endpoint |
+| QA-TR-12..13 | **Ninguna credencial** quedó persistida, y lo redactado quedó marcado |
+| QA-TR-14..15 | La reentrega no acredita de nuevo y queda registrada como duplicada |
+
+> **Alcance**: el checkout del comprador no se automatiza (es UI de Mercado Pago). El cobro se
+> crea con la Orders API y tarjeta de prueba — es el mismo pago real que generaría el checkout;
+> lo que se verifica es **nuestro tratamiento** de ese pago.

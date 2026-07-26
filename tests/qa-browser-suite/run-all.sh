@@ -39,6 +39,7 @@ run_phase "6) Fase 30 — E2E puja + bloqueo + outbid + liberación (incluye E2E
 run_phase "7) Fase 40 — Extras (auth/responsive/CSP/cross-browser)" 40-extras.cjs
 run_phase "8) Fase 50 — Escrituras admin" 50-admin-writes.cjs
 run_phase "9) Fase 60 — RETIRO REAL DEL VENDEDOR (KYC→CLABE→holdback→solicitud→admin)" 60-withdrawal.cjs
+run_phase "9b) Fase 70 — PAGO REAL POR MERCADO PAGO + TRAZA COMPLETA (PT-080/085/086)" 70-payment-trace.cjs
 
 log "10) Historial comprador + vendedor"
 # Leer OUT y actores dentro de node desde .last-run (evita backslashes de Windows en el string del shell)
@@ -46,7 +47,7 @@ node -e "const fs=require('fs');const out=fs.readFileSync('C:/DevOps/Desarrollos
 node hist-check.cjs || echo "   (hist-check con error)"
 
 log "RESUMEN FINAL"
-for j in smoke bootstrap authed e2e extras admin-writes withdrawal; do
+for j in smoke bootstrap authed e2e extras admin-writes withdrawal payment-trace; do
   f="$OUT/$j.json"
   [ -f "$f" ] && echo "   $j: $(node -e "const a=require('$f');const p=a.filter(x=>x.status==='PASS').length;const t=a.length;console.log(p+'/'+t+' PASS')" 2>/dev/null)"
 done
