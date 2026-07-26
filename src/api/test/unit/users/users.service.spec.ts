@@ -87,14 +87,19 @@ describe('UsersService', () => {
   };
 
   // PT-069 añadió KycService como dependencia de UsersService (puerta KYC de enableSeller).
-  // Por defecto se simula KYC APPROVED para no alterar las expectativas previas del suite.
+  // PT-079: el estado es configurable por test; `isApproved` replica la lógica real para que
+  // baste con fijar el estado. Los valores por defecto se restablecen en cada `beforeEach`,
+  // de modo que un test que fuerce el rechazo no contamine a los siguientes.
   const mockKycService = {
-    getUserKycStatus: jest.fn().mockResolvedValue('APPROVED'),
-    isApproved: jest.fn().mockReturnValue(true),
+    getUserKycStatus: jest.fn(),
+    isApproved: jest.fn(),
   };
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
+    mockKycService.getUserKycStatus.mockResolvedValue('APPROVED');
+    mockKycService.isApproved.mockImplementation((status: string | null) => status === 'APPROVED');
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -308,6 +313,69 @@ describe('UsersService', () => {
       await expect(service.enableSeller(mockUser.id, { acceptTerms: false })).rejects.toThrow(
         ValidationException,
       );
+    });
+
+    // ── PT-079 — Puerta de KYC obligatorio (ADR-021 / RN-62, introducida por PT-069) ──
+    // Sin estos casos, eliminar la puerta de users.service.ts no rompería ningún test.
+    describe('puerta de KYC obligatorio', () => {
+      it('PT-079: no habilita vendedor si el KYC está PENDING', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+        mockKycService.getUserKycStatus.mockResolvedValue('PENDING');
+
+        await expect(service.enableSeller(mockUser.id, { acceptTerms: true })).rejects.toThrow(
+          ValidationException,
+        );
+        expect(mockPrismaService.user.update).not.toHaveBeenCalled();
+      });
+
+      it('PT-079: no habilita vendedor si el KYC está REJECTED', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+        mockKycService.getUserKycStatus.mockResolvedValue('REJECTED');
+
+        await expect(service.enableSeller(mockUser.id, { acceptTerms: true })).rejects.toThrow(
+          ValidationException,
+        );
+        expect(mockPrismaService.user.update).not.toHaveBeenCalled();
+      });
+
+      it('PT-079: sin KYC enviado, reporta NOT_SUBMITTED en el detalle del error', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+        mockKycService.getUserKycStatus.mockResolvedValue(null);
+
+        await expect(
+          service.enableSeller(mockUser.id, { acceptTerms: true }),
+        ).rejects.toMatchObject({
+          details: expect.objectContaining({ kycStatus: 'NOT_SUBMITTED' }),
+        });
+      });
+
+      it('PT-079: el error identifica el KYC como requisito faltante', async () => {
+        mockPrismaService.user.findUnique.mockResolvedValue(mockUser);
+        mockKycService.getUserKycStatus.mockResolvedValue('PENDING');
+
+        await expect(
+          service.enableSeller(mockUser.id, { acceptTerms: true }),
+        ).rejects.toMatchObject({
+          details: expect.objectContaining({
+            missingRequirements: expect.arrayContaining([expect.stringMatching(/KYC/i)]),
+          }),
+        });
+      });
+
+      it('PT-079: los requisitos de perfil se evalúan antes que el KYC', async () => {
+        // Preserva el orden de errores que ve el usuario: primero qué le falta en su perfil,
+        // y solo después el KYC. Con ambos incumplidos debe ganar el de perfil.
+        mockPrismaService.user.findUnique.mockResolvedValue({
+          ...mockUser,
+          emailVerifiedAt: null,
+        });
+        mockKycService.getUserKycStatus.mockResolvedValue('PENDING');
+
+        await expect(service.enableSeller(mockUser.id, { acceptTerms: true })).rejects.toThrow(
+          ValidationException,
+        );
+        expect(mockKycService.getUserKycStatus).not.toHaveBeenCalled();
+      });
     });
 
     it('should throw ConflictException if already a seller', async () => {
