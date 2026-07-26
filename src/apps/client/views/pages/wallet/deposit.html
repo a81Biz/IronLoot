@@ -10,12 +10,17 @@
     </div>
     <div class="form-group">
       <label>Método de pago</label>
+      {% if providers and providers.length %}
       <select class="form-control" id="provider">
-        <option value="MERCADO_PAGO">MercadoPago</option>
-        <option value="PAYPAL">PayPal</option>
+        {% for p in providers %}
+        <option value="{{ p.key }}">{{ p.label }}</option>
+        {% endfor %}
       </select>
+      {% else %}
+      <p class="alert alert-error">No hay métodos de pago disponibles en este momento.</p>
+      {% endif %}
     </div>
-    <button type="submit" class="btn btn-primary">Continuar al pago</button>
+    <button type="submit" class="btn btn-primary" {% if not providers or not providers.length %}disabled{% endif %}>Continuar al pago</button>
     <div id="depositError" class="alert alert-error" style="display:none;margin-top:.75rem;"></div>
   </form>
 </div>

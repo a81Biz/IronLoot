@@ -90,10 +90,28 @@ export class AppController {
     return { wallet: mapWalletBalance(walletRaw), apiUrl: API_URL };
   }
 
+  /** Etiqueta visible por proveedor de pago. */
+  private static readonly PROVIDER_LABELS: Record<string, string> = {
+    MERCADO_PAGO: 'MercadoPago',
+    PAYPAL: 'PayPal',
+    STRIPE: 'Stripe',
+    HEY_BANCO: 'Hey Banco',
+  };
+
   @Get('/wallet/deposit')
   @Render('pages/wallet/deposit.html')
-  deposit(@Req() req: Request) {
-    return { apiUrl: API_URL };
+  async deposit(@Req() req: Request) {
+    // PT-076: los métodos se derivan de la configuración real de la API. Antes estaban
+    // fijos en la plantilla, de modo que se ofrecía PayPal aunque no estuviera configurado
+    // y el depósito fallaba al pulsar «Continuar al pago».
+    const res = await apiGet<{ providers: string[] }>(getToken(req), '/api/v1/payments/providers');
+
+    const providers = (res?.providers ?? []).map((key) => ({
+      key,
+      label: AppController.PROVIDER_LABELS[key] ?? key,
+    }));
+
+    return { apiUrl: API_URL, providers };
   }
 
   @Get('/wallet/withdraw')
