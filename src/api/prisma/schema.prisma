@@ -313,10 +313,17 @@ model Payment {
   metadata   Json    @default("{}") @db.JsonB
 
   // Relations
-  orderId String @map("order_id") @db.Uuid
-  order   Order  @relation(fields: [orderId], references: [id])
+  // PT-085: opcional. Un pago puede corresponder a una orden de subasta O a un deposito de
+  // wallet, que no tiene orden. Mientras fue obligatorio nadie pudo escribir esta tabla, y el
+  // panel financiero del admin —que la consulta en seis sitios— mostraba ceros.
+  orderId String? @map("order_id") @db.Uuid
+  order   Order?  @relation(fields: [orderId], references: [id])
+
+  /// Referencia del ciclo que origino el pago (DEP-<userId>-<ts> en depositos).
+  reference String? @db.VarChar(255)
 
   @@index([orderId], name: "idx_payments_order")
+  @@index([reference], name: "idx_payments_reference")
   @@index([externalId], name: "idx_payments_external_id")
   @@index([status], name: "idx_payments_status")
   @@map("payments")
@@ -921,9 +928,16 @@ enum RefundStatus {
 }
 
 model RefundRequest {
-  id          String       @id @default(uuid()) @db.Uuid
-  orderId     String       @unique @map("order_id") @db.Uuid
-  order       Order        @relation(fields: [orderId], references: [id])
+  id String @id @default(uuid()) @db.Uuid
+
+  // PT-085: opcional. Un reembolso puede nacer de una orden O de un cobro duplicado de
+  // deposito, que no tiene orden. En PostgreSQL varios NULL no colisionan, de modo que la
+  // restriccion unica sigue valiendo para los reembolsos de orden.
+  orderId String? @unique @map("order_id") @db.Uuid
+  order   Order?  @relation(fields: [orderId], references: [id])
+
+  /// Referencia del ciclo de pago cuando el reembolso nace de un deposito (PT-085).
+  paymentReference String? @map("payment_reference") @db.VarChar(255)
   amount      Decimal      @db.Decimal(10, 2)
   currency    String       @default("MXN") @db.VarChar(3)
   reason      String       @db.Text
