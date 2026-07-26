@@ -111,6 +111,11 @@
 | RN-70 | **Un fallo de acreditacion nunca se responde con 200.** Se libera la reserva y se propaga, para que la pasarela reintente. Antes MercadoPago respondia 200 y el deposito se perdia en silencio. | ✅ Cumple (verificado solo con tests unitarios) | `payments.service.creditOnce` | **PT-078** (AD-04) |
 | RN-71 | **Deposito por PayPal en dos fases.** `CHECKOUT.ORDER.APPROVED` dispara la captura; solo `PAYMENT.CAPTURE.COMPLETED` acredita. La firma del webhook se verifica contra PayPal antes de procesar. | ⏳ Implementada, **sin verificar contra sandbox real** | `paypal.provider.handleWebhook` | **PT-076** (ADR-024) |
 | RN-72 | **Solo se ofrecen los metodos de pago realmente configurados.** `GET /payments/providers` deriva de `checkStatus()`; la UI de deposito se construye desde esa respuesta. | ✅ Cumple | `payments.service.getAvailableProviders`, `client/app.controller.deposit` | **PT-076** (ADR-026) |
+| RN-73 | **Un pago se identifica siempre por el mismo identificador canonico**, llegue notificado como orden, como pago de orden o como pago. Es la clave de deduplicacion. | ✅ Cumple (verificado contra la pasarela real) | `mercadopago.provider.resolveCanonicalPayment` | **PT-080** |
+| RN-74 | **Solicitud, confirmacion y persistencia deben coincidir** en usuario, importe y moneda. Si difieren: ANOMALY, no se acredita y la solicitud queda abierta para inspeccion. | ✅ Cumple | `payment-cycle.service.checkInvariant` | **PT-080** |
+| RN-75 | **Primera respuesta gana**, positiva o negativa. Las posteriores se cancelan y quedan registradas con su identificador. Un rechazo no «mejora» con una notificacion posterior. | ✅ Cumple | `payment-cycle.service.evaluate` | **PT-080** |
+| RN-76 | **Una referencia, un pago.** Varios cobros bajo una misma referencia son una anomalia, no un caso de negocio: implica que la pasarela cobro de mas. Queda en la cola de revision del admin. | ✅ Cumple | `payment-cycle.service`, `GET /admin/payments/anomalies` | **PT-080** |
+| RN-77 | **Ningun pago cobrado queda sin acreditar.** Si la notificacion no llega, la consulta periodica lo encuentra. Si no se resuelve en 72 h, EXPIRED: se asume no resuelto y no acredita. | ✅ Cumple (verificado: pago real de 412.30 MXN acreditado sin notificacion) | `payment-reconciliation.service` | **PT-080** |
 
 ---
 
