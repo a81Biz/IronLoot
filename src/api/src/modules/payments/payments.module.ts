@@ -1,6 +1,7 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { PaymentsService } from './payments.service';
+import { PaymentCycleService } from './payment-cycle.service';
 import { PaymentsController } from './payments.controller';
 import { StripeProvider } from './providers/stripe.provider';
 import { MercadoPagoProvider } from './providers/mercadopago.provider';
@@ -20,6 +21,7 @@ import { WalletModule } from '../wallet/wallet.module';
   controllers: [PaymentsController],
   providers: [
     PaymentsService,
+    PaymentCycleService,
     StripeProvider,
     MercadoPagoProvider,
     PaypalProvider,
@@ -27,6 +29,6 @@ import { WalletModule } from '../wallet/wallet.module';
     WebhookRetryProducer,
     WebhookRetryWorker,
   ],
-  exports: [PaymentsService, WebhookRetryProducer],
+  exports: [PaymentsService, PaymentCycleService, WebhookRetryProducer],
 })
 export class PaymentsModule {}

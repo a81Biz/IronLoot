@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
+import { PaymentCycleService } from '../../../src/modules/payments/payment-cycle.service';
 import { MercadoPagoProvider } from '../../../src/modules/payments/providers/mercadopago.provider';
 import { PaypalProvider } from '../../../src/modules/payments/providers/paypal.provider';
 import { StripeProvider } from '../../../src/modules/payments/providers/stripe.provider';
@@ -53,6 +54,16 @@ describe('PaymentsService', () => {
             verifyPayment: jest.fn(),
             handleWebhook: jest.fn(),
             checkStatus: jest.fn().mockReturnValue(true),
+          },
+        },
+        {
+          // PT-080: el ciclo decide si procede acreditar. Por defecto, coherente.
+          provide: PaymentCycleService,
+          useValue: {
+            open: jest.fn().mockResolvedValue(undefined),
+            evaluate: jest
+              .fn()
+              .mockResolvedValue({ shouldCredit: true, outcome: 'PROCESSED', cycleId: 'c-1' }),
           },
         },
         { provide: PrismaService, useValue: mockPrismaService },

@@ -8,6 +8,7 @@ import { HeyBancoProvider } from './providers/heybanco.provider';
 import { PaymentProviderEnum, WebhookResult } from './interfaces';
 import { WalletService } from '../wallet/wallet.service';
 import { PrismaService } from '../../database/prisma.service';
+import { PaymentCycleService } from './payment-cycle.service';
 import { StructuredLogger } from '../../common/observability';
 
 export interface PaymentVerification {
@@ -27,6 +28,7 @@ export class PaymentsService {
     private readonly paypalProvider: PaypalProvider,
     private readonly heyBancoProvider: HeyBancoProvider,
     private readonly walletService: WalletService,
+    private readonly paymentCycle: PaymentCycleService,
   ) {}
 
   async getUserPaymentMethod(
@@ -92,6 +94,16 @@ export class PaymentsService {
     const provider = providerStr as PaymentProviderEnum;
     const orderId = `DEP-${userId}-${Date.now()}`;
     const currency = 'MXN';
+
+    // PT-080 — Fase SOLICITUD. El ciclo nace aqui, no al recibir la notificacion: una
+    // solicitud abierta sin confirmacion es la senal de que hay dinero cobrado sin acreditar.
+    await this.paymentCycle.open({
+      provider: provider as unknown as PaymentProvider,
+      reference: orderId,
+      userId,
+      amount,
+      currency,
+    });
 
     switch (provider) {
       case PaymentProviderEnum.MERCADO_PAGO:
@@ -210,6 +222,22 @@ export class PaymentsService {
       result = await this.paypalProvider.handleWebhook(payload, headers);
     } else if (provider === 'HEY_BANCO') {
       result = await this.heyBancoProvider.handleWebhook(payload, headers);
+    }
+
+    // PT-080 — Fases CONFIRMACION y PERSISTENCIA. El ciclo decide si procede acreditar;
+    // toda notificacion queda registrada, se procese o no.
+    if (result) {
+      const format = query?.['data.id'] ? 'WEBHOOK' : query?.topic ? 'IPN' : 'UNKNOWN';
+      const decision = await this.paymentCycle.evaluate(
+        provider as PaymentProvider,
+        result,
+        format,
+      );
+
+      if (!decision.shouldCredit) {
+        this.logger.info(`Ciclo ${result.externalId}: ${decision.outcome} — no procede acreditar`);
+        return { received: true };
+      }
     }
 
     if (result && result.status === 'COMPLETED') {
