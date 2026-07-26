@@ -327,6 +327,10 @@ export class PaymentCycleService {
         cycleId,
         provider,
         externalId: result.paymentId ?? '',
+        // PT-086 — La decision del ciclo forma parte de la traza y usa su mismo vocabulario.
+        reference: result.externalId ?? null,
+        step: 'CYCLE_DECISION',
+        direction: 'INTERNAL',
         format,
         outcome,
         detail: detail ?? null,
