@@ -36,6 +36,14 @@ export interface PaymentProvider {
   name: PaymentProviderEnum;
 
   /**
+   * PT-080 — Identidad para el registro. Cada adaptador se declara a si mismo, de modo que
+   * anadir o quitar una pasarela no obliga a editar la logica de transaccion.
+   */
+  readonly key: string;
+  /** Nombres alternativos con los que puede llegar en la URL del webhook (ej.: `mercadopago`). */
+  readonly aliases: readonly string[];
+
+  /**
    * Checks if the provider is fully configured (e.g. env vars present)
    */
   checkStatus(): boolean;
@@ -59,5 +67,13 @@ export interface PaymentProvider {
   /**
    * Processes a webhook payload
    */
-  handleWebhook(payload: unknown): Promise<WebhookResult | null>;
+  /**
+   * PT-080 — Recibe cabeceras y query porque la validacion difiere por proveedor y, dentro de
+   * Mercado Pago, por formato de notificacion (Webhooks vs IPN).
+   */
+  handleWebhook(
+    payload: unknown,
+    headers?: Record<string, string>,
+    query?: Record<string, string>,
+  ): Promise<WebhookResult | null>;
 }

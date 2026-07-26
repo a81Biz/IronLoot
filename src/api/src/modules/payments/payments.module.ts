@@ -1,6 +1,9 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { PaymentsService } from './payments.service';
+import { PaymentCycleService } from './payment-cycle.service';
+import { PaymentReconciliationService } from './payment-reconciliation.service';
+import { PaymentProviderRegistry, PAYMENT_PROVIDERS } from './payment-provider.registry';
 import { PaymentsController } from './payments.controller';
 import { StripeProvider } from './providers/stripe.provider';
 import { MercadoPagoProvider } from './providers/mercadopago.provider';
@@ -20,6 +23,21 @@ import { WalletModule } from '../wallet/wallet.module';
   controllers: [PaymentsController],
   providers: [
     PaymentsService,
+    PaymentCycleService,
+    PaymentReconciliationService,
+    PaymentProviderRegistry,
+    {
+      // PT-080 — Registro de pasarelas. Anadir una es crear su adaptador y sumarlo a esta
+      // lista; quitarla, borrar esas dos cosas. La logica de transaccion no se toca.
+      provide: PAYMENT_PROVIDERS,
+      useFactory: (
+        mercadopago: MercadoPagoProvider,
+        paypal: PaypalProvider,
+        stripe: StripeProvider,
+        heybanco: HeyBancoProvider,
+      ) => [mercadopago, paypal, stripe, heybanco],
+      inject: [MercadoPagoProvider, PaypalProvider, StripeProvider, HeyBancoProvider],
+    },
     StripeProvider,
     MercadoPagoProvider,
     PaypalProvider,
@@ -27,6 +45,6 @@ import { WalletModule } from '../wallet/wallet.module';
     WebhookRetryProducer,
     WebhookRetryWorker,
   ],
-  exports: [PaymentsService, WebhookRetryProducer],
+  exports: [PaymentsService, PaymentCycleService, PaymentProviderRegistry, WebhookRetryProducer],
 })
 export class PaymentsModule {}

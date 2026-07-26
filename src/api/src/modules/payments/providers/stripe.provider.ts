@@ -11,6 +11,8 @@ import {
 @Injectable()
 export class StripeProvider implements PaymentProvider {
   name = PaymentProviderEnum.STRIPE;
+  readonly key = 'STRIPE';
+  readonly aliases = [] as const;
   private stripe: Stripe;
   private readonly logger = new Logger(StripeProvider.name);
 
@@ -101,7 +103,11 @@ export class StripeProvider implements PaymentProvider {
     }
   }
 
-  async handleWebhook(payload: any): Promise<WebhookResult | null> {
+  async handleWebhook(
+    payload: any,
+    _headers: any = {},
+    _query: any = {},
+  ): Promise<WebhookResult | null> {
     const event = payload as Stripe.Event;
 
     if (event.type === 'checkout.session.completed') {
@@ -110,7 +116,9 @@ export class StripeProvider implements PaymentProvider {
         paymentId: session.client_reference_id!,
         externalId: session.id,
         status: 'COMPLETED',
-        metadata: { paymentIntent: session.payment_intent },
+        // PT-080: el adaptador normaliza su propio importe. Stripe factura en centavos.
+        amount: session.amount_total != null ? session.amount_total / 100 : undefined,
+        metadata: { paymentIntent: session.payment_intent, amountTotal: session.amount_total },
       };
     }
 

@@ -19,6 +19,8 @@ import {
 export class HeyBancoProvider implements PaymentProvider {
   private readonly logger = new Logger(HeyBancoProvider.name);
   name = PaymentProviderEnum.HEY_BANCO;
+  readonly key = 'HEY_BANCO';
+  readonly aliases = ['heybanco'] as const;
 
   private readonly apiUrl = process.env.HEY_BANCO_API_URL || 'https://api.hey.inc/v1';
   private readonly clientId = process.env.HEY_BANCO_CLIENT_ID;
@@ -152,6 +154,8 @@ export class HeyBancoProvider implements PaymentProvider {
         paymentId: p.data.reference,
         externalId: p.data.id,
         status: 'COMPLETED',
+        // PT-080: el adaptador normaliza su propio importe.
+        amount: p.data.amount?.value != null ? Number(p.data.amount.value) : undefined,
         metadata: p.data,
       };
     }

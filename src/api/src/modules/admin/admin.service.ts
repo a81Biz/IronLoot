@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { PaymentProvider } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { SystemConfigService } from '../system-config/system-config.service';
 import { CommissionsService } from '../commissions/commissions.service';
@@ -920,26 +921,54 @@ export class AdminService {
 
   // ─── Reconciliation (PT-013) ──────────────────────────────────────────────
 
-  async reconcilePayments(provider: 'MERCADO_PAGO' | 'PAYPAL', dateFrom: Date, dateTo: Date) {
-    const internalPayments = await this.prisma.payment.findMany({
+  /**
+   * PT-080 — Reconciliacion sobre el ciclo de pago.
+   *
+   * Antes consultaba la tabla `payments`, que nunca se escribe (Payment.orderId es obligatorio
+   * y los depositos de wallet no tienen orden), de modo que siempre devolvia vacio. Ahora lee
+   * `payment_cycles`, que si tiene los datos, y deja de tipar proveedores en duro.
+   */
+  async reconcilePayments(provider: string, dateFrom: Date, dateTo: Date) {
+    const cycles = await this.prisma.paymentCycle.findMany({
       where: {
-        provider: provider as any,
-        createdAt: { gte: dateFrom, lte: dateTo },
-        status: 'COMPLETED',
+        provider: provider as PaymentProvider,
+        requestedAt: { gte: dateFrom, lte: dateTo },
       },
-      select: { id: true, externalId: true, amount: true, status: true },
+      orderBy: { requestedAt: 'desc' },
     });
 
-    // Provider API integration is pending — return internal records with note
+    const byStatus = (status: string) => cycles.filter((c) => c.status === status);
+
     return {
       provider,
       dateFrom,
       dateTo,
-      internalCount: internalPayments.length,
-      internalOnly: internalPayments,
-      providerOnly: [],
-      matched: [],
-      note: `Provider API reconciliation for ${provider} requires API credentials. Internal records shown.`,
+      total: cycles.length,
+      settled: byStatus('SETTLED').length,
+      pending: byStatus('REQUESTED').length,
+      failed: byStatus('FAILED').length,
+      expired: byStatus('EXPIRED').length,
+      anomalies: byStatus('ANOMALY').length,
+      // Cobrado y no acreditado, o abierto mas alla del plazo: lo que exige atencion.
+      needsAttention: cycles.filter((c) => c.status === 'ANOMALY' || c.status === 'EXPIRED'),
+      cycles,
     };
+  }
+
+  /**
+   * PT-080 — Cola de revision de anomalias.
+   *
+   * La tabla del ciclo **es** la cola: un `RefundRequest` no sirve porque exige `orderId` con
+   * clave foranea a `Order`, y un deposito de wallet no tiene orden. La decision de devolver
+   * dinero sigue siendo del admin (ADR-022).
+   */
+  async listPaymentAnomalies() {
+    const cycles = await this.prisma.paymentCycle.findMany({
+      where: { status: { in: ['ANOMALY', 'EXPIRED'] } },
+      orderBy: { requestedAt: 'desc' },
+      include: { events: { orderBy: { receivedAt: 'asc' } } },
+    });
+
+    return { total: cycles.length, items: cycles };
   }
 }

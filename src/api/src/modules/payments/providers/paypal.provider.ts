@@ -48,6 +48,8 @@ interface PaypalWebhookEvent {
 export class PaypalProvider implements PaymentProvider {
   private readonly logger = new Logger(PaypalProvider.name);
   name = PaymentProviderEnum.PAYPAL;
+  readonly key = 'PAYPAL';
+  readonly aliases = [] as const;
 
   private tokenCache: { value: string; expiresAt: number } | null = null;
 

@@ -326,6 +326,82 @@ model Payment {
 /// La clave es el identificador de PAGO del proveedor, no el de la notificacion:
 /// Mercado Pago emite varias notificaciones distintas sobre el mismo pago
 /// (payment.created, payment.updated), cada una con su propio id. La restriccion
+/// PT-080 - Ciclo de vida de un pago, en tres fases que deben coincidir:
+/// SOLICITUD (al pedir el pago) -> CONFIRMACION (respuesta de la pasarela) -> PERSISTENCIA (cierre).
+/// Si las tres no concuerdan en usuario, importe y moneda, el ciclo es ANOMALY y no se acredita.
+/// Una solicitud que no se resuelve dentro de PAYMENT_EXPIRATION_HOURS pasa a EXPIRED:
+/// se asume no resuelta y no acredita.
+///
+/// Tabla propia y no `payments` porque Payment.orderId es obligatorio y los depositos de
+/// wallet no tienen orden asociada.
+enum PaymentCycleStatus {
+  REQUESTED
+  CONFIRMED
+  SETTLED
+  FAILED
+  ANOMALY
+  EXPIRED
+}
+
+model PaymentCycle {
+  id        String   @id @default(uuid()) @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  // Solicitud: lo que se pidio
+  provider  PaymentProvider
+  reference String          @unique @db.VarChar(255)
+  userId    String          @map("user_id") @db.Uuid
+  amount    Decimal         @db.Decimal(10, 2)
+  currency  String          @default("MXN") @db.VarChar(3)
+
+  // Confirmacion: lo que la pasarela devolvio
+  status             PaymentCycleStatus @default(REQUESTED)
+  canonicalPaymentId String?            @map("canonical_payment_id") @db.VarChar(255)
+  responseSnapshot   Json?              @map("response_snapshot") @db.JsonB
+  anomalyReason      String?            @map("anomaly_reason") @db.Text
+
+  requestedAt DateTime  @default(now()) @map("requested_at") @db.Timestamptz
+  respondedAt DateTime? @map("responded_at") @db.Timestamptz
+  settledAt   DateTime? @map("settled_at") @db.Timestamptz
+
+  // Via garantizada: consulta periodica a la pasarela
+  nextCheckAt DateTime? @map("next_check_at") @db.Timestamptz
+  checkCount  Int       @default(0) @map("check_count")
+
+  events PaymentCycleEvent[]
+
+  @@index([status, nextCheckAt], name: "idx_payment_cycle_pending")
+  @@index([canonicalPaymentId], name: "idx_payment_cycle_payment")
+  @@index([userId], name: "idx_payment_cycle_user")
+  @@map("payment_cycles")
+}
+
+/// PT-080 - Toda notificacion recibida, se procese o no. Responde a "que llego y que se hizo
+/// con ello", que es una pregunta distinta de la que responde processed_webhook_events
+/// (barrera de idempotencia). Un evento puede llegar sin ciclo asociado.
+model PaymentCycleEvent {
+  id String @id @default(uuid()) @db.Uuid
+
+  cycleId String?       @map("cycle_id") @db.Uuid
+  cycle   PaymentCycle? @relation(fields: [cycleId], references: [id])
+
+  provider   PaymentProvider
+  externalId String          @map("external_id") @db.VarChar(255)
+  /// WEBHOOK | IPN | POLL
+  format     String          @db.VarChar(20)
+  /// PROCESSED | DUPLICATE | CANCELLED | REJECTED | ANOMALY
+  outcome    String          @db.VarChar(20)
+  detail     String?         @db.Text
+
+  receivedAt DateTime @default(now()) @map("received_at") @db.Timestamptz
+  payload    Json     @default("{}") @db.JsonB
+
+  @@index([cycleId], name: "idx_payment_cycle_event_cycle")
+  @@index([externalId], name: "idx_payment_cycle_event_external")
+  @@map("payment_cycle_events")
+}
+
 /// unica es el punto de serializacion entre entregas concurrentes.
 model ProcessedWebhookEvent {
   id          String          @id @default(uuid()) @db.Uuid
