@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
 import { PaymentCycleService } from '../../../src/modules/payments/payment-cycle.service';
+import { PaymentProviderRegistry } from '../../../src/modules/payments/payment-provider.registry';
 import { MercadoPagoProvider } from '../../../src/modules/payments/providers/mercadopago.provider';
 import { PaypalProvider } from '../../../src/modules/payments/providers/paypal.provider';
 import { StripeProvider } from '../../../src/modules/payments/providers/stripe.provider';
@@ -55,6 +56,19 @@ describe('PaymentsService', () => {
             handleWebhook: jest.fn(),
             checkStatus: jest.fn().mockReturnValue(true),
           },
+        },
+        {
+          // PT-080: el registro resuelve el adaptador por clave o alias. Se construye con los
+          // mismos dobles del test, de modo que el enrutado es real y no simulado.
+          provide: PaymentProviderRegistry,
+          useFactory: (mp: never, pp: never, st: never, hb: never) =>
+            new PaymentProviderRegistry([
+              Object.assign(mp, { key: 'MERCADO_PAGO', aliases: ['mercadopago'] }),
+              Object.assign(pp, { key: 'PAYPAL', aliases: [] }),
+              Object.assign(st, { key: 'STRIPE', aliases: [] }),
+              Object.assign(hb, { key: 'HEY_BANCO', aliases: ['heybanco'] }),
+            ] as never),
+          inject: [MercadoPagoProvider, PaypalProvider, StripeProvider, HeyBancoProvider],
         },
         {
           // PT-080: el ciclo decide si procede acreditar. Por defecto, coherente.

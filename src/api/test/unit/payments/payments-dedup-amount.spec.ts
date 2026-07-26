@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
 import { PaymentCycleService } from '../../../src/modules/payments/payment-cycle.service';
+import { PaymentProviderRegistry } from '../../../src/modules/payments/payment-provider.registry';
 import { MercadoPagoProvider } from '../../../src/modules/payments/providers/mercadopago.provider';
 import { PaypalProvider } from '../../../src/modules/payments/providers/paypal.provider';
 import { StripeProvider } from '../../../src/modules/payments/providers/stripe.provider';
@@ -76,6 +77,19 @@ describe('PaymentsService — importe, disponibilidad y deduplicación', () => {
         { provide: StripeProvider, useValue: providerMock('stripe') },
         { provide: HeyBancoProvider, useValue: providerMock('heybanco') },
         {
+          // PT-080: el registro resuelve el adaptador por clave o alias. Se construye con los
+          // mismos dobles del test, de modo que el enrutado es real y no simulado.
+          provide: PaymentProviderRegistry,
+          useFactory: (mp: never, pp: never, st: never, hb: never) =>
+            new PaymentProviderRegistry([
+              Object.assign(mp, { key: 'MERCADO_PAGO', aliases: ['mercadopago'] }),
+              Object.assign(pp, { key: 'PAYPAL', aliases: [] }),
+              Object.assign(st, { key: 'STRIPE', aliases: [] }),
+              Object.assign(hb, { key: 'HEY_BANCO', aliases: ['heybanco'] }),
+            ] as never),
+          inject: [MercadoPagoProvider, PaypalProvider, StripeProvider, HeyBancoProvider],
+        },
+        {
           // PT-080: el ciclo decide si procede acreditar. Por defecto, coherente.
           provide: PaymentCycleService,
           useValue: {
@@ -140,11 +154,13 @@ describe('PaymentsService — importe, disponibilidad y deduplicación', () => {
       expect(walletDeposit).toHaveBeenCalledWith(UUID, 500, REFERENCE, 'DEPOSIT');
     });
 
-    it('T-27 (regresión): MercadoPago sigue acreditando por metadata.transaction_amount', async () => {
+    it('T-27 (PT-080): MercadoPago acredita por el importe que normaliza su adaptador', async () => {
+      // El nucleo ya no conoce `transaction_amount`: cada adaptador normaliza lo suyo.
       handlers.mp.mockResolvedValue({
         paymentId: 'ORDTST1',
         externalId: REFERENCE,
         status: 'COMPLETED',
+        amount: 750,
         metadata: { transaction_amount: 750 },
       });
 
@@ -152,12 +168,14 @@ describe('PaymentsService — importe, disponibilidad y deduplicación', () => {
       expect(walletDeposit).toHaveBeenCalledWith(UUID, 750, REFERENCE, 'DEPOSIT');
     });
 
-    it('T-28 (regresión): Stripe sigue acreditando por metadata.amountTotal en centavos', async () => {
+    it('T-28 (PT-080): Stripe acredita por el importe que normaliza su adaptador', async () => {
+      // Stripe factura en centavos; la conversion vive ahora en su adaptador, no en el nucleo.
       providerStatus.stripe.mockReturnValue(true);
       handlers.stripe.mockResolvedValue({
         paymentId: 'cs_test_1',
         externalId: REFERENCE,
         status: 'COMPLETED',
+        amount: 123.45,
         metadata: { amountTotal: 12345 },
       });
 

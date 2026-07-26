@@ -32,6 +32,8 @@ interface MpPayment {
 export class MercadoPagoProvider implements PaymentProvider {
   private readonly logger = new Logger(MercadoPagoProvider.name);
   name = PaymentProviderEnum.MERCADO_PAGO;
+  readonly key = 'MERCADO_PAGO';
+  readonly aliases = ['mercadopago'] as const;
   private client: MercadoPagoConfig;
 
   constructor() {

@@ -9,6 +9,7 @@ import { PaymentProviderEnum, WebhookResult } from './interfaces';
 import { WalletService } from '../wallet/wallet.service';
 import { PrismaService } from '../../database/prisma.service';
 import { PaymentCycleService, CycleDecision } from './payment-cycle.service';
+import { PaymentProviderRegistry } from './payment-provider.registry';
 import { StructuredLogger } from '../../common/observability';
 
 export interface PaymentVerification {
@@ -29,6 +30,7 @@ export class PaymentsService {
     private readonly heyBancoProvider: HeyBancoProvider,
     private readonly walletService: WalletService,
     private readonly paymentCycle: PaymentCycleService,
+    private readonly registry: PaymentProviderRegistry,
   ) {}
 
   async getUserPaymentMethod(
@@ -105,30 +107,10 @@ export class PaymentsService {
       currency,
     });
 
-    switch (provider) {
-      case PaymentProviderEnum.MERCADO_PAGO:
-        return this.mercadopagoProvider.createPayment(
-          orderId,
-          amount,
-          currency,
-          description,
-          email,
-        );
-
-      case PaymentProviderEnum.PAYPAL:
-        return this.paypalProvider.createPayment(orderId, amount, currency, description, email);
-
-      case PaymentProviderEnum.STRIPE:
-        if (this.stripeProvider.checkStatus()) {
-          return this.stripeProvider.createPayment(orderId, amount, currency, description, email);
-        }
-        break;
-
-      case PaymentProviderEnum.HEY_BANCO:
-        if (this.heyBancoProvider.checkStatus()) {
-          return this.heyBancoProvider.createPayment(orderId, amount, currency, description, email);
-        }
-        break;
+    // PT-080 — El nucleo no conoce pasarelas: el registro resuelve el adaptador.
+    const adapter = this.registry.resolve(provider);
+    if (adapter && adapter.checkStatus()) {
+      return adapter.createPayment(orderId, amount, currency, description, email);
     }
 
     throw new BadRequestException('Unsupported or invalid payment provider');
@@ -159,15 +141,13 @@ export class PaymentsService {
     }
 
     if (result) {
-      // Map Result to Verification
-      const amount = result.metadata?.amountTotal
-        ? Number(result.metadata.amountTotal) / 100
-        : Number(result.metadata?.amount) || 0;
+      // PT-080 — El importe lo normaliza el adaptador; el nucleo no interpreta campos de pasarela.
+      const amount = Number(result.amount ?? 0) || 0;
 
       return {
         status: result.status === 'COMPLETED' ? 'COMPLETED' : 'FAILED',
         amount,
-        currency: String(result.metadata?.currency || 'MXN').toUpperCase(),
+        currency: 'MXN',
         provider: providerName,
       };
     }
@@ -199,30 +179,16 @@ export class PaymentsService {
     headers: any = {},
     query: any = {},
   ): Promise<{ received: boolean }> {
-    // Normalizar el proveedor: la URL del webhook puede llegar en minúsculas y sin guion bajo
-    // (p. ej. /webhook/mercadopago) mientras el enum interno es MERCADO_PAGO. toUpperCase() no
-    // basta ('mercadopago' → 'MERCADOPAGO' ≠ 'MERCADO_PAGO'); se usa un mapa de alias.
-    const providerAliases: Record<string, string> = {
-      MERCADOPAGO: 'MERCADO_PAGO',
-      MERCADO_PAGO: 'MERCADO_PAGO',
-      PAYPAL: 'PAYPAL',
-      STRIPE: 'STRIPE',
-      HEYBANCO: 'HEY_BANCO',
-      HEY_BANCO: 'HEY_BANCO',
-    };
-    const normalizedProvider = (provider || '').toUpperCase();
-    provider = providerAliases[normalizedProvider] ?? normalizedProvider;
-    let result;
-    if (provider === 'STRIPE') {
-      result = await this.stripeProvider.handleWebhook(payload);
-    } else if (provider === 'MERCADO_PAGO') {
-      result = await this.mercadopagoProvider.handleWebhook(payload, headers, query);
-    } else if (provider === 'PAYPAL') {
-      // PT-076: Orders v2 verifica la firma con las cabeceras PAYPAL-*.
-      result = await this.paypalProvider.handleWebhook(payload, headers);
-    } else if (provider === 'HEY_BANCO') {
-      result = await this.heyBancoProvider.handleWebhook(payload, headers);
+    // PT-080 — El registro resuelve por clave o alias. La URL registrada en la pasarela no
+    // siempre usa la clave canonica (`/webhook/mercadopago` -> MERCADO_PAGO, bug de PT-064).
+    const adapter = this.registry.resolve(provider);
+    if (!adapter) {
+      this.logger.error(`Webhook de proveedor desconocido: ${provider}`);
+      return { received: true };
     }
+    provider = adapter.key;
+
+    const result = await adapter.handleWebhook(payload, headers, query);
 
     // PT-080 — Fases CONFIRMACION y PERSISTENCIA.
     if (result) {
@@ -264,17 +230,10 @@ export class PaymentsService {
       const refMatch = /^DEP-(.+)-\d+$/.exec(result.externalId);
       if (refMatch) {
         const userId = refMatch[1];
-        // Extract amount from webhook metadata — avoids re-calling the provider API
-        // PT-076: `result.amount` (normalizado por el proveedor) tiene prioridad. Se antepone
-        // en lugar de sustituir la cadena histórica: para MP y Stripe es undefined, de modo que
-        // su comportamiento queda idéntico.
-        // MP: transaction_amount, PayPal IPN (heredado): mc_gross, Stripe: amount_total (cents)
-        const rawAmount =
-          result.amount ??
-          result.metadata?.transaction_amount ??
-          result.metadata?.mc_gross ??
-          (result.metadata?.amountTotal ? Number(result.metadata.amountTotal) / 100 : 0);
-        const amount = Number(rawAmount) || 0;
+        // PT-080 — Cada adaptador normaliza su propio importe. El nucleo ya no conoce
+        // `transaction_amount`, `mc_gross` ni `amountTotal`: si un adaptador no informa
+        // `amount`, su deposito no acredita, y su propia suite debe cubrirlo.
+        const amount = Number(result.amount ?? 0) || 0;
 
         if (amount > 0) {
           await this.creditOnce(provider, result, userId, amount);
@@ -360,16 +319,8 @@ export class PaymentsService {
   }
 
   getAvailableProviders(): string[] {
-    // PT-076: derivado de la configuración real. Antes MERCADO_PAGO y PAYPAL estaban
-    // fijos, de modo que PayPal se ofrecía en la UI aunque reventase al usarse.
-    const providers: Array<[PaymentProviderEnum, boolean]> = [
-      [PaymentProviderEnum.MERCADO_PAGO, this.mercadopagoProvider.checkStatus()],
-      [PaymentProviderEnum.PAYPAL, this.paypalProvider.checkStatus()],
-      [PaymentProviderEnum.STRIPE, this.stripeProvider.checkStatus()],
-      [PaymentProviderEnum.HEY_BANCO, this.heyBancoProvider.checkStatus()],
-    ];
-
-    return providers.filter(([, enabled]) => enabled).map(([name]) => name);
+    // PT-080 — Derivado del registro. Antes se enumeraban los cuatro a mano.
+    return this.registry.availableKeys();
   }
 
   async getMercadoPagoMethods() {
