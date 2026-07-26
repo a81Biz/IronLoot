@@ -1,11 +1,11 @@
 import { Injectable, BadRequestException } from '@nestjs/common';
-import { UserPaymentMethod } from '@prisma/client';
+import { UserPaymentMethod, PaymentProvider } from '@prisma/client';
 import { isValidClabe } from '../wallet/clabe.util';
 import { StripeProvider } from './providers/stripe.provider';
 import { MercadoPagoProvider } from './providers/mercadopago.provider';
 import { PaypalProvider } from './providers/paypal.provider';
 import { HeyBancoProvider } from './providers/heybanco.provider';
-import { PaymentProviderEnum } from './interfaces';
+import { PaymentProviderEnum, WebhookResult } from './interfaces';
 import { WalletService } from '../wallet/wallet.service';
 import { PrismaService } from '../../database/prisma.service';
 import { StructuredLogger } from '../../common/observability';
@@ -206,7 +206,8 @@ export class PaymentsService {
     } else if (provider === 'MERCADO_PAGO') {
       result = await this.mercadopagoProvider.handleWebhook(payload, headers, query);
     } else if (provider === 'PAYPAL') {
-      result = await this.paypalProvider.handleWebhook(payload);
+      // PT-076: Orders v2 verifica la firma con las cabeceras PAYPAL-*.
+      result = await this.paypalProvider.handleWebhook(payload, headers);
     } else if (provider === 'HEY_BANCO') {
       result = await this.heyBancoProvider.handleWebhook(payload, headers);
     }
@@ -219,22 +220,19 @@ export class PaymentsService {
       if (refMatch) {
         const userId = refMatch[1];
         // Extract amount from webhook metadata — avoids re-calling the provider API
-        // MP: transaction_amount, PayPal IPN: mc_gross, Stripe: amount_total (cents)
+        // PT-076: `result.amount` (normalizado por el proveedor) tiene prioridad. Se antepone
+        // en lugar de sustituir la cadena histórica: para MP y Stripe es undefined, de modo que
+        // su comportamiento queda idéntico.
+        // MP: transaction_amount, PayPal IPN (heredado): mc_gross, Stripe: amount_total (cents)
         const rawAmount =
+          result.amount ??
           result.metadata?.transaction_amount ??
           result.metadata?.mc_gross ??
           (result.metadata?.amountTotal ? Number(result.metadata.amountTotal) / 100 : 0);
         const amount = Number(rawAmount) || 0;
 
         if (amount > 0) {
-          try {
-            this.logger.info(`Crediting wallet for user ${userId} amount ${amount}`);
-            await this.walletService.deposit(userId, amount, result.externalId, 'DEPOSIT');
-          } catch (e) {
-            this.logger.error(`Failed to credit wallet for ${result.externalId}`, {
-              error: e as Error,
-            });
-          }
+          await this.creditOnce(provider, result, userId, amount);
         } else {
           this.logger.error(`Cannot credit wallet: amount not found in webhook metadata`, {
             data: result as unknown as Record<string, unknown>,
@@ -246,11 +244,81 @@ export class PaymentsService {
     return { received: true };
   }
 
+  /**
+   * Acredita el depósito una sola vez por evento de la pasarela.
+   *
+   * PayPal reentrega hasta 25 veces a lo largo de 3 días hasta recibir un 2xx, así que
+   * sin deduplicación cada reintento acreditaría de nuevo. Se «reserva» el evento
+   * insertando su id: la restricción única `(provider, eventId)` es el punto de
+   * serialización entre entregas concurrentes, y una violación significa
+   * «ya procesado».
+   *
+   * No es una transacción única con la acreditación porque `WalletService.deposit()`
+   * abre la suya propia y no admite un cliente externo. Por eso, si la acreditación
+   * falla, la reserva se libera para que el reintento de la pasarela pueda repetirla.
+   *
+   * Los proveedores que no informan `eventId` (Mercado Pago, Stripe, Hey Banco)
+   * mantienen la ruta anterior sin cambios.
+   */
+  private async creditOnce(
+    provider: string,
+    result: WebhookResult,
+    userId: string,
+    amount: number,
+  ): Promise<void> {
+    const eventId = result.eventId;
+
+    if (!eventId) {
+      // Comportamiento histórico intacto: se registra el fallo y se responde 200.
+      // Cambiarlo aquí alteraría Mercado Pago, ya validado con dinero real (PT-063..065).
+      await this.creditWallet(userId, amount, result.externalId).catch(() => undefined);
+      return;
+    }
+
+    try {
+      await this.prisma.processedWebhookEvent.create({
+        data: { provider: provider as PaymentProvider, eventId },
+      });
+    } catch (e) {
+      if ((e as { code?: string }).code === 'P2002') {
+        this.logger.info(`Webhook ${eventId} already processed — skipping duplicate credit`);
+        return;
+      }
+      throw e;
+    }
+
+    try {
+      await this.creditWallet(userId, amount, result.externalId);
+    } catch (e) {
+      // Se libera la reserva para no dejar el evento marcado como procesado sin haber acreditado.
+      await this.prisma.processedWebhookEvent
+        .delete({ where: { provider_eventId: { provider: provider as PaymentProvider, eventId } } })
+        .catch(() => undefined);
+      throw e;
+    }
+  }
+
+  private async creditWallet(userId: string, amount: number, referenceId: string): Promise<void> {
+    try {
+      this.logger.info(`Crediting wallet for user ${userId} amount ${amount}`);
+      await this.walletService.deposit(userId, amount, referenceId, 'DEPOSIT');
+    } catch (e) {
+      this.logger.error(`Failed to credit wallet for ${referenceId}`, { error: e as Error });
+      throw e;
+    }
+  }
+
   getAvailableProviders(): string[] {
-    const providers: string[] = [PaymentProviderEnum.MERCADO_PAGO, PaymentProviderEnum.PAYPAL];
-    if (this.stripeProvider.checkStatus()) providers.push(PaymentProviderEnum.STRIPE);
-    if (this.heyBancoProvider.checkStatus()) providers.push(PaymentProviderEnum.HEY_BANCO);
-    return providers;
+    // PT-076: derivado de la configuración real. Antes MERCADO_PAGO y PAYPAL estaban
+    // fijos, de modo que PayPal se ofrecía en la UI aunque reventase al usarse.
+    const providers: Array<[PaymentProviderEnum, boolean]> = [
+      [PaymentProviderEnum.MERCADO_PAGO, this.mercadopagoProvider.checkStatus()],
+      [PaymentProviderEnum.PAYPAL, this.paypalProvider.checkStatus()],
+      [PaymentProviderEnum.STRIPE, this.stripeProvider.checkStatus()],
+      [PaymentProviderEnum.HEY_BANCO, this.heyBancoProvider.checkStatus()],
+    ];
+
+    return providers.filter(([, enabled]) => enabled).map(([name]) => name);
   }
 
   async getMercadoPagoMethods() {

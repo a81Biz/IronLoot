@@ -322,6 +322,20 @@ model Payment {
   @@map("payments")
 }
 
+/// PT-076 — Deduplicación de webhooks reentregados por la pasarela.
+/// PayPal reentrega hasta 25 veces a lo largo de 3 días hasta recibir un 2xx; sin
+/// esta reserva, cada reintento acreditaría el depósito de nuevo. La restricción
+/// única es el punto de serialización entre entregas concurrentes.
+model ProcessedWebhookEvent {
+  id          String          @id @default(uuid()) @db.Uuid
+  provider    PaymentProvider
+  eventId     String          @map("event_id") @db.VarChar(255)
+  processedAt DateTime        @default(now()) @map("processed_at") @db.Timestamptz
+
+  @@unique([provider, eventId])
+  @@map("processed_webhook_events")
+}
+
 // ===========================================
 // LOGISTICS TABLES
 // ===========================================

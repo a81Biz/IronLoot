@@ -17,6 +17,19 @@ export interface WebhookResult {
   externalId: string;
   status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
   metadata?: Record<string, unknown>;
+
+  /**
+   * Importe normalizado por el proveedor (PT-076).
+   * Campo opcional y aditivo: los proveedores que no lo informan mantienen la
+   * extracción histórica desde `metadata` sin cambio de comportamiento.
+   */
+  amount?: number;
+
+  /**
+   * Identificador del evento en el proveedor, usado para deduplicar reentregas
+   * (PT-076). PayPal reentrega hasta 25 veces en 3 días hasta recibir un 2xx.
+   */
+  eventId?: string;
 }
 
 export interface PaymentProvider {

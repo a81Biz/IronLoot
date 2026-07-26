@@ -4,6 +4,12 @@
  * CORE defines the verification protocol; HTTP I/O stays in the provider.
  * The provider calls buildIpnVerificationPayload, POSTs the result to PayPal,
  * then calls validateIpnResponse with PayPal's reply.
+ *
+ * @deprecated PT-076 — Sin consumidores desde la migración de PayPal a Orders v2 +
+ * Webhooks. La verificación pasó a `POST /v1/notifications/verify-webhook-signature`
+ * dentro de `PaypalProvider`. Estas funciones se conservan (con sus tests) porque
+ * eliminarlas es un refactor con su propio riesgo, registrado como fuera de alcance
+ * en `changes/PT-076-paypal-orders-v2/out-of-scope.md` nº 5.
  */
 
 /**
