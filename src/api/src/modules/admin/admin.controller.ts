@@ -639,17 +639,29 @@ export class AdminController {
   @Get('reconciliation')
   @ApiOperation({ summary: 'Reconcile payments by provider and date range' })
   reconcile(
-    @Query('provider') provider: 'MERCADO_PAGO' | 'PAYPAL',
+    @Query('provider') provider: string,
     @Query('dateFrom') dateFrom: string,
     @Query('dateTo') dateTo: string,
   ) {
     return this.adminService.reconcilePayments(provider, new Date(dateFrom), new Date(dateTo));
   }
 
+  @Get('payments/anomalies')
+  @ApiOperation({
+    summary: 'Cola de revision: ciclos de pago en ANOMALY o EXPIRED',
+    description:
+      'PT-080. Un ciclo ANOMALY implica que la pasarela cobro de mas o que la respuesta no ' +
+      'coincide con la solicitud; EXPIRED, que se agoto el plazo sin resolucion. La decision ' +
+      'de devolver dinero es del admin (ADR-022).',
+  })
+  paymentAnomalies() {
+    return this.adminService.listPaymentAnomalies();
+  }
+
   @Get('reconciliation/export')
   @ApiOperation({ summary: 'Export reconciliation as CSV' })
   async reconcileExport(
-    @Query('provider') provider: 'MERCADO_PAGO' | 'PAYPAL',
+    @Query('provider') provider: string,
     @Query('dateFrom') dateFrom: string,
     @Query('dateTo') dateTo: string,
     @Res() res: Response,
@@ -659,12 +671,15 @@ export class AdminController {
       new Date(dateFrom),
       new Date(dateTo),
     );
+    // PT-080: el CSV sale del ciclo de pago, que es donde estan los datos reales.
     const rows = [
-      'externalId,internalId,amount,status,source',
-      ...(data.internalOnly ?? []).map(
-        (p: any) => `${p.externalId},${p.id},${p.amount},${p.status},INTERNAL_ONLY`,
+      'reference,canonicalPaymentId,amount,currency,status,requestedAt,settledAt,anomalyReason',
+      ...data.cycles.map(
+        (c) =>
+          `${c.reference},${c.canonicalPaymentId ?? ''},${String(c.amount)},${c.currency},` +
+          `${c.status},${c.requestedAt.toISOString()},${c.settledAt?.toISOString() ?? ''},` +
+          `"${(c.anomalyReason ?? '').replace(/"/g, "'")}"`,
       ),
-      ...(data.providerOnly ?? []).map((p: any) => `${p.id},,${p.amount},,PROVIDER_ONLY`),
     ].join('\n');
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader(
