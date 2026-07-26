@@ -126,6 +126,7 @@ export class PaymentCycleService {
       const reason = `Cobro distinto (${result.paymentId}) sobre una referencia ya cerrada con ${cycle.canonicalPaymentId}`;
       await this.flagAnomaly(cycle.id, reason);
       await this.record(cycle.id, provider, result, format, 'CANCELLED', reason);
+      await this.raiseRefund(cycle, result, reason);
       this.logger.error(reason);
       return { shouldCredit: false, outcome: 'CANCELLED', cycleId: cycle.id };
     }
@@ -143,6 +144,7 @@ export class PaymentCycleService {
         },
       });
       await this.record(cycle.id, provider, result, format, 'REJECTED');
+      await this.writePaymentRow(cycle, provider, result, 'FAILED');
       return { shouldCredit: false, outcome: 'REJECTED', cycleId: cycle.id };
     }
 
@@ -169,6 +171,7 @@ export class PaymentCycleService {
       },
     });
     await this.record(cycle.id, provider, result, format, 'PROCESSED');
+    await this.writePaymentRow(cycle, provider, result, 'COMPLETED');
 
     return { shouldCredit: true, outcome: 'PROCESSED', cycleId: cycle.id };
   }
@@ -234,6 +237,67 @@ export class PaymentCycleService {
     }
 
     return null;
+  }
+
+  /**
+   * PT-085 — Registro contable del pago.
+   *
+   * `Payment.orderId` era obligatorio con clave foránea a `Order` y un depósito no tiene orden,
+   * de modo que **nadie escribía nunca esta tabla**. El panel financiero del admin la consulta
+   * en seis sitios y mostraba ceros. Desde PT-085 `orderId` es opcional y el ciclo escribe aquí.
+   *
+   * Es un registro contable, no la fuente de verdad del dinero: si falla, la acreditación sigue
+   * adelante. El saldo del usuario no puede depender de un apunte de reporting.
+   */
+  private async writePaymentRow(
+    cycle: { reference: string; currency: string },
+    provider: PaymentProvider,
+    result: WebhookResult,
+    status: 'COMPLETED' | 'FAILED',
+  ): Promise<void> {
+    try {
+      await this.prisma.payment.create({
+        data: {
+          provider,
+          status,
+          amount: result.amount ?? 0,
+          currency: cycle.currency,
+          externalId: result.paymentId,
+          reference: cycle.reference,
+          metadata: (result.metadata ?? {}) as object,
+        },
+      });
+    } catch (e) {
+      this.logger.error(`No se pudo registrar el pago ${result.paymentId}`, { error: e as Error });
+    }
+  }
+
+  /**
+   * PT-085 — Un cobro distinto sobre una referencia ya cerrada significa que la pasarela cobró
+   * más de una vez. Se crea la solicitud de reembolso que PT-080 quería y no pudo, porque
+   * `RefundRequest.orderId` era obligatorio. La ejecuta el admin (ADR-022).
+   */
+  private async raiseRefund(
+    cycle: { reference: string; currency: string },
+    result: WebhookResult,
+    reason: string,
+  ): Promise<void> {
+    try {
+      await this.prisma.refundRequest.create({
+        data: {
+          amount: result.amount ?? 0,
+          currency: cycle.currency,
+          reason,
+          status: 'PENDING_REFUND',
+          initiatedBy: 'system:payment-cycle',
+          paymentReference: cycle.reference,
+        },
+      });
+    } catch (e) {
+      this.logger.error(`No se pudo crear la solicitud de reembolso para ${cycle.reference}`, {
+        error: e as Error,
+      });
+    }
   }
 
   /** Marca el ciclo para revisión. La tabla del ciclo **es** la cola del admin. */
