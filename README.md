@@ -38,7 +38,11 @@ IronLoot es una **plataforma de subastas en línea** donde compradores compiten 
 - **Órdenes y envíos** generados automáticamente al cerrar la subasta
 - **Disputas** abiertas hasta 14 días después de la entrega
 - **Panel de administración** para gestión operativa completa
-- **Pagos reales** vía Mercado Pago y PayPal (sandbox en entorno de desarrollo)
+- **Pagos reales** vía Mercado Pago (operativo y verificado) y PayPal (implementado, pendiente
+  de verificar contra sandbox). Desde PT-080 el depósito sigue un **ciclo de tres fases**
+  —solicitud, confirmación y persistencia— que debe cuadrar en usuario, importe y moneda, y una
+  **vía garantizada**: si la notificación de la pasarela no llega, un proceso periódico consulta
+  y acredita igualmente. Ningún pago cobrado queda sin acreditar ni se acredita dos veces.
 
 ---
 

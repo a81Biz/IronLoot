@@ -37,6 +37,13 @@
 ## 3. Migraciones (14, cronológico)
 
 1–9: módulos base (auth/auctions/bids/orders/payments/shipments/ratings/disputes/notifications/wallet). · 10 `audit_fixes_v0_3_0`: +`AUCTION_LOST`, +`STRIPE`, 2FA cols, índice compuesto bids. · 11 `update_ledger_types`: HOLD→HOLD_BID, RELEASE→RELEASE_BID, +DEBIT_ORDER/CREDIT_SALE/FEE_PLATFORM. · 12 `fix_wallet_currency_default_to_mxn`: wallets USD→MXN (default+backfill). · 13 `remove_purchase_ledger_type`: elimina PURCHASE. · 14 `add_user_payment_methods`: tabla UserPaymentMethod. · **15–18 (retiro real PT-070..072):** `+bank fields UserPaymentMethod` (bank_name, clabe, holder_name, alias, is_verified) · `+Wallet.pendingBalance` · `+Order.sellerNet/sellerSettledAt` + `LedgerType.SETTLEMENT_RELEASE` · `+WithdrawalRequest` (tabla) + `WithdrawalStatus` (enum REQUESTED/APPROVED/PAID/REJECTED/FAILED).
+· **19 (PT-076):** `+ProcessedWebhookEvent` — barrera de idempotencia de webhooks.
+· **20 (PT-078):** renombra `event_id` → `payment_id`: la clave de deduplicacion es el
+identificador de **pago** del proveedor, no el de la notificacion.
+· **21 (PT-080):** `+PaymentCycle` y `+PaymentCycleEvent` + `PaymentCycleStatus`
+(REQUESTED/CONFIRMED/SETTLED/FAILED/ANOMALY/EXPIRED). Tabla propia y **no** `payments`, porque
+`Payment.orderId` es obligatorio con FK a `Order` y los depositos de wallet no tienen orden
+(TD-008). `payments` sigue sin escribirse.
 
 ## 4. Drift esquema↔migraciones (AUD-001) — CRÍTICO
 

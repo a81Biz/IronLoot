@@ -47,7 +47,7 @@
 | GET/POST | /wallet/withdrawals | JWT | default |
 | POST | /kyc · GET /kyc/me | JWT | default |
 | POST | /payments/checkout | JWT | default |
-| POST | /payments/webhook/:provider | **Public** | 20/60s |
+| POST | /payments/webhook/:provider | **Public** | 20/60s | PT-080: acepta los dos formatos de MP (Webhooks e IPN). Firma invalida -> **401** (antes 500). Duplicado -> 2xx sin acreditar. Desajuste con la solicitud -> ANOMALY. |
 | POST | /payments/initiate \| /payments/process | JWT | default |
 | GET | /payments/providers \| /payments/methods | Public | default |
 
@@ -74,7 +74,7 @@
 - Health: `/health`, `/health/detailed` (Public).
 
 ## Admin (`/admin`) — ~61 (todos `AdminDualAuthGuard`)
-`POST /admin/auth/login` es **Public + @SkipThrottle** (`AUD-004`). Bloques: dashboard/stats · users · auctions(moderación) · lots · orders/payments · financial/commissions · reports(financial/operational/fiscal) · configuration(platform/smtp/storage/cfdi/payment) · disputes(resolve-buyer/seller/request-evidence) · audit-logs · moderation · kyc · **cfdi(generate ✗ stub)** · notifications/campaigns · refunds · reconciliation(✗ stub) · seo/cms · queues. Detalle de rutas en `audit/raw/B §1`.
+`POST /admin/auth/login` es **Public + @SkipThrottle** (`AUD-004`). Bloques: dashboard/stats · users · auctions(moderación) · lots · orders/payments · financial/commissions · reports(financial/operational/fiscal) · configuration(platform/smtp/storage/cfdi/payment) · disputes(resolve-buyer/seller/request-evidence) · audit-logs · moderation · kyc · **cfdi(generate ✗ stub)** · notifications/campaigns · refunds · **reconciliation (PT-080: operativa, lee `payment_cycles`)** · **payments/anomalies (PT-080: cola de revision)** · seo/cms · queues. Detalle de rutas en `audit/raw/B §1`.
 
 ## Diagnostics (`/diagnostics`) — 9 (`DevOnly`)
 Logs/metrics/errors dev-only; TODO restringir en prod (`AUD-025`).
