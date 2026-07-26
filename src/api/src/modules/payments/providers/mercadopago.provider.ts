@@ -7,6 +7,26 @@ import {
   WebhookResult,
 } from '../interfaces';
 import { WebhookSignatureValidator } from '@ironloot/core';
+import { UnauthorizedException, ValidationException } from '../../../common/observability';
+
+const MP_API = 'https://api.mercadopago.com';
+
+/** Formato de notificacion. Mercado Pago usa dos sobre la misma URL. */
+type NotificationFormat = 'WEBHOOK' | 'IPN';
+
+interface NotificationEnvelope {
+  format: NotificationFormat;
+  /** topic / tipo de recurso: payment | order | merchant_order | ... */
+  resourceType: string;
+  resourceId: string;
+}
+
+interface MpPayment {
+  id: number | string;
+  status?: string;
+  external_reference?: string;
+  transaction_amount?: number;
+}
 
 @Injectable()
 export class MercadoPagoProvider implements PaymentProvider {
@@ -138,94 +158,174 @@ export class MercadoPagoProvider implements PaymentProvider {
     }
   }
 
+  /**
+   * Procesa una notificacion de Mercado Pago.
+   *
+   * MP usa DOS formatos sobre la misma URL, y el discriminador es el **topic**, no la forma
+   * del identificador:
+   *   - Webhooks: query `data.id`; firma `x-signature` validable con el secret.
+   *   - IPN:      query `topic` + `id`; MP documenta que su firma **no** es validable.
+   *
+   * Por eso la validacion difiere por formato. En IPN la confirmacion contra la API es
+   * obligatoria y su respuesta es la unica fuente de verdad: el payload solo aporta un
+   * identificador, nunca importes ni estados (RULE-04 se cumple igualmente).
+   *
+   * El enrutado anterior usaba /^(ORD|PAY)/i —la forma del id— y mandaba identificadores
+   * `PAY...` a `/v1/orders/{id}`, que responde 400 (verificado contra la API real).
+   */
   async handleWebhook(
     payload: any,
     headers: any = {},
     query: any = {},
   ): Promise<WebhookResult | null> {
-    this.logger.log('Received MercadoPago webhook');
+    const envelope = this.normalizeNotification(payload, query);
 
-    const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
-    if (!secret) {
-      this.logger.warn('MERCADO_PAGO_WEBHOOK_SECRET not configured');
-      throw new Error('Webhook Secret not configured');
-    } else {
-      // Validation Logic
-      const xSignature = headers['x-signature'];
-      const xRequestId = headers['x-request-id'];
-      const dataID = query['data.id'];
-
-      if (!xSignature || !xRequestId || !dataID) {
-        this.logger.error('Missing signature headers or data.id — rejecting webhook');
-        throw new Error('Missing required webhook signature headers');
-      } else {
-        const parts = xSignature.split(',');
-        let ts: string | undefined;
-        let hash: string | undefined;
-
-        parts.forEach((part: string) => {
-          const [key, value] = part.split('=');
-          if (key && value) {
-            const trimmedKey = key.trim();
-            const trimmedValue = value.trim();
-            if (trimmedKey === 'ts') ts = trimmedValue;
-            else if (trimmedKey === 'v1') hash = trimmedValue;
-          }
-        });
-
-        if (!ts || !hash) {
-          this.logger.error('Missing ts or v1 in x-signature header — rejecting webhook');
-          throw new Error('Missing required webhook signature components');
-        }
-
-        // PT-017: Delegate HMAC validation to CORE WebhookSignatureValidator.
-        // Mercado Pago signs a manifest string (not the raw body); pass it as the payload arg.
-        const manifest = `id:${dataID};request-id:${xRequestId};ts:${ts};`;
-
-        if (!WebhookSignatureValidator.validateHmacSignature(manifest, hash, secret)) {
-          this.logger.error('HMAC verification failed', { manifest });
-          throw new Error('Invalid Webhook Signature');
-        }
-
-        this.logger.log('HMAC verification passed');
-      }
+    if (!envelope) {
+      this.logger.error('Unrecognized MercadoPago notification — rejecting');
+      throw new UnauthorizedException('Unrecognized MercadoPago notification');
     }
 
-    // Process Payload
-    // If validation passed or skipped
-    if (payload.type === 'payment' || payload.type === 'order') {
-      const rawId = String(payload.data.id);
+    this.logger.log(
+      `MercadoPago notification: format=${envelope.format} topic=${envelope.resourceType} id=${envelope.resourceId}`,
+    );
 
-      // Orders API (formato ORD.../PAY...): la Payments API legacy (payment.get) no
-      // resuelve estos IDs. Se consulta la Orders API. MP está migrando a Orders API,
-      // por lo que ambos formatos deben soportarse.
-      if (/^(ORD|PAY)/i.test(rawId)) {
-        const token = process.env.MERCADO_PAGO_ACCESS_TOKEN;
-        const res = await fetch(`https://api.mercadopago.com/v1/orders/${rawId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        const order: any = await res.json();
-        const accredited = order.status === 'processed' || order.status_detail === 'accredited';
-        return {
-          paymentId: String(order.id),
-          externalId: String(order.external_reference),
-          status: accredited ? 'COMPLETED' : 'PENDING',
-          // el service acredita usando metadata.transaction_amount
-          metadata: { ...order, transaction_amount: Number(order.total_paid_amount) } as any,
-        };
-      }
+    if (envelope.format === 'WEBHOOK') {
+      this.assertWebhookSignature(headers, envelope.resourceId);
+    }
 
-      // Payments API legacy (IDs numéricos)
-      const payment = new Payment(this.client);
-      const paymentInfo = await payment.get({ id: rawId });
+    const payment = await this.resolveCanonicalPayment(envelope);
+    if (!payment) return null;
+
+    return {
+      paymentId: String(payment.id),
+      externalId: String(payment.external_reference ?? ''),
+      status: payment.status === 'approved' ? 'COMPLETED' : 'PENDING',
+      amount: payment.transaction_amount != null ? Number(payment.transaction_amount) : undefined,
+      metadata: payment as unknown as Record<string, unknown>,
+    };
+  }
+
+  /** Reduce la notificacion a {formato, tipo de recurso, id}, sea cual sea el formato. */
+  private normalizeNotification(payload: any, query: any): NotificationEnvelope | null {
+    const dataId = query?.['data.id'];
+    if (dataId) {
+      const type = payload?.type ?? String(payload?.action ?? '').split('.')[0];
       return {
-        paymentId: String(paymentInfo.id),
-        externalId: String(paymentInfo.external_reference),
-        status: paymentInfo.status === 'approved' ? 'COMPLETED' : 'PENDING',
-        metadata: paymentInfo as any,
+        format: 'WEBHOOK',
+        resourceType: String(type || 'payment'),
+        resourceId: String(dataId),
       };
     }
 
+    if (query?.topic && query?.id) {
+      return { format: 'IPN', resourceType: String(query.topic), resourceId: String(query.id) };
+    }
+
     return null;
+  }
+
+  /** Solo aplica al formato Webhooks. Un fallo aqui es 401, no un error interno. */
+  private assertWebhookSignature(headers: any, resourceId: string): void {
+    const secret = process.env.MERCADO_PAGO_WEBHOOK_SECRET;
+    if (!secret) {
+      throw new Error('MERCADO_PAGO_WEBHOOK_SECRET not configured');
+    }
+
+    const xSignature = headers['x-signature'];
+    const xRequestId = headers['x-request-id'];
+
+    if (!xSignature || !xRequestId) {
+      this.logger.error('Missing MercadoPago signature headers — rejecting');
+      throw new UnauthorizedException('Missing MercadoPago webhook signature headers');
+    }
+
+    let ts: string | undefined;
+    let hash: string | undefined;
+    String(xSignature)
+      .split(',')
+      .forEach((part: string) => {
+        const [key, value] = part.split('=');
+        if (!key || !value) return;
+        if (key.trim() === 'ts') ts = value.trim();
+        else if (key.trim() === 'v1') hash = value.trim();
+      });
+
+    if (!ts || !hash) {
+      this.logger.error('Malformed x-signature header — rejecting');
+      throw new UnauthorizedException('Malformed MercadoPago signature header');
+    }
+
+    // MP firma un manifiesto, no el cuerpo. La validacion HMAC vive en CORE (PT-017).
+    const manifest = `id:${resourceId};request-id:${xRequestId};ts:${ts};`;
+    if (!WebhookSignatureValidator.validateHmacSignature(manifest, hash, secret)) {
+      this.logger.error('MercadoPago HMAC verification failed — rejecting');
+      throw new UnauthorizedException('Invalid MercadoPago webhook signature');
+    }
+  }
+
+  /** GET autenticado contra la API de MP. Devuelve null si el recurso no resuelve. */
+  private async mpGet<T>(path: string): Promise<T | null> {
+    const res = await fetch(`${MP_API}${path}`, {
+      headers: { Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}` },
+    });
+    if (!res.ok) {
+      this.logger.error(`MercadoPago API ${path} responded ${res.status}`);
+      return null;
+    }
+    return (await res.json()) as T;
+  }
+
+  /**
+   * Resuelve el pago canonico —el id numerico, unico resoluble en /v1/payments/{id}—
+   * cualquiera que sea el recurso notificado. Es la clave de deduplicacion.
+   */
+  private async resolveCanonicalPayment(env: NotificationEnvelope): Promise<MpPayment | null> {
+    switch (env.resourceType) {
+      case 'payment':
+        return this.mpGet<MpPayment>(`/v1/payments/${env.resourceId}`);
+
+      case 'order': {
+        const order = await this.mpGet<{ external_reference?: string }>(
+          `/v1/orders/${env.resourceId}`,
+        );
+        return order?.external_reference
+          ? this.findApprovedByReference(order.external_reference)
+          : null;
+      }
+
+      case 'merchant_order': {
+        const mo = await this.mpGet<{ external_reference?: string }>(
+          `/merchant_orders/${env.resourceId}`,
+        );
+        return mo?.external_reference ? this.findApprovedByReference(mo.external_reference) : null;
+      }
+
+      default:
+        this.logger.log(`Ignoring unsubscribed MercadoPago topic "${env.resourceType}"`);
+        return null;
+    }
+  }
+
+  /**
+   * Una referencia se genera nueva en cada solicitud, de modo que **un solo pago aprobado**
+   * por referencia es lo esperado. Varios es una anomalia: implica que la pasarela cobro mas
+   * de una vez sobre una sola solicitud y probablemente haya que devolver dinero.
+   */
+  private async findApprovedByReference(reference: string): Promise<MpPayment | null> {
+    const search = await this.mpGet<{ results?: MpPayment[] }>(
+      `/v1/payments/search?external_reference=${encodeURIComponent(reference)}&sort=date_created&criteria=desc`,
+    );
+
+    const approved = (search?.results ?? []).filter((p) => p.status === 'approved');
+
+    if (approved.length > 1) {
+      this.logger.error(`Anomalia: ${approved.length} pagos aprobados para ${reference}`);
+      throw new ValidationException(
+        `Anomalia: varios pagos aprobados bajo la referencia ${reference}`,
+        { reference, paymentIds: approved.map((p) => String(p.id)) },
+      );
+    }
+
+    return approved[0] ?? null;
   }
 }
