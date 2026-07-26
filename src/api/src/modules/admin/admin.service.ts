@@ -956,6 +956,23 @@ export class AdminService {
   }
 
   /**
+   * PT-086 — Traza completa de una transaccion, en orden cronologico.
+   * Es el respaldo ante una disputa con la pasarela: que se pidio, que se envio, que respondio
+   * y que se hizo con ello.
+   */
+  async getPaymentTrace(reference: string) {
+    const [cycle, steps] = await Promise.all([
+      this.prisma.paymentCycle.findUnique({ where: { reference } }),
+      this.prisma.paymentCycleEvent.findMany({
+        where: { reference },
+        orderBy: { receivedAt: 'asc' },
+      }),
+    ]);
+
+    return { reference, cycle, steps, total: steps.length };
+  }
+
+  /**
    * PT-080 — Cola de revision de anomalias.
    *
    * La tabla del ciclo **es** la cola: un `RefundRequest` no sirve porque exige `orderId` con

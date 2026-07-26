@@ -4,6 +4,7 @@ import { PaymentsService } from './payments.service';
 import { PaymentCycleService } from './payment-cycle.service';
 import { PaymentReconciliationService } from './payment-reconciliation.service';
 import { PaymentProviderRegistry, PAYMENT_PROVIDERS } from './payment-provider.registry';
+import { PaymentTraceService } from './payment-trace.service';
 import { PaymentsController } from './payments.controller';
 import { StripeProvider } from './providers/stripe.provider';
 import { MercadoPagoProvider } from './providers/mercadopago.provider';
@@ -26,6 +27,7 @@ import { WalletModule } from '../wallet/wallet.module';
     PaymentCycleService,
     PaymentReconciliationService,
     PaymentProviderRegistry,
+    PaymentTraceService,
     {
       // PT-080 — Registro de pasarelas. Anadir una es crear su adaptador y sumarlo a esta
       // lista; quitarla, borrar esas dos cosas. La logica de transaccion no se toca.
@@ -39,12 +41,22 @@ import { WalletModule } from '../wallet/wallet.module';
       inject: [MercadoPagoProvider, PaypalProvider, StripeProvider, HeyBancoProvider],
     },
     StripeProvider,
-    MercadoPagoProvider,
+    {
+      provide: MercadoPagoProvider,
+      useFactory: (t: PaymentTraceService) => new MercadoPagoProvider(t),
+      inject: [PaymentTraceService],
+    },
     PaypalProvider,
     HeyBancoProvider,
     WebhookRetryProducer,
     WebhookRetryWorker,
   ],
-  exports: [PaymentsService, PaymentCycleService, PaymentProviderRegistry, WebhookRetryProducer],
+  exports: [
+    PaymentsService,
+    PaymentCycleService,
+    PaymentProviderRegistry,
+    PaymentTraceService,
+    WebhookRetryProducer,
+  ],
 })
 export class PaymentsModule {}

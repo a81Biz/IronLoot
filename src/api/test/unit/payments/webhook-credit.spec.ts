@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
 import { PaymentCycleService } from '../../../src/modules/payments/payment-cycle.service';
+import { PaymentTraceService } from '../../../src/modules/payments/payment-trace.service';
 import { PaymentProviderRegistry } from '../../../src/modules/payments/payment-provider.registry';
 import { MercadoPagoProvider } from '../../../src/modules/payments/providers/mercadopago.provider';
 import { PaypalProvider } from '../../../src/modules/payments/providers/paypal.provider';
@@ -84,6 +85,11 @@ describe('PaymentsService.handleWebhook — acreditación (PT-064)', () => {
               .fn()
               .mockResolvedValue({ shouldCredit: true, outcome: 'PROCESSED', cycleId: 'c-1' }),
           },
+        },
+        {
+          // PT-086: la traza nunca bloquea; en tests basta con un doble silencioso.
+          provide: PaymentTraceService,
+          useValue: { record: jest.fn().mockResolvedValue(undefined), byReference: jest.fn() },
         },
         {
           // PT-078: la acreditación pasa ahora por una reserva de deduplicación en

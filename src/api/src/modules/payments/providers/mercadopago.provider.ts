@@ -8,6 +8,7 @@ import {
 } from '../interfaces';
 import { WebhookSignatureValidator } from '@ironloot/core';
 import { UnauthorizedException, ValidationException } from '../../../common/observability';
+import { PaymentTraceService } from '../payment-trace.service';
 
 const MP_API = 'https://api.mercadopago.com';
 
@@ -36,7 +37,12 @@ export class MercadoPagoProvider implements PaymentProvider {
   readonly aliases = ['mercadopago'] as const;
   private client: MercadoPagoConfig;
 
-  constructor() {
+  /**
+   * PT-086 — La traza es **opcional** a proposito: el adaptador debe poder instanciarse sin
+   * ella (sus tests hacen `new MercadoPagoProvider()`), y un fallo de trazabilidad nunca puede
+   * impedir cobrar.
+   */
+  constructor(private readonly trace?: PaymentTraceService) {
     const accessToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
     if (!accessToken) throw new Error('MERCADO_PAGO_ACCESS_TOKEN not configured');
     this.client = new MercadoPagoConfig({ accessToken });
@@ -132,6 +138,22 @@ export class MercadoPagoProvider implements PaymentProvider {
       const redirectUrl =
         useSandbox && result.sandbox_init_point ? result.sandbox_init_point : result.init_point!;
 
+      // PT-086 — Que enviamos a la pasarela y que nos devolvio al crear el cobro.
+      await this.trace?.record({
+        reference: orderId,
+        provider: 'MERCADO_PAGO',
+        step: 'PROVIDER_CREATE',
+        direction: 'OUTBOUND',
+        outcome: 'OK',
+        format: 'HTTP',
+        endpoint: 'mercadopago.preferences.create',
+        externalId: String(result.id ?? ''),
+        data: {
+          request: { amount, currency, description, buyerEmail, external_reference: orderId },
+          response: { id: result.id, init_point: redirectUrl },
+        },
+      });
+
       return {
         externalId: result.id,
         redirectUrl,
@@ -191,12 +213,55 @@ export class MercadoPagoProvider implements PaymentProvider {
       `MercadoPago notification: format=${envelope.format} topic=${envelope.resourceType} id=${envelope.resourceId}`,
     );
 
+    // PT-086 — Toda notificacion queda registrada tal y como llego, cabeceras incluidas
+    // (redactadas donde corresponde por el servicio de traza).
+    await this.trace?.record({
+      reference: '',
+      provider: 'MERCADO_PAGO',
+      step: 'NOTIFICATION_RECEIVED',
+      direction: 'INBOUND',
+      outcome: 'OK',
+      format: envelope.format,
+      externalId: envelope.resourceId,
+      detail: `topic=${envelope.resourceType}`,
+      data: { headers, query, body: payload },
+    });
+
     if (envelope.format === 'WEBHOOK') {
-      this.assertWebhookSignature(headers, envelope.resourceId);
+      try {
+        this.assertWebhookSignature(headers, envelope.resourceId);
+      } catch (e) {
+        await this.trace?.record({
+          reference: '',
+          provider: 'MERCADO_PAGO',
+          step: 'SIGNATURE_REJECTED',
+          direction: 'INTERNAL',
+          outcome: 'ERROR',
+          externalId: envelope.resourceId,
+          detail: (e as Error).message,
+        });
+        throw e;
+      }
+
+      await this.trace?.record({
+        reference: '',
+        provider: 'MERCADO_PAGO',
+        step: 'SIGNATURE_OK',
+        direction: 'INTERNAL',
+        outcome: 'OK',
+        externalId: envelope.resourceId,
+      });
     }
 
     const payment = await this.resolveCanonicalPayment(envelope);
     if (!payment) return null;
+
+    // PT-086 — Ya se sabe a que deposito pertenecen las entradas previas: se enlazan.
+    await this.trace?.attachReference(
+      envelope.resourceId,
+      String(payment.external_reference ?? ''),
+    );
+    await this.trace?.attachReference(String(payment.id), String(payment.external_reference ?? ''));
 
     return {
       paymentId: String(payment.id),
@@ -283,15 +348,34 @@ export class MercadoPagoProvider implements PaymentProvider {
   }
 
   /** GET autenticado contra la API de MP. Devuelve null si el recurso no resuelve. */
-  private async mpGet<T>(path: string): Promise<T | null> {
+  private async mpGet<T>(path: string, reference = ''): Promise<T | null> {
+    const started = Date.now();
     const res = await fetch(`${MP_API}${path}`, {
       headers: { Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}` },
     });
+
+    const body = res.ok ? ((await res.json()) as T) : null;
+
+    // PT-086 — Queda constancia de que consultamos y de que nos respondio la pasarela.
+    await this.trace?.record({
+      reference,
+      provider: 'MERCADO_PAGO',
+      step: 'PROVIDER_CONFIRM',
+      direction: 'OUTBOUND',
+      outcome: res.ok ? 'OK' : 'ERROR',
+      format: 'HTTP',
+      endpoint: `${MP_API}${path}`,
+      externalId: path.split('/').pop()?.split('?')[0] ?? '',
+      httpStatus: res.status,
+      durationMs: Date.now() - started,
+      data: { response: body },
+    });
+
     if (!res.ok) {
       this.logger.error(`MercadoPago API ${path} responded ${res.status}`);
       return null;
     }
-    return (await res.json()) as T;
+    return body;
   }
 
   /**

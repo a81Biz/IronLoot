@@ -4,6 +4,7 @@ import { StructuredLogger } from '../../common/observability';
 import { PaymentCycleService, PendingCycle } from './payment-cycle.service';
 import { PaymentsService } from './payments.service';
 import { MercadoPagoProvider } from './providers/mercadopago.provider';
+import { PaymentTraceService } from './payment-trace.service';
 
 /**
  * PT-080 — Vía garantizada.
@@ -29,6 +30,7 @@ export class PaymentReconciliationService {
     private readonly payments: PaymentsService,
     private readonly mercadopago: MercadoPagoProvider,
     private readonly logger: StructuredLogger,
+    private readonly trace: PaymentTraceService,
   ) {}
 
   @Cron(CronExpression.EVERY_MINUTE)
@@ -53,11 +55,35 @@ export class PaymentReconciliationService {
       this.logger.warn(
         `Solicitud ${cycle.reference} vencida sin resolución — se asume no resuelta`,
       );
+      await this.trace.record({
+        reference: cycle.reference,
+        provider: cycle.provider,
+        step: 'CYCLE_EXPIRED',
+        direction: 'INTERNAL',
+        outcome: 'ERROR',
+        cycleId: cycle.id,
+        detail: 'Sin resolucion dentro del plazo; se asume no resuelta',
+        data: { requestedAt: cycle.requestedAt, checkCount: cycle.checkCount },
+      });
       await this.cycles.expire(cycle.id);
       return;
     }
 
     const result = await this.lookup(cycle);
+
+    // PT-086 — Cada intento de la via garantizada queda registrado, encuentre o no el pago.
+    await this.trace.record({
+      reference: cycle.reference,
+      provider: cycle.provider,
+      step: 'POLL_ATTEMPT',
+      direction: 'OUTBOUND',
+      outcome: result ? 'OK' : 'ERROR',
+      format: 'POLL',
+      cycleId: cycle.id,
+      externalId: result?.paymentId,
+      detail: result ? 'pago encontrado' : 'la pasarela aun no tiene pago',
+      data: { intento: cycle.checkCount + 1, resultado: result ?? null },
+    });
 
     if (!result) {
       await this.cycles.scheduleNextCheck(cycle);

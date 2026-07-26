@@ -395,17 +395,36 @@ model PaymentCycleEvent {
 
   provider   PaymentProvider
   externalId String          @map("external_id") @db.VarChar(255)
-  /// WEBHOOK | IPN | POLL
+  /// WEBHOOK | IPN | POLL | HTTP | INTERNAL
   format     String          @db.VarChar(20)
-  /// PROCESSED | DUPLICATE | CANCELLED | REJECTED | ANOMALY
+  /// PROCESSED | DUPLICATE | CANCELLED | REJECTED | ANOMALY | ORPHAN | OK | ERROR
   outcome    String          @db.VarChar(20)
   detail     String?         @db.Text
+
+  // ── PT-086: traza completa de la transaccion ──
+  /// Nuestra referencia (DEP-<userId>-<ts>). Permite consultar la traza sin join, y tambien
+  /// cuando la entrada no cuelga de ningun ciclo (notificacion huerfana).
+  reference String? @db.VarChar(255)
+  /// INBOUND (nos llega) | OUTBOUND (lo enviamos) | INTERNAL (decision propia)
+  direction String? @db.VarChar(10)
+  /// Paso del proceso, vocabulario cerrado. Ver PaymentTraceStep.
+  step      String? @db.VarChar(40)
+  /// Endpoint implicado, en las entradas OUTBOUND.
+  endpoint   String? @db.VarChar(255)
+  httpStatus Int?    @map("http_status")
+  durationMs Int?    @map("duration_ms")
+  /// Correlacion con request_logs y los logs de aplicacion.
+  traceId    String? @map("trace_id") @db.VarChar(100)
+  /// Rutas del payload cuyo valor se redacto. Lo redactado se MARCA, no se borra en silencio.
+  redactedFields Json? @map("redacted_fields") @db.JsonB
 
   receivedAt DateTime @default(now()) @map("received_at") @db.Timestamptz
   payload    Json     @default("{}") @db.JsonB
 
   @@index([cycleId], name: "idx_payment_cycle_event_cycle")
   @@index([externalId], name: "idx_payment_cycle_event_external")
+  @@index([reference, receivedAt], name: "idx_payment_cycle_event_reference")
+  @@index([traceId], name: "idx_payment_cycle_event_trace")
   @@map("payment_cycle_events")
 }
 

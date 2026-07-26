@@ -10,6 +10,7 @@ import { WalletService } from '../wallet/wallet.service';
 import { PrismaService } from '../../database/prisma.service';
 import { PaymentCycleService, CycleDecision } from './payment-cycle.service';
 import { PaymentProviderRegistry } from './payment-provider.registry';
+import { PaymentTraceService } from './payment-trace.service';
 import { StructuredLogger } from '../../common/observability';
 
 export interface PaymentVerification {
@@ -31,6 +32,7 @@ export class PaymentsService {
     private readonly walletService: WalletService,
     private readonly paymentCycle: PaymentCycleService,
     private readonly registry: PaymentProviderRegistry,
+    private readonly trace: PaymentTraceService,
   ) {}
 
   async getUserPaymentMethod(
@@ -105,6 +107,16 @@ export class PaymentsService {
       userId,
       amount,
       currency,
+    });
+
+    // PT-086 — Primer eslabon de la traza: que pidio el usuario y a que pasarela.
+    await this.trace.record({
+      reference: orderId,
+      provider: provider as string,
+      step: 'DEPOSIT_REQUESTED',
+      direction: 'INBOUND',
+      outcome: 'OK',
+      data: { userId, email, amount, currency, provider: providerStr, description },
     });
 
     // PT-080 — El nucleo no conoce pasarelas: el registro resuelve el adaptador.
@@ -311,7 +323,25 @@ export class PaymentsService {
   private async creditWallet(userId: string, amount: number, referenceId: string): Promise<void> {
     try {
       this.logger.info(`Crediting wallet for user ${userId} amount ${amount}`);
-      await this.walletService.deposit(userId, amount, referenceId, 'DEPOSIT');
+      const result = await this.walletService.deposit(userId, amount, referenceId, 'DEPOSIT');
+
+      // PT-086 — La acreditacion, con saldo antes y despues y el asiento generado. Los saldos
+      // salen del propio asiento del ledger, que ya los registra: no se consulta la BD de nuevo.
+      const ledger = result?.ledger;
+      await this.trace.record({
+        reference: referenceId,
+        provider: 'MERCADO_PAGO',
+        step: 'WALLET_CREDITED',
+        direction: 'INTERNAL',
+        outcome: 'OK',
+        data: {
+          userId,
+          amount,
+          saldoAntes: ledger?.balanceBefore ?? null,
+          saldoDespues: ledger?.balanceAfter ?? null,
+          ledgerId: ledger?.id ?? null,
+        },
+      });
     } catch (e) {
       this.logger.error(`Failed to credit wallet for ${referenceId}`, { error: e as Error });
       throw e;

@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
 import { PaymentCycleService } from '../../../src/modules/payments/payment-cycle.service';
+import { PaymentTraceService } from '../../../src/modules/payments/payment-trace.service';
 import { PaymentProviderRegistry } from '../../../src/modules/payments/payment-provider.registry';
 import { MercadoPagoProvider } from '../../../src/modules/payments/providers/mercadopago.provider';
 import { PaypalProvider } from '../../../src/modules/payments/providers/paypal.provider';
@@ -69,6 +70,11 @@ describe('PaymentsService', () => {
               Object.assign(hb, { key: 'HEY_BANCO', aliases: ['heybanco'] }),
             ] as never),
           inject: [MercadoPagoProvider, PaypalProvider, StripeProvider, HeyBancoProvider],
+        },
+        {
+          // PT-086: la traza nunca bloquea; en tests basta con un doble silencioso.
+          provide: PaymentTraceService,
+          useValue: { record: jest.fn().mockResolvedValue(undefined), byReference: jest.fn() },
         },
         {
           // PT-080: el ciclo decide si procede acreditar. Por defecto, coherente.

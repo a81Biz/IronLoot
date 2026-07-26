@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentReconciliationService } from '../../../src/modules/payments/payment-reconciliation.service';
 import { PaymentCycleService } from '../../../src/modules/payments/payment-cycle.service';
+import { PaymentTraceService } from '../../../src/modules/payments/payment-trace.service';
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
 import { MercadoPagoProvider } from '../../../src/modules/payments/providers/mercadopago.provider';
 import { StructuredLogger } from '../../../src/common/observability';
@@ -68,6 +69,11 @@ describe('PaymentReconciliationService — vía garantizada (PT-080)', () => {
             isExpired: (c: { requestedAt: Date }) =>
               Date.now() - new Date(c.requestedAt).getTime() > 72 * 3600_000,
           },
+        },
+        {
+          // PT-086: la traza nunca bloquea; en tests basta con un doble silencioso.
+          provide: PaymentTraceService,
+          useValue: { record: jest.fn().mockResolvedValue(undefined), byReference: jest.fn() },
         },
         { provide: PaymentsService, useValue: { applyProviderResult } },
         { provide: MercadoPagoProvider, useValue: { findPaymentByReference: findByReference } },

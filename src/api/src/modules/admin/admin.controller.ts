@@ -658,6 +658,20 @@ export class AdminController {
     return this.adminService.listPaymentAnomalies();
   }
 
+  @Get('payments/trace/:reference')
+  @ApiOperation({
+    summary: 'Traza completa de una transaccion de pago',
+    description:
+      'PT-086. Devuelve, en orden cronologico, todos los pasos por los que paso el pago: la ' +
+      'solicitud, lo que se envio a la pasarela y su respuesta, las notificaciones recibidas ' +
+      'con sus cabeceras, la validacion de firma, los intentos de la via garantizada, la ' +
+      'decision del ciclo y la acreditacion con saldos. Las credenciales van redactadas y ' +
+      'marcadas como tales.',
+  })
+  paymentTrace(@Param('reference') reference: string) {
+    return this.adminService.getPaymentTrace(reference);
+  }
+
   @Get('reconciliation/export')
   @ApiOperation({ summary: 'Export reconciliation as CSV' })
   async reconcileExport(
