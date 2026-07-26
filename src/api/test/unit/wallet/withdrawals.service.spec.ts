@@ -48,12 +48,28 @@ describe('WithdrawalsService (PT-072)', () => {
     expect(wallet.withdraw).toHaveBeenCalledWith('u1', 1000, 'WR-w1');
   });
 
-  it('request: sin KYC aprobado → error', async () => {
-    kyc.getUserKycStatus.mockResolvedValue('PENDING');
-    await expect(service.request('u1', { amount: 100, paymentMethodId: 'm1' })).rejects.toThrow(
-      /KYC/,
-    );
-    expect(wallet.withdraw).not.toHaveBeenCalled();
+  // PT-083 — La puerta de KYC obligatorio (ADR-021 / RN-62) se ejercita en todos sus estados,
+  // no solo en PENDING. Es la misma regla que aplica `enableSeller` (cubierta en PT-079): si
+  // una de las dos implementaciones se rompe, su suite debe notarlo igual que la otra.
+  it.each([['PENDING'], ['REJECTED'], ['CORRECTION_NEEDED'], [null]])(
+    'request: KYC en estado %s → error y sin reservar fondos',
+    async (estado) => {
+      kyc.getUserKycStatus.mockResolvedValue(estado);
+      await expect(service.request('u1', { amount: 100, paymentMethodId: 'm1' })).rejects.toThrow(
+        /KYC/,
+      );
+      expect(wallet.withdraw).not.toHaveBeenCalled();
+    },
+  );
+
+  it('request: KYC APPROVED sí permite reservar', async () => {
+    // Contraprueba del caso anterior: sin ella, un test que siempre lanza pasaría igual.
+    prisma.withdrawalRequest.create.mockResolvedValue({ id: 'w9', status: 'REQUESTED' });
+    kyc.getUserKycStatus.mockResolvedValue('APPROVED');
+
+    await service.request('u1', { amount: 100, paymentMethodId: 'm1' });
+
+    expect(wallet.withdraw).toHaveBeenCalled();
   });
 
   it('request: saldo insuficiente → error', async () => {
