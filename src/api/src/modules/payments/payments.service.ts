@@ -8,7 +8,7 @@ import { HeyBancoProvider } from './providers/heybanco.provider';
 import { PaymentProviderEnum, WebhookResult } from './interfaces';
 import { WalletService } from '../wallet/wallet.service';
 import { PrismaService } from '../../database/prisma.service';
-import { PaymentCycleService } from './payment-cycle.service';
+import { PaymentCycleService, CycleDecision } from './payment-cycle.service';
 import { StructuredLogger } from '../../common/observability';
 
 export interface PaymentVerification {
@@ -224,23 +224,40 @@ export class PaymentsService {
       result = await this.heyBancoProvider.handleWebhook(payload, headers);
     }
 
-    // PT-080 — Fases CONFIRMACION y PERSISTENCIA. El ciclo decide si procede acreditar;
-    // toda notificacion queda registrada, se procese o no.
+    // PT-080 — Fases CONFIRMACION y PERSISTENCIA.
     if (result) {
       const format = query?.['data.id'] ? 'WEBHOOK' : query?.topic ? 'IPN' : 'UNKNOWN';
-      const decision = await this.paymentCycle.evaluate(
-        provider as PaymentProvider,
-        result,
-        format,
-      );
-
-      if (!decision.shouldCredit) {
-        this.logger.info(`Ciclo ${result.externalId}: ${decision.outcome} — no procede acreditar`);
-        return { received: true };
-      }
+      await this.applyProviderResult(provider, result, format);
     }
 
-    if (result && result.status === 'COMPLETED') {
+    return { received: true };
+  }
+
+  /**
+   * PT-080 — Punto unico por el que pasa toda respuesta de una pasarela, llegue por
+   * notificacion (via rapida) o por consulta periodica (via garantizada).
+   *
+   * El ciclo decide si procede acreditar; la barrera de idempotencia por identificador
+   * canonico sigue aplicandose despues.
+   */
+  async applyProviderResult(
+    provider: string,
+    result: WebhookResult,
+    format: string,
+  ): Promise<CycleDecision> {
+    const decision = await this.paymentCycle.evaluate(provider as PaymentProvider, result, format);
+
+    if (!decision.shouldCredit) {
+      this.logger.info(`Ciclo ${result.externalId}: ${decision.outcome} — no procede acreditar`);
+      return decision;
+    }
+
+    await this.creditFromResult(provider, result);
+    return decision;
+  }
+
+  private async creditFromResult(provider: string, result: WebhookResult): Promise<void> {
+    if (result.status === 'COMPLETED') {
       // Extract UserId from Reference (DEP-UserId-Timestamp)
       // Referencia: DEP-<userId>-<timestamp>. userId es un UUID (con guiones), por lo que
       // no se puede usar split('-')[1]; se extrae todo entre "DEP-" y el "-<timestamp>" final.
@@ -268,8 +285,6 @@ export class PaymentsService {
         }
       }
     }
-
-    return { received: true };
   }
 
   /**

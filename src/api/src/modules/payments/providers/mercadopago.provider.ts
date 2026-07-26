@@ -263,6 +263,23 @@ export class MercadoPagoProvider implements PaymentProvider {
     }
   }
 
+  /**
+   * Via garantizada (PT-080): busca el pago de una solicitud sin depender de la notificacion.
+   * Devuelve null si la pasarela aun no tiene un pago aprobado para esa referencia.
+   */
+  async findPaymentByReference(reference: string): Promise<WebhookResult | null> {
+    const payment = await this.findApprovedByReference(reference);
+    if (!payment) return null;
+
+    return {
+      paymentId: String(payment.id),
+      externalId: String(payment.external_reference ?? reference),
+      status: 'COMPLETED',
+      amount: payment.transaction_amount != null ? Number(payment.transaction_amount) : undefined,
+      metadata: payment as unknown as Record<string, unknown>,
+    };
+  }
+
   /** GET autenticado contra la API de MP. Devuelve null si el recurso no resuelve. */
   private async mpGet<T>(path: string): Promise<T | null> {
     const res = await fetch(`${MP_API}${path}`, {

@@ -7,6 +7,14 @@ import { WebhookResult } from './interfaces';
 /** Moneda única de la plataforma (ADR-007). Un ciclo en otra moneda es una anomalía. */
 const PLATFORM_CURRENCY = 'MXN';
 
+/**
+ * Retroceso exponencial de la vía garantizada. Las tarjetas resuelven en segundos —de ahí la
+ * primera consulta al minuto— y el efectivo o SPEI tardan días, donde insistir solo carga la
+ * API de la pasarela. Máximo ~10 consultas por ciclo.
+ */
+const CHECK_BACKOFF_MS = [60_000, 300_000, 900_000, 3_600_000, 21_600_000];
+const CHECK_BACKOFF_TAIL_MS = 43_200_000;
+
 /** Referencia de depósito: DEP-<userId>-<timestamp>. El userId es un UUID, con guiones. */
 const DEPOSIT_REFERENCE = /^DEP-(.+)-\d+$/;
 
@@ -23,6 +31,14 @@ export interface CycleDecision {
   shouldCredit: boolean;
   outcome: CycleOutcome;
   cycleId: string | null;
+}
+
+export interface PendingCycle {
+  id: string;
+  provider: PaymentProvider;
+  reference: string;
+  requestedAt: Date;
+  checkCount: number;
 }
 
 export interface OpenCycleInput {
@@ -155,6 +171,45 @@ export class PaymentCycleService {
     await this.record(cycle.id, provider, result, format, 'PROCESSED');
 
     return { shouldCredit: true, outcome: 'PROCESSED', cycleId: cycle.id };
+  }
+
+  /** Ciclos abiertos cuya próxima consulta ya venció. */
+  async dueForCheck(limit = 50): Promise<PendingCycle[]> {
+    return this.prisma.paymentCycle.findMany({
+      where: { status: 'REQUESTED', nextCheckAt: { lte: new Date() } },
+      orderBy: { nextCheckAt: 'asc' },
+      take: limit,
+    }) as unknown as Promise<PendingCycle[]>;
+  }
+
+  /**
+   * Una solicitud que supera `PAYMENT_EXPIRATION_HOURS` sin resolverse se da por no resuelta.
+   * El valor (72 h) ya estaba configurado en el proyecto y no se usaba; cubre además los pagos
+   * en efectivo y SPEI, que tardan días.
+   */
+  isExpired(cycle: { requestedAt: Date }): boolean {
+    const hours = Number(process.env.PAYMENT_EXPIRATION_HOURS || '72');
+    return Date.now() - new Date(cycle.requestedAt).getTime() > hours * 3_600_000;
+  }
+
+  async expire(cycleId: string): Promise<void> {
+    await this.prisma.paymentCycle.update({
+      where: { id: cycleId },
+      data: {
+        status: 'EXPIRED',
+        nextCheckAt: null,
+        anomalyReason: 'Sin resolución dentro del plazo; se asume no resuelto',
+      },
+    });
+  }
+
+  /** Reprograma la siguiente consulta según el retroceso exponencial. */
+  async scheduleNextCheck(cycle: { id: string; checkCount: number }): Promise<void> {
+    const delay = CHECK_BACKOFF_MS[cycle.checkCount] ?? CHECK_BACKOFF_TAIL_MS;
+    await this.prisma.paymentCycle.update({
+      where: { id: cycle.id },
+      data: { checkCount: { increment: 1 }, nextCheckAt: new Date(Date.now() + delay) },
+    });
   }
 
   /**
