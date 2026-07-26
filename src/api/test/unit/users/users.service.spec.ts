@@ -3,6 +3,7 @@ import { UserState } from '@prisma/client';
 import { UsersService } from '@/modules/users/users.service';
 import { PrismaService } from '@/database/prisma.service';
 import { AuditPersistenceService } from '@/modules/audit/audit-persistence.service';
+import { KycService } from '@/modules/kyc/kyc.service';
 import {
   StructuredLogger,
   RequestContextService,
@@ -85,6 +86,13 @@ describe('UsersService', () => {
     startTimer: jest.fn().mockReturnValue(() => {}),
   };
 
+  // PT-069 añadió KycService como dependencia de UsersService (puerta KYC de enableSeller).
+  // Por defecto se simula KYC APPROVED para no alterar las expectativas previas del suite.
+  const mockKycService = {
+    getUserKycStatus: jest.fn().mockResolvedValue('APPROVED'),
+    isApproved: jest.fn().mockReturnValue(true),
+  };
+
   beforeEach(async () => {
     jest.clearAllMocks();
 
@@ -110,6 +118,10 @@ describe('UsersService', () => {
         {
           provide: MetricsService,
           useValue: mockMetrics,
+        },
+        {
+          provide: KycService,
+          useValue: mockKycService,
         },
       ],
     }).compile();
