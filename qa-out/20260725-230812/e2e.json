@@ -1,0 +1,32 @@
+[
+  {
+    "id": "E2E-3",
+    "desc": "Subasta activa disponible para pujar",
+    "status": "PASS",
+    "detail": "status=ACTIVE start=500.00"
+  },
+  {
+    "id": "E2E-setup",
+    "desc": "Comprador2 competidor (andamiaje API+DB)",
+    "status": "PASS",
+    "detail": "regHttp=201 id=1e49ed8d"
+  },
+  {
+    "id": "E2E-5",
+    "desc": "Comprador1 puja 600 → fondos bloqueados",
+    "status": "PASS",
+    "detail": "bidHttp=201 msg=\"¡Puja realizada!\" held 0->600 bal 5000->4400 curPrice=600 bids=1"
+  },
+  {
+    "id": "E2E-6",
+    "desc": "Comprador2 puja 700 → outbid libera fondos de comprador1",
+    "status": "PASS",
+    "detail": "bid2Http=201 msg=\"¡Puja realizada!\" c1.held 600->0 c2.held=700 curPrice=700"
+  },
+  {
+    "id": "E2E-ledger",
+    "desc": "Ledger registra HOLD_BID y RELEASE_BID",
+    "status": "PASS",
+    "detail": "HOLD_BID=2 RELEASE_BID=1"
+  }
+]

@@ -1,0 +1,74 @@
+[
+  {
+    "id": "QA-BOOT-01",
+    "desc": "Admin login inicial",
+    "status": "FAIL",
+    "detail": "http://localhost:3001/login"
+  },
+  {
+    "id": "QA-BOOT-02",
+    "desc": "Config comisión GLOBAL",
+    "status": "BLOCKED",
+    "detail": "admin login falló"
+  },
+  {
+    "id": "QA-BOOT-04",
+    "desc": "Registrar comprador (comprador_230437@test.local)",
+    "status": "FAIL",
+    "detail": "page.goto: net::ERR_EMPTY_RESPONSE at http://localhost:5174/auth/register\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5174/auth/register\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "id": "QA-BOOT-05",
+    "desc": "Registrar vendedor (vendedor_230437@test.local)",
+    "status": "FAIL",
+    "detail": "page.goto: net::ERR_EMPTY_RESPONSE at http://localhost:5174/auth/register\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5174/auth/register\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "id": "QA-BOOT-06",
+    "desc": "Verificar email (comprador y vendedor)",
+    "status": "FAIL",
+    "detail": "buyer=false(no-mail) seller=false(no-mail)"
+  },
+  {
+    "id": "QA-BOOT-07a",
+    "desc": "Login vendedor",
+    "status": "FAIL",
+    "detail": "page.goto: net::ERR_EMPTY_RESPONSE at http://localhost:5174/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5174/auth/login\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "id": "QA-BOOT-07",
+    "desc": "Onboarding vendedor",
+    "status": "BLOCKED",
+    "detail": "login vendedor falló"
+  },
+  {
+    "id": "QA-BOOT-08",
+    "desc": "Admin aprueba KYC",
+    "status": "FAIL",
+    "detail": "no se creó KYC submission"
+  },
+  {
+    "id": "QA-BOOT-09",
+    "desc": "Crear + publicar subasta",
+    "status": "BLOCKED",
+    "detail": "login vendedor falló"
+  },
+  {
+    "id": "QA-BOOT-10a",
+    "desc": "Login comprador",
+    "status": "FAIL",
+    "detail": "page.goto: net::ERR_EMPTY_RESPONSE at http://localhost:5174/auth/login\nCall log:\n\u001b[2m  - navigating to \"http://localhost:5174/auth/login\", waiting until \"domcontentloaded\"\u001b[22m\n"
+  },
+  {
+    "id": "QA-BOOT-10b",
+    "desc": "Depósito contrato",
+    "status": "BLOCKED",
+    "detail": "login comprador falló"
+  },
+  {
+    "id": "QA-BOOT-10c",
+    "desc": "Fondear wallet comprador",
+    "status": "BLOCKED",
+    "detail": "buyerId no resuelto"
+  }
+]

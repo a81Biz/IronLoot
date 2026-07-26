@@ -1,0 +1,16 @@
+{
+  "BUYER": {
+    "username": "comprador_230437",
+    "email": "comprador_230437@test.local",
+    "password": "Passw0rd!2026"
+  },
+  "SELLER": {
+    "username": "vendedor_230437",
+    "email": "vendedor_230437@test.local",
+    "password": "Passw0rd!2026"
+  },
+  "buyerId": "",
+  "sellerId": "",
+  "auctionId": "",
+  "runid": "230437"
+}
