@@ -1,0 +1,98 @@
+[
+  {
+    "id": "QA-TR-00",
+    "desc": "Login comprador",
+    "status": "PASS",
+    "detail": "comprador_030746@test.local"
+  },
+  {
+    "id": "QA-TR-01",
+    "desc": "Solicitud de depósito crea el ciclo",
+    "status": "PASS",
+    "detail": "ref=DEP-9450383f-e877-425e-98a1-4e02c4946e69-1785057005227"
+  },
+  {
+    "id": "QA-TR-02",
+    "desc": "El ciclo nace en REQUESTED",
+    "status": "PASS",
+    "detail": "status=REQUESTED"
+  },
+  {
+    "id": "QA-TR-03",
+    "desc": "Cobro real aprobado en Mercado Pago",
+    "status": "PASS",
+    "detail": "orden=ORDTST01KYEV0NTNDJK4W0T2C7XXW20N status=processed"
+  },
+  {
+    "id": "QA-TR-04",
+    "desc": "Pago canónico resuelto",
+    "status": "PASS",
+    "detail": "id=170608462316"
+  },
+  {
+    "id": "QA-TR-05",
+    "desc": "Notificación firmada aceptada",
+    "status": "PASS",
+    "detail": "HTTP 201"
+  },
+  {
+    "id": "QA-TR-06",
+    "desc": "Wallet acreditado por el importe exacto",
+    "status": "PASS",
+    "detail": "5000 → 5137.4"
+  },
+  {
+    "id": "QA-TR-07",
+    "desc": "El ciclo queda SETTLED",
+    "status": "PASS",
+    "detail": "status=SETTLED"
+  },
+  {
+    "id": "QA-TR-08",
+    "desc": "El pago queda registrado en payments",
+    "status": "PASS",
+    "detail": "COMPLETED 137.40"
+  },
+  {
+    "id": "QA-TR-09",
+    "desc": "La traza contiene todos los pasos del pago",
+    "status": "PASS",
+    "detail": "7 pasos"
+  },
+  {
+    "id": "QA-TR-10",
+    "desc": "La traza está en orden: empieza en la solicitud y termina en la acreditación",
+    "status": "PASS",
+    "detail": "DEPOSIT_REQUESTED → PROVIDER_CREATE → NOTIFICATION_RECEIVED → SIGNATURE_OK → PROVIDER_CONFIRM → CYCLE_DECISION → WALLET_CREDITED"
+  },
+  {
+    "id": "QA-TR-11",
+    "desc": "Las llamadas salientes registran su endpoint",
+    "status": "PASS",
+    "detail": "2 llamadas"
+  },
+  {
+    "id": "QA-TR-12",
+    "desc": "Ninguna credencial quedó persistida en la traza",
+    "status": "PASS",
+    "detail": "coincidencias=0"
+  },
+  {
+    "id": "QA-TR-13",
+    "desc": "Lo redactado quedó marcado, no borrado en silencio",
+    "status": "PASS",
+    "detail": "2 entradas con marca"
+  },
+  {
+    "id": "QA-TR-14",
+    "desc": "La reentrega no acredita de nuevo",
+    "status": "PASS",
+    "detail": "HTTP 201 saldo=5137.4"
+  },
+  {
+    "id": "QA-TR-15",
+    "desc": "La reentrega queda registrada como duplicada",
+    "status": "PASS",
+    "detail": "1 duplicadas"
+  }
+]
