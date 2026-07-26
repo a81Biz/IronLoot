@@ -61,7 +61,7 @@ Cron(1m) → adquiere lock:auction-close (Redis)
 ### Depósito por webhook
 ```
 Proveedor → API POST /payments/webhook/:provider
-API → valida HMAC/IPN (core)                 [RN-50]
+API → valida firma del webhook               [RN-50]
 API → si COMPLETED & ref DEP-<user>-<ts> → WalletService acredita monto verificado [RN-24]
 ```
 

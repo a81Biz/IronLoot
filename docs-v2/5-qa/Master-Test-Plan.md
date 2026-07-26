@@ -19,7 +19,7 @@
 
 | Capa | Suites | Bloques aprox | Cobertura |
 |---|---|---|---|
-| core dominio | 12 | ~104 (157 casos) | Money, wallet-calc, FSM auction/order/dispute, bid-validation, HMAC/IPN, 4 use-cases |
+| core dominio | 8 | 134 casos | Money, wallet-calc, FSM auction/order/dispute, bid-validation, HMAC, validador IPN (**obsoleto desde PT-076**), 4 use-cases |
 | api unit/integ | 30+ | ~175 | users(21), auctions(11), lock(11), auth(9), wallet(8→13), disputes(7), scheduler-lock(7)… **+retiro real (PT-069..072): kyc.service(4), clabe.util(3), settlement(2), withdrawals.service(5)** |
 | api e2e | 15 | ~79 | watchlist(9), auth(8), settings(7), bids(7), auctions(6), wallet(5), orders(5)… |
 | **QA navegador (Playwright)** | 1 harness | ~135 checks | smoke + bootstrap del mundo + 41 rutas autenticadas + E2E puja/superado + admin writes + **MP real (Orders API + webhook firmado)** + **historial** + **flujo de retiro end-to-end (KYC→método→venta→holdback→liberación→solicitud→admin approve/mark-paid)** |

@@ -28,7 +28,7 @@ graph TB
   Visitante -->|HTTPS| IL
   Admin -->|HTTPS| IL
   IL -->|checkout/webhook| MP
-  IL -->|checkout/IPN| PP
+  IL -->|Orders v2 / webhooks| PP
   IL -->|checkout/webhook| HB
   IL -->|correo| SMTP
   IL -.->|timbrado no funcional| PAC

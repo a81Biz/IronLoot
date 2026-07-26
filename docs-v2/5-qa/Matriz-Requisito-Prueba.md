@@ -34,7 +34,7 @@
 | RN-41 | resolución disputa | — | ✗ | AUD-010 |
 | RN-42 | reembolso | ProcessRefundUseCase.spec (8) **no cableado** | ✗ prod | AUD-012/013 |
 | RN-43 | rating DELIVERED | ratings.service.spec (6) + e2e (6) | ✅ | — |
-| RN-50 | webhook HMAC/IPN | webhook-sig.spec (7) + ipn.spec (11) | ✅ (core) | — |
+| RN-50 | webhook: validación de firma | webhook-sig.spec (7) + ipn.spec (11, **obsoleto PT-076**) + paypal-webhook.spec (10, API) | ✅ | — |
 | RN-51 | acredita si COMPLETED | payments.service.spec (6) | ⚠️ idempotencia | — |
 | RN-52 | rate limiting | (config; sin test específico) | ⚠️ | AUD-004 |
 | RN-54 | CSRF | — | ✗ | AUD-014 |

@@ -71,7 +71,7 @@
 
 | NFR | Requisito | Estado real |
 |---|---|---|
-| Seguridad | JWT+2FA, rate limiting, validación de webhooks HMAC/IPN, secretos gated en prod | ⚠️ ADMIN sin CSP/CSRF (AUD-007); WS sin auth (AUD-006); creds admin default (AUD-004) |
+| Seguridad | JWT+2FA, rate limiting, validación de firma de webhooks (HMAC en MP/HeyBanco, verify-webhook-signature en PayPal), secretos gated en prod | ⚠️ ADMIN sin CSP/CSRF (AUD-007); WS sin auth (AUD-006); creds admin default (AUD-004) |
 | Integridad financiera | Ledger inmutable; `Decimal`; MXN | ⚠️ `Money` VO no usado (AUD-012); `payments` default USD (AUD-008) |
 | Disponibilidad | Healthchecks Docker; scheduler con lock Redis | ✅ |
 | Observabilidad | AuditEvent/ErrorEvent/RequestLog con traceId | ⚠️ retención audit en conflicto (AUD-018) |

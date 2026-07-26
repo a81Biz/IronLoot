@@ -40,7 +40,7 @@
 
 ## UC-08 — Depositar en el monedero ⚠️
 - **Actor:** Comprador/Vendedor.
-- **Happy:** inicia pago `POST /payments/initiate` (MP/PayPal) → paga en proveedor → webhook `POST /payments/webhook/:provider` (valida HMAC/IPN, `RN-50`) → si `COMPLETED`, acredita el **monto verificado** (`RN-24`). `[wallet.controller.ts:83, payments.service.ts:159]`
+- **Happy:** inicia pago `POST /payments/initiate` (MP/PayPal) → paga en proveedor → webhook `POST /payments/webhook/:provider` (valida firma HMAC o verify-webhook-signature, `RN-50`) → si `COMPLETED`, acredita el **monto verificado** (`RN-24`). `[wallet.controller.ts:83, payments.service.ts:159]`
 - **Excepción:** monto verificado ≠ solicitado → `PaymentMismatchException`; firma inválida o secreto ausente → rechazo.
 - **⚠️ Estado real:** el formulario client-side de depósito llama al API cross-origin sin ruta de auth válida (`AUD-003`).
 

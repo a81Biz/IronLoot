@@ -77,7 +77,7 @@
 
 | ID | Regla | Estado real | Evidencia | Hallazgo |
 |---|---|---|---|---|
-| RN-50 | Webhook: validar firma HMAC/IPN antes de procesar; rechazar si el secreto no está configurado. | ✅ Cumple (MP/PayPal/HeyBanco) | `mercadopago.provider.ts:137` | AUD-023 (HeyBanco no doc.) |
+| RN-50 | Webhook: validar la firma antes de procesar; rechazar si el secreto no está configurado. MP y HeyBanco por HMAC; PayPal por `verify-webhook-signature` desde PT-076 (antes IPN). | ✅ Cumple (MP/PayPal/HeyBanco) | `mercadopago.provider.ts:137` | AUD-023 (HeyBanco no doc.) |
 | RN-51 | Webhook acredita sólo si `status=COMPLETED` y referencia `DEP-<userId>-<ts>`. | ✅ Cumple | `payments.service.ts:159` | — |
 | RN-52 | Rate limit global 100/min; estricto en auth (5/60s), wallet deposit (10/60s), withdraw (5/60s), webhook (20/60s). | ✅ Cumple; login admin sin throttle en master → **PT-036 (VALIDATION_PENDING)** añade 10/min | `auth.controller.ts:18`, `wallet.controller.ts:41` | AUD-004 |
 | RN-53 | Puerta de secretos en prod: `JWT_SECRET`/`SESSION_SECRET`/`ADMIN_API_KEY`/`ALLOWED_ORIGINS` no placeholder o `process.exit(1)`. | ⚠️ Parcial en master; **PT-036 (VALIDATION_PENDING)** añade el gate de `ADMIN_USERNAME/PASSWORD`. | `main.ts`, `common/config/validate-startup-config.ts` | **AUD-004** |
@@ -106,6 +106,11 @@
 | RN-65 | **Solicitud de retiro reserva fondos.** Al solicitar se descuenta del **disponible** (no del pending) + asiento `WITHDRAWAL`. Gates: KYC APPROVED + método válido + saldo disponible suficiente + límite diario. | ✅ Cumple | `withdrawals.service.request` | **PT-072** |
 | RN-66 | **Aprobación de retiro siempre manual (admin).** Estados REQUESTED→APPROVED→PAID; rechazo (REQUESTED/APPROVED)→REJECTED **reintegra** los fondos (`ADJUSTMENT`). El admin marca **PAID** tras ejecutar el SPEI manual. | ✅ Cumple | `withdrawals.service.{approve,reject,markPaid}`, `admin.controller` | **PT-072** |
 | RN-67 | **Dispersión bancaria automática** (SPEI vía API / MP disbursement): **NO implementada** (Fase 2). El `PayoutProvider` abstrae el mecanismo; MVP usa `ManualPayoutProvider` (el admin transfiere y marca PAID). | ⏳ Pendiente (Fase 2) | `payout/payout-provider.ts` | **PT-072** (out-of-scope) |
+| RN-68 | **Un pago de pasarela acredita el wallet una sola vez.** La reentrega de un webhook, o varias notificaciones distintas sobre el mismo pago, no vuelven a acreditar. Clave: identificador de PAGO del proveedor, reservado en `processed_webhook_events` con unica `(provider, payment_id)`. Aplica a los cuatro proveedores. | ✅ Cumple (verificado solo con tests unitarios) | `payments.service.creditOnce`, migracion `pt078_dedup_by_payment_id` | **PT-078** (TD-006) |
+| RN-69 | **Si no se puede deduplicar, se acredita igualmente** (fail-open). Sin identificador de pago se registra el error y se acredita: un duplicado es corregible por `ADJUSTMENT`; un deposito legitimo perdido, no. En ese caso el fallo no se propaga, porque reintentar sin reserva duplicaria. | ✅ Cumple | `payments.service.creditOnce` | **PT-078** (AD-02) |
+| RN-70 | **Un fallo de acreditacion nunca se responde con 200.** Se libera la reserva y se propaga, para que la pasarela reintente. Antes MercadoPago respondia 200 y el deposito se perdia en silencio. | ✅ Cumple (verificado solo con tests unitarios) | `payments.service.creditOnce` | **PT-078** (AD-04) |
+| RN-71 | **Deposito por PayPal en dos fases.** `CHECKOUT.ORDER.APPROVED` dispara la captura; solo `PAYMENT.CAPTURE.COMPLETED` acredita. La firma del webhook se verifica contra PayPal antes de procesar. | ⏳ Implementada, **sin verificar contra sandbox real** | `paypal.provider.handleWebhook` | **PT-076** (ADR-024) |
+| RN-72 | **Solo se ofrecen los metodos de pago realmente configurados.** `GET /payments/providers` deriva de `checkStatus()`; la UI de deposito se construye desde esa respuesta. | ✅ Cumple | `payments.service.getAvailableProviders`, `client/app.controller.deposit` | **PT-076** (ADR-026) |
 
 ---
 

@@ -14,7 +14,7 @@
 | Integración | Dónde | Estado |
 |---|---|---|
 | **Mercado Pago** (Checkout Pro) | `mercadopago.provider.ts` | ✅ HMAC webhook |
-| **PayPal** (WPS/IPN) | `paypal.provider.ts` | ✅ IPN |
+| **PayPal** (Orders v2 + Webhooks) | `paypal.provider.ts` | ✅ verify-webhook-signature (PT-076) |
 | **HeyBanco** | `heybanco.provider.ts` | ⚠️ presente, **no documentado** ni en `.env.example` (AUD-023) |
 | Stripe | referencia condicional | ⚠️ etiqueta Graphify obsoleta; sin SDK real |
 | **Email (SMTP/Mailhog)** | `notifications.module.ts` | ⚠️ dos rutas config `MAIL_*` vs `SMTP_*` (AUD-027) |

@@ -40,7 +40,7 @@
 | **Máquina de estados (FSM)** | Matriz de transiciones válidas por entidad (auction/order/dispute) en core. **Estado real:** admin las salta con `prisma.update` (AUD-011). | `*-state-machine.ts` |
 | **Distributed lock** | Cerrojo Redis (`lock:auction-close`, TTL 60s) que evita procesar un cierre en múltiples instancias. | `auction-scheduler.service.ts:45` |
 | **Scheduler** | Cron cada minuto que activa subastas programadas y cierra las expiradas. | `auction-scheduler.service.ts:36` |
-| **Webhook HMAC/IPN** | Validación de firma de proveedores de pago antes de procesar (MercadoPago HMAC, PayPal IPN, HeyBanco HMAC). | `mercadopago.provider.ts:137` |
+| **Webhook: validación de firma** | Comprobación de autenticidad del webhook antes de procesarlo: MercadoPago y HeyBanco por HMAC; PayPal por `POST /v1/notifications/verify-webhook-signature` (Orders v2, PT-076 — antes IPN). | `mercadopago.provider.ts:137` |
 | **AdminDualAuthGuard** | Guard que acepta JWT admin **o** `x-admin-key`. | `admin-dual-auth.guard.ts` |
 | **AuditEvent** | Log de eventos inmutable append-only. **Estado real:** dos crons con retención en conflicto (90d/30d, AUD-018). | `schema.prisma:460` |
 
