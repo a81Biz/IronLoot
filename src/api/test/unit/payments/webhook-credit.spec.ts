@@ -60,7 +60,15 @@ describe('PaymentsService.handleWebhook — acreditación (PT-064)', () => {
             createPayment: jest.fn(),
           },
         },
-        { provide: PrismaService, useValue: {} },
+        {
+          // PT-078: la acreditación pasa ahora por una reserva de deduplicación en
+          // `processed_webhook_events` también para Mercado Pago, así que el mock de
+          // Prisma debe proveerla.
+          provide: PrismaService,
+          useValue: {
+            processedWebhookEvent: { create: jest.fn(), delete: jest.fn() },
+          },
+        },
         { provide: WalletService, useValue: { deposit: walletDeposit, getBalance: jest.fn() } },
         { provide: StructuredLogger, useValue: logger },
       ],

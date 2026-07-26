@@ -199,7 +199,8 @@ describe('PaypalProvider — handleWebhook (Orders v2)', () => {
     expect(result!.amount).toBe(99.99);
   });
 
-  it('T-24c: expone el id del evento para la deduplicación aguas arriba', async () => {
+  it('T-24c: expone el id de captura como clave de deduplicación aguas arriba', async () => {
+    // PT-078: la clave es el id de PAGO (la captura), no el id del evento.
     fetchMock.mockResolvedValueOnce(tokenResponse()).mockResolvedValueOnce(verification('SUCCESS'));
 
     const result = await new PaypalProvider().handleWebhook(
@@ -207,7 +208,7 @@ describe('PaypalProvider — handleWebhook (Orders v2)', () => {
       WEBHOOK_HEADERS,
     );
 
-    expect(result!.eventId).toBe('WH-CAPTURE-1');
+    expect(result!.paymentId).toBe('CAPTURE-123');
   });
 
   it('T-25: un evento no suscrito se ignora sin acreditar', async () => {

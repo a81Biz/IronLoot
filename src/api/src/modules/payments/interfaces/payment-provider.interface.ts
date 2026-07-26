@@ -13,7 +13,13 @@ export interface CreatePaymentResult {
 }
 
 export interface WebhookResult {
-  paymentId: string; // Internal Order ID or Payment ID usually sent in metadata
+  /**
+   * Identificador del pago en el proveedor. Es la **clave de deduplicación** (PT-078):
+   * la reentrega de un webhook con el mismo `paymentId` no vuelve a acreditar.
+   * Se prefiere al identificador de notificación porque algunas pasarelas emiten varias
+   * notificaciones distintas sobre un mismo pago.
+   */
+  paymentId: string;
   externalId: string;
   status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
   metadata?: Record<string, unknown>;
@@ -24,12 +30,6 @@ export interface WebhookResult {
    * extracción histórica desde `metadata` sin cambio de comportamiento.
    */
   amount?: number;
-
-  /**
-   * Identificador del evento en el proveedor, usado para deduplicar reentregas
-   * (PT-076). PayPal reentrega hasta 25 veces en 3 días hasta recibir un 2xx.
-   */
-  eventId?: string;
 }
 
 export interface PaymentProvider {
