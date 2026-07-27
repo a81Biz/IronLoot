@@ -1,6 +1,6 @@
 {
   "generado": "2026-07-27",
-  "motivo": "TD-015 — exigen salto de version MAYOR sobre Express o @nestjs/core. Triados en PT-110 y PT-116; ninguno alcanzable sin autenticar.",
+  "motivo": "TD-015 — exigen salto de version MAYOR: @nestjs/core 10->11, Express 4->5 (via @nestjs/platform-express), bcrypt 5->6, uuid 13->14, y utilidades transitivas (glob 10->13, minimatch 9->10, brace-expansion 2->5, file-type 20->22, linkify-it 5->6). Ninguno alcanzable sin autenticar.",
   "revisar_antes_de": "2026-10-27",
   "avisos": {
     "@nestjs/core": "moderate",
@@ -12,7 +12,6 @@
     "linkify-it": "high",
     "minimatch": "high",
     "multer": "high",
-    "nodemailer": "high",
     "path-to-regexp": "high",
     "tar": "critical",
     "uuid": "moderate"

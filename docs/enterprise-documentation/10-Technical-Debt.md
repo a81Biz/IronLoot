@@ -310,10 +310,19 @@ de una página, pero `script-src` ya le impide ejecutar nada.
 
 ---
 
-### TD-015 — 27 avisos (13 paquetes) que exigen salto de version mayor
+### TD-015 — 26 avisos (12 paquetes) que exigen salto de version mayor
 **Status:** Open. Registrada por PT-110 (PTSA H-008) y **reducida por PT-116**: la cadena del
 mailer —11 paquetes, dos de los tres criticos— se subio entera. De 63 avisos a **27**, y de 3
 criticos a **1**.
+
+**Correccion de PT-119**: la entrada afirmaba que los 13 exigian salto mayor. Al volver a medirlo
+—despues de que PT-116 cambiara el arbol— resulto que **`nodemailer` no**: la aplicacion ya estaba
+en la 9.0.3 y el aviso venia de una **segunda copia en 8.0.5** anidada bajo `mailparser` ←
+`preview-email` ← el mailer. Un `override` a `$nodemailer` unifica el arbol en una sola copia.
+Quedan **12**.
+
+Heredar el marco de un PT anterior sin volver a medirlo es como se acumulan las afirmaciones
+falsas; es lo mismo que F-33 en otro sitio.
 
 **Desde PT-118 esta acotada, no solo registrada.** `src/api/security-baseline.json` lista los 13
 paquetes con su severidad, y el checkpoint D2 del CI **falla si aparece el numero 14**. Se comprueba
