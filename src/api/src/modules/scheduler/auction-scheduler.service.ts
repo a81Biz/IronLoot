@@ -143,7 +143,7 @@ export class AuctionSchedulerService {
               const sellerNet = Number((gross - (gross * feePercent) / 100).toFixed(2));
 
               // 2. Create Order (PAID — funds captured atomically below)
-              await tx.order.create({
+              const pedido = await tx.order.create({
                 data: {
                   auctionId: auction.id,
                   buyerId: winnerBid.bidderId,
@@ -164,6 +164,19 @@ export class AuctionSchedulerService {
                 tx,
                 feePercent,
               );
+
+              // 4. PT-114 (H-010) — Registrar la comision, con la MISMA cifra que se acaba de
+              // asentar y dentro de esta misma transaccion.
+              //
+              // Antes no se registraba nunca: `commission_records` tenia 0 filas mientras el
+              // ledger acumulaba `FEE_PLATFORM` cobrados. El informe financiero del panel lee
+              // esta tabla, no el ledger, asi que declaraba cero ingresos por comision.
+              //
+              // Se le pasa `feePercent` —el mismo que uso `captureHeldFunds`— en vez de dejar que
+              // lo resuelva: dos calculos independientes de la misma comision divergen en cuanto
+              // cambie la tarifa del vendedor, y entonces habria dos cifras y ninguna forma de
+              // saber cual vale.
+              await this.commissionsService.recordForOrder(pedido.id, feePercent, tx);
             }
           },
           { timeout: 15000 },
