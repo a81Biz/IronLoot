@@ -1478,3 +1478,28 @@ Error mio cazado antes de commitear: la primera version daba Retry Rate 75% ROJO
   es 0% verde. Un numero de auditoria equivocado no es inocuo: decide.
 Evidence: Success 100% VERDE · Retry 0% VERDE · Failure 0% VERDE · health_unstable false.
   FO-01..FO-10 fijan los bordes exactos de los umbrales de F-1 §6.
+
+## PT-123 — INVESTIGATION: alcanzabilidad real de los 12 avisos de TD-015
+Date: 2026-07-27
+Status: CLOSED
+Branch: (sin rama — investigacion, 0 lineas de codigo de aplicacion)
+Objective: medir cuales de los 12 paquetes de TD-015 estan realmente en el camino de ejecucion,
+en vez de heredar la severidad que trae el aviso.
+Root cause: n/a — no es un defecto.
+Solution: analisis paquete a paquete con tres medidas verificables (cadena de entrada via `npm ls`,
+aviso concreto, punto de uso localizado en el codigo). Resultado: **0 de 12 sin mitigacion**. 6 no
+llegan a produccion, 3 estan en el arbol sin uso alcanzable, 3 estan en el camino con mitigacion.
+Los 12 se reducen a tres decisiones de plataforma: NestJS 10->11 (cierra 7, arrastra Express 4->5),
+`bcrypt` 5->6 (1), `uuid` 13->14 (1).
+Recomendacion emitida: no migrar Express ahora; hacer los dos saltos baratos por separado; dejar
+NestJS 11 como decision consciente con fecha de revision (2026-10-27, la del `security-baseline`).
+**La decision es del negocio — la investigacion entrega el material, no la toma.**
+Modified files: docs/implementation/ANALISIS-TD-015.md (nuevo),
+docs/enterprise-documentation/10-Technical-Debt.md (TD-015: corregido «13/14» -> «12/13» y añadido
+el resumen del analisis con su cita), docs/implementation/DISCOVERY.md
+Evidence: docs/implementation/ANALISIS-TD-015.md — es el entregable y la evidencia a la vez.
+Delta (real vs planeado): dos hallazgos laterales no previstos, ambos registrados y ninguno tocado
+aqui: (1) el `FileInterceptor` de `upload.controller.ts:49` **no declara limite de tamaño** — misma
+familia de riesgo que la CVE de `multer` y cuesta una linea; candidato a PT propio. (2) `file-type`
+solo es inofensivo mientras la subida acepte unicamente imagenes.
+PTSA reference: H-008 (TD-015 es su registro en deuda tecnica)

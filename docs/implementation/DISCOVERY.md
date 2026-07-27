@@ -3438,3 +3438,75 @@ seria un error, y por eso el informe lo dice.
 
 Implementation Confidence: 90% — las consultas son directas; el 10% es acertar con la definicion de
 «resuelto a la primera» de forma que no cuente como fallo lo que es diseño.
+
+
+---
+
+## PT-123 — INVESTIGATION: alcanzabilidad real de los 12 avisos de TD-015
+
+**Fecha**: 2026-07-27 · **Complejidad**: STANDARD · **Variante**: STATE 1-B (modo investigacion)
+**Origen**: peticion explicita del usuario — «despues analizamos a fondo Los 12 de TD-015»
+**Cadena previa**: PTSA H-008 -> PT-110 (63 avisos) -> PT-116 (27) -> PT-119 (26/12 paquetes) ->
+PT-118 (acotada por checkpoint D2 en CI).
+
+### What
+
+TD-015 registra 26 avisos de `npm audit` repartidos en 12 paquetes de produccion. Lo que el registro
+NO dice es cuales de esos 12 estan realmente en el camino de ejecucion. La severidad que trae el
+aviso es la del paquete en abstracto, no la de este sistema.
+
+### Why — por que investigarlo antes de decidir
+
+Los 12 exigen saltos de version mayor. El mas grande arrastra Express 4->5 en un servidor que mueve
+dinero real. Decidir esa migracion por el color de una tabla de `npm audit` seria exactamente lo que
+`[A1]` prohibe: tratar una etiqueta como si fuera una conclusion.
+
+Ademas hay precedente en esta misma sesion: PT-119 encontro que uno de los «13 que exigen mayor» no
+lo exigia — la afirmacion se habia heredado sin volver a medirla (misma familia que F-33).
+
+### Where
+
+`src/api/package.json` y su arbol de dependencias. Puntos de uso en `src/api/src/`.
+
+### How — metodo
+
+Por cada paquete, tres medidas, ninguna inferida:
+
+1. **Cadena de entrada**: `npm ls <paquete> --omit=dev` — de quien cuelga realmente.
+2. **Aviso concreto**: que funcion o vector describe, no solo la severidad.
+3. **Punto de uso**: `grep` del simbolo vulnerable en el codigo del proyecto. Si no aparece, se
+   registra como no alcanzable **y se dice que eso no prueba inexplotabilidad**.
+
+### Hallazgos
+
+Volcados en `docs/implementation/ANALISIS-TD-015.md`. Resumen:
+
+| Grupo | N | Contenido |
+|---|--:|---|
+| No llegan a produccion | 6 | `tar` (instalacion) · `js-yaml` (Swagger apagado, `main.ts:92`) · `linkify-it`, `brace-expansion`, `glob`, `minimatch` (utilidades del mailer, patrones del codigo; el de `glob` es de su **CLI**) |
+| En el arbol, sin uso alcanzable | 3 | `uuid` (el aviso es de v3/v5/v6; solo se usa v4) · `file-type` (parser ASF, solo se suben imagenes) · `path-to-regexp` (ruta estatica fija) |
+| En el camino, con mitigacion | 3 | `multer` (tras `JwtAuthGuard` + throttler) · `@nestjs/core` · `body-parser` (exige un `limit` mal escrito, y la config es del proyecto) |
+| **Sin mitigacion** | **0** | — |
+
+**Hallazgo lateral, y es el que mas vale**: el `FileInterceptor` de `upload.controller.ts:49` **no
+declara limite de tamaño**. No es la CVE de `multer`, pero es su misma familia de riesgo y cuesta una
+linea. Se registra como candidato a PT propio, no se toca aqui.
+
+**Segundo hallazgo lateral**: `file-type` solo es inofensivo mientras la subida acepte unicamente
+imagenes. Si algun dia se acepta video, el aviso pasa a alcanzable. Queda anotado en el analisis.
+
+### Conclusion y punto de decision
+
+Los 12 se reducen a tres decisiones de plataforma: NestJS 10->11 (cierra 7), `bcrypt` 5->6 (1),
+`uuid` 13->14 (1). Recomendacion: **no migrar Express ahora**; hacer los dos saltos baratos por
+separado y dejar NestJS 11 como decision consciente con fecha de revision.
+
+**La migracion de plataforma bajo un servidor de pagos es decision del negocio, no del agente.**
+Esta investigacion se cierra entregando el material para decidirla, no decidiendola.
+
+### Confianza
+
+- Root Cause Confidence: n/a (no es un defecto).
+- Evidence Confidence: **85%** — cadena y punto de uso verificados en el arbol y en el codigo. El
+  15% restante es lo que el analisis declara explicitamente: no se intento explotar ninguna, y no
+  ver una ruta no demuestra que no exista.

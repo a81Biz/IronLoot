@@ -324,12 +324,23 @@ Quedan **12**.
 Heredar el marco de un PT anterior sin volver a medirlo es como se acumulan las afirmaciones
 falsas; es lo mismo que F-33 en otro sitio.
 
-**Desde PT-118 esta acotada, no solo registrada.** `src/api/security-baseline.json` lista los 13
-paquetes con su severidad, y el checkpoint D2 del CI **falla si aparece el numero 14**. Se comprueba
+**Desde PT-118 esta acotada, no solo registrada.** `src/api/security-baseline.json` lista los 12
+paquetes con su severidad, y el checkpoint D2 del CI **falla si aparece el numero 13**. Se comprueba
 con `npm run audit:check`.
 
-**Que es.** Tras PT-110 quedan **63 avisos** en dependencias de produccion (3 criticos, 48 altos).
-Ninguno es alcanzable sin autenticar —eso lo cerro PT-110— pero siguen ahi.
+**Analizada a fondo el 27-jul-2026.** `docs/implementation/ANALISIS-TD-015.md` mide **alcanzabilidad
+paquete a paquete** —cadena de dependencias con `npm ls` y punto de uso localizado en el codigo— en
+vez de heredar la severidad del aviso. Resultado: de los 12, **6 no llegan a produccion** (instalacion,
+o Swagger apagado por `main.ts:92`), **3 estan en el arbol sin uso alcanzable** (`uuid` v3/v5/v6 no se
+invocan; el parser ASF de `file-type` no se alcanza) y **3 estan en el camino con mitigacion**
+(`multer` tras `JwtAuthGuard`, `@nestjs/core`, `body-parser`). Los 12 se reducen a **tres decisiones
+de plataforma**: NestJS 10→11 (cierra 7, arrastra Express 4→5), `bcrypt` 5→6 (1) y `uuid` 13→14 (1).
+La recomendacion —y la decision es del negocio, no mia— es **no migrar Express ahora** y hacer los dos
+saltos baratos por separado. Leerlo antes de tocar nada.
+
+**Que es.** Tras PT-110 quedaban **63 avisos** en dependencias de produccion; PT-116 y PT-119 los
+dejaron en **26 avisos / 12 paquetes**. Ninguno es alcanzable sin autenticar —eso lo cerro PT-110—
+pero siguen ahi.
 
 **Por que no se arreglaron.** Cada uno exige un salto de version **mayor** sobre un servidor que
 mueve dinero real. Medido paquete a paquete:
