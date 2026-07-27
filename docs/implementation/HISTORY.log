@@ -1503,3 +1503,33 @@ aqui: (1) el `FileInterceptor` de `upload.controller.ts:49` **no declara limite 
 familia de riesgo que la CVE de `multer` y cuesta una linea; candidato a PT propio. (2) `file-type`
 solo es inofensivo mientras la subida acepte unicamente imagenes.
 PTSA reference: H-008 (TD-015 es su registro en deuda tecnica)
+
+## PT-114 … PT-122 — VALIDACION
+Date: 2026-07-27
+Status: CLOSED (validados por humano)
+Alcance: los nueve PT que estaban en VALIDATION_PENDING.
+
+| PT | Que era |
+|---|---|
+| PT-114 | La comision se calculaba pero no se asentaba (`recordForOrder` con la tasa recibida) |
+| PT-115 | La ventana de disputa contaba desde `updatedAt` via un `as any` sobre una columna inexistente |
+| PT-116 | La cadena del mailer entera: 11 paquetes, de 63 avisos a 27 |
+| PT-117 | El vendedor no recibia aviso al venderse su subasta (`AUCTION_SOLD`) |
+| PT-118 | Checkpoint D2: dependencias contra linea base declarada, en CI |
+| PT-119 | `nodemailer` no exigia salto mayor — era una segunda copia anidada; `override` a `$nodemailer` |
+| PT-120 | Checkpoint D1.N1: 14 reglas de dominio de F-1 como codigo |
+| PT-121 | Checkpoint D3: detector de `catch` mudos, 25 en linea base |
+| PT-122 | D5 reclasificada fuera de CI + denominador del Retry Rate corregido |
+
+VoBo del humano recibido el 2026-07-27: «las validaciones dalas por validado».
+Los nueve pasan de VALIDATION_PENDING a CLOSED.
+
+Transiciones de hallazgo PTSA en el mismo acto:
+- H-009 CORREGIDA -> CERRADA (el repositorio versiona decisiones, no artefactos — PT-112)
+- H-010 CORREGIDA -> CERRADA (comision asentada; 95.00 == 95.00 verificado en BD)
+- H-011 CORREGIDA -> CERRADA (ventana desde `shipments.delivered_at`)
+- H-012 CORREGIDA -> CERRADA (aviso de venta al vendedor)
+- H-008 sigue CORREGIDA_PARCIAL: el mecanismo esta, los 12 paquetes no. Lo cierra PT-126.
+- H-005 sigue ABIERTA: depende de una decision fiscal del negocio, no de codigo.
+
+Evidence: docs/implementation/evidence/ (por PT) + PTSA/Evidencias/

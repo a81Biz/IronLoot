@@ -3510,3 +3510,73 @@ Esta investigacion se cierra entregando el material para decidirla, no decidiend
 - Evidence Confidence: **85%** — cadena y punto de uso verificados en el arbol y en el codigo. El
   15% restante es lo que el analisis declara explicitamente: no se intento explotar ninguna, y no
   ver una ruta no demuestra que no exista.
+
+
+---
+
+## PT-124 — BUG (seguridad): la subida deja al cliente elegir la extension de guardado
+
+**Fecha**: 2026-07-27 · **Complejidad**: STANDARD · **Variante**: STATE 1-B
+**Origen**: hallazgo lateral de PT-123, registrado como **H-013** con evidencia **E-016**.
+
+### What
+
+`POST /api/v1/upload/image` guarda el fichero con `extname(file.originalname)` — la extension que
+manda el cliente— en un directorio que `ServeStaticModule` publica. El servidor devuelve entonces el
+`Content-Type` que dicta esa extension.
+
+### Where
+
+- `src/api/src/modules/upload/upload.service.ts:19` — `extname(file.originalname)`
+- `src/api/src/modules/upload/upload.controller.ts:49` — `FileInterceptor` sin `limits`
+- `src/api/src/modules/upload/upload.controller.ts:53` — valida `file.mimetype`, campo del cliente
+- `src/api/src/app.module.ts:144` — `ServeStaticModule` sobre `uploads/`
+
+### When
+
+Desde que existe el modulo. No lo encontro ninguna auditoria previa porque las dos mitades viven en
+ficheros distintos y **cada una, por separado, parece correcta**: hay validacion de tipo, y hay
+`nosniff`. El defecto esta en la juntura.
+
+### How — reproduccion
+
+Enviar un `multipart` con la parte `Content-Type: image/png` (pasa la validacion) y
+`filename="x.html"`. Se guarda como `<uuid>.html`. E-016 mide que ese fichero se sirve como
+`text/html; charset=UTF-8`.
+
+### Why — por que no lo tapa `nosniff`
+
+`X-Content-Type-Options: nosniff` impide **adivinar** un tipo distinto del declarado. Aqui el
+declarado ya es `text/html`. La cabecera esta puesta, funciona, y no aplica. Es la clase de
+mitigacion que un checklist marca como presente.
+
+### Impacto
+
+`COOKIE_DOMAIN=.ironloot.local` envia la cookie de sesion a todos los subdominios. Script en el
+origen del API esta dentro del alcance de la sesion.
+
+**Mitigado por**: el endpoint exige sesion (`JwtAuthGuard`), y el registro exige verificar correo.
+Por eso ALTA y no CRITICA.
+
+### Root Cause
+
+Un unico principio incumplido en dos sitios: **un dato bajo control del cliente decide como se
+persiste algo**. `originalname` decide la extension; `mimetype` decide si pasa. Ninguno de los dos
+mira el contenido.
+
+Corolario para el diseño: la unica fuente de verdad sobre que es un fichero son **sus bytes**.
+
+### Confianza
+
+- Root Cause Confidence: **100%** — las dos mitades estan medidas (E-016) o leidas en el codigo.
+- Solution Confidence: **95%** — verificar firmas de 5 formatos es codigo cerrado y sin dependencias.
+  El 5% es acertar el limite de tamaño sin romper una subida legitima.
+
+### Decision de diseño: sin dependencia nueva
+
+Detectar el tipo real se puede hacer con `file-type`, **que ya esta en el arbol y tiene un aviso
+abierto** (bucle infinito en su parser ASF, uno de los 12 de TD-015). Usarlo aqui convertiria un
+aviso hoy inalcanzable —PT-123 lo clasifico asi justamente porque solo se suben imagenes— en
+alcanzable.
+
+Se escribe la comprobacion de firmas en el proyecto: cinco formatos, bytes fijos, sin parser.
