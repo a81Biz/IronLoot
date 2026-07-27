@@ -1,0 +1,1243 @@
+# HISTORY.log — IronLoot
+# Append-only. Never rewrite or delete entries.
+# Format: ## PT-XXX — [Type]: [Title]
+# Initialized: 2026-06-23
+# Methodology: Suite CLAUDE (Foundation + FDGE + PTSA + FPGE)
+
+## PT-035 — FEATURE MAJOR: Iron Loot Design System
+Date: 2026-06-23
+Status: VALIDATION_PENDING
+Branch: feature/PT-035-ironloot-design-system
+Objective: Implementar el sistema visual Iron Loot (paleta #151515/#31363F/#C89B3C/#F6F6F6, Montserrat+Inter, SVG logos) en los 3 sitios SSR: BASE, CLIENT, ADMIN.
+Solution: 4 capas — Assets (logo-3d.png) → CSS design tokens (--cl-*, --ff-*) → Layouts (SVG inline, Google Fonts, 4-col footer) → Pages (home 6 secciones, list sidebar+grid, detail split, 6 auth cards). Admin: minimal touch (2 edits quirúrgicas). 0 cambios a TypeScript, controllers, schema, main.ts.
+Modified files: src/apps/base/public/css/base.css · src/apps/client/public/css/client.css · src/admin/public/css/admin.css · src/apps/base/views/layouts/base.html · src/apps/client/views/layouts/client.html · src/admin/views/layouts/admin.html · src/apps/base/views/pages/home.html · src/apps/base/views/pages/auctions/list.html · src/apps/base/views/pages/auctions/detail.html · src/apps/base/views/pages/auth/* (6 archivos) · src/apps/base/public/images/logo-3d.png
+Evidence: docs/implementation/evidence/PT-035/ (build-results.md, self-review.md)
+Delta (real vs planned): SVG logo implementado en base al brief visual (no PNG crops), confirmado por desarrollador. ACs AC-CSP-01/02/03 eliminados (CSP ya estaba correcta — descubierto en STATE 2). Admin build falla con TS2307 pre-existente (express-session types) — no introducido por PT-035.
+
+## PTSA S-001 — AUDIT: Primera Auditoría Completa PTSA V3
+Date: 2026-06-23
+Status: CLOSED (auditoría completada, hallazgos activos en FDGE)
+Objective: Auditar el sistema IronLoot con PTSA V3 para generar baseline de calidad y alimentar FPGE.
+Solution: Ejecutadas fases F-1 a F12. 7 hallazgos (2 ALTAS, 3 MEDIAS, 2 BAJAS). Health=86.1/100 (Clase C, cap freshness UNKNOWN). Risk=100 CRÍTICO.
+Modified files: PTSA/ (todos los artefactos — F*.md, H-*.md, E-*.md, RESUMEN.md, ESTADO_ACTUAL.md, RELACIONES.md, PENDIENTES.md, AUDIT_LOG.md, score-history.json)
+Evidence: PTSA/Hallazgos/ PTSA/Evidencias/ PTSA/Fases/ PTSA/RESUMEN.md
+Delta: Sistema determinístico (sin LLM) — D5/D6 NO_APLICA. BLQ-001/BLQ-002 limitaron freshness a UNKNOWN.
+
+## FPGE R-001..R-007 — PRIORITIZATION: Roadmap post-PTSA
+Date: 2026-06-23
+Status: DONE (todos promovidos a FDGE)
+Objective: Priorizar 7 hallazgos PTSA en roadmap de desarrollo usando fórmula FPGE.
+Solution: 7 items R-001..R-007 emitidos en ROADMAP.md. Todos APROBADOS por usuario. Promovidos a PT-026..PT-032.
+Modified files: docs/implementation/ROADMAP.md, docs/implementation/ROADMAP_HISTORY.log
+Evidence: ROADMAP.md con scores Priority calculados
+
+## PT-031 — TRIVIAL: StructuredLogger en PaymentsService
+Date: 2026-06-23
+Status: DONE
+Branch: fix/PT-031-032-trivial-fixes
+Objective: Reemplazar `new Logger(PaymentsService.name)` por inyección de `StructuredLogger` vía DI para restaurar trazabilidad completa en logs de pagos.
+Root cause: PaymentsService nunca fue migrado al StructuredLogger del módulo de observabilidad, a diferencia de todos los demás servicios financieros (WalletService, BidsService, AuthService).
+Solution: Eliminado import `{ Logger }` de `@nestjs/common`. Agregado `StructuredLogger` como primer parámetro de constructor. Actualizadas 3 llamadas al logger: `.log()` → `.info()`, `.error(msg, e)` → `.error(msg, { error: e })`, `.error(msg, result)` → `.error(msg, { data: result })`.
+Modified files: src/api/src/modules/payments/payments.service.ts, src/api/package.json (lint-staged fix incluido)
+Evidence: commit 38864cd | typecheck: 0 errores
+PTSA reference: H-003 → CORREGIDA (pendiente validación humana → CLOSED)
+
+## PT-032 — TRIVIAL: Corrección PRD AC-3.2 held funds invariant
+Date: 2026-06-23
+Status: DONE (gitignored — disco solamente)
+Branch: fix/PT-031-032-trivial-fixes (no commitable — docs/ en .gitignore)
+Objective: Corregir AC-3.2 en PRD para documentar el invariante real de held funds: la restricción aplica al MOMENTO del bloqueo, no de forma permanente.
+Solution: `docs/enterprise-documentation/02-PRD.md` AC-3.2 actualizado. Texto anterior: "Held funds cannot exceed balance". Texto correcto: "Held funds cannot exceed available balance at the time of locking (balance − amount_to_lock ≥ 0). After locking, held_funds may exceed remaining balance — this is the expected state for active bidders."
+Modified files: docs/enterprise-documentation/02-PRD.md (local, gitignored)
+Evidence: Cambio aplicado a disco | No commitable por .gitignore
+PTSA reference: H-007 → CORREGIDA (pendiente validación humana → CLOSED)
+
+## PT-028 — INVESTIGATION: Mecanismo auth JS browser en CLIENT (H-006)
+Date: 2026-06-23
+Status: CLOSED
+Branch: — (solo lectura de archivos)
+Objective: Verificar si las llamadas JS browser → API en CLIENT usan autenticación segura (BFF pattern preservado).
+Root cause: N/A — investigación, no bug.
+Solution: Verificadas deposit.html y withdraw.html. Ambas usan `credentials: 'include'` en fetch(). No existen archivos JS separados en public/js/. H1 confirmada: tokens JWT nunca expuestos al browser JS.
+Modified files: — (solo PTSA artifacts y DISCOVERY.md)
+Evidence: src/apps/client/views/pages/wallet/deposit.html línea 32, withdraw.html línea 26
+PTSA reference: H-006 reclasificada MEDIA → BAJA (impacto 2→1, penalización 5→1)
+
+## FOUNDATION — Reverse-Engineering: Full Monorepo
+Date: 2026-06-23
+Status: VALIDATED
+Objective: Reverse-engineer the full repository into docs/enterprise-documentation/ so that FDGE, PTSA, and FPGE have verified architecture, conventions, and domain context.
+Scope: src/ (api, apps/base, apps/client, admin, packages/core, nginx) + docker-compose.yml + prisma/schema.prisma
+Output: 18 documents (11 core + 6 inventory + README)
+Key findings:
+  - TD-001: CFDI/PAC integration is a stub (fiscal invoicing non-functional)
+  - TD-003: Wallet withdrawal payment method verification is mocked
+  - ND-002: Rate limiter backend may be in-memory, not Redis (multi-instance risk)
+  - ND-007: CLIENT direct API call pattern needs CORS verification
+Validated by: Developer ([FOUNDATION VALIDATED] 2026-06-23)
+
+## PT-029 — BUG: Enforce payment method validation on wallet withdraw
+Date: 2026-06-23
+Status: VALIDATION_PENDING
+Branch: fix/PT-029-withdraw-payment-method-validation
+Objective: Eliminar el bloqueo mocked en WalletController.withdraw() y reemplazarlo con validación real contra DB.
+Root cause: La validación en wallet.controller.ts estaba comentada ("Mock for now"). PaymentsService no tenía el método getUserPaymentMethod() ni acceso a PrismaService.
+Solution:
+  1. Schema: Nuevo modelo UserPaymentMethod con @@unique([userId, referenceId]) + migración 20260623_add_user_payment_methods.
+  2. PaymentsService: Inyectado PrismaService + implementado getUserPaymentMethod(userId, referenceId).
+  3. WalletController.withdraw(): Descomentada validación — lanza BadRequestException si método no registrado.
+Modified files:
+  - src/api/prisma/schema.prisma
+  - src/api/prisma/migrations/20260623_add_user_payment_methods/migration.sql (nuevo)
+  - src/api/src/modules/payments/payments.service.ts
+  - src/api/src/modules/wallet/wallet.controller.ts
+  - src/api/test/unit/payments/payments.service.spec.ts
+  - src/api/test/unit/wallet/wallet.controller.spec.ts
+Evidence: docs/implementation/evidence/PT-029/
+Delta (real vs planned): Ninguno — implementación exactamente según Proposal Package. db push usado en lugar de migrate dev (no-interactive env).
+PTSA reference: H-005 (TD-003 wallet withdraw mocked) → VALIDATION_PENDING
+
+## PT-026 — BUG: Soft-close window hardcoded 300s (DONE)
+Date: 2026-06-23
+Status: DONE
+Branch: fix/PT-026-bids-soft-close-config
+Objective: Leer AUCTION_SOFT_CLOSE_WINDOW_SEC de SystemConfig en BidsService en lugar de constante literal.
+Root cause: EXTENSION_MS = 5 * 60 * 1000 hardcoded — scheduler leía SystemConfig (120s) pero BidsService extendía siempre 300s.
+Solution: SystemConfigService inyectado en BidsService. extensionMs calculado vía getNumber('AUCTION_SOFT_CLOSE_WINDOW_SEC', 120) * 1000.
+Modified files: src/api/src/modules/bids/bids.service.ts, src/api/src/modules/bids/bids.module.ts, src/api/test/unit/bids/bids.service.spec.ts
+Evidence: docs/implementation/evidence/PT-026/
+PTSA reference: H-001 → CLOSED
+
+## PT-030 — REFACTOR: ThrottlerModule a Redis storage (DONE)
+Date: 2026-06-23
+Status: DONE
+Branch: fix/PT-030-throttler-redis-storage
+Objective: Migrar ThrottlerModule de in-memory a ThrottlerStorageRedisService para soporte multi-instancia.
+Solution: nestjs-throttler-storage-redis@0.4.4 instalado. ThrottlerModule.forRootAsync actualizado con storage: new ThrottlerStorageRedisService(new Redis({...})).
+Modified files: src/api/src/app.module.ts, src/api/package.json
+Evidence: 145/145 tests pass — no regressions.
+PTSA reference: H-002 → CLOSED
+
+## PT-031 — TRIVIAL: StructuredLogger en PaymentsService (DONE)
+Date: 2026-06-23
+Status: DONE
+Branch: fix/PT-031-032-trivial-fixes
+Objective: Migrar PaymentsService de Logger estándar NestJS a StructuredLogger inyectado vía DI.
+Solution: Eliminado new Logger(). StructuredLogger inyectado vía constructor. 3 llamadas al logger actualizadas. Fix adicional: tests de payments.service.spec.ts usaban string token — corregido a class-based token.
+Modified files: src/api/src/modules/payments/payments.service.ts, src/api/test/unit/payments/payments.service.spec.ts
+Evidence: Validado runtime: webhooks emiten JSON estructurado con traceId.
+PTSA reference: H-003 → CLOSED
+
+## PT-032 — TRIVIAL: PRD AC-3.2 held funds invariant (DONE)
+Date: 2026-06-23
+Status: DONE
+Branch: fix/PT-031-032-trivial-fixes (docs — gitignored)
+Objective: Corregir AC-3.2 en PRD para documentar el invariante real de held funds.
+Solution: docs/enterprise-documentation/02-PRD.md AC-3.2 actualizado a invariante correcto (restricción al momento del bloqueo, no permanente).
+Modified files: docs/enterprise-documentation/02-PRD.md (local, gitignored)
+Evidence: Validado en docs por desarrollador.
+PTSA reference: H-007 → CLOSED
+
+## PTSA DS-003 — DELTA SYNC: Primera certificación Clase A
+Date: 2026-06-23
+Status: CLOSED
+Objective: Cerrar H-001, H-003, H-004, H-007 tras validación humana en runtime.
+Solution: 4 hallazgos validados en runtime → CLOSED. BLQ-002 resuelto (logs verificados). Cap freshness eliminado. Health: 88.8→95.2. Clasificación: C→A.
+Evidence: PTSA/score-history.json DS-003, PTSA/RESUMEN.md DS-003
+
+## PT-034 — BUG: Login cookie no propagada entre subdominios en Docker (CLOSED)
+Date: 2026-06-24
+Status: CLOSED
+Branch: fix/PT-034-cookie-domain-docker
+Objective: Permitir que el login en base.ironloot.local establezca una cookie accesible desde client.ironloot.local, completando el flujo SSO en Docker.
+Root cause: Dos capas de problema: (1) COOKIE_DOMAIN no estaba configurado para los servicios base y client en docker-compose → cookie sin Domain → scoped a host exacto → no cross-subdomain. (2) El default corregido (.localhost) también fallaba porque localhost es un public suffix (RFC 6265 §5.3) — Chrome/Edge/Firefox rechazan cookies con Domain=.localhost. Solución real: usar .ironloot.local (dominio custom con entries en hosts file) donde la restricción de public suffix no aplica.
+Solution: (1) Añadir COOKIE_DOMAIN=${COOKIE_DOMAIN:-.ironloot.local} a servicios base y client en docker-compose. (2) Añadir JWT_SECRET=${JWT_SECRET:-change-me-min-32-chars} al servicio api para coherencia con client. (3) Actualizar CLIENT_URL y BASE_URL en docker-compose a ironloot.local. (4) Actualizar .env.example con el valor correcto y nota explicatoria sobre el rechazo de .localhost en navegadores. Verificado con Playwright headless: flujo completo base→client, cookie Domain=.ironloot.local, dashboard HTTP 200.
+Modified files: docker-compose.yml, .env.example
+Evidence: docs/implementation/evidence/PT-034/
+Delta (real vs planned): Desviación de enfoque — el Proposal Package planificó .localhost como default; durante STATE 5 la prueba E2E con curl reveló que los navegadores rechazan cookies Domain=.localhost (public suffix). Se requirió un commit adicional (PT-034.6) para corregir el default a .ironloot.local.
+PTSA reference: (ninguno — bug operacional sin hallazgo PTSA asociado)
+
+## PT-033 — BUG: Auth email links apuntan a CLIENT en lugar de BASE (CLOSED)
+Date: 2026-06-23
+Status: CLOSED
+Branch: fix/PT-033-auth-email-links
+Objective: Corregir EmailService para que los links de verify-email y reset-password apunten a BASE (sitio público) en lugar de CLIENT (portal privado).
+Root cause: email.service.ts:17 usaba CLIENT_URL con default http://localhost:5173. Los usuarios recibían links a CLIENT que no tiene las rutas /auth/verify-email ni /auth/reset-password → NotFoundException → NotFoundExceptionFilter de CLIENT renderizaba 404 con sidebar visible. Adicionalmente, NotFoundExceptionFilter de BASE existía pero no estaba registrado en main.ts.
+Solution: (1) email.service.ts línea 17: CLIENT_URL → BASE_URL, default localhost:5173 → localhost:5174. (2) Registrar NotFoundExceptionFilter en src/apps/base/src/main.ts. (3) Añadir BASE_URL=http://base.localhost al bloque environment del servicio api en docker-compose.yml. (4) Documentar BASE_URL en .env.example.
+Modified files: src/api/src/modules/notifications/email.service.ts, src/api/test/unit/notifications/email.service.spec.ts (new), src/apps/base/src/main.ts, docker-compose.yml, .env.example
+Evidence: docs/implementation/evidence/PT-033/
+Delta (real vs planned): Sin desviaciones. 4 commits atómicos, 5 tareas completadas según Proposal Package. TS-033.5/6 (sidebar E2E) validados por humano en STATE 6.
+PTSA reference: (ninguno — bug operacional sin hallazgo PTSA asociado)
+
+## PT-036 — BUG: Endurecer autenticación admin (creds default + login sin throttle)
+Date: 2026-07-23
+Status: CLOSED
+Validated: 2026-07-23 (validación humana; rama lista para merge a master)
+Branch: fix/PT-036-admin-auth-hardening
+Objective: Cerrar AUD-004 — el gate de arranque de producción omitía ADMIN_USERNAME/ADMIN_PASSWORD (defaults admin/admin usables) y el login admin era @SkipThrottle (sin límite de fuerza bruta).
+Root cause: (A) validateStartupConfig (main.ts) validaba ADMIN_API_KEY/JWT_SECRET/SESSION_SECRET/ALLOWED_ORIGINS pero no las credenciales de login admin. (B) @SkipThrottle a nivel de clase en AdminAuthController dejaba /admin/auth/login sin rate limiting. Matiz verificado: ADMIN_API_KEY=dev-admin-key ya estaba gateado en prod (solo aplica fuera de prod).
+Solution: (1) Extraer validateStartupConfig a common/config/validate-startup-config.ts como función pura testeable; main.ts hace process.exit según errores. (2) Gate de ADMIN_USERNAME/ADMIN_PASSWORD en prod (rechaza vacío/placeholder/default "admin"). (3) Quitar @SkipThrottle de la clase + @Throttle(10/60s) en login(). (4) Comparación timing-safe (timingSafeEqual sobre sha256). (5) Documentar creds admin en .env.example (×2).
+Modified files: src/api/src/main.ts, src/api/src/common/config/validate-startup-config.ts (new), src/api/src/modules/admin/admin-auth.controller.ts, src/api/test/unit/config/validate-startup-config.spec.ts (new), src/api/test/unit/admin/admin-auth.controller.spec.ts (new), src/api/test/e2e/admin-auth.e2e-spec.ts (new), .env.example, src/api/.env.example
+Evidence: docs/implementation/evidence/PT-036/
+Delta (real vs planned): Sin desviaciones de alcance. Se usó Graphify para medir el radio de impacto (admin-auth.controller grado 6, validateStartupConfig grado 2, AdminController grado 80 excluido). El e2e de throttle queda para el harness de CI (no ejecutado en sesión). Nota de proceso: el 1er mensaje de commit salió con un '@' espurio (sintaxis heredoc) y se corrigió con --amend.
+PTSA reference: (AUD-004 de la auditoría docs-v2; sin H-XXX PTSA asociado)
+
+## PT-037 — BUG/REFACTOR: Reconciliación de migraciones (backoffice) + fix moneda pagos
+Date: 2026-07-23
+Status: CLOSED
+Validated: 2026-07-23 (validación humana; rama lista para merge; baseline `migrate resolve --applied 20260723_reconcile_backoffice_schema_and_currency` pendiente en dev/staging real)
+Branch: fix/PT-037-migration-reconciliation
+Objective: Cerrar AUD-001 (+ AUD-008) — el esquema backoffice v1 se aplicó con `prisma db push` sin migración, dejando `migrate deploy` incompleto en entornos limpios.
+Root cause: uso de `prisma db push` en vez de `migrate` para el backoffice. El `migrate diff` reveló más drift del que halló la auditoría: 11 tablas + 9 enums + 3 valores de enum + 3 FKs + 18 índices, MÁS columnas en tablas existentes (auctions.admin_notes, profiles.legal_name, users.settings, default de user_payment_methods.id). AUD-008 (payments.currency USD→MXN) sale automáticamente del diff.
+Solution: migración `20260723_reconcile_backoffice_schema_and_currency` generada con `migrate diff --from-migrations --to-schema-datamodel` + backfill de moneda. Mecanismo (decisión humana): migración estándar + baseline `migrate resolve --applied` en entornos existentes (db-push); `migrate deploy` en limpios/CI.
+Modified files: src/api/prisma/migrations/20260723_reconcile_backoffice_schema_and_currency/migration.sql (new)
+Evidence: docs/implementation/evidence/PT-037/ (verificado en PostgreSQL 16 throwaway: T1 fresh 28 tablas/19 enums; T2 db-push+resolve status limpio; T3 drift 0 ×2; T6 tsc+153 tests)
+Delta (real vs planned): Cambio de mecanismo D4 (idempotente hecho a mano → migración estándar + resolve baseline) tras el spike, aprobado por humano; el spike reveló drift de columnas no detectado por la auditoría. Nota de proceso: 1er `git add` con ruta relativa incorrecta (cwd) → corregido, sin commit sucio.
+PTSA reference: (AUD-001 + AUD-008 de la auditoría docs-v2; sin H-XXX PTSA asociado)
+
+## PT-038 — BUG: BFF proxy en CLIENT + corrección de escrituras del portal
+Date: 2026-07-23
+Status: CLOSED
+Validated: 2026-07-23 (validación humana; rama lista para merge; e2e de escritura autenticada recomendado con stack levantado)
+Branch: fix/PT-038-client-bff-writes
+Objective: Cerrar AUD-003 — las 8 escrituras client-side del portal privado no tenían ruta de autenticación (llamaban al API cross-origin con cookie, pero el API solo acepta Bearer y la cookie es httpOnly), y varias usaban método/ruta inexistentes.
+Root cause: CLIENT nunca implementó el proxy BFF (pese al comentario que lo afirmaba); las escrituras client-side no podían autenticarse. Sumado a mismatches de ruta/método.
+Solution: (1) proxy BFF en client/src/main.ts (espejo de BASE) que inyecta Authorization: Bearer desde la cookie httpOnly vía función pura testeable (common/bff/inject-auth-header.ts). (2) Las 8 plantillas → path relativo /api/v1 (proxied) + método/ruta correctos (edit PUT→PATCH; profile /users/profile→PATCH /users/me; settings→PATCH /users/me/settings; onboarding→POST /users/me/enable-seller).
+Modified files: src/apps/client/src/main.ts, src/apps/client/src/common/bff/inject-auth-header.ts (new), src/apps/client/jest.config.js (new), src/apps/client/test/inject-auth-header.spec.ts (new), src/apps/client/package.json, + 8 plantillas views/pages/*
+Evidence: docs/implementation/evidence/PT-038/ (injectAuthHeader 3/3; paridad de rutas 0 mismatches; tsc + nest build OK; e2e runtime pendiente de entorno)
+Delta (real vs planned): Sin desviaciones de alcance. Se añadió config jest mínima a CLIENT (antes 0 tests). El e2e de escritura autenticada queda para CI/manual (no había stack levantado). Graphify usado para el radio de impacto.
+PTSA reference: (AUD-003 de la auditoría docs-v2; sin H-XXX PTSA asociado)
+
+## PT-039 — BUG: Hardening de gateways WebSocket
+Date: 2026-07-23 | Status: CLOSED | Branch: fix/PT-039-websocket-hardening
+Objective: Cerrar AUD-006 (WS sin auth).
+Decision: los namespaces `auctions`/`events` son público read-only por diseño (el feed de pujas replica datos públicos por REST; pujar exige REST+JWT). Exigir JWT en WS rompería la vista en vivo para invitados en BASE. Fix: validar `auctionId` (UUID) antes de unir a sala; dejar de emitir el userId (PII) en el payload público `bid:new`; retirar el guard comentado y documentar la postura.
+Modified files: auctions.gateway.ts, events.gateway.ts, bids.service.ts
+Evidence: docs/implementation/evidence/PT-039/ (tsc OK; verificación estática/diseño). Validación runtime opcional.
+PTSA reference: (AUD-006)
+
+## PT-040 — BUG: Hardening de seguridad (ADMIN + CLIENT + diagnostics)
+Date: 2026-07-23 | Status: CLOSED | Branch: fix/audit-remediation
+Objective: AUD-007 (ADMIN sin Helmet/CSP), AUD-014 (postura CSRF), AUD-025 (diagnostics), AUD-026 (secreto CLIENT).
+Solution: ADMIN → helmet + CSP (permite CDN Chart.js) + sesión SameSite=Lax (mitiga CSRF sin tokens por formulario); dep helmet declarada. CLIENT → ClientAuthGuard sin fallback 'change-me' (falla cerrado). Diagnostics → confirmado dev-only por DevelopmentOnlyGuard (bloquea prod); retirado TODO obsoleto. Bonus: resuelto el error de build pre-existente del admin (express-session) instalando sus deps.
+Evidence: docs/implementation/evidence/PT-040/ (admin nest build OK; client+api tsc OK).
+PTSA reference: (AUD-007, AUD-014, AUD-025, AUD-026)
+
+## PT-041 — BUG/REFACTOR: Reglas de dominio (incremento de puja + guard admin)
+Date: 2026-07-23 | Status: CLOSED | Branch: fix/audit-remediation
+Objective: AUD-009 (incremento mínimo no aplicado), AUD-011 (admin salta FSM).
+Solution: BidsService exige `bidAmount >= currentPrice + AUCTION_MIN_INCREMENT_AMOUNT` (default 10) + test unitario nuevo. Admin: `assertAuctionModifiable` bloquea moderar subastas terminales (CLOSED/CANCELLED); overrides admin fuera de la FSM buyer/seller se documentan como intencionales.
+Evidence: docs/implementation/evidence/PT-041/ (bids 5/5; regresión 154/154; tsc OK).
+PTSA reference: (AUD-009, AUD-011)
+
+## PT-042 — REFACTOR: Integridad de dinero (comisión configurable + tests + limpieza core)
+Date: 2026-07-23 | Status: CLOSED | Branch: fix/audit-remediation
+Objective: AUD-005 (doble comisión), AUD-012 (use-cases core no cableados), AUD-013 (sin tests), AUD-010 (disputa→dinero).
+Solution: AUD-005 → el settlement (scheduler) cobra la tasa admin-configurada vía CommissionsService.resolveRatePercent, pasada a captureHeldFunds(feePercent) en vez del 10% hardcodeado (fuente única de tasa). AUD-013 → tests unitarios para CommissionsService y RefundsService (+10). AUD-012 → eliminados los 4 use-cases muertos de core/application (production reimplementa la orquestación en los services); core sigue 134 tests. AUD-010 → documentado como flujo de dos pasos intencional (resolver luego reembolsar en Refunds); auto-refund queda como enhancement (cambio de dinero sin validación runtime aquí).
+Evidence: docs/implementation/evidence/PT-042/ (API 164/164; core build+134; tsc OK).
+PTSA reference: (AUD-005, AUD-010, AUD-012, AUD-013)
+
+## PT-043 — Operación: cron de limpieza único + seed
+Date: 2026-07-23 | Status: CLOSED | Branch: fix/audit-remediation
+Objective: AUD-018 (crons de limpieza en conflicto), AUD-017 (seed inexistente), AUD-027 (SMTP duplicado, doc).
+Solution: AUD-018 → desactivado el cron duplicado de 90d en scheduler; el módulo system-cleanup es el único autoritativo (retención configurable LOG_RETENTION_DAYS, default 90, cubre AuditEvent+RequestLog). AUD-017 → prisma/seed.ts + config prisma.seed (db:seed ya no falla); seed idempotente de commission config GLOBAL. AUD-027 → documentado: MAIL_* es el transporte activo de NotificationsModule; SMTP_* (SystemConfig) es override admin no cableado al transporte — a reconciliar (doc en docs-v2).
+Evidence: docs/implementation/evidence/PT-043/ (tsc OK). db:seed requiere DB (no ejecutado sin stack).
+PTSA reference: (AUD-017, AUD-018, AUD-027)
+
+## PT-044 — FEATURE: Página de puja + feed en vivo (AUD-002)
+Date: 2026-07-23 | Status: CLOSED | Branch: fix/audit-remediation (incluye merge de fix/PT-038 para el proxy BFF)
+Objective: AUD-002 — la puja en tiempo real no tenía frontend (el enlace "Pujar ahora" apuntaba a una ruta CLIENT inexistente; sin cliente Socket.io).
+Solution: nueva ruta CLIENT GET /auctions/:id (tras las rutas específicas) que renderiza detalle + precio + saldo + countdown + pujas + formulario. La puja hace POST /api/v1/auctions/:id/bids vía el proxy BFF (autenticado por cookie httpOnly). Feed en vivo con Socket.io (namespace público `auctions`: bid:new/auction:extended/auction:ended). CSP de CLIENT actualizada (CDN socket.io + WS del API). El enlace de BASE ahora resuelve.
+Evidence: docs/implementation/evidence/PT-044/ (client tsc + nest build OK; jest 3/3). e2e (pujar en vivo) requiere stack levantado.
+PTSA reference: (AUD-002)
+
+## PT-045/046 — CFDI (bloqueo externo) + limpiezas + reconciliación documental
+Date: 2026-07-23 | Status: CLOSED (parcial: AUD-016 BLOQUEADO externo) | Branch: fix/audit-remediation
+Objective: AUD-016 (CFDI), AUD-032 (puerto/huérfana), AUD-015 y AUD-019..036 (doc).
+Solution: AUD-016 → no implementable sin un PAC certificado + credenciales (dependencia externa); el código falla con mensaje claro que apunta al plug point `ICfdiPacProvider` de @ironloot/core; documentado como BLOQUEADO. AUD-032 → puerto admin 5173→5174, eliminada plantilla huérfana auctions-gate.html. AUD-015 + AUD-019/020/021/022/023/024/029/030/031/034/035/036 → reconciliados/superados por `docs-v2/` (documentación oficial); PTSA original queda como histórico. AUD-028 (CI) y AUD-033 (código comentado) quedan como notas honestas.
+Evidence: docs/implementation/evidence/PT-046/ (api tsc OK). CFDI real requiere PAC externo.
+PTSA reference: (AUD-015, AUD-016, AUD-019..AUD-036)
+
+## PT-047 — Cierre de hallazgos abiertos: toggle CFDI (AUD-016), CI (AUD-028), código muerto (AUD-033)
+Date: 2026-07-23
+Status: DONE (AUD-028, AUD-033) / CLOSED-toggle (AUD-016; integración real del PAC = externa)
+Branch: fix/PT-047-open-findings
+Objective: cerrar los 3 hallazgos que quedaban abiertos tras la remediación 036–046.
+Solution:
+  - AUD-016: interruptor `CFDI_ENABLED` (system-config, OFF por defecto). `cfdi.service.generate()`
+    lanza `ServiceUnavailableException` (503) con mensaje claro cuando está apagado; `getConfig()`
+    expone `enabled`; `updateConfig({enabled})` lo persiste. UI admin (cfdi-config.html) gana un
+    checkbox "Habilitar generación de CFDI" y el controlador/servicio admin reenvían el flag a la API.
+    La plataforma opera sin PAC; cuando se contrate uno se implementa `ICfdiPacProvider` y se prende.
+  - AUD-028: `package.json` raíz gana scripts `lint:check`/`typecheck`/`test`/`test:e2e`/`build` +
+    `postinstall` (instala deps de `src/api`), todos delegando a `src/api`, para que el workflow de CI
+    que invoca `npm run <script>` en la raíz resuelva.
+  - AUD-033: eliminado el endpoint comentado de creación manual de orden en orders.controller.ts.
+Modified files: src/api/src/modules/cfdi/cfdi.service.ts, src/api/src/modules/orders/orders.controller.ts,
+  src/api/test/unit/cfdi/cfdi.service.spec.ts (nuevo, 4 tests), src/admin/src/modules/configuration/
+  configuration.controller.ts, configuration.service.ts, src/admin/views/pages/cfdi-config.html, package.json.
+Evidence: API tsc 0 · jest 34 suites / 181 tests (incl. 4 CFDI) · ADMIN build OK.
+Delta (real vs planned): AUD-016 se reclasificó de "bloqueado externo" a "cerrado como toggle" —
+  el bloqueo real (contratar PAC) se aísla detrás del interruptor en lugar de dejar el hallazgo abierto.
+PTSA reference: AUD-016, AUD-028, AUD-033
+
+## PT-048 — BUG — Contrato CLIENT↔API en escrituras del portal
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-048-qa-navegador-findings
+Objective: sincronizar los payloads del CLIENT con los contratos reales del API (depósito, activar vendedor, crear subasta).
+Root cause: el frontend enviaba campos que los DTOs rechazan (whitelist) y omitía requeridos.
+Solution: depósito → POST /payments/initiate ({amount,provider}) + redirectUrl; onboarding → PATCH /users/me {displayName, profile:{legalName,address,city,country,phone}} + enable-seller {acceptTerms}; crear subasta → sin `condition`.
+Modified files: src/apps/client/views/pages/wallet/deposit.html, seller/onboarding.html, auction/create.html, docker-compose.yml
+Evidence: docs/implementation/evidence/PT-048-qa-navegador/ (9/9 PASS; DB: 1 subasta, 1 vendedor)
+Delta: enable-seller requirió ampliar el formulario (displayName/city/country) tras descubrir checkSellerRequirements.
+PTSA reference: BUG-QA-01/03/04
+
+## PT-049 — BUG — Persistencia de auditoría con ids no-UUID
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-048-qa-navegador-findings
+Root cause: actor_user_id/entity_id son @db.Uuid; un id no-UUID (p.ej. "admin") hacía fallar toda la escritura de auditoría y provocaba 500s.
+Solution: toUuidOrNull() aplicado en persistAuditEvent/recordAudit/persistError/persistRequestLog; no-UUID → null/nil-UUID + _actorRef/_entityRef en payload.
+Modified files: src/api/src/modules/audit/audit-persistence.service.ts
+Evidence: 58 audit_events persistidos, 0 "Error creating UUID" en logs.
+PTSA reference: BUG-QA-02
+
+## PT-050 — BUG — Slice Python en plantillas Nunjucks (500)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-048-qa-navegador-findings
+Root cause: `{{ id[:8] }}` no es válido en Nunjucks → fallo de compilación → 500.
+Solution: `{{ id | truncate(8, true, '') }}` en disputes/list, disputes/detail, seller/orders.
+Modified files: src/apps/client/views/pages/disputes/list.html, disputes/detail.html, seller/orders.html
+Evidence: /disputes ahora HTTP 200.
+PTSA reference: BUG-QA-05
+
+## PT-051 — BUG — Enum inválido en broadcast de notificaciones
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-048-qa-navegador-findings
+Root cause: status:'QUEUED' no pertenece a CampaignStatus (DRAFT|SCHEDULED|SENT|FAILED) → Prisma lanzaba; UI mostraba falso éxito.
+Solution: status:'SENT' (envío síncrono).
+Modified files: src/api/src/modules/admin/admin.service.ts
+Evidence: 4 notification_campaigns persistidas.
+PTSA reference: BUG-QA-12
+
+## PT-052 — BUG — CMS admin no cargaba (fetch client-side 404)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-048-qa-navegador-findings
+Root cause: la página hacía fetch a /api/v1/admin/cms sobre el admin app (sin esa ruta) → 404.
+Solution: render server-side (CmsService.getAllContent → API GET /admin/cms) + formularios POST /cms/:key.
+Modified files: src/admin/src/modules/cms/cms.controller.ts, cms.service.ts, src/admin/views/pages/cms.html
+Evidence: /cms HTTP 200, 4 bloques.
+PTSA reference: FINDING-QA-10
+
+## PT-053 — BUG — Enlace footer /contact sin ruta (404)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-048-qa-navegador-findings
+Solution: ruta GET /contact + pages/static/contact.html.
+Modified files: src/apps/base/src/app.controller.ts, src/apps/base/views/pages/static/contact.html
+Evidence: /contact HTTP 200.
+PTSA reference: FINDING-QA-07
+
+## PT-054 — BUG — Subasta inexistente devolvía 200
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-048-qa-navegador-findings
+Solution: NotFoundException si el API no devuelve la subasta.
+Modified files: src/apps/base/src/app.controller.ts
+Evidence: /auctions/<inexistente> HTTP 404.
+PTSA reference: FINDING-QA-08
+
+## PT-055 — BUG — Overflow horizontal en móvil (header BASE)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-048-qa-navegador-findings
+Solution: @media (max-width:640px) para el nav (ocultar nav-links, compactar auth).
+Modified files: src/apps/base/public/css/base.css
+Evidence: sin overflow a 375px/360px en home/login/catálogo.
+PTSA reference: FINDING-QA-13
+
+## PT-056 — BUG — Reembolsos admin no cargaban (fetch client-side 404)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-056-admin-server-render
+Root cause: /refunds hacía fetch a /api/v1/admin/refunds sobre el admin app (sin esa ruta) → 404.
+Solution: render server-side (RefundsService.listRefunds → API GET /admin/refunds) + formularios POST /refunds/create y /refunds/:id/status.
+Modified files: src/admin/src/modules/refunds/refunds.service.ts, refunds.controller.ts, src/admin/views/pages/refunds.html
+Evidence: sin 404/errores de consola; tabla y formularios server-side.
+PTSA reference: FINDING-QA-06
+
+## PT-057 — BUG — SEO admin no cargaba (fetch client-side 404)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-056-admin-server-render
+Root cause: /seo hacía fetch a /api/v1/admin/seo sobre el admin app (sin esa ruta) → 404.
+Solution: render server-side (SeoService.getAllSeo → API GET /admin/seo) + formularios POST /seo/:page.
+Modified files: src/admin/src/modules/seo/seo.service.ts, seo.controller.ts, src/admin/views/pages/seo.html
+Evidence: 5 formularios server-side, sin 404.
+PTSA reference: FINDING-QA-06
+
+## PT-055 (ext) — BUG — Portal CLIENT sin responsive (overflow móvil)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-056-admin-server-render
+Root cause: el portal no tenía media queries; sidebar fijo 240px + grids minmax(200px) desbordaban a 375px.
+Solution: @media (max-width:768px) — sidebar a barra superior con nav envuelto, main full-width, stat-grid 1 col, .d-flex wrap.
+Modified files: src/apps/client/public/css/client.css
+Evidence: sin overflow en /dashboard y /wallet a 375px.
+PTSA reference: FINDING-QA-13 (parte CLIENT)
+
+## PT-058 — BUG — CLIENT llama /api/v1/wallet inexistente (BUG-QA-N01)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-058-client-wallet-endpoint
+Root cause: el portal CLIENT llamaba GET /api/v1/wallet (404); la API expone /wallet/balance. El saldo se mostraba 0.00 pese a tener fondos.
+Solution: helper puro mapWalletBalance + WALLET_BALANCE_PATH; 3 call sites (dashboard, /wallet, detalle subasta) usan /wallet/balance con mapeo available→balance, held→held_funds. Corregido drift documental (API Catalog/endpoints listaban GET /wallet inexistente).
+Modified files: src/apps/client/src/common/bff/wallet-view.ts (nuevo), src/apps/client/test/wallet-view.spec.ts (nuevo), src/apps/client/src/app.controller.ts, docs/enterprise-documentation/08-API-Catalog.md, docs/enterprise-documentation/inventory/endpoints.md
+Evidence: docs/implementation/evidence/PT-058/ (wallet MXN 5000, detalle $5000, delta 404=0; tests 6/6)
+Delta (real vs planned): sin desviaciones; se confirmó además drift documental y se corrigió.
+PTSA reference: BUG-QA-N01
+
+## PT-059 — BUG — CLIENT llama /api/v1/bids/my inexistente (BUG-QA-N02)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-059-client-bids-endpoint
+Root cause: el CLIENT llamaba GET /api/v1/bids/my (404); la API expone /bids/my-active y /bids/my-history (Bid[]). /my-bids salía vacío.
+Solution: helper mapBidsList (envuelve en {items}, deriva isWinning=amount===auction.currentPrice); dashboard→my-active, /my-bids→my-history. Corregido drift documental (catálogo/endpoints listaban /bids/my).
+Modified files: src/apps/client/src/common/bff/bids-view.ts (nuevo), test/bids-view.spec.ts (nuevo), src/apps/client/src/app.controller.ts, docs/enterprise-documentation/08-API-Catalog.md, docs/enterprise-documentation/inventory/endpoints.md
+Evidence: docs/implementation/evidence/PT-059/ (/my-bids muestra la puja; delta 404=0; tests 10/10)
+Delta (real vs planned): añadida derivación isWinning (la API no la provee); paginación server-side declarada out-of-scope.
+PTSA reference: BUG-QA-N02
+
+## PT-060 — BUG (TRIVIAL) — console.error cosméticos: favicon 404 (OBS-02)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-060-favicon
+Root cause: ninguna app servía/referenciaba favicon → navegador pedía /favicon.ico → 404 en consola.
+Solution: favicon.svg (monograma IL) en public/ de BASE/CLIENT/ADMIN + <link rel="icon"> en los 3 layouts. El 401 de verify-email (token inválido) se documenta como logging nativo del navegador (aceptado).
+Modified files: src/apps/base/public/favicon.svg, src/apps/client/public/favicon.svg, src/admin/public/favicon.svg (nuevos), base.html, client.html, admin.html (layouts)
+Evidence: docs/implementation/evidence/PT-060/ (favicon.svg 200 x3; favicon.ico 404=0)
+Delta (real vs planned): sin desviaciones; parte (b) verify-email documentada como aceptada.
+PTSA reference: OBS-02
+
+## PT-061 — INVESTIGATION — Onboarding sin gate KYC (OBS-01)
+Date: 2026-07-24
+Status: CLOSED
+Branch: (sin rama — investigación, 0 líneas de código)
+Root cause: gap diseño↔implementación. Docs (04-App-Flow §8, 01-Platform-Overview) describen gate KYC (POST /api/v1/kyc → PENDING → aprobación admin); implementación: módulo KYC sin controller (KycService no usado), enableSeller no exige KYC (solo ACTIVE + email + displayName + dirección). Un vendedor puede publicar sin verificación de identidad.
+Solution: N/A (investigación). Recomendación documentada: Opción A (implementar gate KYC — FEATURE MAJOR, decisión de producto) u Opción B (actualizar docs si KYC es diferido en v1). Candidato FPGE.
+Modified files: (ninguno — solo DISCOVERY.md + evidence/PT-061/findings.md)
+Evidence: docs/implementation/evidence/PT-061/findings.md
+Delta (real vs planned): investigación reveló además que el endpoint POST /api/v1/kyc está sin implementar (no solo el gate).
+PTSA reference: OBS-01
+
+## PT-062 — INVESTIGATION — Re-verificar broadcast notificaciones (PT-051/BUG-QA-12)
+Date: 2026-07-24
+Status: CLOSED
+Branch: (sin rama — investigación, 0 líneas de código)
+Root cause: N/A (validación). BUG-QA-12 original (status QUEUED inválido + falso éxito) ya corregido por PT-051.
+Solution: N/A. Re-verificado end-to-end: API POST /admin/notifications/campaigns → SENT, 3 recipients; UI /notifications → 302 sent=1, campaña SENT. Enum CampaignStatus sin QUEUED. Broadcast funciona. PT-051 VALIDADO.
+Modified files: (ninguno — DISCOVERY.md + evidence/PT-062/)
+Evidence: docs/implementation/evidence/PT-062/findings.md
+Delta (real vs planned): la falla inicial de la UI fue de targeting del harness QA, no del producto.
+PTSA reference: BUG-QA-12 / PT-051
+
+## MERGE — PT-058/PT-059/PT-060 fusionados a master
+Date: 2026-07-24
+Commit: 89ececb (merge --no-ff)
+Status: PT-058 CLOSED · PT-059 CLOSED · PT-060 CLOSED (validados por autorización de merge del responsable)
+Note: cadena fix/PT-058→059→060 integrada; ramas intermedias eliminadas. Tests CLIENT 10/10 en master. Docs de arquitectura (API Catalog/endpoints) ya reflejan rutas reales. PT-061 (KYC) y PT-062 (broadcast) permanecen CLOSED (investigación).
+
+## PT-063 — BUG (CRÍTICO) — Webhook de pasarela sin @Public (401)
+Date: 2026-07-25
+Status: VALIDATION_PENDING
+Branch: test/mp-real-payment
+Root cause: @Post(webhook/:provider) sin @Public; APP_GUARD JWT global rechaza webhooks (sin JWT) con 401 → ningún pago acredita en producción (MP/PayPal/HeyBanco).
+Solution: @Public() en el método webhook; la firma HMAC sigue validando autenticidad.
+Modified files: src/api/src/modules/payments/payments.controller.ts, src/api/test/unit/payments/webhook-public.spec.ts
+Evidence: docs/implementation/evidence/PT-063/ (test RED→GREEN; webhook 401→201 en prueba real)
+PTSA reference: MP-#4
+
+## PT-064 — BUG (CRÍTICO) — Webhook de acreditación: parser UUID + alias proveedor
+Date: 2026-07-25
+Status: VALIDATION_PENDING
+Branch: test/mp-real-payment
+Root cause: (#6) parser split('-')[1] truncaba el UUID de DEP-<uuid>-<ts> → wallet no encontrada; (#2) toUpperCase('mercadopago')=MERCADOPAGO no matchea MERCADO_PAGO.
+Solution: regex ^DEP-(.+)-\d+$ + mapa de alias de proveedor. El test-first detectó que solo toUpperCase era insuficiente.
+Modified files: src/api/src/modules/payments/payments.service.ts, src/api/test/unit/payments/webhook-credit.spec.ts
+Evidence: docs/implementation/evidence/PT-064/ (tests 2/2 RED→GREEN; 3 depósitos reales acreditados)
+PTSA reference: MP-#6, MP-#2
+
+## PT-065 — BUG — Provider MercadoPago (notification_url + sandbox + Orders API)
+Date: 2026-07-25
+Status: VALIDATION_PENDING
+Branch: test/mp-real-payment
+Root cause: (#1) sin notification_url; (#3) init_point productivo con creds de prueba; (#5) handler solo Payments API legacy, no Orders API (APP_USR).
+Solution: notification_url env-driven; flag MERCADO_PAGO_SANDBOX→sandbox_init_point; fetch Orders API en handleWebhook para IDs ORD/PAY.
+Modified files: src/api/src/modules/payments/providers/mercadopago.provider.ts, src/api/test/unit/payments/mercadopago-preference.spec.ts
+Evidence: docs/implementation/evidence/PT-065/ (tests 3/3; 3 depósitos reales acreditados)
+PTSA reference: MP-#1, MP-#3, MP-#5
+
+## PT-066 — INVESTIGATION — Admin force-close no liquida (#7)
+Date: 2026-07-25
+Status: CLOSED
+Branch: (sin rama — investigación)
+Root cause: forceCloseAuction solo marca CLOSED; el scheduler es quien crea la orden + convierte fondos. Force-close deja la subasta sin liquidar (ganador sin orden, held atrapado).
+Solution: N/A. Recomendación: unificar force-close con la liquidación del scheduler (Opción A) — decisión de producto / FPGE.
+Modified files: (ninguno — DISCOVERY.md + evidence/PT-066/)
+Evidence: docs/implementation/evidence/PT-066/findings.md
+PTSA reference: MP-#7
+
+## MERGE — PT-063/PT-064/PT-065 fusionados a master
+Date: 2026-07-25
+Commit: d100231 (merge --no-ff)
+Status: PT-063/064/065 CLOSED (validados por autorización de merge); PT-066 CLOSED (investigación).
+Note: correcciones críticas de acreditación descubiertas por la prueba real de MercadoPago. El flujo de depósitos estaba roto (webhook 401 + parser UUID + Payments API legacy). 6 tests nuevos + 8 previos sin regresión. Rama test/mp-real-payment eliminada.
+
+## PT-067 — BUG — Historial de órdenes no se mostraba (array vs items)
+Date: 2026-07-25
+Status: VALIDATION_PENDING
+Branch: fix/history-display
+Root cause: la API /orders devuelve array [{...}]; las plantillas iteran orders.items → vacío en /orders, /won-auctions, /seller/orders.
+Solution: helper toItems() (array/{data}/{items}→{items}) aplicado en los 3 call sites del CLIENT.
+Modified files: src/apps/client/src/common/bff/list-view.ts (nuevo), test/list-view.spec.ts (nuevo), src/apps/client/src/app.controller.ts
+Evidence: docs/implementation/evidence/PT-067/ (3 páginas muestran la orden; tests 14/14)
+PTSA reference: HIST-orders
+
+## PT-068 — BUG — /seller/auctions no mostraba subastas (role=seller vs mine=true)
+Date: 2026-07-25
+Status: VALIDATION_PENDING
+Branch: fix/history-display
+Root cause: CLIENT usaba ?role=seller (la API usa ?mine=true para subastas propias) → devolvía solo públicas → vacío. Además {data} vs items.
+Solution: ?mine=true + toItems() en sellerAuctions.
+Modified files: src/apps/client/src/app.controller.ts
+Evidence: docs/implementation/evidence/PT-068/ (/seller/auctions muestra la subasta CLOSED)
+PTSA reference: HIST-seller-auctions
+
+## PT-073 — BUG: Contrato de depósito falla por carrera de navegación (QA harness)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-073-074-qa-harness-reliability
+Objective: QA-BOOT-10b estable sin falso-negativo
+Root cause: el test leía el body de /payments/initiate por evento mientras window.location→abort abortaba la navegación (producto correcto: la API devuelve redirectUrl, verificado por curl)
+Solution: verificación determinista con page.evaluate(fetch('/api/v1/payments/initiate')) inspeccionando el JSON
+Modified files: tests/qa-browser-suite/10-bootstrap.cjs
+Evidence: docs/implementation/evidence/PT-073-074-075/ (run 20260724-232401: bootstrap 13/13, QA-BOOT-10b PASS redirectUrl=true)
+Delta: ninguno vs plan
+
+## PT-074 — BUG: Fase 31-outbid redundante falla en run-all (QA harness)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-073-074-qa-harness-reliability
+Objective: run-all sin falso-negativo por re-run de E2E-6
+Root cause: 31-outbid.cjs re-ejecuta E2E-6 sobre estado ya en 700 (comprador2 líder) → 400 esperado; outbid ya cubierto por E2E-6 de 30-e2e
+Solution: quitar 31-outbid.cjs de la secuencia de run-all.sh (se conserva como herramienta standalone)
+Modified files: tests/qa-browser-suite/run-all.sh
+Evidence: docs/implementation/evidence/PT-073-074-075/ (run 20260724-232401: e2e 5/5)
+Delta: ninguno vs plan
+
+## PT-075 — BUG: E2E-3 falla por precondición temporal (subasta PUBLISHED) (QA harness)
+Date: 2026-07-24
+Status: VALIDATION_PENDING
+Branch: fix/PT-073-074-qa-harness-reliability
+Objective: E2E-3 determinista
+Root cause: aseveraba ACTIVE antes de activar una subasta aún PUBLISHED (válida antes de starts_at); scheduler la activaría al pasar la hora
+Solution: activar PUBLISHED→ACTIVE antes de aseverar E2E-3; además run-all.sh normaliza OUT a forward-slashes
+Modified files: tests/qa-browser-suite/30-e2e.cjs, tests/qa-browser-suite/run-all.sh
+Evidence: docs/implementation/evidence/PT-073-074-075/ (run 20260724-232401: E2E-3 status=ACTIVE PASS)
+Delta: surgió durante la validación de PT-073/074; corregido en el mismo ciclo
+
+## Cierre de validación — PT-073 / PT-074 / PT-075
+Date: 2026-07-24
+Validado por: humano (albe.mtz@gmail.com) — "los damos por cerrados"
+Status: CLOSED (los 3)
+Nota: falsos-negativos de harness QA confirmados corregidos; producto verificado correcto.
+Evidencia de cierre: run 20260724-232401 (suite 100% verde) en docs/implementation/evidence/PT-073-074-075/.
+
+## PT-077 — BUG: mock de KycService ausente en users.service.spec
+Date: 2026-07-25
+Status: VALIDATION_PENDING
+Branch: fix/PT-077-users-spec-kyc-mock
+Objective: restaurar la suite unitaria de UsersService, roja en master desde PT-069.
+Root cause: PT-069 anadio la puerta de KYC obligatorio en enableSeller() e incorporo
+  KycService como sexta dependencia del constructor de UsersService
+  (users.service.ts:49, uso en :340-341). El TestingModule de
+  users.service.spec.ts nunca se actualizo para proveerla; Nest no podia
+  instanciar el servicio y las 21 pruebas fallaban en el beforeEach.
+Solution: registro de un mockKycService (getUserKycStatus -> 'APPROVED',
+  isApproved -> true) como provider del TestingModule. Solo codigo de pruebas.
+Modified files: src/api/test/unit/users/users.service.spec.ts
+Evidence: docs/implementation/evidence/PT-077/self-review.md
+Delta (real vs planned): ninguno. Alcance TRIVIAL respetado; no se anadio el test
+  de la puerta KYC (registrado como deuda en la evidencia).
+Detected by: PT-076.1 (linea base de regresion)
+
+## PT-077 — VALIDACION
+Date: 2026-07-25
+Status: CLOSED (validado por humano)
+Merge: 8acd71f (master) <- fix/PT-077-users-spec-kyc-mock (9d7edc2)
+Nota: entrada de cierre. La entrada original de PT-077 permanece intacta (log append-only).
+
+## PT-079 — BUG: puerta de KYC de enableSeller sin cobertura de test
+Date: 2026-07-25
+Status: VALIDATION_PENDING
+Branch: fix/PT-079-kyc-gate-coverage
+Objective: verificar con tests el camino de rechazo del KYC obligatorio (ADR-021 / RN-62).
+Root cause: PT-069 introdujo la puerta pero no su cobertura; PT-077 anadio un mock de
+  KycService con APPROVED fijo, de modo que todos los tests recorrian la rama feliz.
+  Eliminar la regla no habria roto ningun test.
+Solution: mock configurable por test con valores por defecto restablecidos en beforeEach,
+  mas cinco casos (PENDING, REJECTED, NOT_SUBMITTED, detalle del requisito, orden de
+  evaluacion). Solo codigo de pruebas.
+Modified files: src/api/test/unit/users/users.service.spec.ts
+Evidence: docs/implementation/evidence/PT-079/self-review.md
+Delta (real vs planned): ninguno. Verificacion por mutacion anadida: 4 de 5 casos fallan al
+  neutralizar la puerta; el quinto verifica orden de evaluacion y es indiferente por diseno.
+PTSA reference: TD-007
+
+## PT-078 — BUG: deduplicacion de webhooks por identificador de pago
+Date: 2026-07-25
+Status: VALIDATION_PENDING
+Branch: fix/PT-078-webhook-dedup-payment-id (desde feature/PT-076-paypal-orders-v2)
+Objective: impedir que la reentrega de un webhook acredite un deposito mas de una vez,
+  en los cuatro proveedores. Cierra TD-006.
+Root cause: creditOnce() (PT-076) solo protegia a proveedores que informaban eventId, y solo
+  PayPal lo hacia. Ademas la clave era insuficiente: MercadoPago emite varias notificaciones
+  distintas sobre el mismo pago (payment.created, payment.updated), cada una con su propio id,
+  y reintenta hasta recibir un 2xx (0/15/30 min, 6/48/96 h y luego cada 96 h).
+Solution: clave de deduplicacion = identificador de PAGO del proveedor (result.paymentId),
+  presente en los cuatro. Migracion de renombrado event_id -> payment_id escrita a mano como
+  ALTER TABLE RENAME COLUMN (Prisma proponia DROP+ADD, destructivo). eventId retirado de
+  WebhookResult. Fail-open sin paymentId. Fallos de acreditacion propagan en todos los
+  proveedores, liberando antes la reserva.
+Modified files: payments.service.ts, payment-provider.interface.ts, paypal.provider.ts,
+  schema.prisma, migrations/20260726050000_pt078_dedup_by_payment_id,
+  payments-dedup-amount.spec.ts, paypal-webhook.spec.ts, webhook-credit.spec.ts,
+  docs-v2/transversal/Registro-Maestro-de-ADR.md
+Evidence: docs/implementation/evidence/PT-078/self-review.md
+Delta (real vs planned): ninguno respecto al Proposal Package. Hallazgo colateral:
+  webhook-credit.spec.ts (PT-064) fallo por mockear PrismaService como {}, lo que confirmo
+  que MercadoPago pasa ahora por la reserva. Fixture actualizado, sin cambio de producto.
+PTSA reference: TD-006 (cerrada). ADR-027 sustituye a ADR-025.
+Depends on: PT-076 (no puede fusionarse antes).
+
+## PT-080 — MIXTO (BUG + FEATURE + REFACTOR): ciclo de pago fiable y modularidad de pasarelas
+Date: 2026-07-26
+Status: VALIDATION_PENDING
+Branch: feature/PT-080-payment-cycle (6 commits)
+Objective: que ningun pago cobrado quede sin acreditar ni se acredite dos veces, y que anadir
+  o quitar una pasarela no obligue a tocar la logica de transaccion.
+Root cause: el adaptador de MercadoPago enrutaba por la FORMA del identificador y no por el
+  topic. Consecuencias: el formato IPN se rechazaba con 500 (ningun pago real de Checkout Pro
+  acreditaba), y un mismo pago notificado como orden y como pago producia claves de
+  deduplicacion distintas, acreditando dos veces. Ademas no existia registro de la solicitud,
+  de modo que un pago cobrado sin notificacion se perdia en silencio.
+Solution:
+  Fase A - dos formatos con validacion distinta cada uno; identificador canonico por proveedor;
+    firma invalida -> 401.
+  Fase B - ciclo en tres fases persistido (payment_cycles + payment_cycle_events), invariante
+    solicitud/confirmacion/persistencia, primera-respuesta-gana, via garantizada por consulta
+    con expiracion a 72h (PAYMENT_EXPIRATION_HOURS, que estaba configurada y sin uso), cola de
+    anomalias e informe de reconciliacion.
+  Fase C - registro de pasarelas por inyeccion, puerto de CORE revivido y evolucionado,
+    nucleo sin nombres de campo de pasarela.
+Modified files: mercadopago/paypal/stripe/heybanco.provider.ts, payments.service.ts,
+  payments.module.ts, payment-cycle.service.ts, payment-reconciliation.service.ts,
+  payment-provider.registry.ts, interfaces/payment-provider.interface.ts, admin.service.ts,
+  admin.controller.ts, schema.prisma + migracion, core/integrations/payment-provider.interface.ts,
+  tests/qa-browser-suite/{mp-notify,reconcile-report}.cjs, run-all.sh
+Evidence: docs/implementation/evidence/PT-080/{00-baseline,fase-A,cierre}.md
+Delta (real vs planned): 6 deltas registrados en changes/PT-080-payment-cycle/tasks.md.
+  El principal: la cola de anomalias no usa RefundRequest porque exige orderId con FK a Order
+  y los depositos de wallet no tienen orden (TD-008).
+Verificacion: suite API 49/304, CORE 8/134, QA navegador 148/148, y seis pruebas contra la
+  pasarela real de MercadoPago incluyendo un pago acreditado SIN notificacion.
+PTSA reference: cierra TD-006 de verdad (PT-078 lo habia declarado cerrado sin estarlo).
+  Abre TD-008 y TD-009. ADR-028..032. RN-73..77.
+Depends on: PT-076 y PT-078 (no fusionar antes).
+
+## PT-078 / PT-079 / PT-080 — VALIDACION
+Date: 2026-07-26
+Status: CLOSED (validados por humano)
+Merges: 5922143 (PT-078) · d77e8f7 (PT-079) · 5cd3df3 (PT-080) — todos en master
+Nota: entradas de cierre. Las entradas originales permanecen intactas (log append-only).
+Estado de master tras los merges: API 49 suites / 304 tests, CORE 8/134, typecheck verde,
+  lint 0 errores, suite QA por navegador 148/148.
+
+## PT-083 — BUG TRIVIAL: cobertura de la puerta KYC en withdrawals.request
+Date: 2026-07-26
+Status: DONE
+Branch: fix/PT-083-kyc-withdrawal-coverage (merge en master)
+Correccion de premisa: TD-007 sugeria ausencia total de cobertura; la habia (estado PENDING).
+  El hueco real era mas estrecho: solo un estado ejercitado.
+Solution: se cubren PENDING, REJECTED, CORRECTION_NEEDED y null, mas contraprueba con APPROVED.
+  Verificado por mutacion: 4 de 9 tests fallan al neutralizar la puerta.
+Modified files: test/unit/wallet/withdrawals.service.spec.ts
+Delta: ninguno. Solo codigo de pruebas.
+
+## PT-082 — FEATURE STANDARD: retencion de las tablas de webhooks
+Date: 2026-07-26
+Status: DONE
+Branch: feature/PT-082-webhook-retention (merge en master)
+Correccion de premisa: el "dist/ obsoleto de CORE" no era problema del repositorio
+  (.gitignore:61; git ls-files devuelve 0 ficheros). Artefacto local, no basura versionada.
+Solution: SystemCleanupService purga processed_webhook_events y payment_cycle_events con un
+  SUELO de 30 dias independiente de LOG_RETENTION_DAYS, por encima de la ventana de reintento
+  mas larga de cualquier pasarela. payment_cycles NO se purga. Cada purga va aislada.
+Modified files: system-cleanup.service.ts, test/unit/system-cleanup/webhook-retention.spec.ts
+Delta: se descubrio que el try/catch unico anterior impedia purgar las demas tablas si una
+  fallaba; se corrigio en el mismo PT.
+
+## PT-084 — REFACTOR STANDARD: la capa de use-cases de CORE no se adopta
+Date: 2026-07-26
+Status: DONE
+Branch: refactor/PT-084-core-use-case-layer (merge en master)
+Correccion de alcance: se habia registrado como "cablear los use-cases". La investigacion
+  demostro que seria un error: el flujo que gobiernan ya funciona (wallet.service.ts:418,
+  auction-scheduler.service.ts:152), sus contratos no los usa nadie, y su fuente NO EXISTE
+  (solo quedaba dist/ ignorado por git). Cablearlos habria reescrito una ruta de dinero sin
+  ganancia y exigido recuperar codigo por ingenieria inversa de un artefacto obsoleto.
+Solution: decision explicita de NO adoptar, con criterio de revision escrito en el propio
+  codigo de los contratos. Documentacion corregida. ADR-033. Cierra AUD-012.
+Delta: ninguna linea de logica de negocio modificada.
+
+## PT-085 — BUG STANDARD: el panel financiero del admin mostraba ceros
+Date: 2026-07-26
+Status: DONE
+Branch: fix/PT-085-payment-record (merge en master)
+Root cause: Payment.orderId obligatorio con FK a Order; un deposito de wallet no tiene orden,
+  de modo que nadie escribia nunca la tabla `payments`. El panel de admin la consulta en SEIS
+  sitios (admin.service.ts:45,143,149,253,257,261) y todas esas metricas devolvian cero.
+  El impacto estaba subestimado en la ficha de TD-008, que lo describia como no bloqueante.
+Solution: Payment.orderId y RefundRequest.orderId opcionales con `reference` al ciclo; el ciclo
+  escribe su Payment al cerrarse (COMPLETED y FAILED); un cobro duplicado genera la
+  RefundRequest que PT-080 no pudo crear. El registro es contable: si falla, la acreditacion
+  sigue adelante.
+Modified files: schema.prisma + migracion, payment-cycle.service.ts, payment-record.spec.ts
+Evidence: deposito real de 199.99 MXN; `payments` paso de vacia siempre a 1 fila con
+  order_id NULL; ingresos del dia de 0 a 199.99.
+Delta: ninguno respecto al alcance; el hallazgo del panel se integro en el mismo PT.
+PTSA reference: cierra TD-008. ADR-034.
+
+## PT-087 — BUG: las garantias de un pago dejan de ser de un solo proveedor
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-087-garantias-por-proveedor
+Objective: que traza, via garantizada y rechazo con 401 pertenezcan al registro de pasarelas y no
+  a Mercado Pago, de modo que un proveedor nuevo las herede por construccion.
+Root cause: PT-080 generalizo el ENRUTADO (que adaptador atiende) y dejo particulares las
+  GARANTIAS (que se le promete a cada pago). El sintoma fue PayPal; la causa era el contrato.
+Solution:
+  - `findPayment(ctx)` sube al contrato como OPCIONAL a proposito: cada pasarela busca con lo que
+    tiene. MP por nuestra referencia; PayPal por el id de orden, porque su API no ofrece busqueda
+    por `custom_id`. Que sea opcional deja explicito quien tiene la garantia y quien no.
+  - `PaymentCycle.providerRef`: el id que devuelve la pasarela al CREAR el cobro. No se reutilizo
+    `canonicalPaymentId` (significa «el pago confirmado»): mezclarlos borraria la distincion entre
+    id conocido e id confirmado, que es lo que el ciclo existe para no perder.
+  - En Orders v2 aprobar NO mueve el dinero: la via garantizada de PayPal captura, no solo consulta.
+  - Firma invalida -> 401 en PayPal, igual que en MP desde PT-080.
+  - Prueba `provider-guarantees` sobre TODO adaptador registrado: cierra la clase de bug, no solo
+    los tres casos.
+Hallazgos aparecidos AL VERIFICAR, resueltos en el mismo ciclo:
+  - F-09: el ciclo se declaraba SETTLED y `payments` COMPLETED antes de que el dinero llegara al
+    usuario. Observado en real: 321.50 MXN capturados, sistema afirmando exito, monedero
+    inexistente, y la via garantizada sin volver a mirarlo (solo recoge REQUESTED). Ahora reabre.
+  - F-10: `deposit()` exigia monedero previo. Peor por el cron, donde nadie navega para provocar
+    la creacion perezosa. El deposito lo crea, en su misma transaccion.
+  - F-11: `creditWallet` escribia MERCADO_PAGO en duro: la traza mentia sobre la pasarela.
+  - F-12: el asiento contable se duplicaba al reintentar. `Payment.reference` unica + upsert.
+Modified files: payment-provider.interface.ts, paypal.provider.ts, mercadopago.provider.ts,
+  payment-reconciliation.service.ts, payment-cycle.service.ts, payments.service.ts,
+  payments.module.ts, wallet.service.ts, schema.prisma, 5 specs nuevos + 5 actualizados,
+  71-paypal-guaranteed.cjs, run-all.sh, ADR-036..040, RN-81..85, Modelo-de-Datos (mig. 24-25),
+  Master-Test-Plan (fase 71), inventory/services.md
+Evidence: docs/implementation/evidence/PT-087/
+Delta (real vs planned): el plan preveia tres hallazgos y salieron siete. Los cuatro nuevos no
+  eran deducibles del codigo: solo aparecieron al mover dinero real. El criterio de exito nº 3
+  -acreditar por sondeo un pago realmente aprobado- se daba por bloqueado sin cuenta personal de
+  sandbox; se desbloqueo y quedo cubierto. Ademas: el `PAYPAL_WEBHOOK_ID` no hacia falta pedirlo
+  (el scope `applications/webhooks` permite crearlo por API, y PayPal no valida que la URL
+  responda), y Payouts NO requiere aprobacion de cuenta como se habia dicho: el scope esta dado.
+
+## PT-088 — BUG: las URLs de retorno no llevaban a ninguna parte
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-087-garantias-por-proveedor
+Objective: que un pago devuelva al usuario a su monedero, con URLs de la forma
+  `subdominio.dominio` que sirvan igual en local y en produccion.
+Root cause: el sintoma (nginx no resolvia `client.localhost`) era el ultimo eslabon de cuatro:
+  - F-15: nginx publicaba en 8080, no en 80, asi que `subdominio.dominio` sin puerto no llegaba.
+  - F-16: NINGUNA ruta de retorno existia en CLIENT. `/wallet/success`, `/wallet/deposit-success`
+    y `/wallet/deposit-cancel` eran 404: el pago cobraba y el usuario aterrizaba en un error.
+  - F-17: cada adaptador construia su URL con su propio valor por defecto (`5173`, `5175`) y una
+    ruta distinta por pasarela.
+  - F-18 (la cara): `docker-compose.override.yml` forzaba `localhost:<puerto>` y vaciaba
+    `COOKIE_DOMAIN`. Era un apano legitimo mientras el 80 estaba ocupado, pero con puertos la
+    cookie se comparte —el puerto NO delimita cookies— asi que la sesion cruzaba de BASE a CLIENT
+    por accidente. Al pasar a subdominios eso deja de ser cierto.
+Solution:
+  - Una sola fuente en el `.env` raiz: `PUBLIC_SCHEME` + `PUBLIC_DOMAIN`. `docker-compose` deriva
+    `BASE_URL`, `CLIENT_URL` y `COOKIE_DOMAIN` para los cuatro servicios.
+  - `return-urls.ts`: origen unico y **ruta canonica unica** `/wallet/deposit/return`, con el
+    estado como parametro. Los cuatro adaptadores la usan; ninguno inventa URLs.
+  - Ruta y vista de retorno en CLIENT, con refresco automatico mientras el pago esta pendiente.
+  - `GET /payments/status/:reference` con comprobacion de propiedad: el `status` de la URL lo
+    escribe el navegador y no puede decidir lo que se muestra.
+  - `NGINX_HTTP_PORT=80` y dominio de desarrollo `ironloot.local`, porque los navegadores
+    RECHAZAN `Domain=.localhost` (dominio de uso especial). Esto ya estaba escrito en
+    `.env.example`; lo que habia derivado era el `.env` local.
+  - El override se vacia, con la explicacion de por que no debe volver.
+Modified files: .env, .env.example, docker-compose.yml, docker-compose.override.yml,
+  return-urls.ts (nuevo), payment-cycle.service.ts, payments.controller.ts, los 4 adaptadores,
+  app.controller.ts (CLIENT), deposit-return.html (nuevo), deposit-return.js (nuevo),
+  2 specs nuevos + 2 actualizados, ADR-041..044, RN-86..90
+Evidence: docs/implementation/evidence/PT-088/
+Delta (real vs planned): el encargo era «corregir nginx» y nginx no estaba mal: su bloque de
+  `client.localhost` era correcto desde el principio. Lo que fallaba era el puerto, las rutas
+  inexistentes y un override local que devolvia todo a `localhost:<puerto>`. Ademas, un test
+  previo (T-17) EXIGIA el puerto 5175 en las URLs de PayPal: fijaba en piedra el defecto, y se
+  reescribio para exigir lo contrario.
+
+## PT-089 — BUG: los hallazgos de PT-087/088 que quedaron sin aplicar
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: master (barrido de cierre, sin rama propia — anotado como desviacion)
+Objective: revisar los dos scripts de ADMIN que entraron al repositorio y barrer todo lo que
+  PT-087 y PT-088 dejaron suelto, de modo que no quede ningun hallazgo sin aplicar ni sin motivo.
+Root cause: dos PT consecutivos corrigieron una clase de defecto en el sitio donde se observo, no
+  en todos los sitios donde vivia. El barrido lo hace explicito.
+Solution:
+  - F-19 SRI en las dos dependencias de CDN (Chart.js en ADMIN, socket.io en CLIENT). Verificado
+    con contraprueba: hash alterado -> el navegador bloquea.
+  - F-21 `public-origins.ts` como fuente unica de BASE/CLIENT/API. Cubre los tres sitios que
+    seguian con `localhost:<puerto>`, incluidos los enlaces de correo a usuarios reales.
+  - F-22 PayPal registra `NOTIFICATION_RECEIVED` antes de validar la firma.
+  - F-23 `processed_webhook_events` se trunca entre corridas de QA, y la fase 71 aparece por fin
+    en el resumen final (se ejecutaba y nadie la leia).
+Registrado sin aplicar, con motivo:
+  - TD-012: solo `src/api` tiene ESLint; los otros tres declaran un `lint` que falla al
+    ejecutarse. Instalarlo y pasar `--fix` sobre ficheros nunca linteados es un PT propio.
+  - TD-013: `deleteOutDir: true` deja ADMIN caido tras `docker restart`. No se cambia porque
+    borrar la salida es correcto para produccion; la salida es recrear.
+Revision de los scripts de ADMIN: ambos correctos. `admin.js` usa `textContent`, sin riesgo de
+  inyeccion. `dashboard-charts.js` funciona (Chart.js llega por CDN permitido en la CSP e
+  `initDashboard()` se llama inline). Su unico problema era la falta de SRI, ya corregida.
+Modified files: public-origins.ts (nuevo) + su spec, email.service.ts, upload.service.ts,
+  heybanco.provider.ts, paypal.provider.ts, return-urls.ts, dashboard.html, auction/detail.html,
+  run-all.sh, 2 specs reescritos, ADR-045/046, RN-91..93, TD-012/013
+Evidence: docs/implementation/DISCOVERY.md § PT-089
+Delta (real vs planned): el encargo era revisar dos scripts. Estaban bien; lo que estaba mal era
+  todo lo que los rodeaba. Y aparecio un patron que merece atencion propia: DOS tests exigian el
+  defecto que corregian PT-088 y PT-089 (`T-17` pedia el puerto 5175; el de EmailService exigia
+  `localhost:5174`). Estos defectos estuvieron VALIDADOS por la suite.
+
+## PT-090 — BUG: el registro de deuda y tareas no describia la realidad
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-090-registro-desincronizado
+Objective: que los ficheros con los que el proyecto decide que hacer describan lo que el codigo
+  hace. Item #1 de MATRIZ-DEUDA-TECNICA.md.
+Root cause: la deuda y las tareas se actualizaban desde otros documentos, no contra el codigo. Un
+  registro que miente hace que se priorice mal y que se de por cubierto lo que no lo esta.
+Solution: TD-007 cerrada con cita; TD-003 y TD-004 REESCRITAS (su descripcion era falsa y
+  desorientaba) apuntando a PT-092/093; H-006 cerrada con medicion; PENDING_TASKS reconstruido;
+  ROADMAP reconciliado y declarado caducado; evidencia reconstruida para seis PT, marcada como
+  tal; tabla duplicada de PT-035 eliminada.
+Modified files: 10-Technical-Debt.md, PENDING_TASKS.md (+archive), ROADMAP.md, H-006.md,
+  changes/PT-035/tasks.md, evidence/PT-082|083|084|085|086|089|090, MATRIZ-DEUDA-TECNICA.md
+Evidence: docs/implementation/evidence/PT-090/
+Delta (real vs planned): el plan preveia corregir registros y salio un defecto de producto.
+  F-25: la puja en vivo apunta a `http://api:3000` —direccion interna de Docker— y falla en
+  silencio en el navegador. Aparecio al comprobar H-006, abierta desde el 23-jun preguntando por
+  esa misma zona. Entro en la matriz como PT-098 en posicion #2.
+
+## PT-091 — BUG: tres de los cuatro servicios no se linteaban (TD-012)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-091-linter-tres-servicios
+Objective: que `npm run lint` haga lo que dice en los cuatro proyectos, y que lo que encuentre se
+  mida antes de tocarlo. Item #3 de la matriz.
+Root cause: eslint no estaba ni declarado como dependencia en ADMIN, BASE y CLIENT, que aun asi
+  declaraban script `lint`. CORE no tenia ni script. Y el `pre-commit` hacia `cd src/api`: nada
+  ejecutaba nunca esos scripts, asi que su fallo no se manifestaba.
+Solution: eslint + configuracion replicando la de la API en los cuatro; medicion previa por regla;
+  fondo corregido en un commit (3 fallos de arranque sin manejar, 6 sin usar, 2 require, 8 de
+  parseo en CORE) y formato en otro; `pre-commit` extendido a los cinco.
+Evidence: docs/implementation/evidence/PT-091/
+Delta (real vs planned): el plan temia muchos defectos de fondo y resulto lo contrario — 12 en
+  total, y solo uno con consecuencia real (el fallo de arranque sin manejar en tres servicios).
+  El valor estuvo en la medicion, no en la correccion. Hallazgo generado: F-26, los scripts de la
+  raiz solo cubren la API (`npm test` omite 205 tests) y su `postinstall` rompe `npm install` en
+  cualquier workspace. En la matriz como PT-099.
+
+## PT-092 — FEATURE + BUG: verificar que la cuenta de cobro es del vendedor (TD-003)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: feature/PT-092-verificacion-de-cuenta
+Objective: que el destino de un retiro sea un hecho comprobado, no una afirmacion del usuario.
+  Item #5 de la matriz.
+Root cause: `isVerified` nacia `false`, NADIE lo ponia nunca a `true` y NADIE lo comprobaba. El
+  digito verificador de la CLABE atrapa erratas de tecleo, no la titularidad.
+Solution (diseno del desarrollador): mover dinero de verdad con un TOKEN CORTO que solo ve quien
+  tiene acceso a la cuenta. CLABE -> deposito con el token en el concepto del SPEI (lo envia el
+  administrador, la dispersion es manual). PayPal -> cobro automatico con el token en la
+  descripcion, y devolucion. Los fondos salen de la primera venta del vendedor, no de la
+  plataforma: si la plataforma pagara, dar de alta cuentas en masa seria un vector para drenarla.
+  Cardinalidad: un PayPal, varias CLABE, varias tarjetas.
+Evidence: docs/implementation/evidence/PT-092/
+Delta (real vs planned): el diseno inicial usaba centimos aleatorios; el desarrollador propuso un
+  token en la referencia, que es mas robusto —los centimos los altera cualquier comision y solo
+  dan 100 combinaciones—. Ademas propuso financiarlo con la primera venta, lo que cerro un vector
+  que el diseno original no cubria.
+  HALLAZGO AL VERIFICAR CONTRA LA API REAL: `confirm()` aceptaba el token con la verificacion aun
+  en PENDING, o sea antes de que el dinero saliera. No explotable, pero habria afirmado «cuenta
+  verificada» sin que nada hubiera llegado a esa cuenta. Corregido (W-20). Los 19 tests previos
+  pasaban: aparecio EJECUTANDO, no leyendo.
+  F-27 registrado como bloqueado: depositar A una tarjeta exige dispersion que el SDK de Mercado
+  Pago no expone. La tarjeta verifica y cobra; el retiro va a CLABE o PayPal.
+Pendiente: interfaz del vendedor, vista de la cola del administrador, formulario de tarjeta con
+  `cardToken` (el PAN no debe tocar nuestro servidor: SAQ A-EP frente a SAQ D).
+
+## PT-096 — REFACTOR + BUG: el JavaScript sale de las plantillas (TD-005 + TD-010)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: refactor/PT-096-js-inline-y-csp
+Objective: que ningun script del navegador viva en una plantilla, para retirar `unsafe-inline`.
+  Ultimo item accionable de la matriz.
+Root cause: 335 lineas de JS repartidas en 22 plantillas obligaban a `script-src 'unsafe-inline'`.
+Hallazgo que cambio el caracter del PT: `script-src-attr 'none'` BLOQUEA los manejadores inline.
+  Los 24 que habia estaban muertos desde que se anadio la CSP. El caso grave:
+  `onsubmit="return confirm('¿Cancelar permanentemente?')"` — si el manejador no corre, nada
+  devuelve `false` y el formulario se envia igual. Las acciones destructivas del panel se
+  ejecutaban SIN PREGUNTAR.
+Solution: delegacion con `data-*` en vez de extraer 24 manejadores uno a uno —un listener en
+  `document` cubre lo que hay y lo que se anada despues—; 22 plantillas con su script extraido a
+  fichero; 3 interpolaciones a `data-*`; `unsafe-inline` retirado de los tres sitios; guardas
+  estaticas que impiden la reaparicion.
+Evidence: docs/implementation/evidence/PT-096/
+Delta (real vs planned): el plan era un refactor limpio y resulto ser tambien la correccion de un
+  defecto de seguridad operativa. Ademas, dos tropiezos propios: mis comentarios `{# … <script> …
+  #}` rompieron mi propia guarda (se corrigio para que descarte comentarios, que es lo correcto),
+  y el hook rechazo un commit porque `lint-staged` lintea tests que el tsconfig excluye — mismo
+  hueco que PT-091 cerro en CORE y dejo abierto en los otros tres.
+
+## SERIE COMPLETA — matriz de deuda tecnica
+Date: 2026-07-27
+Doce PT ejecutados: PT-090, PT-098, PT-091, PT-092, PT-099, PT-093, PT-094, PT-095, PT-097,
+PT-100, PT-096. Todos en VALIDATION_PENDING.
+
+Deuda cerrada: TD-003, TD-004, TD-005, TD-007, TD-010, TD-012, TD-013. Mitigada: TD-011.
+Bloqueada por dependencia externa: TD-001 (contrato con un PAC), TD-002 (credenciales),
+TD-009 (comportamiento de la pasarela), F-27 (producto de dispersion).
+
+Hallazgos generados durante la ejecucion, todos entrando por la regla de la matriz:
+  F-25  la puja en vivo apuntaba a `http://api:3000`      -> PT-098
+  F-26  `npm test` en la raiz omitia 205 tests            -> PT-099
+  F-27  depositar a tarjeta exige dispersion              -> bloqueado
+  F-28  la API no arrancaba, y la suite no lo comprobaba  -> PT-097
+  F-29  la suite quedo incompatible con PT-088            -> PT-097
+  F-30  la sesion de ADMIN no persistia en el subdominio  -> PT-100
+  F-31  ADMIN sin infraestructura de tests                -> PENDIENTE
+  F-32  el linter no veia los tests en 3 proyectos        -> PT-096
+
+INCUMPLIMIENTO DE PROCESO, registrado: seis PT (099, 093, 094, 095, 097, 100) se ejecutaron
+saltando STATE 1, 2 y 3 — de la investigacion al codigo, sin las paradas. Se repusieron sus
+DISCOVERY de forma retroactiva y marcados como tales. PT-096 escribio su STATE 2 y 3 a mitad, tras
+que el desarrollador lo senalara por tercera vez. La degradacion fue progresiva: los cuatro
+primeros PT si recorrieron el ciclo.
+
+## PT-101 — FEATURE: ADMIN y BASE tienen donde probar (F-31)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: feature/PT-101-tests-admin
+Objective: que los dos proyectos sin infraestructura de tests la tengan, y que lo primero que se
+  ponga sea lo que mas duele si falla.
+Root cause: ADMIN y BASE no tenian script `test` ni carpeta. Era la razon por la que la guarda de
+  PT-100 —un defecto del propio panel— tuvo que ir a la suite de navegador: minutos y todo el
+  stack levantado, para algo que un test unitario resuelve en milisegundos.
+Solution: jest replicando la config de CLIENT; tests del guardia (6) y del cliente de API (7) en
+  ADMIN, y del filtro 404 en BASE (3). Los 18 servicios quedan FUERA a proposito: son envoltorios
+  de `fetch` y cubrirlos repetiria la implementacion. `npm test` de la raiz los incluye.
+Evidence: docs/implementation/evidence/PT-101/
+Delta (real vs planned): F-31 hablaba solo de ADMIN; al medir aparecio que BASE estaba igual y se
+  incluyo. Y el test G-06 destapo el primer dia una arista en el propio guardia: usaba
+  comprobacion de veracidad, de modo que `isAdmin: 'false'` —la CADENA— abria el panel. No era
+  explotable, pero es la frontera del contexto de mas privilegio y costaba una palabra. Se
+  corrigio ENMENDANDO EL PLAN de forma explicita, porque el §5 decia que este PT no tocaria
+  codigo de aplicacion.
+
+## PT-102 — BUG: la puja en vivo estaba apagada, y PT-096 la apago (F-34)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-102-puja-en-vivo-apagada
+Objective: que la puja en vivo vuelva a funcionar y que no pueda volver a apagarse en silencio.
+Root cause: el orden de los dos <script> de `auction/detail.html` estaba invertido desde
+  b4e7261 (PT-096). `pages-auction-detail.js` llamaba a io('/auctions') antes de que socket.io
+  definiera `io`; el ReferenceError lo tragaba un catch rotulado «live feed is optional». La
+  pagina funcionaba, el producto no, y no habia ni un error en consola.
+  Antes de PT-096 el orden era correcto: el CDN en la linea 46, el codigo inline en la 49. Al
+  extraer el JS a un fichero se movio el contenido «tal cual» — pero la POSICION tambien era un
+  contrato.
+Solution: tres cambios, uno por cada red que fallo.
+  1. `defer` en ambos scripts, con el CDN primero. No una simple reordenacion: `defer` garantiza
+     el orden por especificacion y ademas espera al DOM, que el script ya necesitaba y hasta hoy
+     conseguia por accidente. Y ambos dentro del {% if auction %}: sin subasta el script reventaba
+     al leer #countdown en la pagina de «subasta no encontrada».
+  2. El catch deja de ser mudo: comprueba `io` explicitamente y registra con console.error. Se
+     conserva el catch —si el CDN cae hay que poder pujar por HTTP— pero un fallo que nadie puede
+     observar no es un fallo tolerado, es un fallo oculto.
+  3. Dos guardas: `orden-de-scripts.spec.ts` (estatica, con dos casos de CONTROL que verifican que
+     sabe rechazar y sabe aceptar) y la fase 32 de la suite (dos navegadores reales).
+Modified files: src/apps/client/views/pages/auction/detail.html,
+  src/apps/client/public/js/pages/pages-auction-detail.js,
+  src/apps/client/test/orden-de-scripts.spec.ts (nuevo),
+  tests/qa-browser-suite/32-puja-en-vivo.cjs (nuevo), tests/qa-browser-suite/run-all.sh,
+  docs/enterprise-documentation/11-Conventions.md (RULE-07 + Delta Log)
+Evidence: docs/implementation/evidence/PT-102/
+  - guarda-caza-la-regresion.txt: con el orden invertido a proposito, OS-01/02/03 fallan
+  - npm-test.txt: 697 (CLIENT 83 -> 89)
+  - fase-32-corrida-completa.txt: 8/8 desde base vacia, $700 -> $950 sin recargar
+Delta (real vs planificado): una cosa de mas —mover el script dentro del {% if auction %}—, hecha
+  porque al juntarlos se vio que sin subasta el script se cargaba igual y reventaba. Mismo defecto
+  de fondo. Declarada en self-review.md por si se considera fuera de alcance.
+Hallazgo generado: F-35 — QA-PP-09 mide un delta de saldo y otra fase puede acreditarlo dentro de
+  la ventana. Ledger: 321.50 (PAYPAL) + 137.40 (MERCADO_PAGO) = 458.90, el delta observado. El
+  sistema hizo lo correcto; la prueba mide mal. Registrado en la matriz, no arreglado aqui.
+Desbloquea: PT-096 (dependia de F-34) y PT-098 (su criterio vuelve a ser demostrable).
+PTSA reference: F-34
+
+## PT-103 — BUG: el registro de deuda volvio a contradecir al codigo (F-33)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-103-registro-de-deuda-desincronizado
+Objective: que el registro deje de mentir, y que no pueda volver a hacerlo sin que algo falle.
+Root cause: cerrar una deuda son dos escrituras -el codigo y 10-Technical-Debt.md- y solo la
+  primera esta obligada por algo. TD-003 (PT-092), TD-005 y TD-010 (PT-096) y TD-012 (PT-091)
+  seguian diciendo `Open` con su cierre ya en el codigo y declarado en HISTORY.log:932.
+  Reincidencia: PT-090 existia justamente para corregir que el registro contradijera al codigo,
+  y tres PT despues volvia a hacerlo. La disciplina sin mecanismo caduca.
+Solution: una guarda que cruza HISTORY.log -append-only, y FDGE obliga a escribirlo- con el
+  registro: si la historia da una deuda por cerrada, su Status no puede decir Open.
+  Estrecha a proposito: solo reconoce formas explicitas y ante la duda NO acusa, porque un falso
+  positivo termina con la guarda borrada. Y se salta si los ficheros no estan: docs/ esta
+  gitignored y un rojo por ausencia romperia cualquier clon limpio.
+  Las cuatro filas se corrigieron comprobandolas CONTRA EL CODIGO, no contra HISTORY.log.
+Hallazgos que produjo esa comprobacion:
+  - TD-005 NO estaba del todo cerrada: PT-096 retiro `unsafe-inline` de scriptSrc -su objetivo y
+    el riesgo grande- pero styleSrc lo conserva en los tres sitios. Se cierra ACOTADA a
+    `script-src` y el resto se registra como TD-014. Declararla cerrada a secas habria sido la
+    misma imprecision que causo F-33, una semana despues de corregirla.
+  - PENDING_TASKS.md llevaba nueve trabajos como PENDING que ya estaban hechos. Mismo desfase,
+    otro fichero. Alineado.
+Modified files: src/api/test/unit/documentacion/coherencia-deuda-tecnica.spec.ts (nuevo),
+  docs/enterprise-documentation/10-Technical-Debt.md (4 filas + TD-014 nueva),
+  docs/enterprise-documentation/11-Conventions.md (RULE-08 + Delta Log),
+  docs/implementation/PENDING_TASKS.md
+Evidence: docs/implementation/evidence/PT-103/
+  - En RED nombraba las cuatro deudas, una por una, con lo que decia cada Status
+  - npm-test.txt: 703 (API 458 -> 464)
+Delta (real vs planificado): dos cosas que el plan no preveia y que salieron de exigir la
+  comprobacion contra el codigo -TD-005 parcial, PENDING_TASKS desfasado-. Y un tropiezo: escribi
+  la guarda en test/unit/docs/ y el `docs/` global del .gitignore la dejaba fuera del repositorio.
+  Habria sido una guarda invisible, que es la enfermedad que este PT trata. Movida a
+  test/unit/documentacion/.
+Desbloquea: PT-090 (dependia de F-33).
+PTSA reference: F-33
+
+## PT-104 — BUG: dos pruebas median el credito restando saldos (F-35)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-104-medir-el-credito-por-referencia
+Objective: que QA-PP-09 y QA-TR-06 midan el credito DE SU PAGO, no una diferencia de saldo.
+Root cause: la via garantizada es asincrona por diseno y puede acreditar otro deposito dentro de
+  la ventana entre las dos lecturas de saldo. Ocurrio en la corrida de PT-102: delta 458.90 =
+  321.50 (PAYPAL) + 137.40 (MERCADO_PAGO). La prueba acuso al sistema por hacer lo correcto.
+Solution: `Payment.reference` es unica desde PT-087 y `ledger.reference_id` la guarda, asi que el
+  asiento de ese pago se lee directo. Mas estricto, no menos: UN solo asiento, importe exacto,
+  saldo movido en ese importe, y monedero correcto — nada de eso lo distingue restar dos numeros.
+  Aplicado a las DOS fases: un defecto en dos sitios.
+Segundo defecto, encontrado al verificar: la fase 70 trataba /v1/orders como sincrona. Con
+  `processing_mode: automatic` Mercado Pago puede responder `processing` -orden en curso, no
+  fallida- y la fase se rendia ahi. Sus DOCE comprobaciones de traza no se ejecutaban nunca; el
+  pago si se cobraba. Ahora espera el estado definitivo (`esperarOrden`).
+  Fase 70: 4 casos (1 rojo) -> 16 casos, 16 verdes.  Fase 71: 17/17.
+Modified files: tests/qa-browser-suite/70-payment-trace.cjs,
+  tests/qa-browser-suite/71-paypal-guaranteed.cjs, tests/qa-browser-suite/mp-orders.cjs
+Evidence: docs/implementation/evidence/PT-104/
+  - vieja-falla-nueva-pasa.txt: sobre los MISMOS datos, la medicion vieja da 99049 -> 99507.9
+    (458.90, esperaba 321.5) y la nueva pasa. El sistema no tenia nada roto.
+  - fases-70-71.txt
+Delta (real vs planificado): el arreglo de `processing` no estaba previsto. Se hizo porque sin el
+  no habia forma de demostrar la correccion de esta misma tarea, y porque es el mismo defecto de
+  fondo: una prueba que asume algo que el sistema nunca prometio.
+  Tropiezo anotado: comprobe sintaxis con `node -e require(...)` y el fichero es una IIFE — lo
+  ejecuto, lanzando un deposito real de 137.40 que quedo en REQUESTED (expira a las 72h).
+PTSA reference: F-35
+
+## VALIDACION — PT-090 … PT-104 (los quince de la serie)
+Date: 2026-07-27
+Status: VALIDATION_PENDING — evidencia ejecutada, pendiente de palabra humana
+Objective: correr todas las comprobaciones de VALIDACION-PT-090-101.md contra el entorno real.
+Resultado:
+  npm test          703/703   (API 464 · CLIENT 89 · CORE 134 · ADMIN 13 · BASE 3)
+  lint:check        0 errores en los cinco proyectos
+  bash run-all.sh   193/193   diez fases, desde base vacia, dos pasarelas reales
+  PT-092             9/9      token C9ECJR, verificado en minusculas, retiro 201
+  PT-093            12/12     falla sin TOTP en produccion, no lo exige en desarrollo
+  PT-094            HTTP 200, Up (healthy) tras `docker restart`
+  PT-095            aviso con consecuencia y lineas de hosts; no se emite en produccion
+  PT-096/PT-100      7/7 en navegador, 0 violaciones de CSP, la confirmacion cancela de verdad
+  PT-098             8/8      el precio sube en el segundo navegador SIN recargar
+  PT-102             6/6      guarda de orden, con sus dos casos de control
+  PT-103             6/6      el registro ya no contradice a la historia
+  PT-104            16/16 y 17/17 en las fases 70 y 71
+Evidence: docs/implementation/evidence/VALIDACION-FINAL/
+Nota: el agente NO cierra bugs. Los quince siguen en VALIDATION_PENDING; lo de arriba es la
+  evidencia, no la decision. Cerrarlos es una linea del humano, con el precedente de
+  `PT-078 / PT-079 / PT-080 — VALIDACION`.
+Detalle: ver §15 de VALIDACION-PT-090-101.md.
+
+## PT-090 … PT-104 — VALIDACION
+Date: 2026-07-27
+Status: CLOSED (validados por humano)
+Merges: todos en master, `20ed4b9` = `origin/master`. Quince PT:
+  PT-090 · PT-091 · PT-092 · PT-093 · PT-094 · PT-095 · PT-096 · PT-097 · PT-098 · PT-099 ·
+  PT-100 · PT-101 · PT-102 · PT-103 · PT-104
+Nota: entrada de cierre. Las entradas originales permanecen intactas (log append-only).
+Estado de master en el cierre:
+  npm test          703/703   API 464 · CLIENT 89 · CORE 134 · ADMIN 13 · BASE 3
+  lint:check        0 errores en los cinco proyectos
+  bash run-all.sh   193/193   diez fases, desde base vacia, dos pasarelas reales
+Evidencia: docs/implementation/evidence/VALIDACION-FINAL/ y §15 de VALIDACION-PT-090-101.md.
+Lo que la serie deja detras: dos reglas nuevas nacidas de defectos reales -RULE-07 (una
+  dependencia entre scripts se declara, y un catch sobre el producto registra algo) y RULE-08
+  (cerrar una deuda son dos escrituras, con cita)-, y tres guardas que no existian: orden de
+  scripts, coherencia del registro de deuda, y la puja en vivo en dos navegadores.
+Deuda abierta al cerrar: TD-014 (style-src 'unsafe-inline'), unica sin bloqueo externo.
+
+## PT-105 — REFACTOR: los estilos salen de las plantillas (TD-014)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: refactor/PT-105-estilos-fuera-de-plantillas
+Objective: retirar `unsafe-inline` de style-src, la mitad que PT-096 dejo abierta.
+Root cause: PT-096 cerro `script-src` -donde el riesgo es ejecutar codigo- y dejo `style-src`.
+  PT-103 registro la mitad pendiente como TD-014.
+Solution: 93 atributos style= en 38 plantillas a clases del CSS de cada sitio, con un mapa
+  explicito valor->clase que paraba el proceso ante un valor no contemplado en vez de dejarlo
+  pasar. Ninguna apariencia cambia.
+Lo que si cambio de comportamiento, y era EL riesgo del PT: cuatro paginas de pestanas de ADMIN
+  hacian `style.display = ''` -«vuelve a lo que diga el CSS»-. Mientras el CSS no decia nada eso
+  mostraba el panel; con `.oculto` en el marcado, «lo que diga el CSS» pasa a ser oculto y la
+  pestana dejaba de abrirse. Las cuatro a classList. Los otros 30 usos escriben un valor
+  explicito y no tienen el problema: el estilo inline gana a la clase, y la CSP no cubre CSSOM.
+Modified files: 38 plantillas, 3 CSS, 3 main.ts, 4 JS de ADMIN,
+  src/apps/client/test/estilos-fuera-de-plantillas.spec.ts (nuevo),
+  10-Technical-Debt.md (TD-014 cerrada, TD-005 cerrada del todo), 11-Conventions.md (RULE-09)
+Evidence: guarda 14/14 con dos casos de control; navegador 7/7 -las tres paginas de pestanas
+  abren con alto=199px, el CSS nuevo carga, la pagina no se desborda, 0 violaciones de CSP-.
+Hallazgo generado: F-36 — al reiniciar los tres sitios para probar la CSP, BASE quedo en 503.
+  Es TD-013, que PT-094 cerro solo en ADMIN. Ciclo propio: PT-108.
+PTSA reference: TD-014
+
+## PT-106 — BUG TRIVIAL: las capturas de la suite van a la carpeta de su corrida
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-106-capturas-en-su-sitio
+Objective: que una captura se guarde donde pertenece y que llamar mal a shot() deje de ser mudo.
+Root cause: `shot(page, dir, name)` recibia dos argumentos en 16 de sus 20 llamadas. JavaScript no
+  protesta por un argumento que falta: el nombre caia en `dir` y `name` quedaba undefined, asi que
+  el fichero acababa en `<etiqueta>/undefined.png` DENTRO del codigo fuente de la suite.
+  Se leyo como cosmetico durante semanas. No lo era: capturas inservibles para diagnosticar -todas
+  con el mismo nombre, fuera de su corrida-, pisandose entre ejecuciones, y 12 binarios cambiando
+  en cada git status. PT-102 copio el patron malo.
+Solution: firma invertida a `shot(page, name, dir)` con dir opcional -el orden viejo es el que
+  induce el error-, y sin nombre lanza. Borrados 21 directorios, comprobando el contenido de cada
+  uno antes.
+Evidence: la fase 40 deja 10 capturas con su nombre en qa-out/<corrida>/capturas/ y 0 png en el
+  codigo fuente. Guarda 3/3.
+
+## PT-107 — REFACTOR TRIVIAL: la suite de QA entra en el grafo de conocimiento
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: refactor/PT-107-suite-en-el-grafo
+Objective: que graphify vea los 20 ficheros donde vive la logica de las pruebas de integracion.
+Root cause: `.cjs` no esta en CODE_EXTENSIONS ni en _JS_RESOLVE_EXTS de graphify, que es un
+  paquete de terceros en site-packages y no se parchea.
+Decision: se comprobo si `.cjs` hacia falta. Ni el package.json raiz ni el de la suite declaran
+  "type": "module", asi que un .js sigue siendo CommonJS. No hacia falta.
+Solution: 19 ficheros con `git mv` (conserva el historial) y 34 referencias en 18 ficheros,
+  incluidas las 13 de run-all.sh.
+Evidence: corrida completa, 9 fases en verde. La 71 murio esperando el boton de login del checkout
+  REAL de PayPal -su interfaz, no el renombrado: sus 5 primeros casos pasaron-; repetida sola da
+  17/17. Graphify pasa de 0 a 387 nodos de la suite.
+
+## PT-108 — BUG TRIVIAL: `docker restart` ya no tumba BASE (F-36)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-108-arranque-base
+Objective: cerrar TD-013 donde vive, no solo donde se observo.
+Root cause: PT-094 diagnostico TD-013 en ADMIN y puso alli el nest-cli.dev.json con
+  deleteOutDir: false. La causa —la configuracion de compilacion en desarrollo— es identica en los
+  tres sitios, y BASE se quedo sin el: `docker restart ironloot-base` -> HTTP 503,
+  `Cannot find module './app.module'`.
+Solution: replicado en BASE (nest-cli.dev.json + start:dev + montaje en docker-compose).
+  CLIENT no se rompia, pero no por tener el arreglo: hace `nest build &&` antes de arrancar, que
+  tapa el problema a costa de tiempo. Se deja y se anota; cambiar algo que funciona no entra.
+Evidence: `docker restart ironloot-base` dos veces seguidas -para descartar suerte-: HTTP 200 y
+  healthy en ambas.
+Nota: tercera vez esta semana del mismo patron —arreglar donde se observo y no donde vive—: F-33,
+  TD-005 partida en dos, y esto.
+PTSA reference: F-36
+
+## PT-105 … PT-108 — VALIDACION
+Date: 2026-07-27
+Status: CLOSED (validados por humano)
+Merges: todos en master, `f1190b7` = `origin/master`. Cuatro PT:
+  PT-105 (TD-014) · PT-106 (capturas) · PT-107 (suite en el grafo) · PT-108 (F-36)
+Nota: entrada de cierre. Las entradas originales permanecen intactas (log append-only).
+Estado de master en el cierre:
+  npm test          720/720   API 467 · CLIENT 103 · CORE 134 · ADMIN 13 · BASE 3
+  lint:check        0 errores en los cinco proyectos
+  bash run-all.sh   193/193   diez fases, dos pasarelas reales
+  graphify          2442 nodos, 5100 aristas (la suite de QA pasa de 0 a 387 nodos)
+Lo que deja: RULE-09 (los estilos viven en el CSS; classList, nunca style.display = ''), la CSP de
+  los tres sitios sin `unsafe-inline` en ninguna directiva, y TD-014 cerrada — no queda ninguna
+  deuda tecnica abierta salvo las bloqueadas por terceros.
+
+## PT-109 — DOCS: la documentacion deja de contradecir al codigo
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: docs/PT-109-documentacion-al-dia
+Objective: actualizar toda la documentacion hasta graphify, antes de arrancar PTSA.
+Metodo: barrer las afirmaciones y comprobarlas CONTRA EL CODIGO, no contra otro documento. Es la
+  regla desde PT-090 y la que F-33 demostro que hay que sostener.
+Lo que estaba mal:
+  - 03-TRD, 05-UIUX-Brief y 09-Security-Architecture: la CSP «necesita unsafe-inline para las
+    plantillas». No lo lleva en ninguna directiva (PT-096 script-src, PT-105 style-src).
+  - 09-Security: «el TOTP de admin es opcional». Es obligatorio en produccion desde PT-093.
+  - TD-005 citaba un comentario del codigo que ya no existe.
+  - `src/apps/base/src/main.ts` conservaba el comentario «Nunjucks templates may have inline event
+    handlers», falso desde PT-096. Un comentario que miente es documentacion que miente.
+Lo que faltaba:
+  - inventory/services.md: 5 servicios, entre ellos AccountVerificationService (el que cierra
+    TD-003).
+  - inventory/endpoints.md: los 7 endpoints de metodos de cobro y verificacion, con su linea.
+  - Master-Test-Plan: decia «Core 12 suites/157 casos» y «Frontends: 0 tests». Real: 85 suites /
+    720 casos, 119 de ellos en los frontends.
+Correccion de premisa durante el trabajo: comprobe el inventario de servicios con un grep por
+  nombre de CARPETA y conclui que faltaban 19 de 27 modulos. Era falso: el inventario lista clases
+  de servicio, no carpetas. La comprobacion correcta -por nombre de clase- dio 5 ausentes.
+Modified files: 03-TRD.md, 05-UIUX-Brief.md, 09-Security-Architecture.md, 10-Technical-Debt.md,
+  README.md, inventory/services.md, inventory/endpoints.md, docs-v2/5-qa/Master-Test-Plan.md,
+  CLAUDE.md, src/apps/base/src/main.ts
+Evidence: las cuatro citas nuevas resuelven a la linea exacta (wallet.controller.ts:154, :181,
+  :194 y withdrawals.service.ts:50). npm test 720/720 tras el cambio.
+Graphify: regenerado. 2442 nodos, 5100 aristas, 178 comunidades. La suite de QA aporta 198 nodos
+  -tenia 0 antes de PT-107-. La capa semantica del 26-jun se conserva (563 nodos `document` +
+  73 `rationale`, 149 aristas INFERRED): se fusiona, no se reemplaza.
+Nota sobre el README de enterprise-documentation: se deja dicho que es un recorrido del 23-jun con
+  correcciones encima, NO una regeneracion. Foundation Protocol dice que una nueva ejecucion
+  sobrescribe todo; eso no se ha hecho y la decision es del humano.

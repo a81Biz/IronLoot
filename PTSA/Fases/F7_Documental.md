@@ -108,3 +108,14 @@ Penalización:
 - H-007: BAJA → -1
 
 **D4 = 100 - 1 = 99**
+
+---
+
+## Update U-004 — DS-004 (2026-07-27)
+
+Las correcciones de PT-109 se sostienen: 0 coincidencias de «la CSP necesita `unsafe-inline`»,
+«TOTP opcional» y «Frontends: 0 tests». La guarda `coherencia-deuda-tecnica.spec.ts` pasa 6/6.
+
+**Pero el mecanismo de auditoría documental está roto**: los cinco documentos que
+`audit-scope.yaml` declara auditables están gitignored, así que no hay historial que diffear.
+Evidencia **E-012**, hallazgo **H-009**. D4 baja de 100 a 95.

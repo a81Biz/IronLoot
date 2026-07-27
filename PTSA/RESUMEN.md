@@ -1,119 +1,146 @@
 # PTSA V3 — RESUMEN DE AUDITORÍA
 ## IronLoot Auction Platform v1.0.0
-**Sesión**: S-001 + DS-001 + DS-002 + DS-003 | **Fecha**: 2026-06-23 | **Tipo**: Primera Auditoría Completa + 3 Delta Syncs
+**Sesión**: S-001 + DS-001 + DS-002 + DS-003 + **DS-004** | **Fecha**: 2026-07-27
+**Tipo**: Delta Sync tras 34 días y 20 PT sin reauditar
 
 ---
 
-## SCORES ACTUALES (DS-003) ★ CLASE A
+## SCORES ACTUALES (DS-004) — CLASE B
 
-| Métrica | S-001 | DS-001 | DS-002 | DS-003 | Estado |
-|---|---|---|---|---|---|
-| **Health Score** | 86.1 | 87.3 | 88.8 | **95.2 / 100** | ★ **Clase A** (cap eliminado — freshness KNOWN) |
-| **Health Proyectado** | — | — | — | — | No aplica — ya en máximo alcanzable con H-005 abierta |
-| **Risk Score** | 100 | 100 | 92 | **44 / 100** | MODERADO (solo H-005 + H-006 activos) |
-| **Confidence** | 55 | 55 | 60 | **85 / 100** | ALTA — ambos blockers resueltos |
-| **Clasificación** | C | C | C | **A** | Sin cap — freshness=KNOWN, BLQ-001 y BLQ-002 RESUELTOS |
+| Métrica | DS-003 (23-jun) | **DS-004 (27-jul)** | Cambio |
+|---|---|---|---|
+| **Health Score** | 95.2 | **90.5 / 100** | −4.7 |
+| **Risk Score** | 44 | **92 / 100** | +48 — **ALTO** |
+| **Confidence** | 85 | **62.8 / 100** | −22.2 — **BAJA** |
+| **Clasificación** | A | **B** | Bajada |
 
----
+**Health** = (85×0.30)+(85×0.30)+(100×0.30)+(95×0.10) = **90.5**
+**Regla del Agua Potable**: NO activada (D1 = 85 ≥ 60).
+**Clasificación sin cap**: A. **Con cap**: **B**.
 
-## SCORES POR DIMENSIÓN (DS-003)
-
-| Dimensión | S-001 | DS-001 | DS-002 | DS-003 | Cambio total | Hallazgos activos |
-|---|---|---|---|---|---|---|
-| D1 Domain Alignment | 70 | 70 | 70 | **85** | +15 | H-005 ABIERTA ALTA (único) |
-| D2 Architectural Integrity | 84 | 88 | 93 | **99** | +15 | H-006 ABIERTA BAJA (único) |
-| D3 Observability & Recovery | 100 | 100 | 100 | **100** | = | 0 hallazgos |
-| D4 Documentary Fidelity | 99 | 99 | 99 | **100** | +1 | 0 hallazgos |
-
-**Fórmula DS-003**: Health = (85×0.30)+(99×0.30)+(100×0.30)+(100×0.10) = **95.2**  
-**Regla del Agua Potable**: D1 = 85 ≥ 60 → **NO ACTIVADA**  
-**D5 Hallucination/Drift**: NO_APLICA (sistema determinista, sin LLM)  
-**health_unstable**: false  
-**Cap de freshness**: **ELIMINADO** — BLQ-001 y BLQ-002 resueltos, live verification completada
+> **Por qué no es A.** §15.6 es explícito: *«Un Health A con Confidence < 90 NO obtiene
+> clasificación A»*. Confidence = 62.8.
+>
+> La especificación no dice **cuánto** hay que bajar, así que se aplica la clase adyacente (B) y se
+> declara que es una interpretación, no una regla literal. Si se quiere otro criterio, hay que
+> escribirlo en F-1.
+>
+> **Nota factual sobre DS-003**: emitió Clase A con Confidence 85, que por esa misma regla tampoco
+> alcanzaba A. No se corrige el historial (append-only); se deja constancia.
 
 ---
 
-## HALLAZGOS — ESTADO FINAL (7)
+## SCORES POR DIMENSIÓN
 
-### ALTAS (2)
+| Dimensión | DS-003 | **DS-004** | Hallazgos activos |
+|---|---|---|---|
+| D1 Alineación de Dominio | 85 | **85** | H-005 (ALTA) — CFDI sin PAC |
+| D2 Integridad Arquitectónica | 99 | **85** | **H-008 (ALTA)** — 71 vulnerabilidades |
+| D3 Observabilidad y Recuperación | 100 | **100** | ninguno |
+| D4 Fidelidad Documental | 100 | **95** | **H-009 (MEDIA)** — docs fuera de git |
 
-| ID | Dim | Producto | Título | Estado | Resolución |
-|---|---|---|---|---|---|
-| H-001 | D1 | P-001 Bid | BidsService: EXTENSION_MS hardcoded 300s | **CLOSED** | PT-026, validado runtime 2026-06-23 |
-| H-005 | D1 | P-009 CfdiRecord | CFDI/PAC integration es stub | **ABIERTA** | PT-027 BLOQUEADO — PAC SAT no seleccionado |
-
-### MEDIAS (2)
-
-| ID | Dim | Producto | Título | Estado | Resolución |
-|---|---|---|---|---|---|
-| H-002 | D2 | P-003 RateLimit | ThrottlerModule sin Redis storage | **CLOSED** | PT-030, refactor DONE 2026-06-23 |
-| H-004 | D2 | P-005 Wallet | Withdraw: validación método comentada | **CLOSED** | PT-029, validado runtime 2026-06-23 |
-
-### BAJAS (3)
-
-| ID | Dim | Producto | Título | Estado | Resolución |
-|---|---|---|---|---|---|
-| H-003 | D2 | P-004 PaymentWebhook | PaymentsService Logger estándar | **CLOSED** | PT-031, validado runtime 2026-06-23 |
-| H-006 | D2 | P-010 PageRenderSSR | CLIENT apiUrl expuesto al browser | **ABIERTA BAJA** | Monitorear — reclasificada DS-001 |
-| H-007 | D4 | P-005 Wallet | PRD AC-3.2 incorrecto | **CLOSED** | PT-032, validado en docs 2026-06-23 |
-
-**Resumen**: 5 CLOSED · 1 ABIERTA (ALTA, bloqueada) · 1 ABIERTA (BAJA, monitoreo)
+**D5** (Confiabilidad Operacional): `NO_APLICA` — sistema determinista, sin LLM.
+`health_unstable`: false.
 
 ---
 
-## ESTADO FDGE FINAL
+## FRESCURA
 
-| PT | Tipo | Estado |
-|---|---|---|
-| PT-026 | BUG | **DONE** — validado runtime, H-001 CLOSED |
-| PT-027 | FEATURE MAJOR | **BLOQUEADO** — PAC SAT no seleccionado |
-| PT-028 | INVESTIGATION | **CLOSED** — H-006 reclasificada BAJA |
-| PT-029 | BUG | **DONE** — validado runtime, H-004 CLOSED |
-| PT-030 | REFACTOR | **DONE** — H-002 CLOSED |
-| PT-031 | TRIVIAL | **DONE** — validado runtime, H-003 CLOSED |
-| PT-032 | TRIVIAL | **DONE** — validado docs, H-007 CLOSED |
+```
+score_freshness:
+  last_verified: 2026-07-27
+  commits_since_audit: 177
+  status: STALE
+```
 
----
-
-## VERIFICACIONES POSITIVAS ACUMULADAS
-
-| Componente | Regla | Estado |
-|---|---|---|
-| WalletService.holdFunds() | CR-001, CR-003 — balance ≥ 0, atómico | ✅ |
-| Todos los payment providers | CR-008 — HMAC antes de procesar webhook | ✅ |
-| DisputesService | CR-007 — 14-day window via StateMachine | ✅ |
-| AuthService | CR-013 — BANNED users blocked | ✅ |
-| schema.prisma | CR-015 — Decimal no Float en financieros | ✅ |
-| AuctionSchedulerService | Distributed lock Redis (no doble-close) | ✅ |
-| WalletController.deposit() | CR-004 — amount match + status COMPLETED | ✅ |
-| AuthService | CR-010 — 2FA verificado si habilitado | ✅ |
-| CLIENT wallet pages | BFF — credentials: 'include' en fetch() | ✅ |
-| WalletController.withdraw() | getUserPaymentMethod() activo — referenceId validada en DB | ✅ VALIDADO RUNTIME |
-| BidsService.placeBid() | extensionMs lee AUCTION_SOFT_CLOSE_WINDOW_SEC desde SystemConfig | ✅ VALIDADO RUNTIME |
-| AppModule ThrottlerModule | ThrottlerStorageRedisService configurado — Redis compartido | ✅ |
-| PaymentsService webhooks | StructuredLogger con traceId — trazabilidad end-to-end | ✅ VALIDADO RUNTIME |
+**STALE** por dos motivos independientes: hay commits sobre patrones auditables reauditados sólo en
+parte, y el `audit_due` está **vencido** en los cinco productos CRÍTICOS (P-001, P-002, P-004,
+P-005, P-009 — vencieron el 23-jul).
 
 ---
 
-## LIMITACIONES DECLARADAS
+## LO QUE SE COMPROBÓ, Y CÓMO
 
-| ID | Descripción | Estado DS-003 |
-|---|---|---|
-| BLQ-001 | Sin acceso a DB real | **RESUELTO** (db push 2026-06-23) |
-| BLQ-002 | Sin acceso a logs en vivo | **RESUELTO** (H-003 validado runtime — logs JSON con traceId confirmados) |
+Todo por observación directa (`[A5]`): base de datos, `npm`, `git`, código. Nada de segunda mano.
+
+### D1 — Domain Acid Test sobre la salida real (E-010)
+
+`[R55]` exige ejecutarlo sobre la **salida real extraída de la BD**, nunca sobre tests. Se corrió
+contra los productos de la corrida completa de QA del 27-jul —pujas reales, subastas cerradas,
+**dos pagos por pasarelas de verdad**, retiros y asientos—.
+
+**11 de 12 invariantes cumplen.** Ninguna violación.
+
+| Invariante | |
+|---|---|
+| Balance nunca negativo · fondos retenidos ≤ balance | ✅ |
+| Cada monedero con saldo tiene ledger, **y el último `balance_after` cuadra con el balance** | ✅ 0 descuadres |
+| Depósito acreditado == pago del proveedor | ✅ 0 discrepancias |
+| Ninguna puja sobre subasta propia · ninguna puja que no supere a la previa | ✅ |
+| Moneda MXN exclusivamente · importes `numeric`, **0 columnas float** | ✅ |
+| **Todo pago `COMPLETED` tiene su asiento** · **ningún depósito duplicado** | ✅ |
+| Registros CFDI | ⚠️ 0 — es H-005 |
+
+Tres de esas comprobaciones no estaban en el catálogo `CR-001…CR-015` y se añadieron porque el
+dominio las exige: el cuadre del ledger contra el balance, que todo pago cobrado esté acreditado, y
+que ninguna referencia tenga asiento duplicado. Las tres son las garantías que PT-087 introdujo
+después de encontrar lo contrario.
+
+> **Limitación, dicha sin adornos**: la muestra es pequeña (3 monederos, 3 pujas, 2 pagos). Son
+> productos reales, no simulaciones, pero **no es volumen de producción**. Esto demuestra que los
+> invariantes no se violan en el camino observado, **no** que sean imposibles de violar bajo
+> concurrencia.
+
+### D3 — Observabilidad, sobre la traza real
+
+9 pasos distintos, 30 eventos. **0 credenciales filtradas.** 4 entradas redactadas, y cada una
+**nombra qué ocultó** (`headers.x-signature`, `response.authorization_code`): redacción marcada, no
+borrado silencioso.
+
+### D2 y D4 — Lo que bajó el score
+
+`npm audit --omit=dev` → **71 vulnerabilidades** (3 críticas, 53 altas, 15 moderadas) → **H-008**.
+Los **cinco documentos** que el alcance declara auditables están **gitignored** → **H-009**.
 
 ---
 
-## BLOQUEADOR ÚNICO RESTANTE
+## HALLAZGOS ACTIVOS (3)
 
-**H-005 / PT-027 — CFDI/PAC**: Compliance fiscal mexicano. Requiere selección de PAC certificado SAT (Finkok, SIFEI, Edicom u otro) y firma de contrato. Hasta que esto se defina, D1 permanece en 85 (no puede llegar a 100).
+| ID | Dim | Sev | Título | Estado |
+|---|:--|:--|---|---|
+| **H-005** | D1 | ALTA | CFDI/PAC es un stub — sin facturación fiscal | ABIERTA (bloqueado: exige contratar un PAC) |
+| **H-008** | D2 | ALTA | 71 vulnerabilidades en producción; `engine.io` alcanzable **sin autenticar** | ABIERTA (nuevo, DS-004) |
+| **H-009** | D4 | MEDIA | El alcance declara 5 documentos que git no puede seguir | ABIERTA (nuevo, DS-004) |
 
-**Para alcanzar Health > 95.2**: Solo resolviendo H-005. Con H-005 CLOSED: D1=100 → Health = 100.
+Cerrados en sesiones anteriores: H-001, H-002, H-003, H-004, H-006, H-007.
+
+**Ninguno se cerró en esta sesión.** El agente no cierra hallazgos técnicos ni de dominio.
 
 ---
 
-## PRÓXIMA AUDITORÍA
+## LO QUE ESTA AUDITORÍA NO CUBRE
 
-- **audit_due**: 2026-07-07
-- **Acción**: DS-004 o S-002 completo tras selección de PAC (PT-027 desbloqueado)
-- **Objetivo**: H-005 → Health 100 / Clase A sin restricciones
+Declarado para que no se confunda con cobertura:
+
+| Área | Estado |
+|---|---|
+| **Los 12 productos siguen en `BORRADOR`** | Ninguno llegó nunca a `IDENTIFICADO` ni `VALIDADO`. `[R39]` exige evidencia post-corrección observada en la fuente real para llegar a VALIDADO |
+| P-003, P-006, P-007, P-008, P-010, P-011 | Sin salida real auditada en esta sesión → `coverage` = 50 % |
+| Explotación de las vulnerabilidades | **No se intentó ninguna.** Se capturó el aviso, la cadena de dependencias y el punto de uso |
+| Concurrencia y carga | Fuera del alcance de este delta |
+| Nivel 4 del Acid Test (guardrails IA) | `NO_APLICA` — sistema determinista |
+
+---
+
+## RECOMENDACIÓN
+
+1. **H-008 primero, y triando — no `npm audit fix --force`.** Empezar por `engine.io`: es el único
+   alcanzable sin credenciales, y da contra la puja en vivo.
+2. **Poner a correr el checkpoint D2 de dependencias.** `audit-scope.yaml` lo declara desde el
+   23-jun y no hay registro de una sola ejecución. Un checkpoint previsto y no ejecutado es peor
+   que no tenerlo: da por cubierta un área que nadie mira.
+3. **Decidir sobre H-009**: versionar la documentación crítica, o retirarla del alcance. Hoy el
+   alcance promete una cobertura que el repositorio impide.
+4. **Subir los productos de `BORRADOR`.** Con el Acid Test de esta sesión, P-001, P-004, P-005 y
+   P-009 tienen evidencia real suficiente para pasar a `IDENTIFICADO`. Es trabajo de F3, no de un
+   delta sync.

@@ -119,3 +119,27 @@ En próximas sesiones, activar con `resume PTSA` o `continue PTSA`. El delta syn
 7. Append a `AUDIT_LOG.md`
 
 **Trigger de delta sync**: Cualquier PR merged que toque archivos en `audit-scope.yaml`.
+
+---
+
+## Update U-004 — DS-004 (2026-07-27)
+
+Delta calculado contra `audit-scope.yaml`: **177 commits, 286 ficheros** en alcance desde
+2026-06-23.
+
+```
+score_freshness:
+  last_verified: 2026-07-27
+  commits_since_audit: 177
+  status: STALE
+```
+
+**STALE** por dos motivos independientes: reauditación parcial (coverage 50 %) y `audit_due`
+vencido el 23-jul en los cinco productos CRÍTICOS.
+
+**Hueco detectado en el propio mecanismo**: los cinco documentos de `coverage_targets.docs` están
+gitignored, así que `commits_since_audit` **no es calculable** para ellos — no es 0, es
+indeterminable. Registrado como **H-009**.
+
+`ci_checkpoints` declara `D2` con «tests + schema + vulnerabilidades». **No hay registro de una
+sola ejecución.** Las 71 vulnerabilidades de H-008 son la consecuencia directa.

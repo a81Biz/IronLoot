@@ -28,16 +28,26 @@
         "MEDIA": 3,
         "BAJA": 2
       },
-      "findings_ids": ["H-001","H-002","H-003","H-004","H-005","H-006","H-007"],
-      "blockers": ["BLQ-001","BLQ-002"],
-      "coverage": 0.70,
+      "findings_ids": [
+        "H-001",
+        "H-002",
+        "H-003",
+        "H-004",
+        "H-005",
+        "H-006",
+        "H-007"
+      ],
+      "blockers": [
+        "BLQ-001",
+        "BLQ-002"
+      ],
+      "coverage": 0.7,
       "freshness": 0,
       "evidence_validity": 0.85,
-      "autonomy": 0.70,
+      "autonomy": 0.7,
       "audit_due": "2026-07-07",
       "notes": "Primera auditoría PTSA. Sin baseline previo. Scores constituyen el baseline de referencia."
-    }
-    ,
+    },
     {
       "session": "DS-001",
       "date": "2026-06-23",
@@ -127,9 +137,13 @@
         "MEDIA": 2,
         "BAJA": 3
       },
-      "blockers_resolved": ["BLQ-001"],
-      "blockers_active": ["BLQ-002"],
-      "coverage": 0.80,
+      "blockers_resolved": [
+        "BLQ-001"
+      ],
+      "blockers_active": [
+        "BLQ-002"
+      ],
+      "coverage": 0.8,
       "freshness": 0,
       "evidence_validity": 0.85,
       "autonomy": 0.75,
@@ -177,11 +191,14 @@
         "MEDIA": 0,
         "BAJA": 1
       },
-      "blockers_resolved": ["BLQ-001", "BLQ-002"],
+      "blockers_resolved": [
+        "BLQ-001",
+        "BLQ-002"
+      ],
       "blockers_active": [],
       "coverage": 0.95,
-      "freshness": 0.80,
-      "evidence_validity": 0.90,
+      "freshness": 0.8,
+      "evidence_validity": 0.9,
       "autonomy": 0.75,
       "delta_vs_DS002": {
         "D1": "+15",
@@ -201,6 +218,47 @@
       },
       "audit_due": "2026-07-07",
       "notes": "DS-003: PRIMERA CERTIFICACIÓN CLASE A. 4 hallazgos cerrados por validación humana en runtime. BLQ-002 resuelto (logs verificados en vivo). Cap de freshness=UNKNOWN eliminado. Único bloqueante: H-005 CFDI/PAC (decisión de negocio — fuera de alcance técnico hasta selección de PAC SAT). Health proyectado 100 si H-005 cerrado."
+    },
+    {
+      "session": "DS-004",
+      "date": "2026-07-27",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 85,
+        "D2": 85,
+        "D3": 100,
+        "D4": 95,
+        "health": 90.5,
+        "risk": 92,
+        "confidence": 62.8
+      },
+      "classification": "B",
+      "classification_without_cap": "A",
+      "cap_reason": "Confidence 62.8 < 90 (§15.6): un Health A con Confidence insuficiente no obtiene A",
+      "score_freshness": {
+        "last_verified": "2026-07-27",
+        "commits_since_audit": 177,
+        "status": "STALE"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "trigger": "Delta sync tras 34 dias y 20 PT (PT-090..PT-109) sin reauditar",
+      "findings_changes": {
+        "nuevos": [
+          "H-008 (D2, ALTA) — 71 vulnerabilidades en produccion, engine.io alcanzable sin autenticar",
+          "H-009 (D4, MEDIA) — el alcance declara 5 documentos que git no puede seguir"
+        ],
+        "revisados": [
+          "H-005 — evidencia E-007 STALE; recapturada como E-009; el hecho sigue siendo cierto"
+        ],
+        "cerrados": []
+      },
+      "evidencias_nuevas": [
+        "E-009",
+        "E-010",
+        "E-011",
+        "E-012"
+      ]
     }
   ]
 }

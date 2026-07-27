@@ -110,3 +110,15 @@ Sin penalizaciones en D3.
 **D3 = 100**
 
 *Nota: confidence reducida (70%) por BLQ-002. Si logs en vivo revelaran gaps adicionales en próxima auditoría, D3 podría bajar. Próxima auditoría recomendada para D3 en 30 días.*
+
+---
+
+## Update U-004 — DS-004 (2026-07-27)
+
+Logs **leídos**, no supuestos. Traza de pagos de la última corrida: 9 pasos distintos, 30 eventos.
+
+- Credenciales filtradas: **0**.
+- Entradas redactadas: **4**, y cada una **nombra qué ocultó** en `redacted_fields`
+  (`headers.x-signature`, `response.authorization_code`).
+
+Redacción marcada, no borrado silencioso — que es lo que CLAUDE.md exige. D3 se mantiene en 100.

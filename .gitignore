@@ -116,14 +116,40 @@ jest-coverage/
 # =====================================================
 # SECTION 6: DOCUMENTATION & INTERNAL
 # =====================================================
-# Internal documentation for developers (not for distribution)
-implementation/
-docs/
-CLAUDE.md
+# PT-112 (PTSA H-009 + F-37) — Se versiona lo que registra una DECISION.
+# No se versiona lo que se puede volver a GENERAR.
+#
+# Antes era al reves: `docs/` entero fuera -arquitectura, historia de decisiones y la auditoria
+# PTSA completa- y `qa-out/` dentro, con 164 MB y 2828 ficheros de capturas de corridas.
+#
+# El coste de esa inversion, medido: `commits_since_audit` era INDETERMINABLE para los cinco
+# documentos que `audit-scope.yaml` declara auditables, asi que la frescura de D4 no se podia
+# calcular; la guarda `coherencia-deuda-tecnica.spec.ts` se saltaba a si misma en CI; y las cuatro
+# afirmaciones falsas que corrigio PT-109 no dejaron rastro de que decian antes.
+#
+# Lo que entra son ~3.3 MB de texto. Lo que sale, 164 MB de binarios regenerables.
+
+# --- Artefactos: se regeneran, no se versionan ---
+qa-out/
 GRAPH_REPORT.md
 graphify-out/
 graphify-cache/
 graphify-temp/
+# `implementation/` (sin ruta) se retiro en PT-112: capturaba tambien docs/implementation/,
+# que es donde vive la historia de decisiones. No existe un implementation/ en la raiz.
+
+# La evidencia de FDGE mezcla ambas cosas: los .md son razonamiento, el resto son volcados.
+docs/implementation/evidence/**
+!docs/implementation/evidence/**/
+!docs/implementation/evidence/**/*.md
+
+# --- Lo que si se versiona, y por que ---
+#   docs/enterprise-documentation/  arquitectura, PRD, TRD, seguridad (lo que audita PTSA)
+#   docs/methodology/               los frameworks que gobiernan el trabajo
+#   docs/implementation/*.md        HISTORY.log es append-only: es un registro historico
+#   changes/                        los Proposal Packages: el razonamiento de cada PT
+#   PTSA/                           hallazgos, evidencias y scores: el rastro de auditoria
+#   CLAUDE.md                       lo que lee cualquier agente antes de tocar nada
 
 # Local working files
 todo.md
@@ -255,7 +281,7 @@ QA/
 .antigravitycli/
 src/api/generate-pref.ts
 
-changes/
+# changes/ — versionado desde PT-112: son los Proposal Packages
 
 # =====================================================
 # END OF GITIGNORE
@@ -263,3 +289,8 @@ changes/
 
 # PT-087 — credenciales de la cuenta personal de sandbox de PayPal (fase QA 71)
 tests/qa-browser-suite/paypal-sandbox.json
+
+# PT-112 — `HISTORY.log` es el registro append-only de FDGE, no un log de ejecucion. El patron
+# `*.log` lo dejaba fuera pese a ser el documento con mas valor historico del repositorio.
+!docs/implementation/HISTORY.log
+!PTSA/**/*.log
