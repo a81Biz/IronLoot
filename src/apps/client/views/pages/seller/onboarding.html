@@ -44,7 +44,6 @@
 {% endblock %}
 {% block scripts %}
 <script>
-const API = '{{ apiUrl }}';
 document.getElementById('onboardingForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msgEl = document.getElementById('onboardingMsg');

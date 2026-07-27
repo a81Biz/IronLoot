@@ -17,7 +17,6 @@
 {% endblock %}
 {% block scripts %}
 <script>
-const API = '{{ apiUrl }}';
 document.getElementById('settingsForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   await fetch('/api/v1/users/me/settings', {

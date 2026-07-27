@@ -30,7 +30,6 @@
 {% endblock %}
 {% block scripts %}
 <script>
-const API = '{{ apiUrl }}';
 document.getElementById('editForm')?.addEventListener('submit', async (e) => {
   e.preventDefault();
   const id = document.getElementById('auctionId').value;

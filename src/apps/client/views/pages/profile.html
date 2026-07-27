@@ -23,7 +23,6 @@
 {% endblock %}
 {% block scripts %}
 <script>
-const API = '{{ apiUrl }}';
 document.getElementById('profileForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msg = document.getElementById('profileMsg');
