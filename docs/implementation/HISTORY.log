@@ -1412,3 +1412,22 @@ Lo que casi se me cuela: comprobe el codigo de salida con `| tail` y devolvia 0 
 Delta: TD-015 decia «63 vulnerabilidades» y son 27 (13 paquetes); corregida. `audit-scope.yaml`
   ahora dice DONDE corre cada parte del checkpoint, no solo que existe.
 PTSA reference: H-008 — el mecanismo que faltaba
+
+## PT-119 — BUG: una segunda copia de nodemailer en el arbol (TD-015)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-119-nodemailer-duplicado
+Correccion de premisa: TD-015 afirmaba que los 13 paquetes exigian salto de version MAYOR. Al
+  volver a medirlo -despues de que PT-116 cambiara el arbol- resulto que `nodemailer` no. Hereder
+  el marco de un PT anterior sin recomprobarlo es lo mismo que F-33, en otro sitio.
+Root cause: la app ya estaba en nodemailer 9.0.3, fuera del rango vulnerable. El aviso venia de una
+  SEGUNDA copia en 8.0.5 anidada bajo mailparser <- preview-email <- @nestjs-modules/mailer. Mirar
+  la dependencia directa decia «9.0.3, correcto»; solo `npm ls` enseña las dos.
+Solution: override `$nodemailer` — la sintaxis de npm para referenciar la version de la dependencia
+  directa, de modo que no puedan divergir. Un override a `>=9.0.1` fallaba con EOVERRIDE.
+Evidence: copias 9.0.3+8.0.5 -> 9.0.3. 27 -> 26 avisos, linea base de 13 a 12 paquetes. El correo
+  sigue llegando (registro real, asunto correcto). npm test 492+103. Suite 176/176.
+Lo que NO se hizo: los 12 restantes exigen saltos mayores de verdad (@nestjs/core 10->11, Express
+  4->5, bcrypt 5->6, uuid 13->14 y cinco utilidades transitivas). Es una migracion de plataforma y
+  merece su propia decision. Desde PT-118 estan ACOTADOS: el CI falla si aparece el numero 13.
+PTSA reference: TD-015 / H-008
