@@ -8,6 +8,7 @@ import {
 } from '../interfaces';
 import { UnauthorizedException } from '../../../common/observability';
 import { PaymentTraceService } from '../payment-trace.service';
+import { depositReturnUrl } from '../return-urls';
 
 /** Margen de seguridad para renovar el token antes de que expire realmente. */
 const TOKEN_REFRESH_MARGIN_MS = 60_000;
@@ -193,8 +194,6 @@ export class PaypalProvider implements PaymentProvider {
   ): Promise<CreatePaymentResult> {
     this.logger.log(`Creating PayPal order for ${orderId} (${amount} ${currency})`);
 
-    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5175';
-
     const endpoint = `${this.apiBaseUrl}/v2/checkout/orders`;
     const peticion = {
       intent: 'CAPTURE',
@@ -210,8 +209,10 @@ export class PaypalProvider implements PaymentProvider {
         paypal: {
           experience_context: {
             user_action: 'PAY_NOW',
-            return_url: `${clientUrl}/wallet/deposit-success?ref=${orderId}`,
-            cancel_url: `${clientUrl}/wallet/deposit-cancel?ref=${orderId}`,
+            // PT-088 — Una sola fuente para las URLs de retorno. Antes apuntaban a
+            // `/wallet/deposit-success`, una ruta que no existia: el pago acababa en 404.
+            return_url: depositReturnUrl(orderId, 'success'),
+            cancel_url: depositReturnUrl(orderId, 'cancel'),
           },
         },
       },

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PaymentProvider } from '@prisma/client';
 import { PrismaService } from '../../database/prisma.service';
 import { StructuredLogger } from '../../common/observability';
@@ -31,6 +31,20 @@ export interface CycleDecision {
   shouldCredit: boolean;
   outcome: CycleOutcome;
   cycleId: string | null;
+}
+
+/** PT-088 — Lo que la pagina de retorno necesita saber, y nada mas del ciclo. */
+export interface DepositStatus {
+  reference: string;
+  provider: string;
+  status: string;
+  amount: number;
+  currency: string;
+  settled: boolean;
+  failed: boolean;
+  pending: boolean;
+  requestedAt: Date;
+  settledAt: Date | null;
 }
 
 export interface PendingCycle {
@@ -87,6 +101,44 @@ export class PaymentCycleService {
         nextCheckAt: new Date(Date.now() + 60_000),
       },
     });
+  }
+
+  /**
+   * PT-088 — Estado de un deposito para la pagina de retorno.
+   *
+   * La pasarela devuelve al usuario con un `status` en la URL, y ese parametro **lo escribe el
+   * navegador**: cualquiera puede cambiar `status=failure` por `status=success`. La pagina no
+   * puede creerselo, y este es el endpoint que le dice la verdad.
+   *
+   * Un deposito ajeno se responde **como inexistente**, no como prohibido: decir «no es tuyo»
+   * confirmaria que existe, y las referencias llevan dentro el id del usuario.
+   *
+   * Un ciclo abierto es **pendiente**, no fallido. Efectivo y SPEI tardan horas: decirle «fallo»
+   * a quien acaba de pagar en un OXXO seria mentirle y provocar un segundo pago.
+   */
+  async statusFor(reference: string, userId: string): Promise<DepositStatus> {
+    const cycle = await this.prisma.paymentCycle.findUnique({ where: { reference } });
+
+    if (!cycle || cycle.userId !== userId) {
+      throw new NotFoundException('Deposito no encontrado');
+    }
+
+    const settled = cycle.status === 'SETTLED';
+    const failed =
+      cycle.status === 'FAILED' || cycle.status === 'EXPIRED' || cycle.status === 'ANOMALY';
+
+    return {
+      reference: cycle.reference,
+      provider: String(cycle.provider),
+      status: String(cycle.status),
+      amount: Number(cycle.amount),
+      currency: cycle.currency,
+      settled,
+      failed,
+      pending: !settled && !failed,
+      requestedAt: cycle.requestedAt,
+      settledAt: cycle.settledAt,
+    };
   }
 
   /**

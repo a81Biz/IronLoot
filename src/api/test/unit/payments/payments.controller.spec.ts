@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentsController } from '../../../src/modules/payments/payments.controller';
+import { PaymentCycleService } from '../../../src/modules/payments/payment-cycle.service';
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
 import { AuthenticatedUser, Role } from '../../../src/modules/auth/decorators';
 import { InitiatePaymentDto } from '../../../src/modules/payments/dto/initiate-payment.dto';
@@ -33,6 +34,11 @@ describe('PaymentsController', () => {
         {
           provide: PaymentsService,
           useValue: mockPaymentsService,
+        },
+        {
+          // PT-088: el controlador consulta el estado del deposito para la pagina de retorno.
+          provide: PaymentCycleService,
+          useValue: { statusFor: jest.fn() },
         },
       ],
     })

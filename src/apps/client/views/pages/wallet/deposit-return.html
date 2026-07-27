@@ -1,0 +1,80 @@
+{% extends "layouts/client.html" %}
+{% block title %}Resultado del depósito — IronLoot{% endblock %}
+{% block page_title %}Resultado del depósito{% endblock %}
+{% block content %}
+
+{#
+  PT-088 — Página de retorno común a todas las pasarelas.
+
+  `reportado` es lo que la pasarela puso en la URL, y lo escribe el navegador: sirve para el
+  primer pintado, no para decidir. `deposito` viene de nuestra API y es lo que manda.
+#}
+
+<div class="card" style="max-width:560px;">
+
+  {% if not deposito %}
+    {# Sin referencia, o la referencia no es de este usuario. #}
+    <h2 class="alert alert-error">No encontramos ese depósito</h2>
+    <p>
+      Si acabas de pagar, el cobro no se pierde: se acredita solo en cuanto la pasarela
+      lo confirme. Puedes revisar tu saldo en unos minutos.
+    </p>
+
+  {% elif deposito.settled %}
+    <h2 style="color:var(--success,#1a7f37);">Depósito acreditado</h2>
+    <p style="font-size:1.6rem;margin:.4rem 0 1rem;">
+      <strong>{{ deposito.amount }} {{ deposito.currency }}</strong>
+    </p>
+    <p>Ya está disponible en tu monedero{% if etiqueta %}, pagado con {{ etiqueta }}{% endif %}.</p>
+
+  {% elif deposito.pending %}
+    {# Efectivo y SPEI tardan horas: decir «falló» aquí provocaría un segundo pago. #}
+    <h2 style="color:var(--warning,#9a6700);">Tu pago está en proceso</h2>
+    <p style="font-size:1.6rem;margin:.4rem 0 1rem;">
+      <strong>{{ deposito.amount }} {{ deposito.currency }}</strong>
+    </p>
+    <p>
+      {% if reportado == 'cancel' %}
+        Cancelaste el pago en la pasarela. Si cambiaste de idea, puedes volver a intentarlo.
+      {% else %}
+        Estamos confirmándolo con {{ etiqueta or 'la pasarela' }}. En cuanto responda se
+        acreditará automáticamente: no hace falta que hagas nada, y <strong>no vuelvas a
+        pagar</strong>.
+      {% endif %}
+    </p>
+    <p class="text-muted" style="font-size:.9rem;">
+      Los pagos en efectivo y por transferencia pueden tardar varias horas.
+    </p>
+
+  {% else %}
+    <h2 class="alert alert-error">El depósito no se completó</h2>
+    <p style="font-size:1.6rem;margin:.4rem 0 1rem;">
+      <strong>{{ deposito.amount }} {{ deposito.currency }}</strong>
+    </p>
+    <p>No se te ha cobrado. Puedes intentarlo de nuevo cuando quieras.</p>
+  {% endif %}
+
+  <div style="margin-top:1.5rem;display:flex;gap:.75rem;flex-wrap:wrap;">
+    <a class="btn btn-primary" href="/wallet">Ir a mi monedero</a>
+    {% if not deposito or not deposito.settled %}
+      <a class="btn btn-secondary" href="/wallet/deposit">Depositar de nuevo</a>
+    {% endif %}
+    <a class="btn btn-secondary" href="/wallet/history">Ver movimientos</a>
+  </div>
+
+  {% if ref %}
+    <p class="text-muted" style="margin-top:1.25rem;font-size:.8rem;">
+      Referencia: <code>{{ ref }}</code>
+    </p>
+  {% endif %}
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+{% if deposito and deposito.pending %}
+{# Un pago pendiente se resuelve solo por la vía garantizada: la página se refresca sin que el
+   usuario tenga que recargar, para que vea la acreditación en cuanto ocurra. #}
+<script src="/js/pages/wallet/deposit-return.js"></script>
+{% endif %}
+{% endblock %}

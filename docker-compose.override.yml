@@ -1,18 +1,21 @@
-# Override LOCAL para QA por navegador (no versionar como config oficial).
-# Reapunta los URLs de redirect/correo a localhost:puerto y vacía COOKIE_DOMAIN,
-# para poder probar los flujos autenticados sin depender de *.ironloot.local,
-# del archivo hosts, ni del puerto 80 (ocupado por otro proyecto).
-# Los `environment` se fusionan por clave con el docker-compose.yml base.
-services:
-  api:
-    environment:
-      # Base de los enlaces de correo (verificación, reset) → alcanzable desde el navegador
-      - BASE_URL=http://localhost:5174
-  base:
-    environment:
-      - CLIENT_URL=http://localhost:5175
-      - COOKIE_DOMAIN=
-  client:
-    environment:
-      - BASE_URL=http://localhost:5174
-      - COOKIE_DOMAIN=
+# Override LOCAL.
+#
+# PT-088 — Este fichero fijaba las URLs entre sitios a `localhost:<puerto>` y vaciaba
+# `COOKIE_DOMAIN`. Fue un apaño legítimo mientras el puerto 80 estaba ocupado, pero tenía dos
+# consecuencias que acabaron costando caro:
+#
+#   1. Las URLs dejaban de parecerse a producción. Una pasarela devolvía a `localhost:5175`, que
+#      solo existe en esta máquina: nada de lo que se probaba aquí demostraba nada sobre el
+#      entorno real.
+#   2. `COOKIE_DOMAIN` vacío hacía la cookie *host-only*. Con puertos daba igual —`localhost:5174`
+#      y `localhost:5175` comparten host, porque el puerto no delimita cookies— pero al pasar a
+#      subdominios la sesión dejaba de cruzar de BASE a CLIENT.
+#
+# Hoy las URLs se derivan de `PUBLIC_SCHEME` y `PUBLIC_DOMAIN` en el `.env` raíz, que es lo que
+# permite que la misma configuración sirva de local a producción. **Cambiar de entorno es cambiar
+# esas dos variables**, no editar este fichero.
+#
+# Si el puerto 80 vuelve a estar ocupado, la salida no es volver a `localhost:<puerto>`: es
+# `NGINX_HTTP_PORT=8081` y `PUBLIC_DOMAIN=localhost:8081` en el `.env` raíz, de modo que los
+# subdominios se conserven.
+services: {}

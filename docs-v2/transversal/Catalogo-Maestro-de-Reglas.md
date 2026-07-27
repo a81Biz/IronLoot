@@ -124,6 +124,11 @@
 | RN-83 | **Un ciclo solo esta cerrado cuando el dinero llego al monedero.** Si la acreditacion falla tras la confirmacion, el ciclo se reabre para reintento. | ✅ Cumple | `payments.service.applyProviderResult` | **PT-087** |
 | RN-84 | **Un deposito crea el monedero si no existe.** Ningun cobro puede perderse porque el usuario nunca abriera su monedero. | ✅ Cumple | `wallet.service.deposit` | **PT-087** |
 | RN-85 | **Una solicitud es un pago: el asiento contable es idempotente por referencia.** Un reintento no puede duplicar la cifra con la que el administrador cuadra frente a la pasarela. | ✅ Cumple | `payment-cycle.writePaymentRow` (upsert) | **PT-087** |
+| RN-86 | **Ninguna URL que salga del sistema lleva un puerto suelto.** Las URLs entre sitios y las de retorno de las pasarelas se derivan de `PUBLIC_SCHEME`/`PUBLIC_DOMAIN`: lo que se prueba en local tiene la misma forma que en produccion. | ✅ Cumple | `return-urls.ts`, `docker-compose.yml` | **PT-088** |
+| RN-87 | **Todas las pasarelas devuelven a la misma ruta**, y el estado viaja como parametro. | ✅ Cumple | `depositReturnUrl` | **PT-088** |
+| RN-88 | **El resultado que muestra la pagina de retorno lo dicta la API, no la URL.** El `status` de la query lo escribe el navegador. | ✅ Cumple | `GET /payments/status/:reference` | **PT-088** |
+| RN-89 | **Un deposito ajeno se responde como inexistente**, no como prohibido: distinguirlos confirmaria que existe. | ✅ Cumple | `payment-cycle.statusFor` | **PT-088** |
+| RN-90 | **Un ciclo abierto se informa como pendiente, jamas como fallido.** Efectivo y SPEI tardan horas; decir «fallo» provoca un segundo pago. | ✅ Cumple | `deposit-return.html` | **PT-088** |
 
 ---
 

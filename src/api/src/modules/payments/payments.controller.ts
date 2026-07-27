@@ -15,6 +15,7 @@ import { Throttle } from '@nestjs/throttler';
 import { JwtAuthGuard } from '../auth/guards';
 import { CurrentUser, AuthenticatedUser, Public } from '../auth/decorators';
 import { PaymentsService } from './payments.service';
+import { PaymentCycleService } from './payment-cycle.service';
 import { CreateCheckoutDto, ProcessPaymentDto } from './dto';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
 import { CreatePaymentResult } from './interfaces';
@@ -24,7 +25,10 @@ import { AuditEventType, EntityType } from '../../common/observability/constants
 @ApiTags('payments')
 @Controller('payments')
 export class PaymentsController {
-  constructor(private readonly paymentsService: PaymentsService) {}
+  constructor(
+    private readonly paymentsService: PaymentsService,
+    private readonly paymentCycle: PaymentCycleService,
+  ) {}
 
   @Post('checkout')
   @ApiBearerAuth('access-token')
@@ -62,6 +66,25 @@ export class PaymentsController {
   @ApiResponse({ status: 201, description: 'Payment initiated, returns redirect URL' })
   async initiate(@CurrentUser() user: AuthenticatedUser, @Body() dto: InitiatePaymentDto) {
     return this.paymentsService.initiatePayment(user.id, user.email, dto.amount, dto.provider);
+  }
+
+  /**
+   * PT-088 — Estado de un deposito, para la pagina a la que la pasarela devuelve al usuario.
+   *
+   * La pasarela vuelve con un `status` en la URL que **escribe el navegador**: es un dato del
+   * que se desconfia. Este endpoint es la fuente de verdad, y solo responde al dueno.
+   */
+  @Get('status/:reference')
+  @ApiBearerAuth('access-token')
+  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: 'Estado de un deposito propio' })
+  @ApiResponse({ status: 200, description: 'Estado del ciclo de pago' })
+  @ApiResponse({ status: 404, description: 'No existe o no es del usuario' })
+  async depositStatus(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('reference') reference: string,
+  ) {
+    return this.paymentCycle.statusFor(reference, user.id);
   }
 
   @Get('providers')

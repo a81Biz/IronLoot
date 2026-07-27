@@ -6,6 +6,7 @@ import {
   CreatePaymentResult,
   WebhookResult,
 } from '../interfaces';
+import { depositReturnUrl } from '../return-urls';
 
 /**
  * Hey Banco Payment Provider
@@ -67,7 +68,7 @@ export class HeyBancoProvider implements PaymentProvider {
     this.logger.log(`Creating HeyBanco payment for ${orderId} (${amount} ${currency})`);
 
     const token = await this.getAccessToken();
-    const webBaseUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    // PT-088 — El origen publico sale de `return-urls`, no de un valor por defecto propio.
     const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
 
     const response = await fetch(`${this.apiUrl}/payments`, {
@@ -81,8 +82,8 @@ export class HeyBancoProvider implements PaymentProvider {
         amount: { value: amount, currency },
         description,
         payer: { email: buyerEmail },
-        redirect_url: `${webBaseUrl}/wallet/deposit-success?ref=${orderId}`,
-        cancel_url: `${webBaseUrl}/wallet/deposit-cancel?ref=${orderId}`,
+        redirect_url: depositReturnUrl(orderId, 'success'),
+        cancel_url: depositReturnUrl(orderId, 'cancel'),
         webhook_url: `${apiBaseUrl}/api/v1/payments/webhook/HEY_BANCO`,
       }),
     });

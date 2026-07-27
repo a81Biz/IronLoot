@@ -122,15 +122,22 @@ describe('PaypalProvider — createPayment (Orders v2)', () => {
     await expect(create()).rejects.toThrow(/approval|aprobación/i);
   });
 
-  it('T-17: las URLs de retorno apuntan a CLIENT (5175), nunca al eliminado 5173', async () => {
+  it('T-17: las URLs de retorno usan la ruta canonica, sin puertos sueltos (PT-088)', async () => {
+    // Antes este test exigia el puerto 5175, fijando en piedra justo lo que estaba mal: una
+    // URL con puerto no sirve en produccion, y `/wallet/deposit-success` **no existia** en
+    // CLIENT. Ahora se exige lo contrario: subdominio y ruta unica para todas las pasarelas.
     withApproveLink();
     await create();
 
     const ctx = orderRequestBody().payment_source?.paypal?.experience_context ?? {};
-    const urls = `${ctx.return_url ?? ''} ${ctx.cancel_url ?? ''}`;
 
-    expect(urls).toContain('5175');
-    expect(urls).not.toContain('5173');
+    for (const url of [ctx.return_url, ctx.cancel_url]) {
+      expect(url).toContain('/wallet/deposit/return');
+      expect(url).toContain(`ref=${encodeURIComponent(REFERENCE)}`);
+      expect(url).not.toMatch(/:\d{4}/);
+    }
+    expect(ctx.return_url).toContain('status=success');
+    expect(ctx.cancel_url).toContain('status=cancel');
   });
 
   it('T-17b: respeta CLIENT_URL cuando está definida', async () => {

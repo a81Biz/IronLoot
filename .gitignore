@@ -73,6 +73,13 @@ tsconfig.build.tsbuildinfo
 !.eslintrc.js
 !.prettierrc.js
 
+# PT-088 — El `*.js` de arriba apunta a la salida compilada de TypeScript, pero se llevaba por
+# delante el JavaScript del NAVEGADOR, que es codigo fuente y no compilado de nada. Sin esta
+# excepcion, un script de front no llega al repositorio: existe en la maquina de quien lo
+# escribio y en ninguna otra.
+!src/apps/*/public/js/**/*.js
+!src/admin/public/js/**/*.js
+
 # =====================================================
 # SECTION 4: IDE & EDITOR
 # =====================================================

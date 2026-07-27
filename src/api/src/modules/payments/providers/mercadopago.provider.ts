@@ -10,6 +10,7 @@ import {
 import { WebhookSignatureValidator } from '@ironloot/core';
 import { UnauthorizedException, ValidationException } from '../../../common/observability';
 import { PaymentTraceService } from '../payment-trace.service';
+import { depositReturnUrl } from '../return-urls';
 
 const MP_API = 'https://api.mercadopago.com';
 
@@ -121,9 +122,11 @@ export class MercadoPagoProvider implements PaymentProvider {
           },
           external_reference: orderId,
           back_urls: {
-            success: `${process.env.CLIENT_URL || 'http://localhost:5173'}/wallet/success`,
-            failure: `${process.env.CLIENT_URL || 'http://localhost:5173'}/wallet/failure`,
-            pending: `${process.env.CLIENT_URL || 'http://localhost:5173'}/wallet/pending`,
+            // PT-088 — Misma ruta canonica que el resto de pasarelas; el estado va como
+            // parametro. Antes apuntaban a `/wallet/success`, que no existia en CLIENT.
+            success: depositReturnUrl(orderId, 'success'),
+            failure: depositReturnUrl(orderId, 'failure'),
+            pending: depositReturnUrl(orderId, 'pending'),
           },
           // Per-preference webhook target. Overrides the app-level dashboard URL so
           // deposits notify the configured endpoint (e.g. a tunnel in local/QA).
