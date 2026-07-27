@@ -14,7 +14,7 @@ const crypto = require('crypto');
 const { execSync } = require('child_process');
 const L = require('./lib.cjs');
 const cfg = L.cfg;
-const { createOrder } = require('./mp-orders.cjs');
+const { createOrder, esperarOrden } = require('./mp-orders.cjs');
 
 const OUT = process.argv[2] || fs.readFileSync(path.join(cfg.OUT_ROOT, '.last-run'), 'utf8').trim();
 const actors = JSON.parse(fs.readFileSync(path.join(OUT, '.actors.json'), 'utf8'));
@@ -91,7 +91,6 @@ async function notificar(paymentId) {
   if (!token) return finish();
 
   // ── 1. Solicitud de depósito ──
-  const saldoAntes = Number(db(`SELECT balance FROM wallets WHERE user_id='${buyerId}'`) || 0);
   const initRes = await fetch(`${API}/payments/initiate`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -116,12 +115,19 @@ async function notificar(paymentId) {
     externalRef: REF,
     email: 'test_user_3130461747@testuser.com',
   });
-  const aprobada = orden?.json?.status === 'processed';
+  // PT-104 — Si Mercado Pago responde `processing`, la orden esta en curso, no fallida: se espera.
+  // Antes se abandonaba aqui, y las doce comprobaciones de traza de mas abajo no corrian nunca.
+  let estadoOrden = orden?.json?.status;
+  if (estadoOrden === 'processing' && orden?.json?.id) {
+    const resuelta = await esperarOrden(orden.json.id);
+    estadoOrden = resuelta?.status || estadoOrden;
+  }
+  const aprobada = estadoOrden === 'processed';
   rec(
     'QA-TR-03',
     'Cobro real aprobado en Mercado Pago',
     aprobada ? 'PASS' : 'FAIL',
-    `orden=${orden?.json?.id} status=${orden?.json?.status}`,
+    `orden=${orden?.json?.id} status=${estadoOrden}`,
   );
   if (!aprobada) return finish();
 
@@ -143,14 +149,43 @@ async function notificar(paymentId) {
   rec('QA-TR-05', 'Notificación firmada aceptada', wh.status < 300 ? 'PASS' : 'FAIL', `HTTP ${wh.status}`);
   await new Promise((r) => setTimeout(r, 2500));
 
-  // ── 5. Acreditación ──
+  // ── 5. Acreditacion ──
+  //
+  // PT-104 (F-35) — Se mide el credito DE ESTE PAGO, no la diferencia de saldo.
+  //
+  // Restar saldos fallaba sin que nada estuviera roto: la via garantizada es asincrona por
+  // diseno y puede acreditar OTRO deposito dentro de la ventana. Ocurrio: el delta observado fue
+  // 458.90 = 321.50 (PayPal) + 137.40 (Mercado Pago), y la prueba acuso al sistema por hacer
+  // exactamente lo que debe.
+  //
+  // `Payment.reference` es unica desde PT-087 y `ledger.reference_id` la guarda, asi que el
+  // asiento de este pago se lee directamente. Es MAS estricto, no menos: comprueba que hay UN
+  // solo asiento, con el importe exacto, que movio el saldo en ese importe y en el monedero
+  // correcto — cosas que restar dos numeros no distingue.
+  const asientos = Number(
+    db(`SELECT count(*) FROM ledger WHERE type='DEPOSIT' AND reference_id='${REF}'`) || 0,
+  );
+  const acreditadoImporte = Number(
+    db(`SELECT COALESCE(amount,0) FROM ledger WHERE type='DEPOSIT' AND reference_id='${REF}'`) || 0,
+  );
+  const movio = Number(
+    db(`SELECT COALESCE(balance_after - balance_before,0) FROM ledger WHERE type='DEPOSIT' AND reference_id='${REF}'`) || 0,
+  );
+  const monederoCorrecto =
+    db(`SELECT COALESCE(wallet_id::text,'') FROM ledger WHERE type='DEPOSIT' AND reference_id='${REF}'`) ===
+    db(`SELECT COALESCE(id::text,'') FROM wallets WHERE user_id='${buyerId}'`);
+  const acreditado =
+    asientos === 1 &&
+    Math.round(acreditadoImporte * 100) === Math.round(AMOUNT * 100) &&
+    Math.round(movio * 100) === Math.round(AMOUNT * 100) &&
+    monederoCorrecto;
+  const detalleCredito = `asientos=${asientos} importe=${acreditadoImporte} movio=${movio} monedero=${monederoCorrecto}`;
   const saldoDespues = Number(db(`SELECT balance FROM wallets WHERE user_id='${buyerId}'`) || 0);
-  const acreditado = Math.round((saldoDespues - saldoAntes) * 100) === Math.round(AMOUNT * 100);
   rec(
     'QA-TR-06',
     'Wallet acreditado por el importe exacto',
     acreditado ? 'PASS' : 'FAIL',
-    `${saldoAntes} → ${saldoDespues}`,
+    detalleCredito,
   );
 
   const ciclo = db(`SELECT status::text FROM payment_cycles WHERE reference='${REF}'`);

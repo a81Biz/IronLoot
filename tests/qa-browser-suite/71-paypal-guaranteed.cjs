@@ -149,7 +149,6 @@ async function ordenEnPaypal(orderId) {
   if (!ofrecido) return finish();
 
   // ── 2. Solicitud ──
-  const saldoAntes = Number(db(`SELECT COALESCE(balance,0) FROM wallets WHERE user_id='${buyerId}'`) || 0);
   const init = await fetch(`${API}/payments/initiate`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -217,12 +216,46 @@ async function ordenEnPaypal(orderId) {
   );
 
   // ── 8. El dinero ──
-  const saldoDespues = Number(db(`SELECT COALESCE(balance,0) FROM wallets WHERE user_id='${buyerId}'`) || 0);
+  //
+  // PT-104 (F-35) — Se mide el credito DE ESTE PAGO, no la diferencia de saldo.
+  //
+  // Restar saldos fallaba sin que nada estuviera roto: la via garantizada es asincrona por
+  // diseno y puede acreditar OTRO deposito dentro de la ventana. Ocurrio: el delta observado fue
+  // 458.90 = 321.50 (PayPal) + 137.40 (Mercado Pago), y la prueba acuso al sistema por hacer
+  // exactamente lo que debe.
+  //
+  // `Payment.reference` es unica desde PT-087 y `ledger.reference_id` la guarda, asi que el
+  // asiento de este pago se lee directamente. Es MAS estricto, no menos: comprueba que hay UN
+  // solo asiento, con el importe exacto, que movio el saldo en ese importe y en el monedero
+  // correcto — cosas que restar dos numeros no distingue.
+  const asientos = Number(
+    db(`SELECT count(*) FROM ledger WHERE type='DEPOSIT' AND reference_id='${REF}'`) || 0,
+  );
+  const acreditadoImporte = Number(
+    db(`SELECT COALESCE(amount,0) FROM ledger WHERE type='DEPOSIT' AND reference_id='${REF}'`) || 0,
+  );
+  const movio = Number(
+    db(`SELECT COALESCE(balance_after - balance_before,0) FROM ledger WHERE type='DEPOSIT' AND reference_id='${REF}'`) || 0,
+  );
+  const monederoCorrecto =
+    db(`SELECT COALESCE(wallet_id::text,'') FROM ledger WHERE type='DEPOSIT' AND reference_id='${REF}'`) ===
+    db(`SELECT COALESCE(id::text,'') FROM wallets WHERE user_id='${buyerId}'`);
+  // El saldo se sigue leyendo: QA-PP-16 comprueba que NO cambia tras el webhook fabricado, y eso
+  // si es una comparacion legitima de saldos — mide que no pasa nada, no que pase algo concreto.
+  const saldoDespues = Number(
+    db(`SELECT COALESCE(balance,0) FROM wallets WHERE user_id='${buyerId}'`) || 0,
+  );
+  const acreditado =
+    asientos === 1 &&
+    Math.round(acreditadoImporte * 100) === Math.round(AMOUNT * 100) &&
+    Math.round(movio * 100) === Math.round(AMOUNT * 100) &&
+    monederoCorrecto;
+  const detalleCredito = `asientos=${asientos} importe=${acreditadoImporte} movio=${movio} monedero=${monederoCorrecto}`;
   rec(
     'QA-PP-09',
     'El monedero se acredita por el importe exacto',
-    Math.round((saldoDespues - saldoAntes) * 100) === Math.round(AMOUNT * 100) ? 'PASS' : 'FAIL',
-    `${saldoAntes} → ${saldoDespues}`,
+    acreditado ? 'PASS' : 'FAIL',
+    detalleCredito,
   );
 
   const filas = db(`SELECT count(*) FROM payments WHERE reference='${REF}'`);

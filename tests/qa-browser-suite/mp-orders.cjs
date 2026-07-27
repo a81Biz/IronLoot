@@ -34,6 +34,31 @@ async function createOrder({ amount, externalRef, email }) {
   return { http: r.status, json: await r.json() };
 }
 
+
+/**
+ * PT-104 — Espera a que la orden deje de estar `processing`.
+ *
+ * `/v1/orders` con `processing_mode: 'automatic'` puede responder **`processing`**: la orden esta
+ * creada y el cobro en curso, y el estado definitivo llega despues. La fase 70 tomaba esa
+ * respuesta como un fallo y abandonaba, asi que sus doce comprobaciones de traza no llegaban a
+ * ejecutarse nunca. El pago SI se cobraba —la via garantizada lo acreditaba minutos despues—,
+ * pero la prueba ya se habia rendido.
+ *
+ * Tratar como sincrona una API que no lo es no es un fallo de la pasarela.
+ */
+async function esperarOrden(orderId, { intentos = 12, esperaMs = 5000 } = {}) {
+  let ultima = null;
+  for (let i = 0; i < intentos; i++) {
+    const r = await fetch(`${API}/v1/orders/${orderId}`, {
+      headers: { Authorization: `Bearer ${ACCESS}` },
+    });
+    ultima = await r.json();
+    if (ultima?.status && ultima.status !== 'processing') return ultima;
+    await new Promise((res) => setTimeout(res, esperaMs));
+  }
+  return ultima;
+}
+
 if (require.main === module) {
   (async () => {
     const amount = Number(process.argv[2] || 500);
@@ -44,4 +69,4 @@ if (require.main === module) {
     console.log(JSON.stringify(r.json).slice(0, 700));
   })().catch((e) => { console.error('ERR', e.message); process.exit(1); });
 }
-module.exports = { createOrder, token };
+module.exports = { createOrder, token, esperarOrden };
