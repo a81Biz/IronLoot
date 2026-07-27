@@ -1,0 +1,32 @@
+[
+  {
+    "id": "E2E-3",
+    "desc": "Subasta activa disponible para pujar",
+    "status": "FAIL",
+    "detail": "status=ERR:Command failed: docker exec ironloot-db psql -U ironloot -d ironloot_db -t -A -c \"SELECT status FROM auctions WHERE id=''\"\nERROR:  invalid input syntax for type uuid: \"\"\nLINE 1: SELECT status FROM auctions WHERE id=''\n                                             ^\n start=ERR:Command failed: docker exec ironloot-db psql -U ironloot -d ironloot_db -t -A -c \"SELECT starting_price FROM auctions WHERE id=''\"\nERROR:  invalid input syntax for type uuid: \"\"\nLINE 1: SELECT starting_price FROM auctions WHERE id=''\n                                                     ^\n"
+  },
+  {
+    "id": "E2E-setup",
+    "desc": "Comprador2 competidor (andamiaje API+DB)",
+    "status": "PASS",
+    "detail": "regHttp=201 id=8e878763"
+  },
+  {
+    "id": "E2E-5",
+    "desc": "Comprador1 puja 600 → fondos bloqueados",
+    "status": "FAIL",
+    "detail": "bidHttp=undefined msg=\"undefined\" held 0->0 bal 5000->5000 curPrice=1 bids=ERR:Command failed: docker exec ironloot-db psql -U ironloot -d ironloot_db -t -A -c \"SELECT count(*) FROM bids WHERE auction_id=''\"\nERROR:  invalid input syntax for type uuid: \"\"\nLINE 1: SELECT count(*) FROM bids WHERE auction_id=''\n                                                   ^\n"
+  },
+  {
+    "id": "E2E-6",
+    "desc": "Comprador2 puja 700 → outbid libera fondos de comprador1",
+    "status": "FAIL",
+    "detail": "bid2Http=undefined msg=\"undefined\" c1.held 0->0 c2.held=0 curPrice=1"
+  },
+  {
+    "id": "E2E-ledger",
+    "desc": "Ledger registra HOLD_BID y RELEASE_BID",
+    "status": "FAIL",
+    "detail": "HOLD_BID=0 RELEASE_BID=0"
+  }
+]

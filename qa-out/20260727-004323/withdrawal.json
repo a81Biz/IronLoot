@@ -1,0 +1,74 @@
+[
+  {
+    "id": "QA-WD-00",
+    "desc": "Login vendedor",
+    "status": "PASS",
+    "detail": "http://client.ironloot.local/dashboard"
+  },
+  {
+    "id": "QA-WD-01",
+    "desc": "KYC del vendedor APPROVED (gate de retiro)",
+    "status": "PASS",
+    "detail": "status=APPROVED approved=true"
+  },
+  {
+    "id": "QA-WD-02a",
+    "desc": "Rechazar CLABE con verificador inválido (RN-63)",
+    "status": "PASS",
+    "detail": "http=400"
+  },
+  {
+    "id": "QA-WD-02b",
+    "desc": "Registrar cuenta bancaria (CLABE válida, RN-63)",
+    "status": "PASS",
+    "detail": "http=201 db.clabe=002010077777777771"
+  },
+  {
+    "id": "QA-WD-03",
+    "desc": "Venta liquidada a pendingBalance (holdback 900, RN-64)",
+    "status": "PASS",
+    "detail": "pending 0→900 · disponible 0 (retenido, no retirable)"
+  },
+  {
+    "id": "QA-WD-04",
+    "desc": "Liberar holdback → saldo disponible (SETTLEMENT_RELEASE, RN-64)",
+    "status": "PASS",
+    "detail": "disponible 0→900 · pending 0"
+  },
+  {
+    "id": "QA-WD-05",
+    "desc": "Solicitud de retiro REAL reserva fondos (RN-65)",
+    "status": "FAIL",
+    "detail": "http=400 req= status=ERR:Command failed: docker exec ironloot-db psql -U ironloot -d ironloot_db -t -A -c \"SELECT status FROM withdrawal_requests WHERE id=''\"\nERROR:  invalid input syntax for type uuid: \"\"\nLINE 1: SELECT status FROM withdrawal_requests WHERE id=''\n                                                        ^\n disponible 900→900 ledger=[]"
+  },
+  {
+    "id": "QA-WD-06",
+    "desc": "Rechazar retiro por saldo disponible insuficiente (gate)",
+    "status": "PASS",
+    "detail": "http=400"
+  },
+  {
+    "id": "QA-WD-07a",
+    "desc": "Admin ve la solicitud en la cola (GET /admin/withdrawals)",
+    "status": "FAIL",
+    "detail": "http=200 enCola=false total=0"
+  },
+  {
+    "id": "QA-WD-07b",
+    "desc": "Admin APRUEBA el retiro (REQUESTED→APPROVED, RN-66)",
+    "status": "FAIL",
+    "detail": "http=404 status=ERR:Command failed: docker exec ironloot-db psql -U ironloot -d ironloot_db -t -A -c \"SELECT status FROM withdrawal_requests WHERE id=''\"\nERROR:  invalid input syntax for type uuid: \"\"\nLINE 1: SELECT status FROM withdrawal_requests WHERE id=''\n                                                        ^\n"
+  },
+  {
+    "id": "QA-WD-08",
+    "desc": "Admin marca PAGADO tras SPEI manual (APPROVED→PAID, RN-66)",
+    "status": "FAIL",
+    "detail": "http=404 status=ERR:Command failed: docker exec ironloot-db psql -U ironloot -d ironloot_db -t -A -c \"SELECT status ref= disponible=900 (sin cambio, ya reservado)"
+  },
+  {
+    "id": "QA-WD-09",
+    "desc": "Rechazo de retiro reintegra fondos (→REJECTED + ADJUSTMENT, RN-66)",
+    "status": "FAIL",
+    "detail": "status=ERR:Command failed: docker exec ironloot-db psql -U ironloot -d ironloot_db -t -A -c \"SELECT status FROM withdrawal_requests WHERE id=''\"\nERROR:  invalid input syntax for type uuid: \"\"\nLINE 1: SELECT status FROM withdrawal_requests WHERE id=''\n                                                        ^\n disponible 900→(reserva)900→(reintegro)900 ledger=[]"
+  }
+]

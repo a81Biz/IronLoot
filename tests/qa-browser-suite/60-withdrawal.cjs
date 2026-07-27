@@ -116,6 +116,43 @@ function walletRow() {
   await p.waitForTimeout(600);
   await shot(p, '01_seller_wallet');
 
+  // ── QA-WD-04b: VERIFICAR la cuenta antes de retirar (PT-092) ───────────────
+  //
+  // PT-092 cerro TD-003: `withdrawals.request` exige `isVerified`. Hasta entonces se retiraba a
+  // una CLABE que nadie habia confirmado que fuera del usuario — el digito verificador atrapa
+  // erratas de tecleo, no la titularidad.
+  //
+  // El vendedor solo puede declarar el codigo si tiene acceso a la cuenta. Aqui se lee de la BD
+  // porque el harness no tiene banco: lo que se prueba es el CONTRATO —sin verificar no se
+  // retira, con codigo correcto si—, no que el SPEI llegue.
+  const methodId = L.dbQuery(
+    `SELECT id FROM user_payment_methods WHERE user_id='${sellerId}' AND clabe='${CLABE}'`,
+  );
+  const verifStart = await sellerFetch(p, `/api/v1/wallet/payment-methods/${methodId}/verify`, 'POST', {});
+  const verifId = L.dbQuery(
+    `SELECT id FROM account_verifications WHERE payment_method_id='${methodId}' ORDER BY created_at DESC LIMIT 1`,
+  );
+  // El administrador envia el micro-deposito (la dispersion es manual) y anota la referencia.
+  L.dbQuery(
+    `UPDATE account_verifications SET status='SENT', movement_ref='SPEI-QA', sent_at=NOW() WHERE id='${verifId}'`,
+  );
+  const codigo = L.dbQuery(`SELECT token FROM account_verifications WHERE id='${verifId}'`);
+  const malo = await sellerFetch(
+    p, `/api/v1/wallet/payment-methods/${methodId}/verify/confirm`, 'POST', { token: 'ZZZZZZ' },
+  );
+  const bueno = await sellerFetch(
+    p, `/api/v1/wallet/payment-methods/${methodId}/verify/confirm`, 'POST', { token: codigo },
+  );
+  const verificada = L.dbQuery(
+    `SELECT is_verified FROM user_payment_methods WHERE id='${methodId}'`,
+  );
+  rec(
+    'QA-WD-04b',
+    'Verificar la cuenta: codigo incorrecto falla, correcto verifica (PT-092)',
+    verifStart.status < 300 && verificada === 't' ? 'PASS' : 'FAIL',
+    `verify=${verifStart.status} malo=${JSON.stringify(malo.json?.verified)} bueno=${JSON.stringify(bueno.json?.verified)} verificada=${verificada}`,
+  );
+
   // ── QA-WD-05: solicitud de retiro (REAL) — reserva fondos (RN-65) ──────────
   const availBefore = walletRow().balance;
   const reqWd = await sellerFetch(p, '/api/v1/wallet/withdrawals', 'POST', { amount: WD_AMOUNT, paymentMethodId: CLABE });

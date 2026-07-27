@@ -1,0 +1,26 @@
+[
+  {
+    "id": "QA-TR-00",
+    "desc": "Login comprador",
+    "status": "PASS",
+    "detail": "comprador_003435@test.local"
+  },
+  {
+    "id": "QA-TR-01",
+    "desc": "Solicitud de depósito crea el ciclo",
+    "status": "PASS",
+    "detail": "ref=DEP-8459b03d-4ab4-4863-9caf-028e694f97a9-1785134503114"
+  },
+  {
+    "id": "QA-TR-02",
+    "desc": "El ciclo nace en REQUESTED",
+    "status": "PASS",
+    "detail": "status=REQUESTED"
+  },
+  {
+    "id": "QA-TR-03",
+    "desc": "Cobro real aprobado en Mercado Pago",
+    "status": "FAIL",
+    "detail": "orden=ORDTST01KYH4XPCQA1Z1S8HZ81R6FJQQ status=processing"
+  }
+]

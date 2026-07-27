@@ -1,0 +1,8 @@
+[
+  {
+    "id": "QA-WD-00",
+    "desc": "Login vendedor",
+    "status": "FAIL",
+    "detail": "timeout"
+  }
+]
