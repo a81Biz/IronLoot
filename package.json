@@ -7,11 +7,14 @@
     "src/packages/*"
   ],
   "scripts": {
-    "postinstall": "npm --prefix src/api install --no-audit --no-fund",
-    "lint:check": "npm --prefix src/api run lint:check",
-    "typecheck": "npm --prefix src/api run typecheck",
-    "test": "npm --prefix src/api run test",
-    "test:e2e": "npm --prefix src/api run test:e2e",
-    "build": "npm --prefix src/api run build"
+    "postinstall": "npm --prefix ./src/api install --no-audit --no-fund && npm --prefix ./src/admin install --no-audit --no-fund",
+    "test": "npm run test:api && npm run test:client && npm run test:core",
+    "test:api": "npm --prefix ./src/api run test",
+    "test:client": "npm --prefix ./src/apps/client run test",
+    "test:core": "npm --prefix ./src/packages/core run test",
+    "test:e2e": "npm --prefix ./src/api run test:e2e",
+    "lint:check": "npm --prefix ./src/api run lint:check && npm --prefix ./src/admin run lint:check && npm --prefix ./src/apps/base run lint:check && npm --prefix ./src/apps/client run lint:check && npm --prefix ./src/packages/core run lint:check",
+    "typecheck": "npm --prefix ./src/api run typecheck && npm --prefix ./src/admin run typecheck && npm --prefix ./src/apps/base run typecheck && npm --prefix ./src/apps/client run typecheck",
+    "build": "npm --prefix ./src/api run build && npm --prefix ./src/admin run build && npm --prefix ./src/apps/base run build && npm --prefix ./src/apps/client run build && npm --prefix ./src/packages/core run build"
   }
 }
