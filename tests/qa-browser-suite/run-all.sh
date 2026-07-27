@@ -53,6 +53,9 @@ run_phase "6) Fase 30 — E2E puja + bloqueo + outbid + liberación (incluye E2E
 # PT-074 — 31-outbid.cjs es un re-run AISLADO de E2E-6 (requiere subasta fresca); no va en la secuencia
 #          porque 30-e2e ya deja el precio en 700 (re-pujar 700 sobre 700 se rechaza, esperado).
 #          Se conserva como herramienta standalone: `node 31-outbid.cjs`.
+# PT-102 — Fase 32: la puja llega al OTRO navegador. La suite probaba la puja por HTTP y pasaba
+#          con el producto roto (F-34); nadie comprobaba que el segundo navegador se enterase.
+run_phase "6b) Fase 32 — PUJA EN VIVO en dos navegadores (PT-102/F-34)" 32-puja-en-vivo.cjs
 run_phase "7) Fase 40 — Extras (auth/responsive/CSP/cross-browser)" 40-extras.cjs
 run_phase "8) Fase 50 — Escrituras admin" 50-admin-writes.cjs
 run_phase "9) Fase 60 — RETIRO REAL DEL VENDEDOR (KYC→CLABE→holdback→solicitud→admin)" 60-withdrawal.cjs
@@ -67,7 +70,7 @@ node -e "const fs=require('fs');const out=fs.readFileSync('C:/DevOps/Desarrollos
 node hist-check.cjs || echo "   (hist-check con error)"
 
 log "RESUMEN FINAL"
-for j in smoke bootstrap authed e2e extras admin-writes withdrawal payment-trace paypal-guaranteed; do
+for j in smoke bootstrap authed e2e puja-en-vivo extras admin-writes withdrawal payment-trace paypal-guaranteed; do
   f="$OUT/$j.json"
   [ -f "$f" ] && echo "   $j: $(node -e "const a=require('$f');const p=a.filter(x=>x.status==='PASS').length;const t=a.length;console.log(p+'/'+t+' PASS')" 2>/dev/null)"
 done

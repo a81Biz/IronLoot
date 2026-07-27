@@ -19,10 +19,24 @@ const num = (s) => parseFloat(String(s).replace(/[^0-9.]/g, '')) || 0;
 
 (async () => {
   const AID = actors.auctionId;
-  // A observa; B puja. B NO puede ser quien ya va ganando: pujar contra uno mismo se rechaza,
-  // con razón, y confundir ese 400 con un fallo del feed costó un rato durante el diagnóstico.
-  const A = { email: `comprador2_${actors.runid}@test.local`, password: cfg.TEST_PASSWORD };
-  const B = actors.BUYER;
+
+  // A observa; B puja. **B no puede ser quien ya va ganando**: pujar contra uno mismo se rechaza,
+  // con razón, y ese 400 se confunde con un fallo del feed —pasó durante el diagnóstico de F-34—.
+  // Por eso el pujador se elige mirando quién lidera ahora, y no por una posición fija: así la
+  // fase se puede repetir sin dejarla inservible para la siguiente corrida.
+  const comprador1 = actors.BUYER;
+  const comprador2 = { email: `comprador2_${actors.runid}@test.local`, password: cfg.TEST_PASSWORD };
+  // El SQL va en UNA linea: partido en varias, `psql -c` pierde el ORDER BY/LIMIT y devuelve
+  // todas las filas — lo que hacia elegir al pujador equivocado y daba un 400 desconcertante.
+  const lider = L.dbQuery(
+    `SELECT u.email FROM bids b JOIN users u ON u.id = b.bidder_id WHERE b.auction_id='${AID}' ORDER BY b.amount DESC LIMIT 1`,
+  )
+    .trim()
+    .split('\n')[0]
+    .trim();
+  const [A, B] =
+    lider === comprador1.email ? [comprador1, comprador2] : [comprador2, comprador1];
+  console.log(`lidera "${lider || '(nadie)'}" → observa ${A.email}, puja ${B.email}`);
 
   // Reabrir la subasta: las fases anteriores la dejan cerrada.
   L.dbQuery(
