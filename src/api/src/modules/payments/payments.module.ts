@@ -63,6 +63,12 @@ import { WalletModule } from '../wallet/wallet.module';
     PaymentProviderRegistry,
     PaymentTraceService,
     WebhookRetryProducer,
+    // PT-097 — `WalletModule` lo necesita para el cobro de verificacion de cuenta (PT-092).
+    // Sin exportarlo, la API NO ARRANCA: «Nest can't resolve dependencies of the
+    // AccountVerificationService ... argument PaypalProvider at index [4]».
+    // Los 458 tests unitarios pasaban: construyen modulos de prueba aislados y no validan el
+    // grafo de dependencias real. Solo se ve levantando la aplicacion.
+    PaypalProvider,
   ],
 })
 export class PaymentsModule {}
