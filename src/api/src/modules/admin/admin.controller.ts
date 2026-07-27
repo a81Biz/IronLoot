@@ -18,6 +18,7 @@ import { ApiTags, ApiOperation, ApiSecurity } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { AdminService } from './admin.service';
 import { WithdrawalsService } from '../wallet/withdrawals.service';
+import { AccountVerificationService } from '../wallet/account-verification.service';
 import { AdminDualAuthGuard } from './guards/admin-dual-auth.guard';
 import { Public } from '../auth/decorators';
 import { RefundsService } from '../refunds/refunds.service';
@@ -42,6 +43,7 @@ export class AdminController {
     private readonly notificationQueue: NotificationQueueProducer,
     private readonly webhookRetryQueue: WebhookRetryProducer,
     private readonly withdrawalsService: WithdrawalsService,
+    private readonly accountVerification: AccountVerificationService,
   ) {}
 
   // ─── Dashboard ───────────────────────────────────────────────────────────
@@ -512,6 +514,27 @@ export class AdminController {
   }
 
   // ─── Withdrawals (PT-072) — aprobación manual del retiro del vendedor ──────
+
+  // PT-092 — Cola de verificaciones de cuenta pendientes de mover el dinero.
+  //
+  // La dispersion es manual, asi que estos micro-depositos los envia una persona. La respuesta
+  // INCLUYE el token porque el administrador tiene que escribirlo como concepto del SPEI: sin el,
+  // el vendedor no tendria nada que declarar.
+  @Get('account-verifications')
+  @ApiOperation({ summary: 'Verificaciones de cuenta pendientes de enviar' })
+  async accountVerificationQueue() {
+    return this.accountVerification.pendingQueue();
+  }
+
+  @Post('account-verifications/:id/sent')
+  @ApiOperation({ summary: 'Anotar que el movimiento de verificacion salio' })
+  async markVerificationSent(
+    @Param('id') id: string,
+    @Body() dto: { movementRef: string; adminUser?: string },
+  ) {
+    // Misma convencion que el resto del controlador: el operador viaja en el cuerpo.
+    return this.accountVerification.markSent(id, dto?.movementRef ?? '', dto?.adminUser ?? 'admin');
+  }
 
   @Get('withdrawals')
   @ApiOperation({ summary: 'List withdrawal requests (queue)' })

@@ -148,6 +148,17 @@ export class AccountVerificationService {
       throw new NotFoundException('No hay una verificación en curso para esta cuenta');
     }
 
+    // PT-092 — Solo se confirma lo que ya salio. Detectado al verificar contra la API real:
+    // se aceptaba el token con la verificacion en PENDING. No era explotable —el vendedor no
+    // puede conocer el token— pero habria afirmado «cuenta verificada» sin que nada hubiera
+    // llegado a esa cuenta, que es exactamente lo que la verificacion existe para probar.
+    if (verificacion.status === 'PENDING') {
+      return {
+        verified: false,
+        reason: 'El movimiento de verificacion aun no ha salido. Espera a recibirlo.',
+      };
+    }
+
     if (verificacion.status === 'BLOCKED') {
       throw new BadRequestException(
         'Esta verificación está bloqueada por demasiados intentos. Contacta con soporte.',
@@ -204,6 +215,83 @@ export class AccountVerificationService {
 
     this.logger.info(`Cuenta ${paymentMethodId} verificada`);
     return { verified: true };
+  }
+
+  // ── Cola del administrador ─────────────────────────────────────────────
+  //
+  // La dispersion es manual (`ManualPayoutProvider`), asi que el micro-deposito a una CLABE lo
+  // envia una persona. Estos dos metodos son su interfaz: ver que hay pendiente y anotar que
+  // salio.
+
+  /**
+   * PT-092 — Verificaciones pendientes de que el administrador mueva el dinero.
+   *
+   * **Incluye el token**: el administrador tiene que escribirlo como concepto del SPEI, o el
+   * vendedor no tendra nada que declarar. Es el unico sitio donde el token se expone, y por eso
+   * el endpoint que lo sirve es de administracion.
+   */
+  async pendingQueue() {
+    return this.prisma.accountVerification.findMany({
+      where: { status: 'PENDING' },
+      orderBy: { createdAt: 'asc' },
+      include: {
+        paymentMethod: {
+          select: {
+            id: true,
+            type: true,
+            clabe: true,
+            holderName: true,
+            bankName: true,
+            paypalEmail: true,
+          },
+        },
+      },
+    });
+  }
+
+  /**
+   * PT-092 — El administrador anota que el movimiento salio.
+   *
+   * A partir de aqui empieza a correr el plazo real: el vendedor ya puede ver el codigo en su
+   * cuenta. `sentAt` se fija ahora, no cuando se abrio la verificacion, porque entre una cosa y
+   * otra pueden pasar dias si la cola se acumula.
+   */
+  async markSent(verificationId: string, movementRef: string, adminUser: string) {
+    const verificacion = await this.prisma.accountVerification.findFirst({
+      where: { id: verificationId },
+    });
+    if (!verificacion) throw new NotFoundException('Verificacion no encontrada');
+    if (verificacion.status !== 'PENDING') {
+      throw new BadRequestException(
+        `No se puede marcar como enviada una verificacion en estado ${verificacion.status}`,
+      );
+    }
+
+    const actualizada = await this.prisma.accountVerification.update({
+      where: { id: verificationId },
+      data: {
+        status: 'SENT',
+        movementRef,
+        sentAt: new Date(),
+        // El plazo cuenta desde que el dinero sale, no desde que se abrio la verificacion:
+        // entre una cosa y otra pueden pasar dias si la cola se acumula.
+        expiresAt: new Date(Date.now() + AccountVerificationService.VIGENCIA_DIAS * 24 * 3600_000),
+      },
+    });
+
+    await this.trace.record({
+      reference: `VER-${verificacion.paymentMethodId}`,
+      provider: 'MERCADO_PAGO',
+      step: 'PROVIDER_CONFIRM',
+      direction: 'OUTBOUND',
+      outcome: 'OK',
+      externalId: movementRef,
+      detail: 'Movimiento de verificacion enviado por el administrador',
+      data: { adminUser, verificationId, movementRef },
+    });
+
+    this.logger.info(`Verificacion ${verificationId} marcada como enviada por ${adminUser}`);
+    return actualizada;
   }
 
   /** Token corto, impredecible y transcribible a mano desde un estado de cuenta. */

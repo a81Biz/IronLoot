@@ -3,6 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 import { WalletController } from '../../../src/modules/wallet/wallet.controller';
 import { WalletService } from '../../../src/modules/wallet/wallet.service';
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
+import { AccountVerificationService } from '../../../src/modules/wallet/account-verification.service';
 import { WithdrawalsService } from '../../../src/modules/wallet/withdrawals.service';
 import { PrismaService } from '../../../src/database/prisma.service';
 import { DepositDto, WithdrawDto } from '../../../src/modules/wallet/dto/wallet.dto';
@@ -50,6 +51,11 @@ describe('WalletController', () => {
         },
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: WithdrawalsService, useValue: mockWithdrawalsService },
+        {
+          // PT-092: el controlador expone la verificacion de cuenta de cobro.
+          provide: AccountVerificationService,
+          useValue: { start: jest.fn(), confirm: jest.fn() },
+        },
       ],
     })
       .overrideGuard(JwtAuthGuard)

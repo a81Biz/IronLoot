@@ -78,6 +78,7 @@ describe('AccountVerificationService (PT-092)', () => {
           create: verifCreate,
           findFirst: verifFind,
           update: verifUpdate,
+          findMany: jest.fn().mockResolvedValue([]),
         },
       } as never,
       { getBalance: saldo } as never,
@@ -235,5 +236,59 @@ describe('AccountVerificationService (PT-092)', () => {
     const v = await service.start(USUARIO, METODO);
 
     expect(JSON.stringify(trace.mock.calls)).not.toContain(v.token);
+  });
+
+  // ── La cola del administrador ────────────────────────────────────────
+
+  it('W-17: marcar como enviada fija el momento en que sale el dinero, no el de apertura', async () => {
+    // Entre abrir la verificacion y enviar el dinero pueden pasar dias si la cola se acumula.
+    // El plazo de 7 dias tiene que contar desde que el vendedor PUEDE ver el codigo.
+    (verifFind as never as { conUltima: (v: unknown) => void }).conUltima(
+      verificacion({ status: 'PENDING' }),
+    );
+
+    await service.markSent('v-1', 'SPEI-99887', 'admin');
+
+    const datos = verifUpdate.mock.calls[0][0].data;
+    expect(datos.status).toBe('SENT');
+    expect(datos.movementRef).toBe('SPEI-99887');
+    expect(datos.sentAt).toBeInstanceOf(Date);
+    expect(datos.expiresAt.getTime()).toBeGreaterThan(Date.now() + 6 * 24 * 3600_000);
+  });
+
+  it('W-18: no se puede marcar como enviada una verificacion que ya lo esta', async () => {
+    (verifFind as never as { conUltima: (v: unknown) => void }).conUltima(
+      verificacion({ status: 'SENT' }),
+    );
+
+    await expect(service.markSent('v-1', 'SPEI-1', 'admin')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+  });
+
+  it('W-19: el envio queda en la traza con su referencia', async () => {
+    (verifFind as never as { conUltima: (v: unknown) => void }).conUltima(
+      verificacion({ status: 'PENDING' }),
+    );
+
+    await service.markSent('v-1', 'SPEI-99887', 'admin');
+
+    const envio = trace.mock.calls.map((c) => c[0]).find((e) => e.externalId === 'SPEI-99887');
+    expect(envio).toBeDefined();
+  });
+
+  it('W-20: no se puede confirmar antes de que el dinero salga (PENDING)', async () => {
+    // Detectado al verificar contra la API real: `confirm()` aceptaba el token con la
+    // verificacion aun en PENDING. No es explotable —el vendedor no puede conocer el token—
+    // pero afirmaria «cuenta verificada» sin que nada hubiera llegado a esa cuenta, que es
+    // justo lo que la verificacion existe para probar.
+    (verifFind as never as { conUltima: (v: unknown) => void }).conUltima(
+      verificacion({ status: 'PENDING' }),
+    );
+
+    const r = await service.confirm(USUARIO, METODO, 'ABC123');
+
+    expect(r.verified).toBe(false);
+    expect(metodoUpdate).not.toHaveBeenCalled();
   });
 });
