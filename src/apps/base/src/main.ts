@@ -53,7 +53,14 @@ async function bootstrap() {
       contentSecurityPolicy: {
         directives: {
           defaultSrc: ["'self'"],
-          scriptSrc: ["'self'", "'unsafe-inline'"], // Nunjucks templates may have inline event handlers
+          // PT-096 - `'unsafe-inline'` RETIRADO. Estaba porque el JavaScript vivia dentro de las
+          // plantillas; ahora vive en ficheros y la directiva sobra. Mientras estuvo, un XSS que
+          // lograra inyectar un `<script>` se ejecutaba: es justo lo que la CSP deberia impedir.
+          //
+          // Si algo deja de funcionar tras esto, la respuesta NO es devolver la palabra: es que
+          // queda codigo en una plantilla. Las guardas de `plantillas-sin-js-inline.spec.ts` lo
+          // dicen en segundos.
+          scriptSrc: ["'self'"], // Nunjucks templates may have inline event handlers
           styleSrc: [
             "'self'",
             "'unsafe-inline'",

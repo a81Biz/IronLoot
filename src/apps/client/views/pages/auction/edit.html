@@ -29,18 +29,6 @@
 {% endif %}
 {% endblock %}
 {% block scripts %}
-<script>
-document.getElementById('editForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const id = document.getElementById('auctionId').value;
-  const msgEl = document.getElementById('editMsg');
-  const res = await fetch('/api/v1/auctions/' + id, {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-    body: JSON.stringify({ title: document.getElementById('title').value, description: document.getElementById('description').value, startingPrice: parseFloat(document.getElementById('startingPrice').value) }),
-  });
-  msgEl.className = 'alert ' + (res.ok ? 'alert-success' : 'alert-error');
-  msgEl.textContent = res.ok ? 'Subasta actualizada.' : 'Error al guardar.';
-  msgEl.style.display = 'block';
-});
-</script>
+<script src="/js/pages/pages-auction-edit.js"></script>
+
 {% endblock %}

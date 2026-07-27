@@ -25,7 +25,7 @@
       <div class="gallery-item">
         <img src="{{ img }}" alt="Imagen {{ loop.index }}">
         <form action="/lots/{{ lot.id }}/images/{{ loop.index0 }}/delete" method="POST" class="img-delete-form"
-              onsubmit="return confirm('¿Eliminar esta imagen?')">
+              data-confirm="¿Eliminar esta imagen?">
           <button type="submit" class="btn-img-delete" title="Eliminar imagen">
             <span class="material-symbols-outlined">delete</span>
           </button>
@@ -53,7 +53,7 @@
     </form>
     {% else %}
     <form action="/lots/{{ lot.id }}/block" method="POST" class="action-form"
-          onsubmit="return confirm('¿Bloquear este lote?')">
+          data-confirm="¿Bloquear este lote?">
       <button type="submit" class="btn btn-danger btn-block">Bloquear lote</button>
     </form>
     {% endif %}

@@ -72,7 +72,7 @@
       </button>
     </form>
     <form action="/auctions/{{ auction.id }}/force-close" method="POST" class="action-form"
-          onsubmit="return confirm('¿Forzar cierre anticipado?')">
+          data-confirm="¿Forzar cierre anticipado?">
       <button type="submit" class="btn btn-danger btn-block">
         <span class="material-symbols-outlined">stop_circle</span> Forzar cierre
       </button>
@@ -81,7 +81,7 @@
 
     {% if auction.status == 'CLOSED' or auction.status == 'CANCELLED' or auction.status == 'SUSPENDED' %}
     <form action="/auctions/{{ auction.id }}/reopen" method="POST" class="action-form"
-          onsubmit="return confirm('¿Reabrir esta subasta?')">
+          data-confirm="¿Reabrir esta subasta?">
       <button type="submit" class="btn btn-primary btn-block">
         <span class="material-symbols-outlined">restart_alt</span> Reabrir
       </button>
@@ -90,7 +90,7 @@
 
     {% if auction.status != 'CLOSED' and auction.status != 'CANCELLED' %}
     <form action="/auctions/{{ auction.id }}/cancel" method="POST" class="action-form"
-          onsubmit="return confirm('¿Cancelar permanentemente?')">
+          data-confirm="¿Cancelar permanentemente?">
       <button type="submit" class="btn btn-ghost btn-block btn-sm">
         <span class="material-symbols-outlined">delete</span> Cancelar subasta
       </button>

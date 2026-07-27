@@ -22,17 +22,6 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script>
-document.getElementById('profileForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const msg = document.getElementById('profileMsg');
-  const res = await fetch('/api/v1/users/me', {
-    method: 'PATCH', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-    body: JSON.stringify({ fullName: document.getElementById('fullName').value, phone: document.getElementById('phone').value }),
-  });
-  msg.className = 'alert ' + (res.ok ? 'alert-success' : 'alert-error');
-  msg.textContent = res.ok ? 'Perfil actualizado.' : 'Error al guardar.';
-  msg.style.display = 'block';
-});
-</script>
+<script src="/js/pages/pages-profile.js"></script>
+
 {% endblock %}

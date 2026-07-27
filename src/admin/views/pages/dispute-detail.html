@@ -49,7 +49,7 @@
 
     {% if dispute.status == 'OPEN' or dispute.status == 'IN_MEDIATION' %}
 
-    <form method="POST" action="/disputes/{{ dispute.id }}/resolve-buyer" onsubmit="return confirm('¿Resolver a favor del comprador?')">
+    <form method="POST" action="/disputes/{{ dispute.id }}/resolve-buyer" data-confirm="¿Resolver a favor del comprador?">
       <div class="form-group mb-3">
         <label class="form-label">Notas (resolución a favor del comprador)</label>
         <textarea name="reason" class="form-control" rows="3" required placeholder="Motivo de la resolución..."></textarea>
@@ -62,7 +62,7 @@
 
     <hr class="my-3">
 
-    <form method="POST" action="/disputes/{{ dispute.id }}/resolve-seller" onsubmit="return confirm('¿Resolver a favor del vendedor?')">
+    <form method="POST" action="/disputes/{{ dispute.id }}/resolve-seller" data-confirm="¿Resolver a favor del vendedor?">
       <div class="form-group mb-3">
         <label class="form-label">Notas (resolución a favor del vendedor)</label>
         <textarea name="reason" class="form-control" rows="3" required placeholder="Motivo de la resolución..."></textarea>

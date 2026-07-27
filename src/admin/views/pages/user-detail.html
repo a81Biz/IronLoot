@@ -33,13 +33,13 @@
     <h3 class="card-title">Acciones</h3>
     {% if user.state == 'ACTIVE' %}
     <form action="/users/{{ user.id }}/suspend" method="POST" class="action-form"
-          onsubmit="return confirm('¿Suspender temporalmente a este usuario?')">
+          data-confirm="¿Suspender temporalmente a este usuario?">
       <button type="submit" class="btn btn-warning btn-block">
         <span class="material-symbols-outlined">pause_circle</span> Suspender usuario
       </button>
     </form>
     <form action="/users/{{ user.id }}/ban" method="POST" class="action-form mt-4"
-          onsubmit="return confirm('¿Banear permanentemente a este usuario?')">
+          data-confirm="¿Banear permanentemente a este usuario?">
       <button type="submit" class="btn btn-danger btn-block">
         <span class="material-symbols-outlined">block</span> Banear usuario
       </button>
@@ -113,14 +113,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
-      btn.classList.add('active');
-      document.getElementById('tab-' + btn.dataset.tab).style.display = '';
-    });
-  });
-</script>
+<script src="/js/pages/pages-user-detail.js"></script>
+
 {% endblock %}

@@ -36,7 +36,7 @@
                 <span class="material-symbols-outlined">check</span> Aprobar
               </button>
             </form>
-            <button class="btn btn-danger btn-xs" onclick="openRejectModal('{{ item.id }}', '{{ item.title | escape }}')">
+            <button class="btn btn-danger btn-xs" data-accion="abrir-rechazo" data-id="{{ item.id }}" data-titulo="{{ item.title | escape }}">
               <span class="material-symbols-outlined">close</span> Rechazar
             </button>
           </div>
@@ -73,7 +73,7 @@
         <textarea name="notes" class="form-input" rows="2" placeholder="Opcional"></textarea>
       </div>
       <div class="form-actions">
-        <button type="button" class="btn btn-ghost" onclick="closeRejectModal()">Cancelar</button>
+        <button type="button" class="btn btn-ghost" data-accion="cerrar-rechazo">Cancelar</button>
         <button type="submit" class="btn btn-danger">Confirmar rechazo</button>
       </div>
     </form>
@@ -82,14 +82,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-  function openRejectModal(id, title) {
-    document.getElementById('reject-modal-title').textContent = title;
-    document.getElementById('reject-form').action = '/moderation/' + id + '/reject';
-    document.getElementById('reject-modal').style.display = 'flex';
-  }
-  function closeRejectModal() {
-    document.getElementById('reject-modal').style.display = 'none';
-  }
-</script>
+<script src="/js/pages/pages-moderation.js"></script>
+
 {% endblock %}

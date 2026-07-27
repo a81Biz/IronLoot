@@ -84,7 +84,10 @@
           {% if auctions %}{{ auctions.length }} resultado(s){% endif %}
           {% if q %} para "<strong>{{ q }}</strong>"{% endif %}
         </span>
-        <select class="sort-select" onchange="window.location.search = '?sort='+this.value{% if q %}+'&q={{ q }}'{% endif %}">
+        {# PT-096 - Antes `onchange="window.location.search=..."`, que la CSP bloqueaba: ordenar
+           el catalogo no hacia nada. El script conserva los demas parametros de la URL, que
+           es lo que aqui se hacia a mano concatenando `&q=`. #}
+        <select class="sort-select" data-navega-param="sort">
           <option value="createdAt_desc">Más recientes</option>
           <option value="price_asc">Menor precio</option>
           <option value="price_desc">Mayor precio</option>

@@ -32,7 +32,14 @@ async function bootstrap() {
         directives: {
           defaultSrc: ["'self'"],
           // PT-044 (AUD-002): allow the Socket.io client CDN and the API WS origin for the live bid feed.
-          scriptSrc: ["'self'", "'unsafe-inline'", "https://cdn.socket.io"],
+          // PT-096 - `'unsafe-inline'` RETIRADO. Estaba porque el JavaScript vivia dentro de
+          // las plantillas; ahora vive en ficheros y la directiva sobra. Mientras estuvo, un XSS
+          // que lograra inyectar un `<script>` se ejecutaba: justo lo que la CSP deberia impedir.
+          //
+          // Si algo deja de funcionar tras esto, la respuesta NO es devolver la palabra: es que
+          // queda codigo en una plantilla, y `plantillas-sin-js-inline.spec.ts` lo dice en
+          // segundos.
+          scriptSrc: ["'self'", "https://cdn.socket.io"],
           styleSrc: [
             "'self'",
             "'unsafe-inline'",

@@ -172,17 +172,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-  // Toggle cloud storage fields
-  document.querySelectorAll('input[name="STORAGE_PROVIDER"]').forEach(radio => {
-    radio.addEventListener('change', () => {
-      const fields = document.getElementById('storage-cloud-fields');
-      if (fields) fields.style.display = radio.value === 'LOCAL' ? 'none' : '';
-    });
-  });
+<script src="/js/pages/pages-settings.js"></script>
 
-  if (new URLSearchParams(window.location.search).get('saved') === '1') {
-    history.replaceState({}, '', '/settings');
-  }
-</script>
 {% endblock %}

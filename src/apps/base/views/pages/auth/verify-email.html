@@ -1,4 +1,5 @@
 {% extends "layouts/base.html" %}
+{% block body_data %} data-token="{{ token }}"{% endblock %}
 {% block title %}Verificar correo — IronLoot{% endblock %}
 
 {% block content %}
@@ -27,22 +28,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-const token = new URLSearchParams(window.location.search).get('token') || '{{ token }}';
-if (token) {
-  fetch('/api/v1/auth/verify-email', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token }),
-  }).then(res => {
-    const el = document.getElementById('verifyStatus');
-    if (res.ok) {
-      el.innerHTML = '<div class="alert alert-success">¡Correo verificado! <a href="/auth/login">Iniciar sesión</a></div>';
-    } else {
-      el.innerHTML = '<div class="alert alert-error">Token inválido o expirado. <a href="/auth/recovery">Solicitar nuevo enlace</a></div>';
-    }
-  }).catch(() => {
-    document.getElementById('verifyStatus').innerHTML = '<div class="alert alert-error">Error de conexión.</div>';
-  });
-}
-</script>
+<script src="/js/pages/pages-auth-verify-email.js"></script>
+
 {% endblock %}

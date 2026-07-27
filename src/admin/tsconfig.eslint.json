@@ -1,0 +1,12 @@
+{
+  "_comentario": "PT-096 - Solo para el linter. El tsconfig de compilacion excluye los tests (no deben ir al dist), pero el linter SI tiene que verlos: `lint-staged` corre sobre lo que esta en el indice. Sin esto, el hook rechaza cualquier commit que anada un test.",
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}
