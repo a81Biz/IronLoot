@@ -141,6 +141,33 @@ function rec(id, desc, status, detail) {
     }
   }
 
+
+  // ── PT-100: ningun sitio puede subir las peticiones a HTTPS si no servimos HTTPS ──
+  //
+  // Helmet anade `upgrade-insecure-requests` por defecto. Sobre `localhost` no se nota —los
+  // navegadores lo eximen— pero sobre un dominio real en desarrollo ROMPE EL SITIO ENTERO: cada
+  // peticion se sube a `https://`, donde no escucha nadie, y falla con ERR_CONNECTION_REFUSED.
+  //
+  // Le paso a ADMIN al mover la suite a subdominios: 24 checks caidos, y el sintoma —«la sesion
+  // no persiste»— apuntaba en la direccion equivocada. La sesion estaba bien; la peticion nunca
+  // llegaba.
+  for (const [nombre, base] of [['BASE', cfg.BASE], ['CLIENT', cfg.CLIENT], ['ADMIN', cfg.ADMIN]]) {
+    let csp = '';
+    try {
+      const r = await fetch(base + '/', { redirect: 'manual' });
+      csp = r.headers.get('content-security-policy') || '';
+    } catch (e) {
+      csp = 'ERR:' + e.message;
+    }
+    const sube = /upgrade-insecure-requests/i.test(csp);
+    rec(
+      `QA-CSP-UIR-${nombre}`,
+      `${nombre} no fuerza HTTPS en desarrollo (upgrade-insecure-requests)`,
+      sube ? 'FAIL' : 'PASS',
+      sube ? 'la envia: el navegador subira a https:// y no escucha nadie' : 'no la envia',
+    );
+  }
+
   L.writeJSON(OUT, 'extras.json', results);
   const pass = results.filter((r) => r.status === 'PASS').length;
   const fail = results.filter((r) => r.status === 'FAIL').length;

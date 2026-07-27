@@ -34,6 +34,19 @@ async function bootstrap() {
           connectSrc: ["'self'"],
           frameSrc: ["'none'"],
           objectSrc: ["'none'"],
+          // PT-100 — Helmet añade `upgrade-insecure-requests` por defecto, y en desarrollo eso
+          // ROMPE el panel entero: el navegador sube cada peticion a `https://admin.<dominio>`,
+          // donde no escucha nadie, y el login falla con ERR_CONNECTION_REFUSED antes de poder
+          // guardar la cookie de sesion.
+          //
+          // No se notaba con `localhost` porque los navegadores lo eximen de la subida a HTTPS.
+          // Al pasar la suite a subdominios (PT-088/PT-097) aparecieron 24 checks caidos, y el
+          // sintoma —«la sesion no persiste»— apuntaba en la direccion equivocada: la sesion
+          // estaba bien, la peticion nunca llegaba.
+          //
+          // BASE y CLIENT ya lo resolvian asi; ADMIN se habia quedado fuera.
+          upgradeInsecureRequests:
+            process.env.NODE_ENV === "production" ? [] : null,
         },
       },
       crossOriginEmbedderPolicy: false,
