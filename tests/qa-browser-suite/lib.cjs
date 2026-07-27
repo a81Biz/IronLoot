@@ -62,8 +62,28 @@ async function visit(page, url, capture, opts = {}) {
   return { status, finalUrl: page.url(), title };
 }
 
-async function shot(page, dir, name) {
-  const file = path.join(dir, `${name}.png`);
+/**
+ * Captura de pantalla, guardada en la carpeta de la corrida.
+ *
+ * PT-106 — La firma era `(page, dir, name)` y 16 de las 20 llamadas pasaban dos argumentos, asi
+ * que el nombre caia en `dir` y `name` quedaba `undefined`: el fichero acababa en
+ * `<etiqueta>/undefined.png` DENTRO del codigo fuente de la suite, no en la corrida. JavaScript
+ * no protesta por un argumento que falta.
+ *
+ * Se invirtio el orden en vez de corregir las 16 llamadas porque el orden viejo es el que induce
+ * el error: nadie espera que el segundo argumento de una funcion de captura sea un directorio.
+ * `dir` es opcional y por defecto es la carpeta de la corrida.
+ */
+
+/** La carpeta de la corrida en curso, segun `.last-run`. */
+function readLastRun() {
+  return fs.readFileSync(path.join(cfg.OUT_ROOT, '.last-run'), 'utf8').trim();
+}
+
+async function shot(page, name, dir) {
+  if (!name) throw new Error('shot(): falta el nombre de la captura');
+  const destino = dir || ensureDir(path.join(readLastRun(), 'capturas'));
+  const file = path.join(destino, `${name}.png`);
   try {
     await page.screenshot({ path: file, fullPage: true });
   } catch (e) {
