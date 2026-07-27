@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { Redis } from 'ioredis';
-import { v4 as uuid } from 'uuid';
+import { randomUUID as uuid } from 'node:crypto';
 
 @Injectable()
 export class DistributedLockService {

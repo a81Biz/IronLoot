@@ -1,85 +1,100 @@
-# REFACTOR_SCOPE — PT-105: los estilos salen de las plantillas (TD-014)
+# REFACTOR_SCOPE — PT-125: bcrypt 5->6 y uuid 9->14
 
-**Fecha**: 2026-07-27 · **Tipo**: REFACTOR · **Complejidad**: STANDARD · **Estado**: STATE 1-R
-**Origen**: TD-014, registrada en PT-103 al comprobar que TD-005 sólo estaba cerrada a medias.
+**Fecha**: 2026-07-27 · **Complejidad**: STANDARD · **Variante**: STATE 1-R
+**Origen**: PT-123 / TD-015 / H-008. Dos de los tres saltos que el analisis recomendo hacer ya.
+**Autorizacion**: el humano autorizo la migracion el 2026-07-27 («si la migracion es lo que se
+necesita para mejorar la seguridad... mejor ahora que parchar»).
+
+## Que cambia
+
+| Paquete | De | A | Aviso que cierra |
+|---|---|---|---|
+| `bcrypt` | 5.1.1 | 6.0.0 | `tar` CRITICA (via `@mapbox/node-pre-gyp`) |
+| `uuid` | 9.0.1 | 14.0.1 | `uuid` MODERADA (bounds check en v3/v5/v6) |
+
+## Que NO cambia
+
+- **Ningun hash existente.** El formato bcrypt (`$2b$rondas$sal+hash`) es un estandar; la libreria
+  cambia, el formato no. Si esto fuera falso, todos los usuarios quedarian fuera.
+- **Ninguna llamada.** `bcrypt.hash` / `bcrypt.compare` y `import { v4 as uuidv4 }` tienen la misma
+  firma en las versiones destino.
+- **El numero de rondas.** Se deja el que hay; cambiarlo es otra decision y se notaria en el tiempo
+  de login.
+- **NestJS y Express.** Son PT-126. Deliberadamente separados: si algo se rompe, hay que poder
+  saber cual de los dos fue.
+
+## Superficie medida
+
+```
+bcrypt   src/modules/auth/auth.service.ts   unico fichero
+         bcrypt.hash    x3
+         bcrypt.compare x2
+uuid     solo v4 (7 usos de `uuidv4`, 4 de `v4`)
+         v1/v3/v5/v6: CERO — los 12 «v1» del grep son rutas /api/v1
+```
+
+Que solo se use v4 importa: el aviso de `uuid` es **exclusivamente** de v3/v5/v6 con `buf`. Se sube
+igual —cierra el aviso y quita una excepcion que explicar— pero el riesgo que se elimina era nulo.
+Esto se dice aqui para que nadie lo lea como un parche urgente.
+
+## Quality bar — como se sabe que esta completo
+
+1. Un hash generado con **bcrypt 5** sigue validando con **bcrypt 6**. Esta es LA prueba: se congela
+   un hash como fixture ANTES de subir y se comprueba despues.
+2. `npm audit --omit=dev` baja de 12 paquetes a 10.
+3. Las 552 pruebas unitarias siguen pasando.
+4. Un login real contra el API en ejecucion, con un usuario **creado antes** de la subida.
+
+## Riesgo de regresion — que debe conservarse exacto
+
+| Riesgo | Por que importa | Como se comprueba |
+|---|---|---|
+| **Hashes existentes dejan de validar** | Todos los usuarios fuera. Es el unico riesgo grave | Fixture congelado + login real con usuario preexistente |
+| `bcrypt` 6 exige Node >= 18 | El contenedor podria no arrancar | `node -v` en la imagen antes de subir |
+| `bcrypt` es nativo: compila en `npm install` | Si falla la compilacion, la imagen no se construye | `docker-compose build api` |
+| `uuid` 11+ cambio el empaquetado (ESM/CJS dual) | Un import roto se ve al compilar | `npm run typecheck` + arranque real |
+
+## Estrategia de vuelta atras
+
+Cada paquete, su propio commit. `package.json` + `package-lock.json` revertidos devuelven el estado
+anterior sin tocar datos: **ningun hash se reescribe**, asi que volver atras es seguro en cualquier
+momento. Es la razon de subirlos por separado y no junto con PT-126.
+
+## Fuera de alcance
+
+- Cambiar el numero de rondas de bcrypt.
+- Migrar a `argon2` u otro algoritmo. Es una decision de seguridad con migracion de datos detras.
+- Sustituir `uuid` por `crypto.randomUUID()` del runtime (haria la dependencia innecesaria). Tiene
+  sentido y es un PT propio: toca 11 puntos y no cierra ningun aviso adicional.
+
 
 ---
 
-## 1. Qué cambia y qué NO
+## Delta: lo que cambio respecto a este alcance, y por que
 
-### Cambia
+**El alcance decia que quitar `uuid` a favor de `crypto.randomUUID()` era «fuera de alcance, PT
+propio». Se hizo aqui.** Lo que lo cambio fue una medida, no una preferencia:
 
-Los **93 atributos `style=`** repartidos por 38 plantillas pasan a clases en el CSS del sitio, y
-`'unsafe-inline'` sale de `styleSrc` en los tres `main.ts`.
+1. `uuid@14` **es ESM**. Jest no lo parsea: 54 de 79 suites dejaron de arrancar.
+2. Y sobre todo: **el aviso nunca fue de nuestra dependencia**. El rango vulnerable es `<11.1.1` y
+   el unico nodo afectado era `node_modules/mercadopago/node_modules/uuid`. Subir la nuestra a 14
+   no cerraba nada — solo añadia una segunda copia y rompia las pruebas.
 
-| Sitio | Atributos | Ficheros |
+La salida buena no era configurar transformaciones de Jest para conservar una dependencia que no
+hacia falta. `crypto.randomUUID()` es v4 del propio runtime, con el mismo CSPRNG, en 4 ficheros.
+**Un paquete menos en el arbol es un aviso que no puede volver.**
+
+La copia de `mercadopago` se resuelve con `override: uuid ^11.1.1` — la **minima parcheada**, no la
+ultima. La 14 tambien cierra el aviso y volveria a romper Jest dentro del arbol de `mercadopago`.
+Elegir la ultima porque si era el error de la primera vuelta.
+
+## Resultado medido
+
+| | Antes | Despues |
 |---|--:|--:|
-| BASE | 15 | 12 |
-| CLIENT | 51 | 14 |
-| ADMIN | 27 | 12 |
+| Paquetes con aviso propio | 12 | **10** |
+| Criticos | 1 (`tar`) | **0** |
+| Pruebas unitarias API | 552 | **561** |
 
-### NO cambia
-
-- **Ninguna apariencia.** Es un refactor: lo que se ve antes y después es lo mismo.
-- **El JavaScript que cambia estilos** (`el.style.display = …`). La CSP **no cubre** los cambios
-  por CSSOM: sólo el atributo en el marcado y los bloques `<style>`. Ese código sigue igual.
-- `script-src`, que ya cerró PT-096.
-- Las hojas de estilo: no se reorganizan, sólo se les añaden las clases que hagan falta.
-
-## 2. Qué se ha medido, antes de decidir nada
-
-**No hay bloques `<style>` con cuerpo** en ninguna plantilla: el trabajo es sólo de atributos.
-
-Lo que contienen los 93:
-
-| Propiedad | Veces |
-|---|--:|
-| `display` (21 de ellos `display:none`) | 44 |
-| `max-width` | 19 |
-| `margin-top` | 17 |
-| `font-size` | 11 |
-| `gap` · `color` · `margin` · `width` · `padding` | 38 |
-
-**Y sólo dos son dinámicos**, ambos en `client/views/pages/notifications/list.html`:
-
-```
-<div style="font-size:.9rem;{% if not n.read %}font-weight:600{% endif %}">
-```
-
-Es un condicional, no una interpolación de datos. **Esto es lo que hace el refactor viable**: si
-hubiera un `style="width: {{ porcentaje }}%"`, no habría clase que lo sustituyera y habría que
-elegir entre romperlo o dejar `unsafe-inline`. No lo hay.
-
-## 3. Listón de calidad — cuándo está terminado
-
-1. `grep -r 'style="' ` sobre las tres carpetas de vistas devuelve **0**.
-2. `styleSrc` de los tres `main.ts` **no** contiene `'unsafe-inline'`.
-3. **Cero violaciones de CSP** en el recorrido de navegador — que es donde se vería el fallo.
-4. Una guarda estática lo vigila, como PT-096 hizo con el JavaScript.
-5. TD-014 pasa a cerrada en el registro **con cita** (RULE-08).
-
-## 4. Riesgo de regresión — qué comportamiento debe preservarse exactamente
-
-| Comportamiento | Riesgo | Cómo se comprueba |
-|---|---|---|
-| **Los 21 `display:none` iniciales** | Un elemento que debía nacer oculto aparece a la vista. Es el fallo más visible y más probable | La clase `.oculto` en el marcado + recorrido de navegador |
-| **El JS que muestra/oculta** | Si el JS hace `style.display=''` sobre algo que ahora oculta una **clase**, deja de funcionar: la clase gana | Hay que revisar **cada** caso, no suponerlo. Es el riesgo real de este PT |
-| **La apariencia** | Un `max-width` o un `gap` que se pierde descoloca la página | Comparación visual en el recorrido |
-| **Los dos condicionales** | Perder el resaltado de notificación no leída | Clase condicional, comprobada |
-| **La CSP de ADMIN** | Romperla deja el panel inservible (ya pasó en PT-100) | La suite entera, 193 casos |
-
-> **El segundo riesgo es el que puede morder.** `element.style.display = ''` restaura el estilo
-> *inline*, y si lo que oculta ahora es una clase, el elemento sigue oculto. Cada uno de los 21
-> casos hay que mirarlo: no vale con sustituir a ciegas.
-
-## 5. Estrategia de vuelta atrás
-
-Rama propia. Si algo se descoloca, `git revert` del merge: no hay migración de datos ni estado que
-deshacer. El cambio es marcado y CSS.
-
-## 6. Fuera de alcance
-
-- Reorganizar los CSS o unificar los tres sitios.
-- Tocar `script-src` (PT-096) o cualquier otra directiva.
-- Los estilos inline que genere el JavaScript en tiempo de ejecución.
-- Cerrar el bug: el agente no cierra.
+Verificado contra el API en ejecucion: un usuario **creado antes** de la subida, con hash `$2b$12$`
+escrito por bcrypt 5, entra con bcrypt 6 (HTTP 200) y la contraseña equivocada sigue dando 401.
