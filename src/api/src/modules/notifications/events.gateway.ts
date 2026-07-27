@@ -25,6 +25,19 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
     credentials: true,
   },
   namespace: 'events',
+  // PT-110 (H-008) — Cotas explicitas. Este namespace es PUBLICO y SIN autenticar, y el
+  // `@nestjs/throttler` global cubre HTTP, **no sockets**: si no hay cota aqui, no hay cota.
+  //
+  // Los eventos que viajan por aqui son diminutos —un id de subasta, un importe, una marca de
+  // tiempo—, asi que 16 KB es holgado por dos ordenes de magnitud sobre lo observado y sigue
+  // cortando un cuerpo abusivo. No es una cifra bonita: es lo medido con margen.
+  //
+  // `pingInterval`/`pingTimeout` explicitos para que una conexion muerta se recoja en ~25 s en
+  // vez de quedarse ocupando sitio: el aviso de engine.io era justamente agotamiento de
+  // conexiones por el transporte polling.
+  maxHttpBufferSize: 16 * 1024,
+  pingInterval: 20000,
+  pingTimeout: 5000,
 })
 export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
