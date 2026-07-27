@@ -67,10 +67,57 @@ export class PaymentsService {
     return this.prisma.userPaymentMethod.create({
       data: {
         userId,
+        type: 'CLABE',
         referenceId: dto.clabe, // la CLABE identifica el método
         bankName: dto.bankName ?? null,
         clabe: dto.clabe,
         holderName: dto.holderName.trim(),
+        alias: dto.alias ?? null,
+        isVerified: false,
+        isActive: true,
+      },
+    });
+  }
+
+  /**
+   * PT-092 — Registra una cuenta de PayPal como destino de cobro.
+   *
+   * **Solo se admite una.** La asimetría con la CLABE es deliberada: una cuenta de PayPal se
+   * identifica por un correo y una persona tiene el suyo; tener dos registradas no resuelve
+   * ningún caso real y multiplica la posibilidad de equivocarse al elegir destino. En cambio es
+   * normal tener cuentas en varios bancos, o una personal y otra de la actividad.
+   *
+   * Nace **sin verificar**, como todas: el destino de un retiro es un hecho comprobado, no una
+   * afirmación del usuario (PT-092, cierre de TD-003).
+   */
+  async addPaypalAccount(
+    userId: string,
+    dto: { paypalEmail: string; alias?: string },
+  ): Promise<UserPaymentMethod> {
+    const correo = String(dto.paypalEmail ?? '')
+      .trim()
+      .toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(correo)) {
+      throw new BadRequestException('Correo de PayPal inválido');
+    }
+
+    const existentes = await this.prisma.userPaymentMethod.findMany({
+      where: { userId, type: 'PAYPAL', isActive: true },
+    });
+    if (existentes.length > 0) {
+      // Se dice CUAL es, para que se pueda quitar sin tener que buscarla.
+      throw new BadRequestException(
+        `Ya tienes una cuenta de PayPal registrada (${existentes[0].paypalEmail}). ` +
+          'Elimínala primero si quieres usar otra.',
+      );
+    }
+
+    return this.prisma.userPaymentMethod.create({
+      data: {
+        userId,
+        type: 'PAYPAL',
+        referenceId: correo, // el correo identifica el método
+        paypalEmail: correo,
         alias: dto.alias ?? null,
         isVerified: false,
         isActive: true,

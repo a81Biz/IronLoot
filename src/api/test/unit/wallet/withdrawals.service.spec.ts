@@ -33,7 +33,9 @@ describe('WithdrawalsService (PT-072)', () => {
     payments = {
       getUserPaymentMethod: jest
         .fn()
-        .mockResolvedValue({ id: 'm1', clabe: '00201', holderName: 'X' }),
+        // PT-092: el metodo por defecto esta VERIFICADO. Antes no existia el concepto y por eso
+        // se podia retirar a una cuenta que nadie habia confirmado (TD-003).
+        .mockResolvedValue({ id: 'm1', clabe: '00201', holderName: 'X', isVerified: true }),
     };
     payout = {
       execute: jest.fn().mockResolvedValue({ success: true, reference: 'WR-1', mode: 'MANUAL' }),
@@ -100,5 +102,28 @@ describe('WithdrawalsService (PT-072)', () => {
       paymentMethodId: 'm1',
     });
     await expect(service.markPaid('w1', 'admin')).rejects.toThrow(/APPROVED/);
+  });
+
+  it('PT-092: una cuenta SIN verificar no puede retirar (cierre de TD-003)', async () => {
+    // Es el motivo de todo PT-092. El digito verificador de la CLABE atrapa erratas de tecleo,
+    // no la titularidad: una CLABE ajena bien escrita pasaba igual.
+    payments.getUserPaymentMethod.mockResolvedValue({
+      id: 'm1',
+      clabe: '00201',
+      holderName: 'X',
+      isVerified: false,
+    });
+
+    await expect(service.request('u1', { amount: 100, paymentMethodId: 'm1' })).rejects.toThrow(
+      /no está verificada/i,
+    );
+  });
+
+  it('PT-092: el mensaje explica como resolverlo, no solo que fallo', async () => {
+    payments.getUserPaymentMethod.mockResolvedValue({ id: 'm1', isVerified: false });
+
+    await expect(service.request('u1', { amount: 100, paymentMethodId: 'm1' })).rejects.toThrow(
+      /código/i,
+    );
   });
 });

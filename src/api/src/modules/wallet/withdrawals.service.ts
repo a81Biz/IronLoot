@@ -35,6 +35,22 @@ export class WithdrawalsService {
     // Gate 2 — método de pago válido del usuario
     const method = await this.payments.getUserPaymentMethod(userId, dto.paymentMethodId);
     if (!method) throw new BadRequestException('Método de pago inválido');
+
+    // Gate 2-bis — la cuenta tiene que estar VERIFICADA (PT-092, cierre de TD-003).
+    //
+    // Hasta aquí `isVerified` nacía `false`, nadie lo ponía nunca a `true` y nadie lo
+    // comprobaba: se retiraba a una cuenta que nadie había confirmado que fuera del usuario.
+    // El dígito verificador de la CLABE se valida al registrarla, lo que atrapa erratas de
+    // tecleo pero **no la titularidad**: una CLABE ajena bien escrita pasaba igual.
+    //
+    // La verificación mueve dinero de verdad con un código que solo ve quien tiene acceso a la
+    // cuenta. Sin ella, el destino del retiro es una afirmación del usuario, no un hecho.
+    if (!method.isVerified) {
+      throw new BadRequestException(
+        'Esta cuenta aún no está verificada. Verifícala antes de retirar: te enviaremos un ' +
+          'importe pequeño con un código que tendrás que confirmar.',
+      );
+    }
     // Gate 3 — saldo disponible suficiente (sólo disponible, no pending)
     const balance = await this.wallet.getBalance(userId);
     if (Number(balance.available) < amount) {
