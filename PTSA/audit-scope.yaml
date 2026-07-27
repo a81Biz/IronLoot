@@ -83,7 +83,11 @@ ci_checkpoints:
           #     Incluye el JavaScript de NAVEGADOR: es donde vivia F-34.
           #   trace_completeness: % de ciclos liquidados con la cadena de traza completa.
           #   prompt_provenance: NO_APLICA. fallback_quality: evaluacion documentada ([R57]).
-  - D5    # Success/Retry/Failure Rate (métricas determinísticas)
+  # PT-122 — D5 SALE de ci_checkpoints: es una clasificacion equivocada, no algo pendiente.
+  # Success/Retry Rate se calculan sobre HISTORIA DE EJECUCION, y en CI la base nace vacia en cada
+  # corrida: el checkpoint devolveria SIN_DATOS siempre y alguien acabaria leyendolo como verde.
+  # D5 es metrica de DELTA SYNC -> src/api/scripts/reliability-check.ts
+  #   `npm run audit:reliability`, contra un entorno CON historia.
   # PT-120 — D1.N1 deja de ser una declaracion.
   - "D1.N1"  # Domain Rules as Code -> src/api/scripts/domain-rules.ts
              #   `npm run audit:domain` — 14 reglas de F-1 §4 y §5, con pesos.
