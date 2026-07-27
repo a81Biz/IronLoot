@@ -50,10 +50,10 @@ describe('Las capturas de la suite van a su sitio (PT-106)', () => {
   });
 
   it('CS-03: `shot()` exige el nombre de la captura', () => {
-    // Se lee el fuente en vez de importarlo: `lib.cjs` arrastra Playwright, que no esta en las
+    // Se lee el fuente en vez de importarlo: `lib.js` arrastra Playwright, que no esta en las
     // dependencias del API. La comprobacion es mas debil que ejecutarlo —fija que la guarda
     // existe, no que funcione— y por eso CS-01 y CS-02 miran el disco, que no se puede fingir.
-    const fuente = readFileSync(join(SUITE, 'lib.cjs'), 'utf8');
+    const fuente = readFileSync(join(SUITE, 'lib.js'), 'utf8');
     const cuerpo = fuente.slice(fuente.indexOf('function shot('));
 
     expect(cuerpo.slice(0, 400)).toMatch(/if \(!name\)[\s\S]*?throw/);
