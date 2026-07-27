@@ -10,7 +10,7 @@ ROOT="C:/DevOps/Desarrollos/IronLoot/qa-out"
 log(){ echo -e "\n\033[1;36m==== $* ====\033[0m"; }
 
 log "1) RESET BD — truncar todos los datos (empezar de cero)"
-TABLES="payment_cycle_events,payment_cycles,processed_webhook_events,audit_events,error_events,request_logs,withdrawal_requests,sessions,auctions,orders,bids,payments,shipments,ratings,disputes,notifications,wallets,user_payment_methods,system_config,ledger,profiles,users,commission_config,commission_records,moderation_log,cfdi_records,kyc_submissions,notification_campaigns,seo_config,cms_content,watchlist,refund_requests"
+TABLES="account_verifications,payment_cycle_events,payment_cycles,processed_webhook_events,audit_events,error_events,request_logs,withdrawal_requests,sessions,auctions,orders,bids,payments,shipments,ratings,disputes,notifications,wallets,user_payment_methods,system_config,ledger,profiles,users,commission_config,commission_records,moderation_log,cfdi_records,kyc_submissions,notification_campaigns,seo_config,cms_content,watchlist,refund_requests"
 docker exec "$DB" psql -U ironloot -d ironloot_db -c "TRUNCATE TABLE ${TABLES} RESTART IDENTITY CASCADE;" >/dev/null 2>&1 \
   && echo "   OK truncadas" || { echo "   FALLO truncando"; exit 1; }
 echo "   users=$(docker exec "$DB" psql -U ironloot -d ironloot_db -t -A -c 'SELECT count(*) FROM users')"
@@ -22,6 +22,23 @@ for i in $(seq 1 40); do
   [ "$code" = "200" ] && { echo "   API health 200 (intento $i)"; break; }
   sleep 2
 done
+
+# PT-097 — Que el API arranque, antes que nada.
+#
+# La fase de humo recorre BASE, CLIENT y ADMIN, que son sitios SSR: si el API esta muerto sus
+# paginas RENDERIZAN IGUAL con datos vacios y la suite pasa tan campante. Por ese hueco se colo
+# un fallo de inyeccion que impedia arrancar la API entera — y los 458 tests unitarios pasaban,
+# porque construyen modulos aislados y no validan el grafo de dependencias real.
+#
+# Cuesta una linea y evita interpretar 164 checks de una aplicacion que no existe.
+log "2b) ARRANQUE DEL API"
+API_HEALTH=$(curl -s -o /dev/null -m 10 -w "%{http_code}" http://localhost:3000/api/v1/health || echo "000")
+if [ "$API_HEALTH" != "200" ]; then
+  echo "   FALLO: el API no responde (HTTP $API_HEALTH). El resto de la suite no significaria nada."
+  echo "   Revisa con: docker logs ironloot-api | tail -30"
+  exit 1
+fi
+echo "   API en pie (HTTP 200)"
 
 log "3) Fase 00 — Smoke (crea OUT + .last-run)"
 node 00-smoke.cjs || exit 1

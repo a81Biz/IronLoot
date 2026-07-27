@@ -1,0 +1,74 @@
+[
+  {
+    "id": "QA-BOOT-01",
+    "desc": "Admin login inicial",
+    "status": "PASS",
+    "detail": "http://localhost:3001/"
+  },
+  {
+    "id": "QA-BOOT-02",
+    "desc": "Config comisión GLOBAL (10%)",
+    "status": "PASS",
+    "detail": "db.rate_percent=10.00"
+  },
+  {
+    "id": "QA-BOOT-04",
+    "desc": "Registrar comprador (comprador_003435@test.local)",
+    "status": "PASS",
+    "detail": "http://localhost:5174/auth/verify-email-pending"
+  },
+  {
+    "id": "QA-BOOT-05",
+    "desc": "Registrar vendedor (vendedor_003435@test.local)",
+    "status": "PASS",
+    "detail": "http://localhost:5174/auth/verify-email-pending"
+  },
+  {
+    "id": "QA-BOOT-06",
+    "desc": "Verificar email (comprador y vendedor)",
+    "status": "PASS",
+    "detail": "buyer=true() seller=true()"
+  },
+  {
+    "id": "QA-BOOT-07a",
+    "desc": "Login vendedor",
+    "status": "FAIL",
+    "detail": "http://base.ironloot.local/auth/login"
+  },
+  {
+    "id": "QA-BOOT-07",
+    "desc": "Onboarding vendedor",
+    "status": "BLOCKED",
+    "detail": "login vendedor falló"
+  },
+  {
+    "id": "QA-BOOT-08",
+    "desc": "Admin aprueba KYC",
+    "status": "FAIL",
+    "detail": "no se creó KYC submission"
+  },
+  {
+    "id": "QA-BOOT-09",
+    "desc": "Crear + publicar subasta",
+    "status": "BLOCKED",
+    "detail": "login vendedor falló"
+  },
+  {
+    "id": "QA-BOOT-10a",
+    "desc": "Login comprador",
+    "status": "FAIL",
+    "detail": "http://base.ironloot.local/auth/login"
+  },
+  {
+    "id": "QA-BOOT-10b",
+    "desc": "Depósito contrato",
+    "status": "BLOCKED",
+    "detail": "login comprador falló"
+  },
+  {
+    "id": "QA-BOOT-10c",
+    "desc": "Fondear wallet comprador (crédito de prueba)",
+    "status": "PASS",
+    "detail": "balance=5000.00"
+  }
+]

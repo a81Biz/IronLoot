@@ -1,0 +1,26 @@
+[
+  {
+    "id": "QA-ADM-W-commission",
+    "desc": "Comisión global persistida (bootstrap)",
+    "status": "FAIL",
+    "detail": "rate="
+  },
+  {
+    "id": "QA-ADM-W-seo",
+    "desc": "SEO: editar metadata home → persiste",
+    "status": "FAIL",
+    "detail": "db.title=\"\""
+  },
+  {
+    "id": "QA-ADM-W-cms",
+    "desc": "CMS: editar bloque home.hero.title → persiste",
+    "status": "FAIL",
+    "detail": "db.value=\"\""
+  },
+  {
+    "id": "QA-ADM-W-user",
+    "desc": "Usuario: suspender comprador2 → estado cambia",
+    "status": "FAIL",
+    "detail": "state=ACTIVE"
+  }
+]
