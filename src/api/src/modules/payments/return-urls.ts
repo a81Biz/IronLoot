@@ -1,3 +1,5 @@
+import { clientOrigin as origenCliente } from '../../common/config/public-origins';
+
 /**
  * PT-088 — De dónde salen las URLs a las que la pasarela devuelve al usuario.
  *
@@ -15,9 +17,6 @@
  * enseñar primero, pero la verdad la pide a `GET /payments/status/:reference`.
  */
 
-/** Valor por defecto: el subdominio local, nunca un puerto suelto. */
-const CLIENT_ORIGIN_FALLBACK = 'http://client.ironloot.local';
-
 export type DepositReturnStatus = 'success' | 'failure' | 'pending' | 'cancel';
 
 /** Ruta canónica de retorno, la misma para todas las pasarelas. */
@@ -30,8 +29,9 @@ export const DEPOSIT_RETURN_PATH = '/wallet/deposit/return';
  * quien configuró el entorno lo necesita. Esta función no decide por él.
  */
 export function clientOrigin(): string {
-  const configured = process.env.CLIENT_URL?.trim();
-  return (configured || CLIENT_ORIGIN_FALLBACK).replace(/\/+$/, '');
+  // PT-089 — Delega en la fuente comun a todos los origenes publicos, para que no vuelva a
+  // haber dos definiciones de «donde vive CLIENT».
+  return origenCliente();
 }
 
 /**

@@ -7,6 +7,7 @@ import {
   WebhookResult,
 } from '../interfaces';
 import { depositReturnUrl } from '../return-urls';
+import { apiOrigin } from '../../../common/config/public-origins';
 
 /**
  * Hey Banco Payment Provider
@@ -69,7 +70,9 @@ export class HeyBancoProvider implements PaymentProvider {
 
     const token = await this.getAccessToken();
     // PT-088 — El origen publico sale de `return-urls`, no de un valor por defecto propio.
-    const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
+    // PT-089 — La pasarela tiene que alcanzar esta URL desde fuera: `localhost:3000` no
+    // existe para ella.
+    const apiBaseUrl = apiOrigin();
 
     const response = await fetch(`${this.apiUrl}/payments`, {
       method: 'POST',

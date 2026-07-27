@@ -10,7 +10,7 @@ ROOT="C:/DevOps/Desarrollos/IronLoot/qa-out"
 log(){ echo -e "\n\033[1;36m==== $* ====\033[0m"; }
 
 log "1) RESET BD — truncar todos los datos (empezar de cero)"
-TABLES="payment_cycle_events,payment_cycles,audit_events,error_events,request_logs,withdrawal_requests,sessions,auctions,orders,bids,payments,shipments,ratings,disputes,notifications,wallets,user_payment_methods,system_config,ledger,profiles,users,commission_config,commission_records,moderation_log,cfdi_records,kyc_submissions,notification_campaigns,seo_config,cms_content,watchlist,refund_requests"
+TABLES="payment_cycle_events,payment_cycles,processed_webhook_events,audit_events,error_events,request_logs,withdrawal_requests,sessions,auctions,orders,bids,payments,shipments,ratings,disputes,notifications,wallets,user_payment_methods,system_config,ledger,profiles,users,commission_config,commission_records,moderation_log,cfdi_records,kyc_submissions,notification_campaigns,seo_config,cms_content,watchlist,refund_requests"
 docker exec "$DB" psql -U ironloot -d ironloot_db -c "TRUNCATE TABLE ${TABLES} RESTART IDENTITY CASCADE;" >/dev/null 2>&1 \
   && echo "   OK truncadas" || { echo "   FALLO truncando"; exit 1; }
 echo "   users=$(docker exec "$DB" psql -U ironloot -d ironloot_db -t -A -c 'SELECT count(*) FROM users')"
@@ -50,7 +50,7 @@ node -e "const fs=require('fs');const out=fs.readFileSync('C:/DevOps/Desarrollos
 node hist-check.cjs || echo "   (hist-check con error)"
 
 log "RESUMEN FINAL"
-for j in smoke bootstrap authed e2e extras admin-writes withdrawal payment-trace; do
+for j in smoke bootstrap authed e2e extras admin-writes withdrawal payment-trace paypal-guaranteed; do
   f="$OUT/$j.json"
   [ -f "$f" ] && echo "   $j: $(node -e "const a=require('$f');const p=a.filter(x=>x.status==='PASS').length;const t=a.length;console.log(p+'/'+t+' PASS')" 2>/dev/null)"
 done

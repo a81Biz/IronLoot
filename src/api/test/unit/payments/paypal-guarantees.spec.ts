@@ -256,6 +256,29 @@ describe('PaypalProvider — garantías (PT-087)', () => {
     expect(e.endpoint).toContain('/v2/checkout/orders/ORDER-1');
   });
 
+  it('P-14: la llegada de la notificacion queda registrada ANTES de validar la firma (PT-089)', async () => {
+    // Mercado Pago lo registraba y PayPal no. Una notificacion rechazada tambien ocurrio: la
+    // traza debe decir que llego, no solo que se rechazo.
+    responder(token, { body: { verification_status: 'FAILURE' } });
+
+    await expect(
+      provider.handleWebhook(
+        { id: 'WH-1', event_type: 'CHECKOUT.ORDER.APPROVED', resource: { id: 'ORDER-1' } } as never,
+        cabecerasFirma(),
+      ),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+
+    const llegada = paso('NOTIFICATION_RECEIVED');
+    expect(llegada).toBeDefined();
+    expect(llegada.direction).toBe('INBOUND');
+    expect(llegada.detail).toBe('CHECKOUT.ORDER.APPROVED');
+    // Y va primero: el orden de la traza cuenta la historia.
+    const pasos = record.mock.calls.map((c) => c[0].step);
+    expect(pasos.indexOf('NOTIFICATION_RECEIVED')).toBeLessThan(
+      pasos.indexOf('SIGNATURE_REJECTED'),
+    );
+  });
+
   function cabecerasFirma() {
     return {
       'paypal-auth-algo': 'SHA256withRSA',

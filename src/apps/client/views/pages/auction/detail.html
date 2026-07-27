@@ -41,7 +41,11 @@
 {% endblock %}
 {% block scripts %}
 {% if auction %}
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+{# PT-089 — SRI: la puja en vivo depende de este fichero; si el CDN se compromete, el
+   navegador lo rechaza en vez de ejecutarlo. #}
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+        integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
+        crossorigin="anonymous"></script>
 <script>
   const API = '{{ apiUrl }}';
   const auctionId = '{{ auction.id }}';

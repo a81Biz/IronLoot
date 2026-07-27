@@ -5,6 +5,7 @@ import { join, extname, resolve } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { Express } from 'express';
 import 'multer';
+import { apiOrigin } from '../../common/config/public-origins';
 
 @Injectable()
 export class UploadService {
@@ -20,7 +21,8 @@ export class UploadService {
 
     await writeFile(filePath, file.buffer);
 
-    const apiUrl = this.configService.get('API_URL', 'http://localhost:3000');
+    // PT-089 — Es una URL publica: se incrusta en la respuesta y la consume el navegador.
+    const apiUrl = apiOrigin(this.configService.get('API_BASE_URL'));
     return `${apiUrl}/uploads/${fileName}`;
   }
 }

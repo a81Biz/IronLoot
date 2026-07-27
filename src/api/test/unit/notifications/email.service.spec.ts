@@ -89,9 +89,20 @@ describe('EmailService', () => {
   // ─── Fallback default ─────────────────────────────────────────────────────
 
   describe('BASE_URL configuration', () => {
-    it('should read BASE_URL from ConfigService with correct default fallback', () => {
-      // Verifies the exact contract: key = 'BASE_URL', fallback = 'http://localhost:5174'
-      expect(mockConfig.get).toHaveBeenCalledWith('BASE_URL', 'http://localhost:5174');
+    it('lee BASE_URL de ConfigService, sin valor de reserva propio (PT-089)', () => {
+      // Antes este test exigia el valor de reserva `http://localhost:5174`, fijando en piedra
+      // el defecto: un enlace de verificacion o de reset que solo funciona en la maquina de
+      // quien desplego. La reserva vive ahora en `public-origins` y es un subdominio, nunca
+      // un puerto suelto — cubierto por `public-origins.spec.ts`.
+      expect(mockConfig.get).toHaveBeenCalledWith('BASE_URL');
+    });
+
+    it('los enlaces de correo NUNCA apuntan a un localhost con puerto (PT-089)', async () => {
+      // Es el criterio que importa: lo que recibe el usuario en su bandeja de entrada.
+      await service.sendVerificationEmail('u@test.local', 'tok-123');
+
+      const enviado = JSON.stringify(mockMailer.sendMail.mock.calls);
+      expect(enviado).not.toMatch(/localhost:\d+/);
     });
   });
 });

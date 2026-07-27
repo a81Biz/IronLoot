@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { MailerService } from '@nestjs-modules/mailer';
 import { ConfigService } from '@nestjs/config';
 import { StructuredLogger, ChildLogger } from '../../common/observability';
+import { baseOrigin } from '../../common/config/public-origins';
 
 @Injectable()
 export class EmailService {
@@ -14,7 +15,10 @@ export class EmailService {
     private readonly logger: StructuredLogger,
   ) {
     this.log = this.logger.child('EmailService');
-    this.frontendUrl = this.configService.get<string>('BASE_URL', 'http://localhost:5174');
+    // PT-089 — Sin BASE_URL, esto apuntaba a `localhost:5174`: un enlace de verificacion
+    // o de reset que solo funciona en la maquina de quien desplego. No falla al arrancar,
+    // falla cuando el usuario ya recibio el correo.
+    this.frontendUrl = baseOrigin(this.configService.get<string>('BASE_URL'));
   }
 
   async sendVerificationEmail(to: string, token: string): Promise<void> {

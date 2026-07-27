@@ -294,6 +294,18 @@ export class PaypalProvider implements PaymentProvider {
     const event = payload as PaypalWebhookEvent;
     this.logger.log(`Received PayPal webhook ${event?.event_type} (${event?.id})`);
 
+    // PT-089 — Mercado Pago registraba la llegada de la notificacion y PayPal no: si algun dia
+    // una alcanza la API, la traza tiene que decir que llego, con que cabeceras y que cuerpo.
+    // Se registra ANTES de validar la firma, porque una notificacion rechazada tambien ocurrio.
+    await this.traza({
+      step: 'NOTIFICATION_RECEIVED',
+      direction: 'INBOUND',
+      outcome: 'OK',
+      externalId: event?.resource?.id,
+      detail: event?.event_type,
+      data: { headers, body: event },
+    });
+
     await this.verifyWebhookSignature(event, headers);
 
     switch (event.event_type) {

@@ -129,6 +129,9 @@
 | RN-88 | **El resultado que muestra la pagina de retorno lo dicta la API, no la URL.** El `status` de la query lo escribe el navegador. | ✅ Cumple | `GET /payments/status/:reference` | **PT-088** |
 | RN-89 | **Un deposito ajeno se responde como inexistente**, no como prohibido: distinguirlos confirmaria que existe. | ✅ Cumple | `payment-cycle.statusFor` | **PT-088** |
 | RN-90 | **Un ciclo abierto se informa como pendiente, jamas como fallido.** Efectivo y SPEI tardan horas; decir «fallo» provoca un segundo pago. | ✅ Cumple | `deposit-return.html` | **PT-088** |
+| RN-91 | **Ninguna URL que abandone el sistema —correo, pasarela, fichero publico— lleva un puerto suelto.** El valor de reserva es un subdominio; un puerto falla en silencio y en produccion. | ✅ Cumple | `public-origins.ts` | **PT-089** |
+| RN-92 | **Toda dependencia cargada desde un CDN lleva `integrity`.** Sin ella, un CDN comprometido ejecuta codigo en el panel de administracion. | ✅ Cumple | `dashboard.html`, `auction/detail.html` | **PT-089** |
+| RN-93 | **La llegada de una notificacion se registra ANTES de validar su firma.** Una notificacion rechazada tambien ocurrio, y la traza debe decirlo. | ✅ Cumple | `paypal.provider`, `mercadopago.provider` | **PT-089** |
 
 ---
 
