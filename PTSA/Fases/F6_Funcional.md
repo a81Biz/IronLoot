@@ -158,3 +158,21 @@ Penalizaciones:
 **D1 = 100 - 15 - 15 = 70**
 
 Regla del Agua Potable: D1 = 70 ≥ 60 → **NO ACTIVADA**
+
+---
+
+## Update U-004 — DS-004 (2026-07-27)
+
+Domain Acid Test Nivel 1 ejecutado **sobre la salida real en BD** (`[R55]`), con los productos de
+la corrida completa de QA del 27-jul: pujas reales, subastas cerradas, dos pagos por pasarelas de
+verdad, retiros y asientos.
+
+**11 de 12 invariantes cumplen. Ninguna violación.** El único sin datos es CFDI (H-005).
+
+Se añadieron tres invariantes que no estaban en `CR-001…CR-015` porque el dominio los exige: el
+cuadre del último `balance_after` contra el balance, que todo pago `COMPLETED` tenga asiento, y que
+ninguna referencia tenga asiento duplicado. Son las garantías que PT-087 introdujo tras encontrar
+lo contrario. Las tres pasan.
+
+Evidencia: **E-010**. Limitación declarada: muestra pequeña (3 monederos, 3 pujas, 2 pagos); no es
+volumen de producción.

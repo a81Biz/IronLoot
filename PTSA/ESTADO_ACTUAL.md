@@ -1,85 +1,61 @@
 # ESTADO ACTUAL — PTSA V3
-**Última actualización**: 2026-06-23 | **Sesión**: DS-003 — Cierre de H-001, H-003, H-004, H-007
+**Última actualización**: 2026-07-27 | **Sesión**: DS-004 — Delta Sync
 
 ---
 
-## Estado del Sistema ★
+## Estado del Sistema
 
 ```
 Sistema:        IronLoot Auction Platform v1.0.0
-Fase actual:    CERTIFICADO — Clase A (primera certificación)
-Health:         95.2 / 100
-Clasificación:  A  ★  (sin cap — freshness=KNOWN, BLQ-001 y BLQ-002 RESUELTOS)
-Risk:           44 / 100  (MODERADO)
-Confidence:     85 / 100  (ALTA)
-Bloqueadores:   0 activos
+Fase actual:    CERTIFICADO — Clase B
+Health:         90.5 / 100
+Clasificación:  B      (sin cap sería A; Confidence 62.8 < 90 lo impide, §15.6)
+Risk:           92 / 100   (ALTO)
+Confidence:     62.8 / 100 (BAJA)
+Freshness:      STALE  (177 commits sin reauditar del todo; audit_due vencido en 5 productos)
 ```
 
----
+## Dimensiones
 
-## Hallazgos — Estado Final
+| | Score | Hallazgo activo |
+|---|--:|---|
+| D1 Dominio | 85 | H-005 — CFDI sin PAC |
+| D2 Arquitectura | 85 | H-008 — 71 vulnerabilidades |
+| D3 Observabilidad | 100 | — |
+| D4 Documental | 95 | H-009 — docs fuera de git |
 
-| ID | Sev | Dim | Título breve | Estado |
-|---|---|---|---|---|
-| H-001 | ALTA | D1 | Soft-close EXTENSION_MS hardcoded | **CLOSED** 2026-06-23 |
-| H-002 | MEDIA | D2 | ThrottlerModule sin Redis | **CLOSED** 2026-06-23 |
-| H-003 | BAJA | D2 | PaymentsService Logger estándar | **CLOSED** 2026-06-23 |
-| H-004 | MEDIA | D2 | Withdraw payment validation mocked | **CLOSED** 2026-06-23 |
-| H-005 | ALTA | D1 | CFDI stub — compliance fiscal SAT | **ABIERTA** — PT-027 BLOQUEADO |
-| H-006 | BAJA | D2 | CLIENT apiUrl al browser | **ABIERTA BAJA** — monitoreo |
-| H-007 | BAJA | D4 | PRD AC-3.2 incorrecto | **CLOSED** 2026-06-23 |
+## Lo que cambió respecto a DS-003
 
-**5 CLOSED · 1 ABIERTA ALTA · 1 ABIERTA BAJA**
+| | DS-003 | DS-004 |
+|---|--:|--:|
+| Health | 95.2 | **90.5** |
+| Risk | 44 | **92** |
+| Confidence | 85 | **62.8** |
+| Clasificación | A | **B** |
 
----
+**El sistema no ha empeorado — la auditoría se ha puesto al día.** D1 y D3 están donde estaban;
+el Acid Test sobre la salida real no encontró **ninguna** violación de invariante. Lo que bajó fue
+D2, por 71 vulnerabilidades que nadie había mirado, y D4, por una limitación del propio alcance.
 
-## Scores DS-003
+Y el Confidence cayó porque **se está midiendo con honestidad**: cobertura real 50 %, frescura
+STALE, y una evidencia de cinco caducada.
 
-| Dimensión | DS-002 | DS-003 | Cambio | Motivo |
-|---|---|---|---|---|
-| D1 | 70 | **85** | **+15** | H-001 CLOSED (-15 eliminado) |
-| D2 | 93 | **99** | **+6** | H-003 CLOSED (-1) + H-004 CLOSED (-5) |
-| D3 | 100 | **100** | = | |
-| D4 | 99 | **100** | **+1** | H-007 CLOSED (-1 eliminado) |
-| **Health** | 88.8 | **95.2** | **+6.4** | ★ Clase A |
-| Risk | 92 | **44** | **-48** | Solo H-005+H-006 activos |
-| Confidence | 60 | **85** | **+25** | BLQ-002 resuelto — live verification completa |
+## Hallazgos activos
 
----
+- **H-005** (D1, ALTA) — bloqueado por contratar un PAC ante el SAT. Sin cambios.
+- **H-008** (D2, ALTA) — **nuevo**. `engine.io` alcanzable sin autenticar contra la puja en vivo.
+- **H-009** (D4, MEDIA) — **nuevo**. Los 5 documentos del alcance están gitignored.
 
-## Estado FDGE
+## Productos
 
-| PT | Tipo | Estado |
-|---|---|---|
-| PT-026 | BUG | **DONE** |
-| PT-027 | FEATURE | **BLOQUEADO** — PAC SAT |
-| PT-028 | INVESTIGATION | **CLOSED** |
-| PT-029 | BUG | **DONE** |
-| PT-030 | REFACTOR | **DONE** |
-| PT-031 | TRIVIAL | **DONE** |
-| PT-032 | TRIVIAL | **DONE** |
+**Los 12 siguen en `BORRADOR`.** Ninguno ha llegado nunca a `IDENTIFICADO`. Cinco tienen el
+`audit_due` vencido desde el 23-jul: P-001, P-002, P-004, P-005, P-009 (todos CRÍTICOS).
 
----
+Con la evidencia de E-010, cuatro de ellos (P-001, P-004, P-005, P-009) tienen base suficiente para
+subir a `IDENTIFICADO`. Es trabajo de F3.
 
-## Ramas pendientes de merge a master
+## Siguiente acción
 
-| Rama | PT | Acción |
-|---|---|---|
-| `fix/PT-031-032-trivial-fixes` | PT-031, PT-032 | Merge a master |
-| `fix/PT-026-bids-soft-close-config` | PT-026 | Merge a master |
-| `fix/PT-030-throttler-redis-storage` | PT-030 | Merge a master |
-| `fix/PT-029-withdraw-payment-method-validation` | PT-029 | Merge a master |
+Triar H-008 empezando por `engine.io`. Después, decidir sobre H-009.
 
----
-
-## Único bloqueador activo
-
-**H-005 — CFDI/PAC** (D1 ALTA): Compliance fiscal SAT. Requiere decisión de negocio sobre PAC. No es resolvible técnicamente sin proveedor seleccionado. Con H-005 cerrado: D1=100, Health=100.
-
----
-
-## Próximos pasos
-
-1. **Merge ramas** a master (orden: fix/PT-031-032 → fix/PT-026 → fix/PT-030 → fix/PT-029)
-2. **PT-027**: Seleccionar PAC SAT → desbloquear FDGE STATE 2
-3. **audit_due**: 2026-07-07 — DS-004 o S-002 completo
+**Ningún hallazgo se cierra sin validación humana.**

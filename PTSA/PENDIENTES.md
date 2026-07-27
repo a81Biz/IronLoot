@@ -36,3 +36,16 @@
 
 ### PQ-002 — Patrón llamadas CLIENT al API ✅
 - **Resolución:** Confirmado `apiUrl` expuesto al browser (E-006). Registrado como H-006, pendiente investigación JS browser (PQ-003).
+
+---
+
+## DS-004 (2026-07-27)
+
+| # | Pendiente | Responsable |
+|---|---|---|
+| 1 | **Triar H-008**, empezando por `engine.io` (único alcanzable sin autenticar) | Humano decide el triaje |
+| 2 | **Ejecutar el checkpoint D2 de dependencias.** Declarado en `audit-scope.yaml` desde el 23-jun, sin una sola ejecución registrada | Humano |
+| 3 | **Decidir H-009**: versionar la documentación crítica o retirarla del alcance | Humano (política del repositorio) |
+| 4 | Subir P-001, P-004, P-005, P-009 de `BORRADOR` a `IDENTIFICADO` con la evidencia de E-010 | F3, próxima sesión |
+| 5 | Auditar la salida real de P-003, P-006, P-007, P-008, P-010, P-011 (hoy `coverage` = 50 %) | Próxima sesión |
+| 6 | `CLAUDE.md` cita `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`; **ninguno existe** | Humano |

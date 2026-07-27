@@ -106,3 +106,14 @@ Verificado via grep en todos los providers:
 | H-006 | SECURITY | MEDIA | -5 |
 
 **Score D2 parcial**: 100 - 5 - 1 - 5 - 5 = **84**
+
+---
+
+## Update U-004 — DS-004 (2026-07-27)
+
+Esquema **real** verificado por shell (no por migraciones): 33 tablas en BD = 33 modelos en
+`schema.prisma`. Índice `payments_reference_key` presente — es el que impide el asiento duplicado.
+
+`npm audit --omit=dev`: **71 vulnerabilidades** (3 críticas, 53 altas, 15 moderadas). Alcanzabilidad
+resuelta paquete a paquete con `npm ls` y localizada en el código. Evidencia **E-011**, hallazgo
+**H-008**.

@@ -1,0 +1,130 @@
+# Inventory — Services
+
+All injectable NestJS services across services.  
+**Source:** `src/api/src/modules/**/*.service.ts`, `src/admin/src/app.service.ts`, `src/packages/core/src/`
+
+---
+
+## API Services (`src/api/src/`)
+
+### Infrastructure Services
+
+| Service | Module | Responsibility |
+|---|---|---|
+| `PrismaService` | `DatabaseModule` | Prisma client; DB connection; lifecycle hooks |
+| `StructuredLogger` | `ObservabilityModule` | JSON structured logging; NestJS logger interface |
+| `RequestContextService` | `ObservabilityModule` | AsyncLocalStorage context (traceId, userId) |
+| `MetricsService` | `ObservabilityModule` | In-memory metrics collection |
+| `AuditService` | `AuditModule` | Persists AuditEvent, ErrorEvent, RequestLog to DB |
+| `DistributedLockService` | `common/redis/` | Redis-based distributed lock (for scheduler) |
+| `SystemConfigService` | `SystemConfigModule` | Runtime key-value configuration from DB |
+
+### Feature Services
+
+| Service | Module | Key Responsibilities |
+|---|---|---|
+| `AuthService` | `AuthModule` | Register, login, logout, token refresh, password reset, email verify |
+| `TwoFactorAuthService` | `AuthModule` | TOTP secret generation, verification, enable/disable |
+| `UsersService` | `UsersModule` | User profile CRUD, seller onboarding, settings |
+| `AuctionsService` | `AuctionsModule` | Auction CRUD, publish, cancel, status management |
+| `BidsService` | `BidsModule` | Bid placement, fund locking, outbid release, WebSocket broadcast |
+| `WalletService` | `WalletModule` | Balance management, deposit, withdraw, ledger entries, held funds |
+| `PaymentsService` | `PaymentsModule` | Payment initiation, webhook handling, HMAC validation, provider routing |
+| `OrdersService` | `OrdersModule` | Order creation, status transitions, cancellation |
+| `ShipmentsService` | `ShipmentsModule` | Shipment registration, tracking updates, delivery confirmation |
+| `RatingsService` | `RatingsModule` | Rating submission and retrieval |
+| `DisputesService` | `DisputesModule` | Dispute creation (with 14-day window check), status management |
+| `NotificationsService` | `NotificationsModule` | In-app notification delivery; bulk campaigns |
+| `WatchlistService` | `WatchlistModule` | Watchlist add/remove/list |
+| `UploadService` | `UploadModule` | File upload handling |
+| `AdminService` | `AdminModule` | Admin-specific user, auction, and platform management operations |
+| `SystemCleanupService` | `SystemCleanupModule` | Scheduled cleanup of expired sessions, old logs |
+| `CommissionsService` | `CommissionsModule` | Commission rate config, per-order commission records |
+| `KycService` | `KycModule` | KYC submission management, status transitions |
+| `CfdiService` | `CfdiModule` | CFDI record management (stub — no real PAC integration) |
+| `RefundsService` | `RefundsModule` | Refund request lifecycle |
+| `SeoService` | `SeoModule` | Per-page SEO metadata CRUD |
+| `CmsService` | `CmsModule` | Content key-value CRUD |
+| `FeatureFlagsService` | `FeatureFlagsModule` | Feature toggle management |
+
+### Scheduler Services
+
+| Service | Cron | Lock | Responsibility |
+|---|---|---|---|
+| `AuctionSchedulerService` | Every 60s | `lock:auction-close` (Redis) | Close expired auctions, start scheduled auctions |
+
+Source: `src/api/src/modules/scheduler/auction-scheduler.service.ts`
+
+---
+
+## Admin Services (`src/admin/src/`)
+
+| Service | Responsibility |
+|---|---|
+| `AppService` | All API proxy calls (wraps `AdminApiClient`); dashboard stats, user/auction management |
+| `AdminApiClient` | HTTP client for API calls with `ADMIN_API_KEY` auth |
+
+Source: `src/admin/src/app.service.ts`, `src/admin/src/shared/admin-api-client.service.ts`
+
+---
+
+## @ironloot/core Use Cases (`src/packages/core/src/application/`)
+
+| Use Case | Location | Responsibility |
+|---|---|---|
+| `CloseAuctionUseCase` | `application/auctions/` | Domain logic for closing an auction (no I/O — pure) |
+| `PlaceBidUseCase` | `application/bids/` | Domain validation for bid placement |
+| `ProcessPaymentUseCase` | `application/payments/` | Domain logic for payment processing |
+| `ProcessRefundUseCase` | `application/payments/` | Domain logic for refund processing |
+
+---
+
+## @ironloot/core Domain Logic (`src/packages/core/src/domain/`)
+
+| Class | Location | Responsibility |
+|---|---|---|
+| `AuctionStateMachine` | `domain/auction/` | Valid state transitions for AuctionStatus |
+| `BidValidation` | `domain/bid/` | Bid amount and ownership validation rules |
+| `DisputeStateMachine` | `domain/dispute/` | Valid state transitions for DisputeStatus |
+| `Money` | `domain/money/` | MXN money value object with arithmetic |
+| `OrderStateMachine` | `domain/order/` | Valid state transitions for OrderStatus |
+| `WebhookSignatureValidator` | `domain/payment/` | HMAC signature validation for payment webhooks |
+| `IpnValidator` | `domain/payment/` | IPN (Instant Payment Notification) validation |
+| `WalletCalculation` | `domain/wallet/` | Balance calculation rules (held funds, available) |
+
+
+## Módulo `payments` — servicios añadidos por PT-080
+
+| Servicio | Responsabilidad |
+|---|---|
+| `PaymentCycleService` | Fases del ciclo: abre la solicitud, evalúa la respuesta contra el invariante (usuario, importe, moneda) y la cierra. **Decide, no acredita.** Primera respuesta gana. |
+| `PaymentReconciliationService` | Vía garantizada. Cron que consulta a la pasarela por las solicitudes abiertas, con retroceso exponencial (1 min…12 h) y expiración a `PAYMENT_EXPIRATION_HOURS` (72). **PT-087**: resuelve el adaptador por el registro; ya no conoce pasarelas. Un proveedor que no declare `findPayment` no tiene vía garantizada, y eso es explícito. |
+| `PaymentProviderRegistry` | Resuelve el adaptador por clave o alias. Añadir o quitar una pasarela no obliga a tocar `PaymentsService`. |
+| `PaymentTraceService` (PT-086) | **Punto único de escritura de la traza.** La redacción de credenciales vive dentro: ningún llamante puede saltársela. Normaliza objetos no planos (`Decimal`, `Date`) antes de persistir, y **nunca lanza** — un apunte no puede costar un depósito. |
+
+`PaymentsService.applyProviderResult()` es el punto único por el que pasa toda respuesta de una
+pasarela, llegue por notificación (vía rápida) o por consulta (vía garantizada).
+
+
+---
+
+## Servicios que faltaban en el inventario (añadidos 2026-07-27, PT-109)
+
+El inventario venía del recorrido de Foundation Protocol del 23-jun y no recogía estos. Cada uno
+con el fichero donde se lee, que es la regla desde PT-090.
+
+| Servicio | Módulo | Responsabilidad | Fichero |
+|---|---|---|---|
+| `AccountVerificationService` | `WalletModule` | Verifica que una cuenta de cobro es del vendedor moviendo **20 MXN** con un **token corto de 6 caracteres** como concepto. Cierra TD-003 (PT-092) | `modules/wallet/account-verification.service.ts` |
+| `WithdrawalsService` | `WalletModule` | Solicitud y despacho de retiros. Exige KYC aprobado **y cuenta verificada** (`:50`) | `modules/wallet/withdrawals.service.ts` |
+| `EmailService` | `NotificationsModule` | Correo saliente vía `@nestjs-modules/mailer` | `modules/notifications/email.service.ts` |
+| `HealthService` | `HealthModule` | `/health` y `/health/detailed` | `modules/health/health.service.ts` |
+| `AuditPersistenceService` | `AuditModule` | Escritura del registro inmutable de eventos | `modules/audit/audit-persistence.service.ts` |
+
+### Sobre `AccountVerificationService`, lo que no es obvio
+
+- El **token nunca viaja en una respuesta de la API**. Si viajara, quien pide la verificación lo
+  sabría sin haber accedido nunca a la cuenta, y la verificación no probaría nada.
+- El alfabeto excluye `0/O` y `1/I/L`: el código se dicta por teléfono y se transcribe a mano.
+- Se acepta **en minúsculas**: exigir mayúsculas sería castigar al usuario por cómo teclea.
+- **Nunca se escribe en la traza de pagos** (`PaymentTraceService`).

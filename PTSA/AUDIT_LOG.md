@@ -90,3 +90,26 @@
 - **Cap de freshness:** **ELIMINADO** — ambos blockers resueltos
 - **Clasificación:** C → **A** ★ (primera certificación Clase A)
 - **Único hallazgo bloqueante restante:** H-005 ABIERTA ALTA (CFDI/PAC — decisión de negocio)
+
+---
+
+## DS-004 — Delta Sync (2026-07-27)
+
+**Disparador**: 34 días y 20 PT (PT-090…PT-109) desde DS-003. `audit_due` vencido en los cinco
+productos CRÍTICOS.
+
+| Paso | Qué se hizo | Resultado |
+|---|---|---|
+| F11 | Delta contra `audit-scope.yaml` | **177 commits, 286 ficheros** en alcance |
+| R34 | Revalidación de evidencias de hallazgos activos | E-007 **STALE** (`HANDOFF.md` reescrito) → recapturada como **E-009** |
+| F6 | Domain Acid Test Nivel 1 **sobre la BD real** | **11 de 12 invariantes cumplen**; el 12.º es CFDI (H-005) → **E-010** |
+| F5 | D2: esquema real, índices, dependencias | 33 tablas = 33 modelos; `payments_reference_key` presente; **71 vulnerabilidades** → **E-011**, **H-008** |
+| F8 | D3: traza de pagos real | 9 pasos, 30 eventos, **0 credenciales filtradas**, 4 entradas redactadas y **nombradas** |
+| F7 | D4: fidelidad documental | Las correcciones de PT-109 se sostienen; **los 5 documentos del alcance están fuera de git** → **E-012**, **H-009** |
+| F9/F10 | Consolidación y scoring | Health **90.5**, Risk **92**, Confidence **62.8** → **Clase B** |
+
+**Hallazgos nuevos**: H-008 (D2, ALTA), H-009 (D4, MEDIA).
+**Hallazgos revisados**: H-005 (evidencia recapturada; sigue ABIERTA y bloqueada).
+**Hallazgos cerrados**: ninguno. *El agente no cierra hallazgos.*
+
+**Evidencias nuevas**: E-009, E-010, E-011, E-012. Ninguna evidencia previa se sobrescribió (A6).

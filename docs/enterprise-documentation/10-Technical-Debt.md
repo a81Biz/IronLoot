@@ -1,0 +1,340 @@
+# 10 — Technical Debt
+
+**Source:** Code inspection, git history references, `.env.example`, schema comments  
+**Last updated:** 2026-06-23
+
+## CONFIRMED STUBS / INCOMPLETE IMPLEMENTATIONS
+
+### TD-001 — CFDI/PAC Integration (stub)
+**Status:** Schema exists, service exists, no real PAC integration.  
+**Evidence:** `src/api/prisma/schema.prisma:739-754` — `CfdiRecord` model fully defined; `src/api/src/modules/cfdi/` exists; no PAC HTTP client found in dependencies.  
+**Impact:** Fiscal invoicing (required for B2B Mexico) is non-functional.  
+**Risk:** HIGH if platform targets B2B or VAT-registered sellers.
+
+### TD-002 — Stripe and Hey Banco not implemented
+**Status:** In `PaymentProvider` enum but no integration code confirmed.  
+**Evidence:** `src/api/prisma/schema.prisma:284-285` — `STRIPE`, `HEY_BANCO` in enum.  
+**Impact:** Only Mercado Pago is operational in production.
+
+> **Corrected 2026-07-25 (PT-076).** This entry previously read *"Only Mercado Pago and
+> PayPal are operational"*, which was false: PayPal had integration code (WPS + IPN) but
+> was **never configured or tested** — `PAYPAL_CLIENT_ID` / `PAYPAL_CLIENT_SECRET` were
+> empty in every `.env`, and any deposit attempt threw `PAYPAL_BUSINESS_EMAIL not
+> configured`. PT-076 migrated PayPal to Orders v2 + Webhooks; it is implemented and unit
+> tested, but **remains unverified against PayPal sandbox** pending credentials.
+
+### TD-006 — Mercado Pago webhook deliveries are not idempotent
+**Status:** ✅ **CLOSED 2026-07-26 by PT-080.**
+
+> ⚠️ **PT-078 declaró cerrada esta deuda y no lo estaba.** Su protección deduplicaba por el id
+> de *orden*, y un mismo pago de Mercado Pago existe además como id de pago numérico: notificado
+> por las dos rutas, se acreditaba dos veces. PT-080 lo cerró de verdad, con identificador
+> canónico por proveedor, y lo verificó contra la pasarela real. Se deja constancia porque el
+> patrón —declarar cerrado con hallazgos abiertos en la misma superficie— es la razón por la que
+> el desarrollador exigió que los hallazgos se resuelvan dentro de su propio ciclo.
+
+**Cierre anterior (PT-078, incompleto):** Deduplication now keys on the provider's
+**payment id** (`processed_webhook_events`, unique `(provider, payment_id)`) and applies to all
+four providers. The investigation also showed the original PT-076 key (notification id) was
+insufficient: Mercado Pago emits several distinct notifications about the same payment
+(`payment.created`, `payment.updated`), so only the payment id prevents crediting twice.
+ADR-025 superseded by ADR-027. Kept below for the record.
+
+~~**Status:** Open. Introduced as known debt by PT-076.~~  
+**Evidence:** `src/api/src/modules/payments/payments.service.ts` — `creditOnce()` only
+deduplicates providers that report an `eventId`; Mercado Pago does not, so a redelivered
+webhook credits the wallet again.  
+**Impact:** Duplicate deposit crediting is possible on gateway retries.  
+**Risk:** HIGH — involves money.  
+**Note:** The `processed_webhook_events` mechanism built in PT-076 is provider-agnostic and
+ready to be reused. It was scoped out of PT-076 to avoid touching a flow already validated
+with real money (PT-063..065). See `changes/PT-076-paypal-orders-v2/out-of-scope.md` nº 2.
+
+### TD-007 — `enableSeller()` KYC gate has no test coverage
+**Status:** CERRADA 2026-07-27 por PT-090 — verificado, ya lo estaba desde PT-079.
+**Evidence del cierre:** `test/unit/users/users.service.spec.ts:313, 325, 335` ejercitan el
+camino de rechazo (`enableSeller` lanza con KYC no aprobado). El doble de `KycService` se
+reinicia entre tests (`:89-93`) precisamente para que un rechazo forzado no contamine a los
+siguientes.
+**Nota:** la deuda siguio figurando como abierta durante un dia despues de estar cubierta. Es el
+motivo de PT-090: un registro que miente hace que se priorice mal.
+
+### TD-003 — Un retiro se paga a una CLABE que nadie ha verificado
+**Status:** ✅ **CERRADA 2026-07-27 por PT-092.** Reescrita antes por PT-090 (su descripcion
+era falsa). Se comprueba leyendo `src/api/src/modules/wallet/account-verification.service.ts`
+y `withdrawals.service.ts:50`, que rechaza el retiro con «Esta cuenta aun no esta verificada».
+**Correccion de la descripcion:** decia que la verificacion estaba «mockeada» y la validacion
+«comentada», lo que sugiere que basta con descomentarla. **No es asi**: la comprobacion de
+existencia SI esta activa —`withdrawals.service.ts:36-37` llama a `getUserPaymentMethod()` y
+rechaza con 400 si no existe—. El defecto real es otro, y peor.
+**Evidence:** `payments.service.ts:75` crea el metodo de pago con `isVerified: false`, y **nadie
+en todo el repositorio lo pone nunca a `true`** (`grep -rn "isVerified: true" src/` no devuelve
+nada). Nadie lo comprueba tampoco: `getUserPaymentMethod()` filtra por `isActive`, no por
+`isVerified`.
+**Impact:** Se puede retirar dinero a una CLABE que nadie ha confirmado que pertenezca al usuario.
+El digito verificador de la CLABE se valida (`isValidClabe`), lo que atrapa erratas de tecleo pero
+**no la titularidad**: una CLABE ajena valida pasa igual.
+**Next:** **PT-092** en la matriz de deuda tecnica.
+**Evidence:** `src/api/src/modules/wallet/wallet.controller.ts:121-123` — comment "Mock for now, should verify if user has this method registered".  
+**Impact:** Withdrawals may process without verifying the user has a valid payment method registered.  
+**Risk:** MEDIUM — potential operational issue.
+
+### TD-004 — El panel de administracion entra sin segundo factor
+**Status:** ✅ **CERRADA 2026-07-27 por PT-093.** El arranque en produccion se aborta sin
+`ADMIN_TOTP_SECRET` (>=16 caracteres), con la misma validacion pura que ya protegia `JWT_SECRET`
+y las credenciales admin. En desarrollo sigue siendo opcional: obligarlo alli llevaria a
+desactivarlo de formas peores.
+**Historico de la descripcion — reescrita por PT-090**: no era que estuviera indocumentado.
+**Correccion de la descripcion:** `ADMIN_TOTP_SECRET` **si** esta documentado, en
+`.env.example:135`. El problema es que es **opcional**: `app.controller.ts:26` calcula
+`requiresTotp = !!process.env.ADMIN_TOTP_SECRET`, de modo que si la variable esta vacia —como
+viene por defecto— el panel entra con usuario y contrasena y nada mas.
+**Impact:** El backoffice es el contexto de mas privilegio del sistema: aprueba retiros, suspende
+usuarios, cancela subastas. Protegerlo solo con contrasena en produccion es desproporcionado.
+**Next:** **PT-093** en la matriz de deuda tecnica.
+**Evidence:** `src/admin/src/app.controller.ts:28` — `const requiresTotp = !!process.env.ADMIN_TOTP_SECRET`.  
+**Risk:** Admin accounts can be accessed with only username+password if `ADMIN_TOTP_SECRET` is not set.
+
+### TD-005 — `unsafe-inline` in Content Security Policy
+**Status:** ✅ **CERRADA DEL TODO 2026-07-27.** `script-src` por PT-096 y `style-src` por
+PT-105 (que cerro TD-014). La CSP de los tres sitios ya no lleva `'unsafe-inline'` en ninguna
+directiva. Se comprueba en
+`src/apps/{base,client}/src/main.ts` y `src/admin/src/main.ts`: `scriptSrc` ya no lleva
+`'unsafe-inline'`. **Queda `styleSrc`**, que sigue llevandolo por los estilos inline de las
+plantillas: registrado aparte como **TD-014**. Declararla cerrada sin esa salvedad seria la
+misma imprecision que causo F-33.  
+**Evidence:** ninguno de los tres `main.ts` lleva ya `'unsafe-inline'`; las dos guardas
+(`plantillas-sin-js-inline.spec.ts` y `estilos-fuera-de-plantillas.spec.ts`) lo vigilan, cada una
+con casos de control que demuestran que saben fallar.  
+**Riesgo residual:** ninguno de esta deuda. Lo que queda es que un `style=` o un manejador inline
+nuevo **no funcionaria y el navegador no diria nada** — el silencio que hizo invisible a F-34. Por
+eso hay guardas y no solo convencion (RULE-07, RULE-09).
+
+## NOT DETERMINED
+
+### ND-001 — WebSocket event payload schemas
+**Status:** WebSocket events referenced in CLAUDE.md (`bid.new`, `auction.extended`, `auction.closed`) but their exact payload schemas are not verified from code inspection.  
+**Location to check:** `src/api/src/modules/bids/`, auction gateway files.
+
+### ND-002 — Rate limiter storage backend
+**Status:** ThrottlerModule is configured but the storage backend is not verified. Default is in-memory; for multi-instance deployments, a Redis-backed throttler should be used.  
+**Evidence:** `src/api/src/app.module.ts:75-85` — no `ThrottlerStorageRedisService` referenced.  
+**Risk:** In multi-instance deployment, rate limits are per-instance, not global.
+
+### ND-003 — Email template locations
+**Status:** `@nestjs-modules/mailer` with Handlebars is installed; email templates not found in reconnaissance.  
+**Location to check:** `src/api/src/modules/notifications/templates/` or similar.
+
+### ND-004 — Test coverage percentage
+**Status:** Unit tests exist for 20+ test files; coverage thresholds not confirmed from `jest.config`.  
+**Location to check:** `src/api/package.json` jest `coverageThreshold`.
+
+### ND-005 — Feature flags implementation
+**Status:** `FeatureFlagsModule` is registered in app.module.ts; its implementation was not inspected.  
+**Location to check:** `src/api/src/modules/feature-flags/`.
+
+### ND-006 — BullMQ queue names and processors
+**Status:** BullMQ is configured globally; individual queues/processors not inventoried.  
+**Location to check:** All `src/api/src/modules/**/*.module.ts` for `BullModule.registerQueue()`.
+
+### ND-007 — CLIENT proxy pattern
+**Status:** CLIENT does not use the BFF proxy (no `http-proxy-middleware`); instead uses direct `fetch()` calls with cookie-extracted token. Cross-site requests from browser JavaScript may be blocked by CORS if the CLIENT template renders forms that POST directly to API from browser (not via SSR controller).  
+**Risk:** MEDIUM — needs verification that no client-side JS makes direct API calls.
+
+## KNOWN TECHNICAL DECISIONS WITH TRADEOFFS
+
+### TT-001 — Soft-close implemented as scheduler logic, not DB status
+The `SOFT_CLOSE` state is not in `AuctionStatus` enum. Auctions remain `ACTIVE` during soft-close. The scheduler decides extension based on `endsAt` timestamp. This simplifies the state machine but means querying "which auctions are in soft-close" requires a time-range query, not a status filter.
+
+### TT-002 — Ledger is insert-only
+Financial history is immutable. Corrections must be made via `ADJUSTMENT` ledger entries. This is correct by design but means no DELETE on `ledger` table should ever be written.
+
+### TT-003 — Admin is a separate NestJS app, not an admin module in the API
+Trade-off: complete isolation (admin UI compromise doesn't affect API auth); cost: separate deployment, two sets of templates, duplication of some service logic.
+
+### TT-004 — SSR with Nunjucks instead of SPA
+Trade-off: simpler deployment, no build step, SEO-friendly; cost: less interactive UI without extra JS, `unsafe-inline` in CSP.
+
+## DEPENDENCY NOTES
+
+- `stripe: ^20.1.2` is installed in `src/api/package.json:68` but Stripe integration is not confirmed.
+- `mercadopago: ^2.11.0` — primary payment provider.
+- `otplib: ^12.0.1` — TOTP for 2FA.
+- `bullmq: ^5.79.0` — async job queue (PT-038).
+- `nanoid: ^3.3.7` — short ID generation (usage location not verified).
+
+## LEGACY / CLEANUP NOTES
+
+- Legacy `web/` SSR frontend was removed 2026-06-19 per git history. References to `web/` in comments are historical.
+- `docker-compose.yml:4` — comment "web/ legacy retirado" confirms removal.
+- Test file `src/api/test/unit/web-views/web-views.deprecation.spec.ts` may be a remnant.
+
+
+### TD-008 — El modelo de dominio es order-céntrico y los depósitos de wallet no encajan
+**Status:** ✅ **CLOSED 2026-07-26 por PT-085.**
+
+> ⚠️ **El impacto estaba subestimado en esta ficha.** Se describió como *«no bloquea, pero cada
+> funcionalidad nueva de dinero tropieza con lo mismo»*. Al abrir PT-085 se descubrió que
+> **el panel financiero del admin consulta `payments` en seis sitios** (`admin.service.ts:45,
+> 143, 149, 253, 257, 261`) y, como nadie escribía nunca esa tabla, **mostraba ceros**. No era
+> deuda de modelado: era un defecto visible de producto.
+>
+> **Resuelto**: `Payment.orderId` y `RefundRequest.orderId` pasan a opcionales; el ciclo de pago
+> escribe su fila de `Payment` al cerrarse, y un cobro duplicado genera la `RefundRequest` que
+> PT-080 quería crear y no pudo. Verificado con un depósito real: la tabla, vacía desde siempre,
+> registró 199.99 MXN con `order_id = NULL`, y los ingresos del día dejaron de ser cero.
+
+**Ficha original:**
+**Evidence:** `Payment.orderId` y `RefundRequest.orderId` son obligatorios con clave foránea a
+`Order`. Un depósito de wallet no tiene orden, de modo que:
+- `payments` **nunca se escribe** (0 filas tras depósitos reales acreditados);
+- no se puede crear un `RefundRequest` para devolver un cobro duplicado de depósito.
+**Impact:** PT-080 tuvo que crear una tabla propia (`payment_cycles`) y usar esa misma tabla como
+cola de revisión, en lugar de reutilizar los modelos existentes. Es el tercer sitio donde aparece
+el mismo defecto de modelado.
+**Risk:** MEDIO — no bloquea, pero cada funcionalidad nueva de dinero fuera de subastas tropieza
+con lo mismo.
+
+### TD-012 — Tres de los cuatro servicios no se lintean, y lo aparentan
+**Status:** ✅ **CERRADA 2026-07-27 por PT-091.** Se comprueba con `npm run lint:check` en la
+raiz: encadena los **cinco** proyectos (`src/api`, `src/admin`, `src/apps/base`,
+`src/apps/client`, `src/packages/core`), y los cinco terminan con 0 errores.
+**Evidence:** Solo `src/api` tiene configuracion de ESLint. ADMIN, BASE y CLIENT declaran un
+script `lint` en su `package.json` que **falla al ejecutarse**: `"eslint" no se reconoce como un
+comando`. Ni la herramienta instalada ni fichero de configuracion. El de la API, ademas, solo
+cubre `*.ts` bajo `src/`: el JavaScript de navegador queda fuera en los cuatro (ver TD-010).
+**Impact:** Un script `lint` que existe y falla es peor que no tenerlo: da por cubierto lo que no
+lo esta. Tres proyectos con codigo TypeScript y plantillas nunca han pasado por un linter.
+**Next:** PT propio. Instalar ESLint + configuracion en los tres, ejecutar SIN `--fix` primero
+para medir el dano, y corregir por lotes. Un `--fix` a ciegas sobre ficheros nunca linteados tiene
+superficie de regresion real.
+
+
+### TD-013 — Reiniciar el contenedor de ADMIN lo deja caido
+**Status:** ✅ **CERRADA 2026-07-27 por PT-094.** `nest-cli.dev.json` con `deleteOutDir: false`
+para el contenedor de desarrollo; el de produccion conserva `true`, que es lo correcto para un
+build. Verificado: `docker restart ironloot-admin` -> HTTP 200, healthy.
+**Historico:**
+**Evidence:** `nest-cli.json` tiene `deleteOutDir: true`. Nest borra `dist/` en cada arranque y,
+con los montajes de Windows, `node dist/main` se dispara antes de que la compilacion aterrice:
+node muere, se lleva el watcher y el contenedor queda `unhealthy` con
+`Cannot find module '/app/dist/main'`. Reproducido con `docker restart ironloot-admin`.
+**Impact:** `docker restart` **no** es una operacion segura para ADMIN. Hay que recrear
+(`docker-compose up -d --force-recreate admin`). Misma familia que la trampa del `env_file`.
+**Next:** no se cambia `deleteOutDir`: borrar la salida es correcto para los builds de produccion.
+Mitigacion posible: separar la configuracion de desarrollo, o un arranque que espere a que
+`dist/main.js` exista.
+
+
+### TD-010 — El JavaScript del navegador vive inline en las plantillas
+**Status:** ✅ **CERRADA 2026-07-27 por PT-096.** Se comprueba con
+`src/apps/client/test/plantillas-sin-js-inline.spec.ts` (12 casos, barre las plantillas de los
+tres sitios). PT-102 anadio despues `orden-de-scripts.spec.ts`, porque sacar el JS movio una
+dependencia de orden y apago la puja en vivo (F-34).
+**Evidence:** El `.gitignore` tenia un `*.js` global —pensado para la salida de TypeScript— que se
+llevaba por delante **todo** el JavaScript de navegador: cero ficheros de front versionados en el
+repositorio. Al anadir la excepcion (`!src/apps/*/public/js/**/*.js`) entraron dos scripts de
+ADMIN (`src/admin/public/js/`) que llevaban sin versionar desde siempre y **nadie habia notado**.
+**Impact:** El resto del JS sigue inline en las plantillas Nunjucks. Funciona porque la CSP de los
+sitios SSR permite `'unsafe-inline'` (ver TD-005), pero significa que no se puede cachear, ni
+enlazar, ni pasar por lint, ni probar. Los dos scripts de ADMIN incorporados **no se han
+revisado**.
+**Next:** revisar los dos scripts de ADMIN; extraer el JS inline a ficheros conforme se toquen las
+paginas. Va de la mano de TD-005.
+
+
+### TD-011 — Los flujos autenticados dependen del fichero hosts
+**Status:** ✅ **MITIGADA 2026-07-27 por PT-095.** El dominio sigue haciendo falta —no hay
+alternativa tecnica: los navegadores rechazan `Domain=.localhost`— pero ya no falla en silencio:
+al arrancar se comprueba que `base.*` y `client.*` resuelven y, si no, se avisa con las lineas
+exactas que hay que pegar en el fichero hosts. **No aborta**: es un problema del entorno de quien
+desarrolla, no del codigo.
+**Historico:**
+**Evidence:** El dominio de desarrollo es `ironloot.local` porque los navegadores **rechazan** una
+cookie con `Domain=.localhost` (dominio de uso especial, RFC 6265) y la sesion no cruzaria de BASE
+a CLIENT. Verificado en navegador: cero cookies almacenadas con `.localhost`.
+**Impact:** Un checkout limpio **no arranca los flujos autenticados** hasta anadir cinco lineas al
+fichero hosts del sistema. Esta documentado en README, `.env.example` y CLAUDE.md, pero es un paso
+manual y silencioso: quien lo omita vera un login que "funciona" y un portal que lo trata como
+anonimo.
+**Next:** no hay alternativa tecnica con `localhost`. Mitigacion posible: una comprobacion al
+arrancar que avise si el dominio configurado no resuelve.
+
+
+### TD-009 — Un 4xx en firma inválida no garantiza que la pasarela deje de reintentar
+**Status:** Open, riesgo aceptado por PT-080.
+**Evidence:** La documentación de Mercado Pago solo indica que espera 200 o 201; no documenta el
+comportamiento ante 4xx.
+**Impact:** El 401 se adoptó por corrección semántica y observabilidad —un rechazo legítimo dejaba
+de contarse como error interno—, no porque garantice el cese de los reintentos.
+
+
+### AUD-012 / ADR-008 — Capa de use-cases de CORE
+**Status:** ✅ **RESUELTA 2026-07-26 por PT-084 — con una decisión, no con una implementación.**
+
+Se investigó y se decidió **no adoptarla**. Los cuatro use-cases estaban documentados pero su
+fuente no existe en el repositorio (solo quedaba un `dist/` ignorado por git, residuo de un
+checkout anterior), y los contratos de repositorio de CORE no los referencia nadie.
+
+El flujo que gobernarían —orden a `PAID` y crédito `CREDIT_SALE` al vendedor— **ya funciona** en
+`wallet.service.ts:418` y `auction-scheduler.service.ts:152`. Adoptarlos habría reescrito una
+ruta de dinero que funciona, exigido cuatro adaptadores de repositorio que nadie pidió y añadido
+riesgo de regresión en la liquidación de subastas.
+
+Los contratos se conservan marcados como *previstos y no adoptados*, con el criterio para
+revisar la decisión escrito en su propio código. Ver **ADR-033**.
+
+---
+
+### TD-014 — `style-src 'unsafe-inline'` sigue en la CSP de los tres sitios
+**Status:** ✅ **CERRADA 2026-07-27 por PT-105.** Se comprueba con
+`src/apps/client/test/estilos-fuera-de-plantillas.spec.ts` (14 casos, con dos de control) y
+leyendo `styleSrc` en los tres `main.ts`: ninguno lleva ya `'unsafe-inline'`.
+
+**Qué es.** PT-096 retiró `'unsafe-inline'` de `scriptSrc` —que era su objetivo y el riesgo
+grande—, pero `styleSrc` lo conserva en los tres sitios: `src/apps/base/src/main.ts:66`,
+`src/apps/client/src/main.ts:45`, `src/admin/src/main.ts:35`.
+
+**Por qué se registra aparte en vez de dejar TD-005 «abierta».** Porque son dos cosas de tamaño
+muy distinto y mezclarlas fue lo que hizo que TD-005 llevara meses diciendo «trade-off conocido»
+sin que nadie supiera de qué parte hablaba. El JavaScript inline permite ejecutar código; el
+estilo inline permite, como mucho, alterar la apariencia. Registrarlas juntas hacía que la parte
+grave se escondiera detrás de la leve.
+
+**Qué costaría.** Los estilos inline están repartidos por las plantillas como atributos `style=`.
+Sacarlos es el mismo trabajo que hizo PT-096 con el JavaScript, con menos urgencia: es apariencia,
+no ejecución.
+
+**Riesgo mientras tanto.** Bajo. Un atacante que pueda inyectar marcado podría alterar el aspecto
+de una página, pero `script-src` ya le impide ejecutar nada.
+
+---
+
+### TD-015 — 63 vulnerabilidades que exigen salto de version mayor
+**Status:** Open. Registrada por PT-110 (PTSA H-008) 2026-07-27.
+
+**Que es.** Tras PT-110 quedan **63 avisos** en dependencias de produccion (3 criticos, 48 altos).
+Ninguno es alcanzable sin autenticar —eso lo cerro PT-110— pero siguen ahi.
+
+**Por que no se arreglaron.** Cada uno exige un salto de version **mayor** sobre un servidor que
+mueve dinero real. Medido paquete a paquete:
+
+| Paquete | Instalado | Parcheado | Salto |
+|---|---|---|---|
+| `body-parser` | 1.20.3 | 2.3.0 | mayor — Express 4 usa la 1.x |
+| `path-to-regexp` | 3.3.0 | 8.4.2 | mayor — cambia el enrutado |
+| `tar` | 6.2.1 | 7.5.22 | mayor |
+| `glob` · `minimatch` · `brace-expansion` · `js-yaml` | | | mayor |
+
+**Y la cadena del mailer va aparte.** `handlebars`, `liquidjs`, `mjml`, `html-minifier`,
+`mailparser`, `nodemailer`, `linkify-it`, `js-cookie`, `file-type`, `multer` y `uuid` cuelgan de
+`@nestjs-modules/mailer`. Subirlo exige `nodemailer >= 8` (hoy 7.0.13) y `npm audit fix` falla con
+`ERESOLVE` justo ahi. Es **una sola unidad de actualizacion** y merece su propio trabajo, con su
+propia verificacion: el correo de verificacion de cuenta pasa por ahi.
+
+**Riesgo mientras tanto.** De los 3 criticos: `tar` solo corre al instalar; `liquidjs` esta cargado
+y sin usar; `handlebars` si esta en el camino, pero su aviso exige controlar la plantilla y las
+plantillas son del proyecto. **No se ha demostrado explotabilidad de ninguno** — afirmarla sin
+demostrarla seria opinion.
+
+**Como se comprueba.** `cd src/api && npm audit --omit=dev`.
