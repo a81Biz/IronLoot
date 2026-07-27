@@ -52,6 +52,7 @@ services:
       - ./src/admin/package.json:/app/package.json
       - ./src/admin/tsconfig.json:/app/tsconfig.json
       - ./src/admin/nest-cli.json:/app/nest-cli.json
+      - ./src/admin/nest-cli.dev.json:/app/nest-cli.dev.json
       - /app/node_modules
     depends_on:
       api:
