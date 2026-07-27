@@ -19,6 +19,8 @@ const VALID_PROD: Record<string, string> = {
   SESSION_SECRET: 'y'.repeat(40),
   ADMIN_USERNAME: 'ironadmin',
   ADMIN_PASSWORD: 'a-strong-admin-password',
+  // PT-093: una configuracion de produccion valida incluye ahora segundo factor en el admin.
+  ADMIN_TOTP_SECRET: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP',
 };
 
 describe('validateStartupConfig', () => {
@@ -93,5 +95,50 @@ describe('validateStartupConfig', () => {
     delete process.env.ALLOWED_ORIGINS;
     const errors = validateStartupConfig(makeConfig(VALID_PROD), 'production');
     expect(errors.some((e) => /ALLOWED_ORIGINS/.test(e))).toBe(true);
+  });
+
+  // ── PT-093 (TD-004): el backoffice sin segundo factor ─────────────────
+
+  describe('ADMIN_TOTP_SECRET (PT-093 / TD-004)', () => {
+    it('en produccion, SIN segundo factor el arranque falla', () => {
+      // El backoffice aprueba retiros, suspende usuarios y cancela subastas: es el contexto de
+      // mas privilegio del sistema. Protegerlo solo con contrasena en produccion es
+      // desproporcionado, y hasta ahora nada lo impedia — `ADMIN_TOTP_SECRET` viene vacio por
+      // defecto y el panel calculaba `requiresTotp = !!secret`.
+      const errores = validateStartupConfig(
+        makeConfig({ ...VALID_PROD, ADMIN_TOTP_SECRET: '' }),
+        'production',
+      );
+
+      expect(errores.some((e) => /ADMIN_TOTP_SECRET/.test(e))).toBe(true);
+    });
+
+    it('en produccion, con segundo factor no se queja por eso', () => {
+      const errores = validateStartupConfig(
+        makeConfig({ ...VALID_PROD, ADMIN_TOTP_SECRET: 'JBSWY3DPEHPK3PXPJBSWY3DPEHPK3PXP' }),
+        'production',
+      );
+
+      expect(errores.some((e) => /ADMIN_TOTP_SECRET/.test(e))).toBe(false);
+    });
+
+    it('un secreto de TOTP demasiado corto tampoco vale', () => {
+      // Un secreto corto reduce el espacio de busqueda del codigo y anula el segundo factor.
+      const errores = validateStartupConfig(
+        makeConfig({ ...VALID_PROD, ADMIN_TOTP_SECRET: 'ABC' }),
+        'production',
+      );
+
+      expect(errores.some((e) => /ADMIN_TOTP_SECRET/.test(e))).toBe(true);
+    });
+
+    it('en desarrollo NO se exige: la carga no compensa', () => {
+      const errores = validateStartupConfig(
+        makeConfig({ ...VALID_PROD, ADMIN_TOTP_SECRET: '' }),
+        'development',
+      );
+
+      expect(errores).toEqual([]);
+    });
   });
 });
