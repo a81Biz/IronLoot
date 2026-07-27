@@ -1311,3 +1311,52 @@ Lo que si estaba hecho y H-005 no reconocia: modelo completo, interruptor CFDI_E
 No se amplia CfdiData a proposito: hacerlo antes de decidir el modelo de emision seria inventarse
   la forma. La advertencia queda en el propio contrato y la pregunta en F-1 § U-005.
 PTSA reference: H-005 sigue ABIERTA con la causa raiz corregida (F-40)
+
+## PT-114 — BUG: la comision se cobra pero no se registra (PTSA H-010)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-114-comision-registrada
+Root cause: `calculateForOrder()` era el unico sitio que creaba un CommissionRecord y no lo
+  invocaba nadie en produccion: sus tres referencias estaban en los tests. Una funcion probada que
+  nunca corria. El dinero se cobraba (FEE_PLATFORM en el ledger) pero la contabilidad no lo veia,
+  y el informe financiero del panel lee esa tabla, no el ledger.
+Solution: `recordForOrder(orderId, feePercent, tx)`, invocado por el orquestador DENTRO de la misma
+  transaccion que crea el pedido y asienta los movimientos.
+  Dos decisiones que importan mas que el arreglo: (1) recibe el feePercent en vez de resolverlo,
+  porque dos calculos independientes de la misma comision divergen en cuanto cambie la tarifa;
+  (2) lo hace el orquestador y no captureHeldFunds, porque WalletModule no debe depender de
+  CommissionsModule.
+Evidence: se vencio una subasta y el cron la cerro solo. registro 95.00 MXN al 10% frente a asiento
+  95.00 MXN -> COINCIDEN AL CENTIMO. Suite 193/193.
+PTSA reference: H-010 -> CORREGIDA; P-010 -> IDENTIFICADO con evidencia post-fix [R39]
+
+## PT-115 — BUG: la ventana de disputa se medía desde la ultima modificacion (PTSA H-011)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-115-ventana-de-disputa
+Root cause: `(order as any).deliveredAt` — `orders` NO TIENE esa columna. Los dos `as any` hacian
+  que compilara y devolviera undefined, asi que la ventana respondia siempre a `updatedAt`:
+  cualquier modificacion del pedido reiniciaba los 14 dias.
+Solution: el dato existia todo el tiempo en `shipments.delivered_at`. No hizo falta anadir ninguna
+  columna: `order.shipment?.deliveredAt ?? order.updatedAt`, con el envio incluido en la consulta.
+  Los `as any` fuera.
+Evidence: VD-02 fija el caso que el defecto dejaba pasar — entregado hace 20 dias, pedido tocado
+  hoy -> RECHAZA. npm test 735/735.
+PTSA reference: H-011 -> CORREGIDA
+
+## PT-116 — REFACTOR: la cadena del mailer (TD-015)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: refactor/PT-116-cadena-del-mailer
+Objective: los once paquetes que colgaban de @nestjs-modules/mailer, que PT-110 dejo por ser UNA
+  sola unidad de actualizacion.
+Solution: mailer 2.0.2 -> 2.3.7 y nodemailer 7.0.12 -> 9.0.3. La 8 no bastaba: el aviso de CRLF
+  injection en las cabeceras List-* cubre <=9.0.0.
+  63 -> 27 avisos; de 3 criticos a 1. Desaparecen handlebars, liquidjs, mjml, html-minifier,
+  mailparser y js-cookie.
+Por que se pudo hacer un salto mayor con seguridad: la app no usa nodemailer directamente -solo a
+  traves del mailer, 3 llamadas a sendMail- y la fase bootstrap registra un usuario y verifica su
+  correo contra Mailhog. El envio estaba cubierto de punta a punta.
+Evidence: verificado con ambas versiones registrando un usuario real; el correo llega con su asunto
+  y su enlace. Suite 193/193, las diez fases.
+PTSA reference: H-008 sigue CORREGIDA_PARCIAL (quedan 27, todos con salto mayor)
