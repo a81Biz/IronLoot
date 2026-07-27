@@ -6,7 +6,8 @@
     "start": "node dist/main",
     "start:dev": "nest start --watch",
     "lint": "eslint \"src/**/*.ts\" --fix",
-    "lint:check": "eslint \"src/**/*.ts\""
+    "lint:check": "eslint \"src/**/*.ts\"",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@nestjs/common": "^10.3.0",
