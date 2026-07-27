@@ -35,7 +35,7 @@ function verdict(expect, status, finalUrl, capture) {
       const nav = await L.visit(page, url);
       const safe = r.path.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '') || 'root';
       const shotName = `${String(n).padStart(2, '0')}_${app}_${safe}`.slice(0, 90);
-      const evidence = await L.shot(page, DIR, shotName);
+      const evidence = await L.shot(page, shotName, DIR);
       // pequeña espera para que el usuario alcance a ver
       await page.waitForTimeout(150);
       const status = verdict(r.expect, nav.status, nav.finalUrl, capture);

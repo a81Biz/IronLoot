@@ -18,7 +18,7 @@ function rec(id, desc, status, detail) {
   results.push({ id, desc, status, detail: detail || '' });
   console.log(`[${status}] ${id.padEnd(12)} ${desc}${detail ? ' :: ' + detail : ''}`);
 }
-const shot = (page, name) => L.shot(page, DIR, name);
+const shot = (page, name) => L.shot(page, name, DIR);
 
 async function verifyEmail(ctx, email, tag) {
   let found = null;

@@ -32,7 +32,7 @@ async function sweep(page, id, base, route, tag) {
   const bodyLen = (await page.content().catch(() => '')).length;
   const renderedOk = !!http && http < 400 && !bouncedToLogin && bodyLen > 500;
   const safe = route.replace(/[^a-z0-9]+/gi, '_').replace(/^_|_$/g, '').slice(0, 60) || 'root';
-  const evidence = await L.shot(page, DIR, `${id}_${safe}`);
+  const evidence = await L.shot(page, `${id}_${safe}`, DIR);
   const ce = cap.consoleErrors.filter((e) => !/favicon/i.test(e));
   rec({
     id, path: route, http, finalUrl: finalUrl.replace(base, ''), bouncedToLogin,

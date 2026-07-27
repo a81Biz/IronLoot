@@ -29,7 +29,7 @@ function rec(id, desc, status, detail) {
   results.push({ id, desc, status, detail: detail || '' });
   console.log(`[${status}] ${id.padEnd(12)} ${desc}${detail ? ' :: ' + detail : ''}`);
 }
-const shot = (page, name) => L.shot(page, DIR, name);
+const shot = (page, name) => L.shot(page, name, DIR);
 const num = (s) => parseFloat(String(s).replace(/[^0-9.\-]/g, '')) || 0;
 
 // fetch autenticado como el vendedor, a través del BFF del CLIENT (inyecta el JWT desde la cookie)
