@@ -10,7 +10,7 @@
   primer pintado, no para decidir. `deposito` viene de nuestra API y es lo que manda.
 #}
 
-<div class="card" style="max-width:560px;">
+<div class="card ancho-560">
 
   {% if not deposito %}
     {# Sin referencia, o la referencia no es de este usuario. #}
@@ -21,16 +21,16 @@
     </p>
 
   {% elif deposito.settled %}
-    <h2 style="color:var(--success,#1a7f37);">Depósito acreditado</h2>
-    <p style="font-size:1.6rem;margin:.4rem 0 1rem;">
+    <h2 class="texto-exito">Depósito acreditado</h2>
+    <p class="titulo-cifra">
       <strong>{{ deposito.amount }} {{ deposito.currency }}</strong>
     </p>
     <p>Ya está disponible en tu monedero{% if etiqueta %}, pagado con {{ etiqueta }}{% endif %}.</p>
 
   {% elif deposito.pending %}
     {# Efectivo y SPEI tardan horas: decir «falló» aquí provocaría un segundo pago. #}
-    <h2 style="color:var(--warning,#9a6700);">Tu pago está en proceso</h2>
-    <p style="font-size:1.6rem;margin:.4rem 0 1rem;">
+    <h2 class="texto-aviso">Tu pago está en proceso</h2>
+    <p class="titulo-cifra">
       <strong>{{ deposito.amount }} {{ deposito.currency }}</strong>
     </p>
     <p>
@@ -42,19 +42,19 @@
         pagar</strong>.
       {% endif %}
     </p>
-    <p class="text-muted" style="font-size:.9rem;">
+    <p class="text-muted texto-pequeno">
       Los pagos en efectivo y por transferencia pueden tardar varias horas.
     </p>
 
   {% else %}
     <h2 class="alert alert-error">El depósito no se completó</h2>
-    <p style="font-size:1.6rem;margin:.4rem 0 1rem;">
+    <p class="titulo-cifra">
       <strong>{{ deposito.amount }} {{ deposito.currency }}</strong>
     </p>
     <p>No se te ha cobrado. Puedes intentarlo de nuevo cuando quieras.</p>
   {% endif %}
 
-  <div style="margin-top:1.5rem;display:flex;gap:.75rem;flex-wrap:wrap;">
+  <div class="fila-botones">
     <a class="btn btn-primary" href="/wallet">Ir a mi monedero</a>
     {% if not deposito or not deposito.settled %}
       <a class="btn btn-secondary" href="/wallet/deposit">Depositar de nuevo</a>
@@ -63,7 +63,7 @@
   </div>
 
   {% if ref %}
-    <p class="text-muted" style="margin-top:1.25rem;font-size:.8rem;">
+    <p class="text-muted pie-nota">
       Referencia: <code>{{ ref }}</code>
     </p>
   {% endif %}

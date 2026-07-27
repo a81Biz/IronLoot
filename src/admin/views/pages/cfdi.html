@@ -32,14 +32,14 @@
         <td>
           <div class="action-group">
             {% if cfdi.status == 'PENDING' or cfdi.status == 'ERROR' %}
-            <form action="/cfdi/{{ cfdi.orderId }}/generate" method="POST" style="display:inline">
+            <form class="en-linea" action="/cfdi/{{ cfdi.orderId }}/generate" method="POST">
               <button class="btn btn-primary btn-xs">Emitir</button>
             </form>
             {% endif %}
             {% if cfdi.status == 'EMITTED' %}
             <a href="/cfdi/{{ cfdi.orderId }}/download/xml" class="btn btn-ghost btn-xs">XML</a>
             <a href="/cfdi/{{ cfdi.orderId }}/download/pdf" class="btn btn-ghost btn-xs">PDF</a>
-            <form action="/cfdi/{{ cfdi.orderId }}/cancel" method="POST" style="display:inline"
+            <form class="en-linea" action="/cfdi/{{ cfdi.orderId }}/cancel" method="POST"
                   data-confirm="¿Cancelar este CFDI?">
               <button class="btn btn-danger btn-xs">Cancelar</button>
             </form>

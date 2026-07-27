@@ -68,7 +68,7 @@
 </div>
 
 <!-- Operational tab -->
-<div class="tab-panel" id="tab-operational" style="display:none">
+<div class="tab-panel oculto" id="tab-operational">
   {% if report and reportType == 'operational' %}
   <div class="stats-grid stats-grid-4">
     <div class="stat-card"><div class="stat-body"><div class="stat-value">{{ report.auctions_total }}</div><div class="stat-label">Subastas</div></div></div>
@@ -82,7 +82,7 @@
 </div>
 
 <!-- Fiscal tab -->
-<div class="tab-panel" id="tab-fiscal" style="display:none">
+<div class="tab-panel oculto" id="tab-fiscal">
   {% if report and reportType == 'fiscal' %}
   <div class="stats-grid stats-grid-4">
     <div class="stat-card"><div class="stat-body"><div class="stat-value">{{ report.cfdi_emitted }}</div><div class="stat-label">CFDIs emitidos</div></div></div>

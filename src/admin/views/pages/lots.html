@@ -45,11 +45,11 @@
           <div class="action-group">
             <a href="/lots/{{ lot.id }}" class="btn btn-ghost btn-xs">Ver</a>
             {% if lot.isBlocked %}
-            <form action="/lots/{{ lot.id }}/unblock" method="POST" style="display:inline">
+            <form class="en-linea" action="/lots/{{ lot.id }}/unblock" method="POST">
               <button class="btn btn-success btn-xs">Desbloquear</button>
             </form>
             {% else %}
-            <form action="/lots/{{ lot.id }}/block" method="POST" style="display:inline"
+            <form class="en-linea" action="/lots/{{ lot.id }}/block" method="POST"
                   data-confirm="¿Bloquear este lote?">
               <button class="btn btn-danger btn-xs">Bloquear</button>
             </form>

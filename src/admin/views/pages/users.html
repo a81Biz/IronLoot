@@ -58,11 +58,11 @@
         <td class="text-muted text-sm">{{ user.createdAt | truncate(10, true, '') }}</td>
         <td>
           {% if user.state == 'BANNED' %}
-          <form action="/users/{{ user.id }}/unban" method="POST" style="display:inline">
+          <form class="en-linea" action="/users/{{ user.id }}/unban" method="POST">
             <button type="submit" class="btn btn-success btn-xs" data-confirm-click="¿Restaurar acceso?">Restaurar</button>
           </form>
           {% else %}
-          <form action="/users/{{ user.id }}/ban" method="POST" style="display:inline">
+          <form class="en-linea" action="/users/{{ user.id }}/ban" method="POST">
             <button type="submit" class="btn btn-danger btn-xs" data-confirm-click="¿Banear usuario?">Banear</button>
           </form>
           {% endif %}

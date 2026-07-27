@@ -2,7 +2,7 @@
 {% block title %}Depositar fondos — IronLoot{% endblock %}
 {% block page_title %}Depositar fondos{% endblock %}
 {% block content %}
-<div class="card" style="max-width:480px;">
+<div class="card ancho-480">
   <form id="depositForm">
     <div class="form-group">
       <label for="amount">Monto a depositar (MXN)</label>
@@ -21,7 +21,7 @@
       {% endif %}
     </div>
     <button type="submit" class="btn btn-primary" {% if not providers or not providers.length %}disabled{% endif %}>Continuar al pago</button>
-    <div id="depositError" class="alert alert-error" style="display:none;margin-top:.75rem;"></div>
+    <div id="depositError" class="alert alert-error oculto mensaje-accion"></div>
   </form>
 </div>
 {% endblock %}

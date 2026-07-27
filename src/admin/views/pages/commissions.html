@@ -17,7 +17,7 @@
           <div class="form-row">
             <div class="form-group">
               <label>Tasa global (%)</label>
-              <input type="number" name="ratePercent" value="{{ entry.ratePercent }}" min="0" max="100" step="0.1" class="form-input" style="width:120px">
+              <input type="number" name="ratePercent" value="{{ entry.ratePercent }}" min="0" max="100" step="0.1" class="form-input col-120">
             </div>
             <button type="submit" class="btn btn-primary">Actualizar</button>
           </div>
@@ -29,7 +29,7 @@
       <div class="form-row">
         <div class="form-group">
           <label>Tasa global (%)</label>
-          <input type="number" name="ratePercent" value="10" min="0" max="100" step="0.1" class="form-input" style="width:120px">
+          <input type="number" name="ratePercent" value="10" min="0" max="100" step="0.1" class="form-input col-120">
         </div>
         <button type="submit" class="btn btn-primary">Establecer</button>
       </div>
@@ -47,7 +47,7 @@
         </div>
         <div class="form-group">
           <label>Tasa (%)</label>
-          <input type="number" name="ratePercent" placeholder="0.0" min="0" max="100" step="0.1" class="form-input" style="width:100px">
+          <input type="number" name="ratePercent" placeholder="0.0" min="0" max="100" step="0.1" class="form-input col-100">
         </div>
         <button type="submit" class="btn btn-primary">Agregar</button>
       </div>
@@ -78,7 +78,7 @@
 </div>
 
 <!-- Ledger tab -->
-<div class="tab-panel" id="tab-ledger" style="display:none">
+<div class="tab-panel oculto" id="tab-ledger">
   {% if records and records.data.length > 0 %}
   <div class="table-card">
     <table class="data-table">

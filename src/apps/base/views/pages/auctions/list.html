@@ -71,10 +71,10 @@
 
     {# ── Área de resultados ────────────────────────────── #}
     <div class="auction-results">
-      <div style="margin-bottom:1.25rem;">
-        <form method="GET" action="/auctions" style="display:flex;gap:.5rem;margin-bottom:1rem;">
+      <div class="mb-4">
+        <form class="fila-acciones" method="GET" action="/auctions">
           {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
-          <input class="form-control" name="q" value="{{ q }}" placeholder="Buscar subastas..." style="flex:1;">
+          <input class="form-control flex-1" name="q" value="{{ q }}" placeholder="Buscar subastas...">
           <button type="submit" class="btn btn-primary">Buscar</button>
         </form>
       </div>

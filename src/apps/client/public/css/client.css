@@ -753,3 +753,53 @@ select.form-control { cursor: pointer; }
   /* filas de botones/acciones (.d-flex) envuelven en móvil para no desbordar */
   .d-flex { flex-wrap: wrap; }
 }
+
+/* ── PT-105 (TD-014) — clases que sustituyen a los atributos `style=` ──────────
+   Estaban en el marcado, lo que obligaba a `style-src 'unsafe-inline'`. PT-096 cerro
+   `script-src` -donde el riesgo es ejecutar codigo- y dejo esta mitad; PT-103 la registro
+   como TD-014 y esto la cierra.
+
+   `.oculto` la ponen las plantillas para que un elemento nazca oculto. El JavaScript que
+   lo muestra con `style.display='block'` sigue funcionando: el estilo inline que escribe
+   el script gana a la clase, y la CSP no cubre los cambios por CSSOM. Lo que NO funciona
+   es `style.display = ''` -vaciar para volver al CSS-, porque ahora el CSS dice oculto:
+   las pestanas de ADMIN se pasaron a classList por eso. */
+.oculto { display: none; }
+.en-linea { display: inline; }
+.flex-1 { flex: 1; }
+.texto-tenue { color: #6c757d; }
+.redimensiona-vertical { resize: vertical; }
+.mensaje-accion { display: none; margin-top: .75rem; }
+.mensaje-accion-corto { display: none; margin-top: .5rem; }
+.ancho-160 { max-width: 160px; }
+.ancho-480 { max-width: 480px; }
+.ancho-500 { max-width: 500px; }
+.ancho-560 { max-width: 560px; }
+.ancho-600 { max-width: 600px; }
+.ancho-680 { max-width: 680px; }
+.ancho-720 { max-width: 720px; }
+.ancho-820 { max-width: 820px; }
+.ancho-total { width: 100%; }
+.col-100 { width: 100px; }
+.col-120 { width: 120px; }
+.col-160 { width: 160px; }
+.texto-pequeno { font-size: .9rem; }
+.caja-oscura { border: 1px solid #31363F; border-radius: 8px; padding: 1rem; margin: 1rem 0; }
+.caja-clara { border: 1px solid #dee2e6; border-radius: 8px; padding: 1rem; }
+.texto-exito { color: var(--success, #1a7f37); }
+.texto-aviso { color: var(--warning, #9a6700); }
+.fila-centrada { display: flex; gap: .5rem; align-items: center; }
+.etiqueta-normal { font-weight: normal; }
+.rejilla-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.rejilla-auto { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 1rem; }
+.nota-ayuda { font-size: .75rem; color: #6c757d; margin-top: .25rem; }
+.texto-medio { font-size: .95rem; margin-bottom: .5rem; }
+.cifra-destacada { font-size: 1.2rem; font-weight: 700; color: #e0a800; }
+.titulo-cifra { font-size: 1.6rem; margin: .4rem 0 1rem; }
+.fila-acciones-mt { margin-top: .75rem; display: flex; gap: .5rem; }
+.pie-nota { margin-top: 1.25rem; font-size: .8rem; }
+.fila-botones { margin-top: 1.5rem; display: flex; gap: .75rem; flex-wrap: wrap; }
+.imagen-subasta { max-width: 100%; border-radius: 8px; margin-bottom: 1rem; }
+.notif-linea { padding: .75rem; border-bottom: 1px solid #f0f2f5; }
+.notif-linea--sin-leer { background: #fffbf0; }
+.notif-sin-leer { font-weight: 600; }

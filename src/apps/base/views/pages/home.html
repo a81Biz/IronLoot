@@ -60,12 +60,12 @@
 
 {# ── Sección 3: Subastas activas ─────────────────────────── #}
 <section class="active-auctions">
-  <div class="section-header" style="max-width:1200px;margin:0 auto 2rem;padding:0 1.5rem;">
+  <div class="section-header contenedor-ancho contenedor-ancho--sep">
     <h2>Subastas activas</h2>
     <a href="/auctions" class="section-link">Ver todas →</a>
   </div>
   {% if auctions and auctions.length > 0 %}
-    <div class="auctions-grid" style="max-width:1200px;margin:0 auto;padding:0 1.5rem;">
+    <div class="auctions-grid contenedor-ancho">
       {% for auction in auctions %}
         <div class="auction-card">
           <div class="card-image card-image--placeholder">

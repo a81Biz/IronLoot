@@ -2,7 +2,7 @@
 {% block title %}Mi reputación — IronLoot{% endblock %}
 {% block page_title %}Mi reputación{% endblock %}
 {% block content %}
-<div class="card" style="max-width:500px;">
+<div class="card ancho-500">
   <p><strong>Usuario:</strong> {{ profile.username | default('—') }}</p>
   <p><strong>Reputación como comprador:</strong> ⭐ {{ profile.buyerRating | default('Sin calificaciones') }}</p>
   <p><strong>Reputación como vendedor:</strong> ⭐ {{ profile.sellerRating | default('Sin calificaciones') }}</p>

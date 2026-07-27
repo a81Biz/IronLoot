@@ -30,9 +30,16 @@ async function bootstrap() {
           // queda codigo en una plantilla. Las guardas de `plantillas-sin-js-inline.spec.ts` lo
           // dicen en segundos.
           scriptSrc: ["'self'", "https://cdn.jsdelivr.net"],
+          // PT-105 (TD-014) — `'unsafe-inline'` RETIRADO tambien de los estilos.
+          //
+          // PT-096 lo quito de `script-src`, donde el riesgo es ejecutar codigo, y dejo esta
+          // mitad abierta; PT-103 la registro como TD-014 al comprobar aquel cierre. Los 93
+          // atributos `style=` que lo obligaban viven ahora en el CSS del sitio.
+          //
+          // Lo que el JavaScript hace con `el.style` o `classList` NO lo cubre la CSP: solo el
+          // atributo en el marcado y los bloques <style>.
           styleSrc: [
             "'self'",
-            "'unsafe-inline'",
             "https://fonts.googleapis.com",
             "https://cdn.jsdelivr.net",
           ],

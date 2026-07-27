@@ -5,9 +5,9 @@
 <div class="card">
   {% if notifications and notifications.items %}
     {% for n in notifications.items %}
-    <div style="padding:.75rem;border-bottom:1px solid #f0f2f5;{% if not n.read %}background:#fffbf0;{% endif %}">
-      <div style="font-size:.9rem;{% if not n.read %}font-weight:600;{% endif %}">{{ n.message }}</div>
-      <div style="font-size:.75rem;color:#6c757d;margin-top:.25rem;">{{ n.createdAt }}</div>
+    <div class="notif-linea{% if not n.read %} notif-linea--sin-leer{% endif %}">
+      <div class="texto-pequeno{% if not n.read %} notif-sin-leer{% endif %}">{{ n.message }}</div>
+      <div class="nota-ayuda">{{ n.createdAt }}</div>
     </div>
     {% endfor %}
   {% else %}
