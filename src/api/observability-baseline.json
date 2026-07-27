@@ -1,0 +1,32 @@
+{
+  "generado": "2026-07-27",
+  "motivo": "Silencios declarados y aceptados a 2026-07-27. Casi todos llevan comentario explicativo y son decisiones deliberadas. NO se juzga cuales son aceptables: se fija el estado para que el numero 26 se vea el dia que aparezca. Recuerda F-34: aquel catch TENIA comentario, y la puja en vivo estuvo apagada varios dias con la suite en verde.",
+  "revisar_antes_de": "2026-10-27",
+  "silencios": [
+    "src/admin/public/js/dashboard-charts.js:77",
+    "src/admin/src/app.controller.ts:69",
+    "src/admin/src/shared/admin-api-client.service.ts:111",
+    "src/api/src/common/config/public-domain-check.ts:41",
+    "src/api/src/common/observability/observability.interceptor.ts:295",
+    "src/api/src/modules/admin/admin.service.ts:352",
+    "src/api/src/modules/audit/audit-persistence.service.ts:270",
+    "src/api/src/modules/auth/guards/jwt-auth.guard.ts:78",
+    "src/api/src/modules/bids/bids.service.ts:213",
+    "src/api/src/modules/payments/payment-trace.service.ts:204",
+    "src/api/src/modules/system-config/system-config.service.ts:211",
+    "src/apps/base/public/js/pages/pages-auth-login.js:33",
+    "src/apps/base/public/js/pages/pages-auth-recovery.js:21",
+    "src/apps/base/public/js/pages/pages-auth-register.js:23",
+    "src/apps/base/public/js/pages/pages-auth-reset-password.js:23",
+    "src/apps/base/src/app.controller.ts:19",
+    "src/apps/base/src/common/filters/not-found.filter.ts:11",
+    "src/apps/base/src/main.ts:130",
+    "src/apps/client/public/js/pages/pages-auction-detail.js:90",
+    "src/apps/client/public/js/pages/pages-seller-onboarding.js:42",
+    "src/apps/client/public/js/pages/pages-wallet-deposit.js:22",
+    "src/apps/client/public/js/pages/wallet/deposit-return.js:40",
+    "src/apps/client/src/app.controller.ts:40",
+    "src/apps/client/src/common/filters/not-found.filter.ts:11",
+    "src/packages/core/src/domain/payment/webhook-signature-validator.ts:36"
+  ]
+}

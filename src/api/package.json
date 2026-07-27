@@ -9,6 +9,7 @@
     "audit:baseline": "node -e \"const{execSync}=require('child_process');const fs=require('fs');let o;try{o=execSync('npm audit --omit=dev --json',{encoding:'utf8',maxBuffer:33554432})}catch(e){o=e.stdout}const v=JSON.parse(o).vulnerabilities||{};const a={};for(const[k,x]of Object.entries(v))if((x.via||[]).some(i=>typeof i==='object'))a[k]=x.severity;fs.writeFileSync('security-baseline.json',JSON.stringify({generado:new Date().toISOString().slice(0,10),motivo:'REVISAR: describe por que cada uno sigue aqui',avisos:a},null,2)+'\n');console.log(Object.keys(a).length+' avisos en la linea base')\"",
     "audit:check": "ts-node scripts/audit-check.ts",
     "audit:domain": "ts-node scripts/domain-rules.ts",
+    "audit:observability": "ts-node scripts/observability-check.ts",
     "build": "nest build",
     "db:generate": "npx prisma generate",
     "db:migrate": "npx prisma migrate dev",
