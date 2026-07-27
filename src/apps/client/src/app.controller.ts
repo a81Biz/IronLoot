@@ -114,6 +114,44 @@ export class AppController {
     return { apiUrl: API_URL, providers };
   }
 
+  /**
+   * PT-088 — Ruta canonica a la que TODAS las pasarelas devuelven al usuario.
+   *
+   * Antes cada una apuntaba a una ruta distinta —`/wallet/success`, `/wallet/deposit-success`,
+   * `/wallet/deposit-cancel`— y **ninguna existia**: un pago real terminaba en 404 tras haber
+   * cobrado. Ahora hay una, y el estado viaja como parametro.
+   *
+   * El `status` de la URL **lo escribe el navegador**: sirve para elegir que mostrar mientras
+   * llega la respuesta, pero la verdad se pide a la API. Un usuario que edite `status=success`
+   * a mano vera el estado real de su deposito, no el que puso.
+   *
+   * Y no se muestra «fallo» a un deposito abierto: efectivo y SPEI tardan horas.
+   */
+  @Get('/wallet/deposit/return')
+  @Render('pages/wallet/deposit-return.html')
+  async depositReturn(
+    @Req() req: Request,
+    @Query('ref') ref = '',
+    @Query('status') status = '',
+  ) {
+    const deposito = ref
+      ? await apiGet<Record<string, unknown>>(
+          getToken(req),
+          `/api/v1/payments/status/${encodeURIComponent(ref)}`,
+        )
+      : null;
+
+    return {
+      apiUrl: API_URL,
+      ref,
+      // Lo que dijo la pasarela, solo para el primer pintado.
+      reportado: status,
+      // Lo que dice nuestra API, que es lo que manda.
+      deposito,
+      etiqueta: deposito ? AppController.PROVIDER_LABELS[String(deposito.provider)] : null,
+    };
+  }
+
   @Get('/wallet/withdraw')
   @Render('pages/wallet/withdraw.html')
   withdraw(@Req() req: Request) {

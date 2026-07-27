@@ -3,7 +3,7 @@ import { PaymentReconciliationService } from '../../../src/modules/payments/paym
 import { PaymentCycleService } from '../../../src/modules/payments/payment-cycle.service';
 import { PaymentTraceService } from '../../../src/modules/payments/payment-trace.service';
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
-import { MercadoPagoProvider } from '../../../src/modules/payments/providers/mercadopago.provider';
+import { PaymentProviderRegistry } from '../../../src/modules/payments/payment-provider.registry';
 import { StructuredLogger } from '../../../src/common/observability';
 
 /**
@@ -28,6 +28,7 @@ describe('PaymentReconciliationService — vía garantizada (PT-080)', () => {
   let expire: jest.Mock;
   let applyProviderResult: jest.Mock;
   let findByReference: jest.Mock;
+  let findPaypal: jest.Mock;
 
   const cycle = (overrides: Record<string, unknown> = {}) => ({
     id: 'cycle-1',
@@ -38,6 +39,7 @@ describe('PaymentReconciliationService — vía garantizada (PT-080)', () => {
     status: 'REQUESTED',
     requestedAt: new Date(),
     checkCount: 0,
+    providerRef: null,
     ...overrides,
   });
 
@@ -56,6 +58,7 @@ describe('PaymentReconciliationService — vía garantizada (PT-080)', () => {
       .fn()
       .mockResolvedValue({ shouldCredit: true, outcome: 'PROCESSED', cycleId: 'cycle-1' });
     findByReference = jest.fn().mockResolvedValue(null);
+    findPaypal = jest.fn().mockResolvedValue(null);
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -76,7 +79,19 @@ describe('PaymentReconciliationService — vía garantizada (PT-080)', () => {
           useValue: { record: jest.fn().mockResolvedValue(undefined), byReference: jest.fn() },
         },
         { provide: PaymentsService, useValue: { applyProviderResult } },
-        { provide: MercadoPagoProvider, useValue: { findPaymentByReference: findByReference } },
+        {
+          // PT-087: el reconciliador ya no conoce pasarelas. Resuelve por registro, igual
+          // que el resto del núcleo desde PT-080.
+          provide: PaymentProviderRegistry,
+          useValue: {
+            resolve: (key: string) =>
+              key === 'MERCADO_PAGO'
+                ? { key: 'MERCADO_PAGO', findPayment: findByReference }
+                : key === 'PAYPAL'
+                  ? { key: 'PAYPAL', findPayment: findPaypal }
+                  : null,
+          },
+        },
         {
           provide: StructuredLogger,
           useValue: {
@@ -164,5 +179,53 @@ describe('PaymentReconciliationService — vía garantizada (PT-080)', () => {
 
     expect(findByReference).not.toHaveBeenCalled();
     expect(applyProviderResult).not.toHaveBeenCalled();
+  });
+
+  // ── PT-087: la vía garantizada deja de ser de un solo proveedor ───────
+
+  it('B-17: un ciclo de PayPal se sondea por su adaptador, no se ignora', async () => {
+    // Antes de PT-087 esto devolvía `null` en duro y el pago se perdía en silencio: el
+    // mismo fallo F-04 que costó 180 MXN, reintroducido para el segundo proveedor.
+    dueForCheck.mockResolvedValue([
+      cycle({ provider: 'PAYPAL', providerRef: '6D025229D0199593K' }),
+    ]);
+    findPaypal.mockResolvedValue({
+      paymentId: 'CAP-9',
+      externalId: REFERENCE,
+      status: 'COMPLETED',
+      amount: 321.5,
+    });
+
+    await service.reconcilePending();
+
+    expect(findPaypal).toHaveBeenCalledWith({
+      reference: REFERENCE,
+      providerRef: '6D025229D0199593K',
+    });
+    expect(applyProviderResult).toHaveBeenCalledWith(
+      'PAYPAL',
+      expect.objectContaining({ paymentId: 'CAP-9' }),
+      'POLL',
+    );
+  });
+
+  it('B-18: un proveedor sin vía garantizada reprograma, no rompe el lote', async () => {
+    dueForCheck.mockResolvedValue([cycle({ provider: 'STRIPE' })]);
+
+    await service.reconcilePending();
+
+    expect(applyProviderResult).not.toHaveBeenCalled();
+    expect(scheduleNextCheck).toHaveBeenCalled();
+  });
+
+  it('B-19: el id del proveedor viaja al adaptador tal cual se guardó', async () => {
+    dueForCheck.mockResolvedValue([cycle({ providerRef: '169718720683' })]);
+
+    await service.reconcilePending();
+
+    expect(findByReference).toHaveBeenCalledWith({
+      reference: REFERENCE,
+      providerRef: '169718720683',
+    });
   });
 });

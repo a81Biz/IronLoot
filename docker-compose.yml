@@ -93,7 +93,9 @@ services:
       - MAIL_USER=test
       - MAIL_PASSWORD=test
       - MAIL_FROM="Iron Loot <noreply@ironloot.com>"
-      - BASE_URL=http://base.localhost
+      # PT-088 — Derivado de PUBLIC_SCHEME/PUBLIC_DOMAIN. No se escribe a mano.
+      - BASE_URL=${PUBLIC_SCHEME:-http}://base.${PUBLIC_DOMAIN:-ironloot.local}
+      - CLIENT_URL=${PUBLIC_SCHEME:-http}://client.${PUBLIC_DOMAIN:-ironloot.local}
       - JWT_SECRET=${JWT_SECRET:-change-me-min-32-chars}
     # Load additional env vars from project .env into the container
     env_file:
@@ -235,7 +237,7 @@ services:
       - NODE_ENV=development
       - BASE_PORT=5174
       - API_URL=http://api:3000
-      - CLIENT_URL=http://client.ironloot.local
+      - CLIENT_URL=${PUBLIC_SCHEME:-http}://client.${PUBLIC_DOMAIN:-ironloot.local}
       - COOKIE_DOMAIN=${COOKIE_DOMAIN:-.ironloot.local}
       - COOKIE_SAMESITE=${COOKIE_SAMESITE:-Lax}
     volumes:
@@ -278,7 +280,7 @@ services:
       - NODE_ENV=development
       - CLIENT_PORT=5175
       - API_URL=http://api:3000
-      - BASE_URL=http://base.ironloot.local
+      - BASE_URL=${PUBLIC_SCHEME:-http}://base.${PUBLIC_DOMAIN:-ironloot.local}
       - JWT_SECRET=${JWT_SECRET:-change-me-min-32-chars}
       - COOKIE_DOMAIN=${COOKIE_DOMAIN:-.ironloot.local}
       - COOKIE_SAMESITE=${COOKIE_SAMESITE:-Lax}

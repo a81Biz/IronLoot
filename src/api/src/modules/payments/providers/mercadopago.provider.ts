@@ -5,10 +5,12 @@ import {
   PaymentProviderEnum,
   CreatePaymentResult,
   WebhookResult,
+  FindPaymentContext,
 } from '../interfaces';
 import { WebhookSignatureValidator } from '@ironloot/core';
 import { UnauthorizedException, ValidationException } from '../../../common/observability';
 import { PaymentTraceService } from '../payment-trace.service';
+import { depositReturnUrl } from '../return-urls';
 
 const MP_API = 'https://api.mercadopago.com';
 
@@ -120,9 +122,11 @@ export class MercadoPagoProvider implements PaymentProvider {
           },
           external_reference: orderId,
           back_urls: {
-            success: `${process.env.CLIENT_URL || 'http://localhost:5173'}/wallet/success`,
-            failure: `${process.env.CLIENT_URL || 'http://localhost:5173'}/wallet/failure`,
-            pending: `${process.env.CLIENT_URL || 'http://localhost:5173'}/wallet/pending`,
+            // PT-088 — Misma ruta canonica que el resto de pasarelas; el estado va como
+            // parametro. Antes apuntaban a `/wallet/success`, que no existia en CLIENT.
+            success: depositReturnUrl(orderId, 'success'),
+            failure: depositReturnUrl(orderId, 'failure'),
+            pending: depositReturnUrl(orderId, 'pending'),
           },
           // Per-preference webhook target. Overrides the app-level dashboard URL so
           // deposits notify the configured endpoint (e.g. a tunnel in local/QA).
@@ -334,7 +338,14 @@ export class MercadoPagoProvider implements PaymentProvider {
    * Via garantizada (PT-080): busca el pago de una solicitud sin depender de la notificacion.
    * Devuelve null si la pasarela aun no tiene un pago aprobado para esa referencia.
    */
-  async findPaymentByReference(reference: string): Promise<WebhookResult | null> {
+  /**
+   * PT-087 — Vía garantizada, ahora bajo la firma del contrato compartido.
+   *
+   * Mercado Pago es de las pasarelas que **sí** permiten buscar por nuestra propia referencia,
+   * de modo que `providerRef` no le hace falta y lo ignora. PayPal está en el caso contrario.
+   */
+  async findPayment(ctx: FindPaymentContext): Promise<WebhookResult | null> {
+    const reference = ctx.reference;
     const payment = await this.findApprovedByReference(reference);
     if (!payment) return null;
 

@@ -1,0 +1,5 @@
+{
+  "_comentario": "Copiar a paypal-sandbox.json (gitignored) con una cuenta PERSONAL de sandbox. developer.paypal.com -> Testing Tools -> Sandbox Accounts -> tipo Personal. La cuenta BUSINESS no sirve: PayPal devuelve CANNOT_PAY_SELF porque es la que cobra.",
+  "email": "sb-XXXXXXXX@personal.example.com",
+  "password": "..."
+}

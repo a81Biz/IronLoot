@@ -320,10 +320,14 @@ model Payment {
   order   Order?  @relation(fields: [orderId], references: [id])
 
   /// Referencia del ciclo que origino el pago (DEP-<userId>-<ts> en depositos).
-  reference String? @db.VarChar(255)
+  ///
+  /// PT-087 (F-12) — Unica: una solicitud es un pago. Sostiene el `upsert` que impide que un
+  /// ciclo reabierto tras un fallo de acreditacion deje dos asientos del mismo cobro.
+  /// En PostgreSQL varios NULL no colisionan, de modo que los pagos de orden —que no llevan
+  /// referencia— no se ven afectados. Mismo razonamiento que `RefundRequest.orderId`.
+  reference String? @unique @db.VarChar(255)
 
   @@index([orderId], name: "idx_payments_order")
-  @@index([reference], name: "idx_payments_reference")
   @@index([externalId], name: "idx_payments_external_id")
   @@index([status], name: "idx_payments_status")
   @@map("payments")
@@ -361,6 +365,15 @@ model PaymentCycle {
   userId    String          @map("user_id") @db.Uuid
   amount    Decimal         @db.Decimal(10, 2)
   currency  String          @default("MXN") @db.VarChar(3)
+
+  // PT-087 — Identificador que la pasarela devolvio al CREAR el cobro (p. ej. el id de orden
+  // de PayPal). Se guarda al abrir el ciclo y es lo unico con lo que algunas pasarelas pueden
+  // localizar el pago despues: PayPal no ofrece busqueda por `custom_id`.
+  //
+  // No se reutiliza `canonicalPaymentId`: ese campo significa «el pago confirmado». Mezclarlos
+  // borraria la distincion entre id conocido e id confirmado, que es justo lo que el ciclo
+  // existe para no perder.
+  providerRef String? @map("provider_ref") @db.VarChar(255)
 
   // Confirmacion: lo que la pasarela devolvio
   status             PaymentCycleStatus @default(REQUESTED)

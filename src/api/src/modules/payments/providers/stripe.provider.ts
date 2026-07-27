@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { depositReturnUrl } from '../return-urls';
 import { ConfigService } from '@nestjs/config';
 import Stripe from 'stripe';
 import {
@@ -40,8 +41,6 @@ export class StripeProvider implements PaymentProvider {
   ): Promise<CreatePaymentResult> {
     if (!this.stripe) throw new Error('Stripe not configured');
 
-    const frontendUrl = this.configService.get('CLIENT_URL', 'http://localhost:5173');
-
     const session = await this.stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -57,8 +56,10 @@ export class StripeProvider implements PaymentProvider {
         },
       ],
       mode: 'payment',
-      success_url: `${frontendUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${frontendUrl}/checkout/cancel`,
+      // PT-088 — Misma ruta canonica que el resto. Stripe necesita ademas su marcador de
+      // sesion, que se anade sobre la URL comun en vez de justificar un camino propio.
+      success_url: `${depositReturnUrl(orderId, 'success')}&session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: depositReturnUrl(orderId, 'cancel'),
       client_reference_id: orderId,
       customer_email: buyerEmail,
     });

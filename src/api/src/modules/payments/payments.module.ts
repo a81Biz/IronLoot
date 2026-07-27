@@ -46,7 +46,13 @@ import { WalletModule } from '../wallet/wallet.module';
       useFactory: (t: PaymentTraceService) => new MercadoPagoProvider(t),
       inject: [PaymentTraceService],
     },
-    PaypalProvider,
+    {
+      // PT-087 — Igual que Mercado Pago: la traza se inyecta en el adaptador para que un
+      // pago por PayPal deje el mismo respaldo. Sin esto no quedaba constancia de nada.
+      provide: PaypalProvider,
+      useFactory: (t: PaymentTraceService) => new PaypalProvider(t),
+      inject: [PaymentTraceService],
+    },
     HeyBancoProvider,
     WebhookRetryProducer,
     WebhookRetryWorker,

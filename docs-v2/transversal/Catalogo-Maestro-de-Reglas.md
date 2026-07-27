@@ -119,6 +119,16 @@
 | RN-78 | **De cada pago queda traza completa**: solicitud, lo que se envio a la pasarela y su respuesta, notificaciones con cabeceras, validacion de firma, decision y acreditacion con saldos. Es el respaldo ante una disputa. | ✅ Cumple (verificado contra la pasarela real) | `payment-trace.service`, `GET /admin/payments/trace/:reference` | **PT-086** |
 | RN-79 | **Ninguna credencial se persiste en la traza.** Se redactan por lista explicita y lo redactado se MARCA, no se borra en silencio: quien lea la traza debe saber que ese campo existia. | ✅ Cumple | `payment-trace.service.redact` | **PT-086** |
 | RN-80 | **La trazabilidad nunca bloquea el cobro.** Si escribir la traza o el registro contable falla, la acreditacion sigue adelante: el saldo del usuario no depende de un apunte de reporting. | ✅ Cumple | `payment-trace.service`, `payment-cycle.service` | **PT-085 / PT-086** |
+| RN-81 | **Toda pasarela registrada debe rechazar una firma invalida con 401, nunca con 500.** Un rechazo de seguridad no es una averia interna: devolver 500 contamina la tasa de error y le dice a la pasarela «reintenta». | ✅ Cumple | `provider-guarantees.spec` G-02 | **PT-087** |
+| RN-82 | **La via garantizada es opcional en el contrato, y quien la declara devuelve `null` —nunca lanza— cuando el pago no existe.** El reconciliador recorre todos los ciclos abiertos: un adaptador que lance ante «no encontrado» convertiria un caso normal en un fallo del lote. | ✅ Cumple | `payment-provider.interface.findPayment` | **PT-087** |
+| RN-83 | **Un ciclo solo esta cerrado cuando el dinero llego al monedero.** Si la acreditacion falla tras la confirmacion, el ciclo se reabre para reintento. | ✅ Cumple | `payments.service.applyProviderResult` | **PT-087** |
+| RN-84 | **Un deposito crea el monedero si no existe.** Ningun cobro puede perderse porque el usuario nunca abriera su monedero. | ✅ Cumple | `wallet.service.deposit` | **PT-087** |
+| RN-85 | **Una solicitud es un pago: el asiento contable es idempotente por referencia.** Un reintento no puede duplicar la cifra con la que el administrador cuadra frente a la pasarela. | ✅ Cumple | `payment-cycle.writePaymentRow` (upsert) | **PT-087** |
+| RN-86 | **Ninguna URL que salga del sistema lleva un puerto suelto.** Las URLs entre sitios y las de retorno de las pasarelas se derivan de `PUBLIC_SCHEME`/`PUBLIC_DOMAIN`: lo que se prueba en local tiene la misma forma que en produccion. | ✅ Cumple | `return-urls.ts`, `docker-compose.yml` | **PT-088** |
+| RN-87 | **Todas las pasarelas devuelven a la misma ruta**, y el estado viaja como parametro. | ✅ Cumple | `depositReturnUrl` | **PT-088** |
+| RN-88 | **El resultado que muestra la pagina de retorno lo dicta la API, no la URL.** El `status` de la query lo escribe el navegador. | ✅ Cumple | `GET /payments/status/:reference` | **PT-088** |
+| RN-89 | **Un deposito ajeno se responde como inexistente**, no como prohibido: distinguirlos confirmaria que existe. | ✅ Cumple | `payment-cycle.statusFor` | **PT-088** |
+| RN-90 | **Un ciclo abierto se informa como pendiente, jamas como fallido.** Efectivo y SPEI tardan horas; decir «fallo» provoca un segundo pago. | ✅ Cumple | `deposit-return.html` | **PT-088** |
 
 ---
 
