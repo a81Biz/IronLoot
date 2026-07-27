@@ -77,3 +77,28 @@ contra la pasarela real:
 > **Alcance**: el checkout del comprador no se automatiza (es UI de Mercado Pago). El cobro se
 > crea con la Orders API y tarjeta de prueba — es el mismo pago real que generaría el checkout;
 > lo que se verifica es **nuestro tratamiento** de ese pago.
+
+## Fase 71 — Pago real por PayPal acreditado por la vía garantizada (PT-076 / PT-087)
+
+`tests/qa-browser-suite/71-paypal-guaranteed.cjs`, integrada en `run-all.sh`. **17 casos**,
+todos contra la pasarela real. La diferencia con la fase 70 es el punto: aquí **no hay
+notificación**. El comprador aprueba en el checkout real de PayPal —navegador headless, cuenta
+personal de sandbox— y nadie avisa a la API, igual que en desarrollo, donde PayPal no puede
+alcanzar un contenedor local.
+
+| Bloque | Qué verifica |
+|---|---|
+| QA-PP-01..02 | PayPal se ofrece y la solicitud crea la orden en la pasarela |
+| QA-PP-03 | El id de la orden queda guardado en el ciclo — **sin él PayPal no puede sondear**, porque su API no ofrece búsqueda por `custom_id` |
+| QA-PP-04 | La creación deja traza con su estado HTTP |
+| QA-PP-05..06 | El comprador aprueba de verdad, y se comprueba que **ninguna notificación llegó**: es el escenario que se prueba |
+| QA-PP-07..08 | La vía garantizada cierra el ciclo sola y **captura** la orden — en Orders v2 aprobar no mueve el dinero |
+| QA-PP-09..10 | El monedero se acredita por el importe exacto y el asiento contable es **uno solo** |
+| QA-PP-11..13 | La traza contiene los seis pasos, se atribuye **toda** a PAYPAL y la captura registra su endpoint |
+| QA-PP-14 | **Ninguna credencial** de PayPal quedó persistida |
+| QA-PP-15..16 | Un webhook fabricado se rechaza con **401** —no 500— y el saldo no cambia |
+
+> **Requisitos**: las tres variables de PayPal en `src/api/.env` y `paypal-sandbox.json` con una
+> cuenta **personal** de sandbox (ver `paypal-sandbox.example.json`). La fase se **salta sola** si
+> falta. La cuenta *business* no sirve: PayPal responde `CANNOT_PAY_SELF` porque es la que cobra.
+

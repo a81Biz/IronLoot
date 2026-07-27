@@ -122,7 +122,14 @@ export class PaymentsService {
     // PT-080 — El nucleo no conoce pasarelas: el registro resuelve el adaptador.
     const adapter = this.registry.resolve(provider);
     if (adapter && adapter.checkStatus()) {
-      return adapter.createPayment(orderId, amount, currency, description, email);
+      const created = await adapter.createPayment(orderId, amount, currency, description, email);
+
+      // PT-087 — El id que devuelve la pasarela es lo único con lo que algunas pueden
+      // localizar el pago después: PayPal no busca por `custom_id`. Sin esto, su vía
+      // garantizada no tiene por dónde empezar.
+      await this.paymentCycle.attachProviderRef(orderId, created.externalId);
+
+      return created;
     }
 
     throw new BadRequestException('Unsupported or invalid payment provider');
@@ -230,7 +237,22 @@ export class PaymentsService {
       return decision;
     }
 
-    await this.creditFromResult(provider, result);
+    try {
+      await this.creditFromResult(provider, result);
+    } catch (e) {
+      // PT-087 (F-09) — El ciclo ya se marcó SETTLED al confirmar con la pasarela, pero el
+      // dinero no ha llegado al usuario. Dejarlo así sería lo peor de los dos mundos: el
+      // sistema afirmando que el pago está resuelto mientras el saldo no existe, y sin que la
+      // vía garantizada vuelva a mirarlo nunca (solo recoge ciclos en REQUESTED).
+      //
+      // Se reabre para reintento. Es seguro: `creditOnce` ya liberó la reserva de
+      // deduplicación, así que el reintento acredita una sola vez.
+      if (decision.cycleId) {
+        await this.paymentCycle.reopenForRetry(decision.cycleId);
+      }
+      throw e;
+    }
+
     return decision;
   }
 
@@ -291,7 +313,7 @@ export class PaymentsService {
       this.logger.error('Webhook without paymentId — crediting without deduplication', {
         data: result as unknown as Record<string, unknown>,
       });
-      await this.creditWallet(userId, amount, result.externalId).catch(() => undefined);
+      await this.creditWallet(userId, amount, result.externalId, provider).catch(() => undefined);
       return;
     }
 
@@ -308,7 +330,7 @@ export class PaymentsService {
     }
 
     try {
-      await this.creditWallet(userId, amount, result.externalId);
+      await this.creditWallet(userId, amount, result.externalId, provider);
     } catch (e) {
       // Se libera la reserva para no dejar el pago marcado como acreditado sin haberlo estado.
       await this.prisma.processedWebhookEvent
@@ -320,7 +342,12 @@ export class PaymentsService {
     }
   }
 
-  private async creditWallet(userId: string, amount: number, referenceId: string): Promise<void> {
+  private async creditWallet(
+    userId: string,
+    amount: number,
+    referenceId: string,
+    provider: string,
+  ): Promise<void> {
     try {
       this.logger.info(`Crediting wallet for user ${userId} amount ${amount}`);
       const result = await this.walletService.deposit(userId, amount, referenceId, 'DEPOSIT');
@@ -330,7 +357,9 @@ export class PaymentsService {
       const ledger = result?.ledger;
       await this.trace.record({
         reference: referenceId,
-        provider: 'MERCADO_PAGO',
+        // PT-087 (F-11) — Antes iba 'MERCADO_PAGO' en duro: la traza de una acreditacion
+        // por PayPal mentia sobre la pasarela, que es justo el dato que sostiene una disputa.
+        provider,
         step: 'WALLET_CREDITED',
         direction: 'INTERNAL',
         outcome: 'OK',
@@ -344,6 +373,17 @@ export class PaymentsService {
       });
     } catch (e) {
       this.logger.error(`Failed to credit wallet for ${referenceId}`, { error: e as Error });
+      // PT-087 (F-09) — Que la acreditacion falle no puede pasar en silencio: es el unico
+      // punto donde el dinero llega al usuario.
+      await this.trace.record({
+        reference: referenceId,
+        provider,
+        step: 'WALLET_CREDITED',
+        direction: 'INTERNAL',
+        outcome: 'ERROR',
+        detail: (e as Error).message,
+        data: { userId, amount },
+      });
       throw e;
     }
   }

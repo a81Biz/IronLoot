@@ -76,4 +76,28 @@ export interface PaymentProvider {
     headers?: Record<string, string>,
     query?: Record<string, string>,
   ): Promise<WebhookResult | null>;
+
+  /**
+   * PT-087 — Vía garantizada: localiza el pago cuando la notificación nunca llegó.
+   *
+   * Es **opcional a propósito**. Cada pasarela busca con lo que tiene, y no todas pueden:
+   *  - Mercado Pago busca por *nuestra* referencia (`/v1/payments/search?external_reference=`).
+   *  - PayPal no ofrece búsqueda por `custom_id`: **debe** ir por el id de orden, que
+   *    conocemos desde que la creamos y viaja en `providerRef`.
+   *
+   * Que sea opcional deja explícito en el contrato qué proveedor tiene esta garantía y cuál
+   * no, en vez de esconderlo tras un `null` del reconciliador (hallazgo F-07).
+   *
+   * **Devuelve `null`, nunca lanza**, cuando el pago aún no existe: el reconciliador recorre
+   * todos los ciclos abiertos y un caso normal no puede tumbar el lote.
+   */
+  findPayment?(ctx: FindPaymentContext): Promise<WebhookResult | null>;
+}
+
+/** Lo que el reconciliador sabe de una solicitud abierta al ir a buscarla en la pasarela. */
+export interface FindPaymentContext {
+  /** Nuestra referencia: `DEP-<userId>-<timestamp>`. */
+  reference: string;
+  /** El identificador que devolvió la pasarela al crear el cobro. Nulo en ciclos previos a PT-087. */
+  providerRef?: string | null;
 }

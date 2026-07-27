@@ -4,7 +4,10 @@ import {
   PaymentProviderEnum,
   CreatePaymentResult,
   WebhookResult,
+  FindPaymentContext,
 } from '../interfaces';
+import { UnauthorizedException } from '../../../common/observability';
+import { PaymentTraceService } from '../payment-trace.service';
 
 /** Margen de seguridad para renovar el token antes de que expire realmente. */
 const TOKEN_REFRESH_MARGIN_MS = 60_000;
@@ -52,6 +55,22 @@ export class PaypalProvider implements PaymentProvider {
   readonly aliases = [] as const;
 
   private tokenCache: { value: string; expiresAt: number } | null = null;
+
+  /**
+   * PT-087 — La traza se inyecta **opcional**, igual que en Mercado Pago: los tests que
+   * construyen el adaptador a mano siguen funcionando, y un apunte de trazabilidad nunca
+   * puede costarle el depósito al usuario.
+   */
+  constructor(private readonly trace?: PaymentTraceService) {}
+
+  /** Registra un paso de la traza sin que un fallo suyo pueda tumbar el pago. */
+  private async traza(entry: Record<string, unknown>): Promise<void> {
+    try {
+      await this.trace?.record({ provider: 'PAYPAL', ...entry } as never);
+    } catch (error) {
+      this.logger.warn(`No se pudo registrar la traza de PayPal: ${(error as Error).message}`);
+    }
+  }
 
   private get apiBaseUrl(): string {
     return process.env.PAYPAL_MODE === 'production'
@@ -118,12 +137,24 @@ export class PaypalProvider implements PaymentProvider {
     url: string,
     init: { method: string; headers?: Record<string, string>; body?: string },
   ): Promise<T> {
+    return (await this.authorizedCall<T>(url, init)).data;
+  }
+
+  /**
+   * PT-087 — Igual que `authorizedFetch`, pero devuelve además el estado HTTP y la duración,
+   * que es lo que la traza necesita para sostener una disputa con la pasarela.
+   */
+  private async authorizedCall<T>(
+    url: string,
+    init: { method: string; headers?: Record<string, string>; body?: string },
+  ): Promise<{ data: T; status: number; durationMs: number }> {
     const call = async (token: string) =>
       fetch(url, {
         ...init,
         headers: { ...(init.headers ?? {}), Authorization: `Bearer ${token}` },
       });
 
+    const startedAt = Date.now();
     let res = await call(await this.getAccessToken());
 
     if (res.status === 401) {
@@ -135,7 +166,11 @@ export class PaypalProvider implements PaymentProvider {
       throw new Error(`PayPal request to ${url} failed with status ${res.status}`);
     }
 
-    return (await res.json()) as T;
+    return {
+      data: (await res.json()) as T,
+      status: res.status,
+      durationMs: Date.now() - startedAt,
+    };
   }
 
   private resolveApprovalUrl(links: PaypalLink[] = []): string {
@@ -160,37 +195,59 @@ export class PaypalProvider implements PaymentProvider {
 
     const clientUrl = process.env.CLIENT_URL || 'http://localhost:5175';
 
-    const order = await this.authorizedFetch<{ id: string; status: string; links: PaypalLink[] }>(
-      `${this.apiBaseUrl}/v2/checkout/orders`,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          // Clave de idempotencia de PayPal: evita duplicar la orden si se reintenta.
-          'PayPal-Request-Id': orderId,
+    const endpoint = `${this.apiBaseUrl}/v2/checkout/orders`;
+    const peticion = {
+      intent: 'CAPTURE',
+      purchase_units: [
+        {
+          amount: { currency_code: currency.toUpperCase(), value: amount.toFixed(2) },
+          // Referencia DEP-<userId>-<timestamp>; reaparece en el webhook como resource.custom_id
+          custom_id: orderId,
+          description: description || 'Iron Loot Deposit',
         },
-        body: JSON.stringify({
-          intent: 'CAPTURE',
-          purchase_units: [
-            {
-              amount: { currency_code: currency.toUpperCase(), value: amount.toFixed(2) },
-              // Referencia DEP-<userId>-<timestamp>; reaparece en el webhook como resource.custom_id
-              custom_id: orderId,
-              description: description || 'Iron Loot Deposit',
-            },
-          ],
-          payment_source: {
-            paypal: {
-              experience_context: {
-                user_action: 'PAY_NOW',
-                return_url: `${clientUrl}/wallet/deposit-success?ref=${orderId}`,
-                cancel_url: `${clientUrl}/wallet/deposit-cancel?ref=${orderId}`,
-              },
-            },
+      ],
+      payment_source: {
+        paypal: {
+          experience_context: {
+            user_action: 'PAY_NOW',
+            return_url: `${clientUrl}/wallet/deposit-success?ref=${orderId}`,
+            cancel_url: `${clientUrl}/wallet/deposit-cancel?ref=${orderId}`,
           },
-        }),
+        },
       },
-    );
+    };
+
+    const {
+      data: order,
+      status,
+      durationMs,
+    } = await this.authorizedCall<{
+      id: string;
+      status: string;
+      links: PaypalLink[];
+    }>(endpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        // Clave de idempotencia de PayPal: evita duplicar la orden si se reintenta.
+        'PayPal-Request-Id': orderId,
+      },
+      body: JSON.stringify(peticion),
+    });
+
+    // PT-087 (F-06) — Qué se envió a PayPal y qué devolvió. El `Authorization` no se pasa
+    // aquí a propósito: no aporta nada a la traza y no tiene por qué acercarse a ella.
+    await this.traza({
+      reference: orderId,
+      step: 'PROVIDER_CREATE',
+      direction: 'OUTBOUND',
+      outcome: 'OK',
+      endpoint,
+      httpStatus: status,
+      durationMs,
+      externalId: order.id,
+      data: { request: peticion, response: order },
+    });
 
     return {
       externalId: order.id,
@@ -289,22 +346,171 @@ export class PaypalProvider implements PaymentProvider {
 
     if (missing.length > 0) {
       this.logger.error(`Rejecting PayPal webhook — missing header(s): ${missing.join(', ')}`);
-      throw new Error(`Missing required PayPal webhook header(s): ${missing.join(', ')}`);
+      await this.traza({
+        step: 'SIGNATURE_REJECTED',
+        direction: 'INTERNAL',
+        outcome: 'REJECTED',
+        externalId: event?.resource?.id,
+        detail: `Faltan cabeceras de firma: ${missing.join(', ')}`,
+        data: { eventId: event?.id, eventType: event?.event_type },
+      });
+      // PT-087 (F-08): un rechazo de seguridad es 401, no una avería interna.
+      throw new UnauthorizedException(
+        `Missing required PayPal webhook header(s): ${missing.join(', ')}`,
+      );
     }
 
-    const result = await this.authorizedFetch<{ verification_status: string }>(
-      `${this.apiBaseUrl}/v1/notifications/verify-webhook-signature`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...required, webhook_id: webhookId, webhook_event: event }),
-      },
-    );
+    const endpoint = `${this.apiBaseUrl}/v1/notifications/verify-webhook-signature`;
+    const {
+      data: result,
+      status,
+      durationMs,
+    } = await this.authorizedCall<{
+      verification_status: string;
+    }>(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...required, webhook_id: webhookId, webhook_event: event }),
+    });
 
     if (result.verification_status !== 'SUCCESS') {
       this.logger.error(`PayPal webhook signature verification failed (${event.id})`);
-      throw new Error('Invalid PayPal webhook signature');
+      await this.traza({
+        step: 'SIGNATURE_REJECTED',
+        direction: 'INTERNAL',
+        outcome: 'REJECTED',
+        endpoint,
+        httpStatus: status,
+        durationMs,
+        externalId: event?.resource?.id,
+        detail: `PayPal respondió verification_status=${result.verification_status}`,
+        data: { eventId: event?.id, eventType: event?.event_type, response: result },
+      });
+      // PT-087 (F-08) — Igual que Mercado Pago desde PT-080. Antes lanzaba `Error` genérico y
+      // el controlador lo traducía a 500: un rechazo de firma se presentaba como avería
+      // nuestra, contaminaba la tasa de error y le decía a PayPal «reintenta».
+      throw new UnauthorizedException('Invalid PayPal webhook signature');
     }
+
+    await this.traza({
+      step: 'SIGNATURE_OK',
+      direction: 'INTERNAL',
+      outcome: 'OK',
+      endpoint,
+      httpStatus: status,
+      durationMs,
+      externalId: event?.resource?.id,
+      data: { eventId: event?.id, eventType: event?.event_type },
+    });
+  }
+
+  /**
+   * PT-087 (F-07) — Vía garantizada de PayPal.
+   *
+   * PayPal **no ofrece búsqueda por `custom_id`**, así que a diferencia de Mercado Pago no
+   * puede localizar el pago por nuestra referencia: va por el id de orden que guardamos al
+   * crearla (`providerRef`).
+   *
+   * Y hay una diferencia de fondo con Mercado Pago: en Orders v2 el dinero **no se mueve al
+   * aprobar**. Una orden `APPROVED` está autorizada pero sin cobrar; si nadie la captura, no
+   * hay pago. Por eso aquí se captura, no solo se consulta. Es lo que convierte el hallazgo
+   * del 2026-07-27 —321.50 MXN aprobados y en el limbo— en dinero acreditado.
+   */
+  async findPayment(ctx: FindPaymentContext): Promise<WebhookResult | null> {
+    // Los ciclos abiertos antes de PT-087 no tienen id de orden guardado: sin él no hay por
+    // dónde buscar. No es un error, es un ciclo viejo; expirará a las 72 h como haría antes.
+    if (!ctx.providerRef) return null;
+
+    const endpoint = `${this.apiBaseUrl}/v2/checkout/orders/${ctx.providerRef}`;
+
+    try {
+      const {
+        data: order,
+        status,
+        durationMs,
+      } = await this.authorizedCall<PaypalOrder>(endpoint, {
+        method: 'GET',
+      });
+
+      await this.traza({
+        reference: ctx.reference,
+        step: 'PROVIDER_CONFIRM',
+        direction: 'OUTBOUND',
+        outcome: 'OK',
+        format: 'POLL',
+        endpoint,
+        httpStatus: status,
+        durationMs,
+        externalId: ctx.providerRef,
+        detail: `Orden en estado ${order.status}`,
+        data: { response: order },
+      });
+
+      // El comprador aprobó pero nadie capturó: el webhook que debía hacerlo no llegó.
+      const finalizada =
+        order.status === 'APPROVED' ? await this.captureAndReturn(ctx, order) : order;
+
+      if (finalizada.status !== 'COMPLETED') return null;
+
+      const capture = finalizada.purchase_units?.[0]?.payments?.captures?.[0];
+
+      return {
+        paymentId: capture?.id ?? finalizada.id,
+        externalId: finalizada.purchase_units?.[0]?.custom_id ?? ctx.reference,
+        status: 'COMPLETED',
+        amount: capture?.amount ? Number(capture.amount.value) : undefined,
+        metadata: finalizada as unknown as Record<string, unknown>,
+      };
+    } catch (error) {
+      // Un fallo consultando un ciclo no puede impedir que se revisen los demás. El
+      // reconciliador reprogramará esta solicitud y volverá a intentarlo.
+      this.logger.warn(
+        `No se pudo consultar la orden ${ctx.providerRef} en PayPal: ${(error as Error).message}`,
+      );
+      await this.traza({
+        reference: ctx.reference,
+        step: 'PROVIDER_CONFIRM',
+        direction: 'OUTBOUND',
+        outcome: 'ERROR',
+        format: 'POLL',
+        endpoint,
+        externalId: ctx.providerRef,
+        detail: (error as Error).message,
+      });
+      return null;
+    }
+  }
+
+  /** Captura una orden aprobada durante el sondeo y devuelve la orden ya cobrada. */
+  private async captureAndReturn(
+    ctx: FindPaymentContext,
+    order: PaypalOrder,
+  ): Promise<PaypalOrder> {
+    const endpoint = `${this.apiBaseUrl}/v2/checkout/orders/${ctx.providerRef}/capture`;
+    const {
+      data: capturada,
+      status,
+      durationMs,
+    } = await this.authorizedCall<PaypalOrder>(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+
+    await this.traza({
+      reference: ctx.reference,
+      step: 'PROVIDER_CONFIRM',
+      direction: 'OUTBOUND',
+      outcome: 'OK',
+      format: 'POLL',
+      endpoint,
+      httpStatus: status,
+      durationMs,
+      externalId: ctx.providerRef,
+      detail: 'Orden aprobada sin capturar: se captura por la via garantizada',
+      data: { previo: order.status, response: capturada },
+    });
+
+    return capturada;
   }
 
   /**

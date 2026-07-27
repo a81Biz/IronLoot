@@ -39,6 +39,8 @@ export interface PendingCycle {
   reference: string;
   requestedAt: Date;
   checkCount: number;
+  /** PT-087 — Id que devolvió la pasarela al crear el cobro. Nulo en ciclos anteriores. */
+  providerRef?: string | null;
 }
 
 export interface OpenCycleInput {
@@ -85,6 +87,53 @@ export class PaymentCycleService {
         nextCheckAt: new Date(Date.now() + 60_000),
       },
     });
+  }
+
+  /**
+   * PT-087 (F-09) — Devuelve un ciclo ya cerrado al estado reintentable.
+   *
+   * `evaluate()` marca SETTLED en cuanto la pasarela confirma, **antes** de que el dinero
+   * llegue al monedero. Si acreditar falla después, el ciclo se queda afirmando que el pago
+   * está resuelto y la vía garantizada no vuelve a mirarlo nunca, porque solo recoge ciclos
+   * en REQUESTED. Eso es dinero cobrado y perdido con el sistema declarando éxito.
+   *
+   * Reabrirlo es seguro: la reserva de deduplicación se libera en el mismo camino de error,
+   * de modo que el reintento acredita una sola vez. Y `settledAt` se conserva a propósito:
+   * la traza debe recordar que hubo un cierre prematuro.
+   */
+  async reopenForRetry(cycleId: string): Promise<void> {
+    await this.prisma.paymentCycle.update({
+      where: { id: cycleId },
+      data: { status: 'REQUESTED', nextCheckAt: new Date(Date.now() + 60_000) },
+    });
+    this.logger.warn(`Ciclo ${cycleId} reabierto: confirmado por la pasarela pero sin acreditar`);
+  }
+
+  /**
+   * PT-087 — Guarda el identificador que la pasarela devolvió al crear el cobro.
+   *
+   * Se llama **después** de `createPayment`, porque hasta entonces no existe: el ciclo nace
+   * antes de hablar con la pasarela, a propósito (una solicitud abierta sin confirmación es la
+   * señal de que puede haber dinero cobrado sin acreditar).
+   *
+   * **No lanza.** Si esto falla, el usuario ya tiene su enlace de pago y el cobro puede
+   * ocurrir: tumbar la solicitud por no poder anotar un identificador sería el peor canje
+   * posible. El coste de fallar es perder la vía garantizada para *ese* ciclo, que entonces
+   * expira a las 72 h como haría sin PT-087.
+   */
+  async attachProviderRef(reference: string, providerRef: string | undefined): Promise<void> {
+    if (!providerRef) return;
+
+    try {
+      await this.prisma.paymentCycle.updateMany({
+        where: { reference },
+        data: { providerRef },
+      });
+    } catch (error) {
+      this.logger.error(`No se pudo anotar el id de pasarela para ${reference}`, {
+        error: error as Error,
+      });
+    }
   }
 
   /**
@@ -255,17 +304,25 @@ export class PaymentCycleService {
     result: WebhookResult,
     status: 'COMPLETED' | 'FAILED',
   ): Promise<void> {
+    const fila = {
+      provider,
+      status,
+      amount: result.amount ?? 0,
+      currency: cycle.currency,
+      externalId: result.paymentId,
+      reference: cycle.reference,
+      metadata: (result.metadata ?? {}) as object,
+    };
+
     try {
-      await this.prisma.payment.create({
-        data: {
-          provider,
-          status,
-          amount: result.amount ?? 0,
-          currency: cycle.currency,
-          externalId: result.paymentId,
-          reference: cycle.reference,
-          metadata: (result.metadata ?? {}) as object,
-        },
+      // PT-087 (F-12) — Idempotente por referencia. Un ciclo reabierto tras un fallo de
+      // acreditación (F-09) vuelve a pasar por aquí, y con `create` dejaba dos asientos del
+      // mismo cobro: el ledger decía 321.50 y el panel financiero 643.00. La referencia
+      // identifica la solicitud, y una solicitud es un pago.
+      await this.prisma.payment.upsert({
+        where: { reference: cycle.reference },
+        create: fila,
+        update: { status: fila.status, externalId: fila.externalId, metadata: fila.metadata },
       });
     } catch (e) {
       this.logger.error(`No se pudo registrar el pago ${result.paymentId}`, { error: e as Error });

@@ -34,7 +34,7 @@
 
 > Los modelos de backoffice (excepto RefundRequest) usan **referencias libres** sin `@relation` ni FK — su integridad referencial no está garantizada en BD.
 
-## 3. Migraciones (14, cronológico)
+## 3. Migraciones (25, cronológico)
 
 1–9: módulos base (auth/auctions/bids/orders/payments/shipments/ratings/disputes/notifications/wallet). · 10 `audit_fixes_v0_3_0`: +`AUCTION_LOST`, +`STRIPE`, 2FA cols, índice compuesto bids. · 11 `update_ledger_types`: HOLD→HOLD_BID, RELEASE→RELEASE_BID, +DEBIT_ORDER/CREDIT_SALE/FEE_PLATFORM. · 12 `fix_wallet_currency_default_to_mxn`: wallets USD→MXN (default+backfill). · 13 `remove_purchase_ledger_type`: elimina PURCHASE. · 14 `add_user_payment_methods`: tabla UserPaymentMethod. · **15–18 (retiro real PT-070..072):** `+bank fields UserPaymentMethod` (bank_name, clabe, holder_name, alias, is_verified) · `+Wallet.pendingBalance` · `+Order.sellerNet/sellerSettledAt` + `LedgerType.SETTLEMENT_RELEASE` · `+WithdrawalRequest` (tabla) + `WithdrawalStatus` (enum REQUESTED/APPROVED/PAID/REJECTED/FAILED).
 · **19 (PT-076):** `+ProcessedWebhookEvent` — barrera de idempotencia de webhooks.
@@ -50,6 +50,16 @@ financiero del admin —que la consulta en seis sitios— mostraba ceros (TD-008
 · **23 (PT-086):** `PaymentCycleEvent` gana `direction`, `step`, `endpoint`, `httpStatus`,
 `durationMs`, `traceId`, `reference` y `redactedFields`: pasa de registrar solo notificaciones a
 ser la **traza completa** de la transaccion.
+· **24 (PT-087):** `PaymentCycle.providerRef` — el identificador que la pasarela devuelve al
+**crear** el cobro. No se reutilizo `canonicalPaymentId` porque ese campo significa «el pago
+confirmado»: mezclarlos borraria la distincion entre id conocido e id confirmado, que es justo lo
+que el ciclo existe para no perder. PayPal no puede sondear sin el, porque su API no ofrece
+busqueda por `custom_id`.
+· **25 (PT-087):** `Payment.reference` pasa a **UNICA**. Una solicitud es un pago, y el asiento se
+escribe con `upsert`: un ciclo reabierto tras un fallo de acreditacion dejaba dos filas del mismo
+cobro. **Una BD existente puede tener duplicados**; el indice no se crea hasta deduplicar:
+`DELETE FROM payments p USING payments q WHERE p.reference = q.reference AND p.reference IS NOT NULL AND p.created_at > q.created_at;`
+
 
 ## 4. Drift esquema↔migraciones (AUD-001) — CRÍTICO
 

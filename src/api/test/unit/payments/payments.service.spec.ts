@@ -81,6 +81,9 @@ describe('PaymentsService', () => {
           provide: PaymentCycleService,
           useValue: {
             open: jest.fn().mockResolvedValue(undefined),
+            attachProviderRef: jest.fn().mockResolvedValue(undefined),
+            // PT-087: el ciclo se reabre si la acreditacion falla tras haberlo cerrado.
+            reopenForRetry: jest.fn().mockResolvedValue(undefined),
             evaluate: jest
               .fn()
               .mockResolvedValue({ shouldCredit: true, outcome: 'PROCESSED', cycleId: 'c-1' }),

@@ -3,7 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { StructuredLogger } from '../../common/observability';
 import { PaymentCycleService, PendingCycle } from './payment-cycle.service';
 import { PaymentsService } from './payments.service';
-import { MercadoPagoProvider } from './providers/mercadopago.provider';
+import { PaymentProviderRegistry } from './payment-provider.registry';
 import { PaymentTraceService } from './payment-trace.service';
 
 /**
@@ -20,15 +20,17 @@ import { PaymentTraceService } from './payment-trace.service';
  * Al vencer `PAYMENT_EXPIRATION_HOURS` sin resolución, el ciclo expira: se asume no resuelto
  * y no acredita.
  *
- * Hoy solo cubre Mercado Pago, que es el único proveedor verificable de punta a punta. La
- * Fase C lo generaliza a través del registro de proveedores.
+ * PT-087 — Ya no conoce pasarelas. Resuelve el adaptador por el registro, igual que el resto
+ * del núcleo desde PT-080. Antes inyectaba `MercadoPagoProvider` en duro y devolvía `null`
+ * para todo lo demás, de modo que un cobro de PayPal sin notificación se perdía en silencio:
+ * el mismo fallo, reintroducido para el segundo proveedor.
  */
 @Injectable()
 export class PaymentReconciliationService {
   constructor(
     private readonly cycles: PaymentCycleService,
     private readonly payments: PaymentsService,
-    private readonly mercadopago: MercadoPagoProvider,
+    private readonly registry: PaymentProviderRegistry,
     private readonly logger: StructuredLogger,
     private readonly trace: PaymentTraceService,
   ) {}
@@ -96,11 +98,24 @@ export class PaymentReconciliationService {
     await this.payments.applyProviderResult(cycle.provider, result, 'POLL');
   }
 
+  /**
+   * PT-087 — El adaptador lo resuelve el registro, y la vía garantizada es opcional en el
+   * contrato: un proveedor que no la declare simplemente no la tiene, y su ciclo se reprograma
+   * hasta expirar. Eso queda explícito aquí en vez de escondido en un `if` por proveedor.
+   */
   private async lookup(cycle: PendingCycle) {
-    if (cycle.provider === 'MERCADO_PAGO') {
-      return this.mercadopago.findPaymentByReference(cycle.reference);
+    const adapter = this.registry.resolve(cycle.provider);
+
+    if (!adapter?.findPayment) {
+      this.logger.warn(
+        `${cycle.provider} no tiene vía garantizada: ${cycle.reference} depende de su notificación`,
+      );
+      return null;
     }
-    // Los demás proveedores se incorporan con el registro de la Fase C.
-    return null;
+
+    return adapter.findPayment({
+      reference: cycle.reference,
+      providerRef: cycle.providerRef ?? null,
+    });
   }
 }

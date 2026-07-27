@@ -21,7 +21,8 @@ const CANONICAL = '169718720683';
 describe('PaymentCycleService — registro de pago y reembolso (PT-085)', () => {
   let service: PaymentCycleService;
   let cycleFindUnique: jest.Mock;
-  let paymentCreate: jest.Mock;
+  // PT-087: el asiento se escribe con `upsert` para que un ciclo reabierto no lo duplique.
+  let paymentUpsert: jest.Mock;
   let refundCreate: jest.Mock;
 
   const openCycle = (o: Record<string, unknown> = {}) => ({
@@ -45,7 +46,7 @@ describe('PaymentCycleService — registro de pago y reembolso (PT-085)', () => 
 
   beforeEach(async () => {
     cycleFindUnique = jest.fn().mockResolvedValue(openCycle());
-    paymentCreate = jest.fn().mockResolvedValue({});
+    paymentUpsert = jest.fn().mockResolvedValue({});
     refundCreate = jest.fn().mockResolvedValue({});
 
     const module: TestingModule = await Test.createTestingModule({
@@ -61,7 +62,7 @@ describe('PaymentCycleService — registro de pago y reembolso (PT-085)', () => 
               findMany: jest.fn().mockResolvedValue([]),
             },
             paymentCycleEvent: { create: jest.fn().mockResolvedValue({}) },
-            payment: { create: paymentCreate },
+            payment: { upsert: paymentUpsert },
             refundRequest: { create: refundCreate },
           },
         },
@@ -85,9 +86,10 @@ describe('PaymentCycleService — registro de pago y reembolso (PT-085)', () => 
   it('P-01: al liquidar el ciclo se escribe la fila de Payment', async () => {
     await evaluate();
 
-    expect(paymentCreate).toHaveBeenCalledWith(
+    expect(paymentUpsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({
+        where: { reference: REFERENCE },
+        create: expect.objectContaining({
           provider: 'MERCADO_PAGO',
           status: 'COMPLETED',
           externalId: CANONICAL,
@@ -100,21 +102,21 @@ describe('PaymentCycleService — registro de pago y reembolso (PT-085)', () => 
   it('P-02: un depósito escribe Payment SIN orden asociada', async () => {
     await evaluate();
 
-    const data = paymentCreate.mock.calls[0][0].data;
+    const data = paymentUpsert.mock.calls[0][0].create;
     expect(data.orderId ?? null).toBeNull();
   });
 
   it('P-03: el importe registrado es el confirmado', async () => {
     await evaluate();
 
-    expect(Number(paymentCreate.mock.calls[0][0].data.amount)).toBe(250);
+    expect(Number(paymentUpsert.mock.calls[0][0].create.amount)).toBe(250);
   });
 
   it('P-04: un rechazo también se registra, como FAILED', async () => {
     await evaluate(response({ status: 'FAILED' }));
 
-    expect(paymentCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ data: expect.objectContaining({ status: 'FAILED' }) }),
+    expect(paymentUpsert).toHaveBeenCalledWith(
+      expect.objectContaining({ create: expect.objectContaining({ status: 'FAILED' }) }),
     );
   });
 
@@ -125,7 +127,7 @@ describe('PaymentCycleService — registro de pago y reembolso (PT-085)', () => 
 
     await evaluate();
 
-    expect(paymentCreate).not.toHaveBeenCalled();
+    expect(paymentUpsert).not.toHaveBeenCalled();
   });
 
   it('P-06: un cobro DISTINTO sobre una referencia cerrada genera la solicitud de reembolso', async () => {
@@ -159,7 +161,7 @@ describe('PaymentCycleService — registro de pago y reembolso (PT-085)', () => 
   it('P-08: si escribir el Payment falla, la acreditación sigue adelante', async () => {
     // El registro es contable, no la fuente de verdad del dinero: un fallo aquí no puede
     // impedir que el usuario reciba su saldo.
-    paymentCreate.mockRejectedValue(new Error('bd caida'));
+    paymentUpsert.mockRejectedValue(new Error('bd caida'));
 
     const decision = await evaluate();
 

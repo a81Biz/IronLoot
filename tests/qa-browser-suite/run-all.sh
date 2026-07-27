@@ -40,6 +40,9 @@ run_phase "7) Fase 40 — Extras (auth/responsive/CSP/cross-browser)" 40-extras.
 run_phase "8) Fase 50 — Escrituras admin" 50-admin-writes.cjs
 run_phase "9) Fase 60 — RETIRO REAL DEL VENDEDOR (KYC→CLABE→holdback→solicitud→admin)" 60-withdrawal.cjs
 run_phase "9b) Fase 70 — PAGO REAL POR MERCADO PAGO + TRAZA COMPLETA (PT-080/085/086)" 70-payment-trace.cjs
+# Fase 71 — el mismo dinero por la otra pasarela y por la OTRA via: sin notificacion, por
+# consulta periodica. Se salta sola si falta `paypal-sandbox.json` (cuenta personal de sandbox).
+run_phase "9c) Fase 71 — PAGO REAL POR PAYPAL VIA GARANTIZADA (PT-076/087)" 71-paypal-guaranteed.cjs
 
 log "10) Historial comprador + vendedor"
 # Leer OUT y actores dentro de node desde .last-run (evita backslashes de Windows en el string del shell)

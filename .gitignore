@@ -253,3 +253,6 @@ changes/
 # =====================================================
 # END OF GITIGNORE
 # =====================================================
+
+# PT-087 — credenciales de la cuenta personal de sandbox de PayPal (fase QA 71)
+tests/qa-browser-suite/paypal-sandbox.json

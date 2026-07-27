@@ -138,8 +138,20 @@ export class WalletService {
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Get current wallet
-      const wallet = await tx.wallet.findUnique({ where: { userId } });
-      if (!wallet) throw new NotFoundException('Wallet not found');
+      //
+      // PT-087 (F-10) — Si no existe, se crea aquí. El monedero se creaba de forma perezosa
+      // al consultarlo, de modo que un usuario que nunca abrió su monedero no podía recibir
+      // un depósito: se capturaron 321.50 MXN reales en PayPal y la acreditación murió con
+      // «Wallet not found». Es peor por la vía garantizada, que corre en un cron: allí no hay
+      // nadie navegando que provoque la creación perezosa.
+      //
+      // Un depósito **es** el momento en que un monedero debe existir. Va dentro de la misma
+      // transacción que el asiento, así que o se crea y acredita, o no ocurre ninguna de las dos.
+      const wallet =
+        (await tx.wallet.findUnique({ where: { userId } })) ??
+        (await tx.wallet.create({
+          data: { userId, balance: 0, heldFunds: 0, isActive: true },
+        }));
 
       const amountDecimal = new Decimal(amount);
       const newBalance = new Decimal(wallet.balance).plus(amountDecimal);
