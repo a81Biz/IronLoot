@@ -76,7 +76,13 @@ ci_checkpoints:
           # schema (npm run typecheck + prisma)
           # vulnerabilidades -> ci.yml: security-audit  ->  npm run audit:check
           #   compara contra src/api/security-baseline.json (13 paquetes triados, TD-015)
-  - D3    # trazabilidad + logging
+  # PT-121 — D3 deja de ser una declaracion.
+  - D3    # trazabilidad + logging -> src/api/scripts/observability-check.ts
+          #   `npm run audit:observability`
+          #   silent_failure_count: catch que no registran ni relanzan, contra linea base.
+          #     Incluye el JavaScript de NAVEGADOR: es donde vivia F-34.
+          #   trace_completeness: % de ciclos liquidados con la cadena de traza completa.
+          #   prompt_provenance: NO_APLICA. fallback_quality: evaluacion documentada ([R57]).
   - D5    # Success/Retry/Failure Rate (métricas determinísticas)
   # PT-120 — D1.N1 deja de ser una declaracion.
   - "D1.N1"  # Domain Rules as Code -> src/api/scripts/domain-rules.ts
