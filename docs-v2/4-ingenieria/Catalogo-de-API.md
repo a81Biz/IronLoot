@@ -50,6 +50,7 @@
 | POST | /payments/webhook/:provider | **Public** | 20/60s | PT-080: acepta los dos formatos de MP (Webhooks e IPN). Firma invalida -> **401** (antes 500). Duplicado -> 2xx sin acreditar. Desajuste con la solicitud -> ANOMALY. |
 | POST | /payments/initiate \| /payments/process | JWT | default |
 | GET | /payments/providers \| /payments/methods | Public | default |
+| GET | /payments/status/:reference | JWT | default | **PT-088**: estado del deposito propio, para la pagina de retorno. El `status` de la URL lo escribe el navegador y no decide nada. **404 si no existe O no es del usuario** (indistinguibles a proposito: distinguirlos confirmaria que existe). Un ciclo abierto se informa `pending`, jamas `failed`. |
 
 > **Retiro del vendedor (PT-069..072).** `GET /wallet/balance` expone ahora `{ balance, held, pending }`
 > (`pending` = liquidaciones retenidas). `POST /wallet/payment-methods` registra la CLABE (validada, RN-63).

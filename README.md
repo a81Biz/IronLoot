@@ -59,17 +59,17 @@ IronLoot corre como cinco contenedores Docker independientes, más infraestructu
 └──────┬───────────┬──────────────┬───────────────┬───────────────┘
        │           │              │               │
        ▼           ▼              ▼               ▼
-  base.localhost  client.localhost  admin.localhost  api.localhost
-  puerto 5174     puerto 5175       puerto 3001      puerto 3000
-  (sitio público) (portal privado)  (backoffice)     (REST API)
+  base.ironloot.local  client.ironloot.local  admin.ironloot.local  api.ironloot.local
+  puerto 5174          puerto 5175            puerto 3001           puerto 3000
+  (sitio público)      (portal privado)       (backoffice)          (REST API)
 ```
 
 | Servicio | Descripción | Puerto directo | Subdominio Nginx |
 |---|---|---|---|
-| **BASE** | Sitio público: home, catálogo de subastas, login, registro | 5174 | `base.localhost` |
-| **CLIENT** | Portal privado: dashboard, wallet, órdenes, perfil, vendedor | 5175 | `client.localhost` |
-| **ADMIN** | Backoffice operacional: usuarios, subastas, pagos, reportes | 3001 | `admin.localhost` |
-| **API** | REST API + WebSockets (backend de datos) | 3000 | `api.localhost` |
+| **BASE** | Sitio público: home, catálogo de subastas, login, registro | 5174 | `base.ironloot.local` |
+| **CLIENT** | Portal privado: dashboard, wallet, órdenes, perfil, vendedor | 5175 | `client.ironloot.local` |
+| **ADMIN** | Backoffice operacional: usuarios, subastas, pagos, reportes | 3001 | `admin.ironloot.local` |
+| **API** | REST API + WebSockets (backend de datos) | 3000 | `api.ironloot.local` |
 | **DB** | PostgreSQL 16 | 5432 | — |
 | **Redis** | Cache y sesiones | 6379 | — |
 | **Mailhog** | Servidor SMTP para captura de emails de prueba | 8025 (UI) / 1025 (SMTP) | — |
@@ -93,7 +93,14 @@ No se necesita Node.js ni npm instalados en la máquina anfitriona para correr e
 
 ### Archivo hosts del sistema operativo
 
-Para que los subdominios (`base.localhost`, `client.localhost`, etc.) funcionen en el navegador, hay que registrarlos en el archivo de hosts una sola vez.
+Para que los subdominios funcionen en el navegador, hay que registrarlos en el archivo de hosts una sola vez.
+
+> **No se usa `*.localhost` (PT-088).** Los navegadores **rechazan** una cookie con
+> `Domain=.localhost` por ser un dominio de uso especial (RFC 6265), de modo que la sesión no
+> cruzaría de BASE a CLIENT: podrías iniciar sesión y aparecer deslogueado en el portal. Con
+> `localhost:<puerto>` el problema no se ve —el puerto no delimita cookies— y por eso aparece
+> justo al pasar a subdominios. `ironloot.local` además tiene la misma forma que producción
+> (`ironloot.com`).
 
 **Windows** — abrir Notepad como Administrador y editar:
 ```
@@ -109,10 +116,11 @@ Añadir al final del archivo:
 
 ```
 # IronLoot — desarrollo local
-127.0.0.1  base.localhost
-127.0.0.1  client.localhost
-127.0.0.1  admin.localhost
-127.0.0.1  api.localhost
+127.0.0.1  ironloot.local
+127.0.0.1  base.ironloot.local
+127.0.0.1  client.ironloot.local
+127.0.0.1  admin.ironloot.local
+127.0.0.1  api.ironloot.local
 ```
 
 > **Opcional — solo si se prueba la conmutación de tráfico (Nginx redirects):**
