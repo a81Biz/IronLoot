@@ -27,7 +27,6 @@
 {% endblock %}
 {% block scripts %}
 <script>
-const API = '{{ apiUrl }}';
 document.getElementById('depositForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const errEl = document.getElementById('depositError');

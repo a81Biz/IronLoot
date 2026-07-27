@@ -47,7 +47,6 @@
         integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
         crossorigin="anonymous"></script>
 <script>
-  const API = '{{ apiUrl }}';
   const auctionId = '{{ auction.id }}';
 
   // Countdown timer
@@ -66,7 +65,9 @@
 
   // Live bid feed via Socket.io (public read-only namespace)
   try {
-    const socket = io(API + '/auctions', { transports: ['websocket', 'polling'] });
+    // PT-098 — Relativo al propio origen: CLIENT lo reenvia a la API. Una URL relativa
+    // no puede apuntar a un host que el navegador no resuelve.
+    const socket = io('/auctions', { transports: ['websocket', 'polling'] });
     socket.on('connect', () => socket.emit('joinAuction', { auctionId }));
     socket.on('bid:new', (bid) => {
       if (bid && bid.amount != null) {

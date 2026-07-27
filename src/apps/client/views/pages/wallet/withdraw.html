@@ -19,7 +19,6 @@
 {% endblock %}
 {% block scripts %}
 <script>
-const API = '{{ apiUrl }}';
 document.getElementById('withdrawForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msgEl = document.getElementById('withdrawMsg');

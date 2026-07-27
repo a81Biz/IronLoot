@@ -35,11 +35,10 @@ async function bootstrap() {
           styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
           fontSrc: ["'self'", 'https://fonts.gstatic.com', 'data:'],
           imgSrc: ["'self'", 'data:', 'https:'],
-          connectSrc: [
-            "'self'",
-            process.env.API_URL || 'http://localhost:3000',
-            (process.env.API_URL || 'http://localhost:3000').replace(/^http/, 'ws'),
-          ],
+          // PT-098 — Solo el propio origen. Antes se listaba `API_URL`, que es la direccion
+          // interna de Docker: la politica permitia exactamente lo que el navegador NO puede
+          // alcanzar, y nada mas. Con el proxy de arriba, todo va al mismo origen.
+          connectSrc: ["'self'"],
           frameSrc: ["'none'"],
           objectSrc: ["'none'"],
           upgradeInsecureRequests: isProd ? [] : null,
@@ -75,6 +74,28 @@ async function bootstrap() {
         proxyReq: (proxyReq, req) =>
           injectAuthHeader(proxyReq, req as { cookies?: Record<string, string | undefined> }),
       },
+    }),
+  );
+
+  // PT-098 (F-25) — Reenvio del WebSocket de la puja en vivo.
+  //
+  // Antes la vista conectaba a `API_URL + '/auctions'`, es decir `http://api:3000`: la direccion
+  // INTERNA de Docker, que un navegador no puede resolver. Fallaba en silencio —socket.io
+  // reintenta solo— y las pujas de otros nunca aparecian.
+  //
+  // Ahora la vista conecta a su PROPIO origen y este proxy lo reenvia. Una URL relativa no puede
+  // apuntar mal: no hay ninguna direccion que mantener sincronizada con el entorno.
+  //
+  // `ws: true` es lo que negocia el upgrade. NO se inyecta cabecera de autenticacion: el espacio
+  // de nombres `/auctions` es publico y de solo lectura; meter credenciales en un canal que no
+  // las pide seria ampliar la superficie sin motivo.
+  app.use(
+    '/socket.io',
+    createProxyMiddleware({
+      target: apiTarget,
+      changeOrigin: true,
+      ws: true,
+      pathRewrite: { '^/': '/socket.io/' },
     }),
   );
 

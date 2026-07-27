@@ -19,7 +19,6 @@
 {% endblock %}
 {% block scripts %}
 <script>
-const API = '{{ apiUrl }}';
 document.getElementById('disputeForm').addEventListener('submit', async (e) => {
   e.preventDefault();
   const msgEl = document.getElementById('disputeMsg');
