@@ -3074,3 +3074,64 @@ Root Cause: 100% — el bloqueo de versiones esta medido con `npm view`.
 Solution: 75% — la superficie es pequeña y hay prueba de punta a punta, pero es un salto de version
 mayor sobre el unico camino por el que un usuario nuevo entra al sistema. El 25% se resuelve
 midiendo, no opinando.
+
+
+---
+
+## PT-117 — BUG: el aviso al vendedor reutiliza el tipo del comprador (H-012)
+
+**Fecha**: 2026-07-27 · **Complejidad**: TRIVIAL · **Estado**: STATE 1-B
+**Origen**: H-012 (PTSA D1, BAJA), detectado en el Nivel 3 del Acid Test (DS-008).
+
+### Que
+
+Al cerrar una subasta se emiten dos notificaciones con el **mismo tipo** y significados distintos:
+
+| Tipo | Destinatario | Titulo | Mensaje |
+|---|---|---|---|
+| `AUCTION_WON` | comprador | «You won the auction!» | «Congratulations! You have won…» |
+| `AUCTION_WON` | **vendedor** | «Auction Sold!» | «Your auction … has been sold» |
+
+### Donde
+
+`auction-scheduler.service.ts:204`, y el propio codigo lo declara:
+
+```ts
+NotificationType.AUCTION_WON, // Reuse type or add AUCTION_SOLD if exists, for now WON implies completion
+```
+
+El catalogo no lo tiene:
+
+```
+AUCTION_WON  AUCTION_LOST  BID_OUTBID  ORDER_PAID  ORDER_SHIPPED  DISPUTE_UPDATE  SYSTEM
+```
+
+### Impacto
+
+**Ninguno visible hoy.** El titulo y el mensaje distinguen los dos casos, asi que quien lea la lista
+no se confunde.
+
+Lo que falla es el **tipo como discriminador**: un consumidor que filtre `AUCTION_WON` para mostrar
+«mis subastas ganadas» le enseñaria al vendedor su propia venta como una victoria. Hoy ese filtro no
+existe; el dia que exista, el defecto ya esta puesto.
+
+### Por que se atiende pese a ser BAJA
+
+Porque es **lo unico** que impide que P-007 llegue a `VALIDADO`. El producto se fija a si mismo el
+invariante «tipo de notificacion correcto para el evento», y dos eventos compartiendo tipo no lo
+cumplen.
+
+Que el atajo este comentado lo hace **honesto, no correcto**.
+
+### La restriccion del entorno
+
+`prisma db push --accept-data-loss` corre en cada arranque y **no hay `_prisma_migrations` en
+desarrollo** (ADR-006 / AUD-001). El SQL se genera con `migrate diff`, se comprueba que es
+**aditivo** y se aplica con `psql`. Anadir un valor a un enum de PostgreSQL lo es —`ALTER TYPE …
+ADD VALUE`— pero hay que verificarlo, no suponerlo.
+
+### Confianza
+
+Root Cause: 100% — el comentario del codigo nombra el atajo y el enum confirma la ausencia.
+Solution: 95% — es un valor de enum y una linea; el 5% es que `ADD VALUE` no puede correr dentro de
+una transaccion en PostgreSQL, y eso condiciona como se aplica.

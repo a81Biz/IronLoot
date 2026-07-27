@@ -1360,3 +1360,33 @@ Por que se pudo hacer un salto mayor con seguridad: la app no usa nodemailer dir
 Evidence: verificado con ambas versiones registrando un usuario real; el correo llega con su asunto
   y su enlace. Suite 193/193, las diez fases.
 PTSA reference: H-008 sigue CORREGIDA_PARCIAL (quedan 27, todos con salto mayor)
+
+## PT-117 — BUG TRIVIAL: el vendedor recibia el tipo de aviso del comprador (PTSA H-012)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-117-tipo-de-aviso-al-vendedor
+Root cause: no habia `AUCTION_SOLD` en el catalogo, asi que el aviso al vendedor reutilizaba
+  `AUCTION_WON`. El propio codigo lo declaraba en un comentario. El titulo distinguia los dos
+  casos, pero el TIPO no: un filtro por AUCTION_WON para «mis subastas ganadas» le enseñaria al
+  vendedor su propia venta como una victoria.
+Solution: AUCTION_SOLD al enum y una linea en el orquestador. La migracion se comprobo ADITIVA
+  antes de aplicarla (ALTER TYPE ... ADD VALUE, una sentencia, sin tocar filas): las 4
+  notificaciones existentes intactas antes y despues.
+Evidence: el contraste en los datos — 21:49 AUCTION_WON|vendedor (antes), 22:11
+  AUCTION_SOLD|vendedor (despues). 0 avisos AUCTION_WON sin pedido que los respalde.
+Nota: durante la verificacion reabri a ACTIVE una subasta que ya tenia pedido —lo hizo mi propio
+  script de validacion de la puja en vivo— y el cierre choco con la restriccion unica de
+  auction_id. Artefacto mio, no defecto.
+PTSA reference: H-012 -> CORREGIDA; P-007 -> VALIDADO
+
+## PTSA DS-008 — Niveles 2 y 3, y las primeras transiciones a VALIDADO
+Date: 2026-07-27
+Correccion de premisa: DS-006 y DS-007 declararon que «las rubricas no estan definidas en F-1».
+  ERA FALSO. F-1 §5 las declara, ya adaptadas a un sistema transaccional. Lo que faltaba no era
+  escribirlas: era ejecutarlas y pesarlas. Dos emisiones dieron por bloqueado algo que solo estaba
+  sin hacer.
+Resultado: rubric_compliance_score = 100 sobre once criterios; cross_coherence verificada en diez
+  parejas (una fallo -> H-012, corregida el mismo dia).
+Transiciones: 11 de 12 productos IDENTIFICADO -> VALIDADO, con VoBo humano. P-012 se queda por
+  H-005.
+Scores: Health 94.0 · Risk 40 · Confidence 94.2 · Clase A · 11 productos VALIDADOS.

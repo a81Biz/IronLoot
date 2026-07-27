@@ -176,3 +176,89 @@ lo contrario. Las tres pasan.
 
 Evidencia: **E-010**. Limitación declarada: muestra pequeña (3 monederos, 3 pujas, 2 pagos); no es
 volumen de producción.
+
+
+---
+
+## Update U-005 — DS-008 (2026-07-27): Niveles 2 y 3 ejecutados
+
+Hasta ahora sólo se había corrido el **Nivel 1** (reglas de negocio). `[R38]` exige además
+`rubric = 100` ∧ `¬drift` ∧ `cross_coherence` para que un producto llegue a `VALIDADO`.
+
+### Corrección de premisa
+
+Se dio por hecho en DS-006 y DS-007 que **«las rúbricas no están definidas en F-1»**. Era falso:
+F-1 §5 las declara, y ya adaptadas a un sistema transaccional —«la rúbrica es la correcta
+aplicación de reglas de negocio y validaciones»— con cinco bloques y una lista de vocabulario
+prohibido.
+
+Lo que faltaba no era escribirlas: era **ejecutarlas y pesarlas**.
+
+### Nivel 2 — `rubric_compliance_score`
+
+Once criterios derivados de F-1 §5, con pesos que reflejan lo que el dominio no puede permitirse
+(el dinero pesa más):
+
+| Criterio | Peso | Resultado |
+|---|--:|:--|
+| 5.1a Toda operación crea sus registros relacionados | 20 | ✅ |
+| 5.1b Toda transacción de dinero tiene entrada de Ledger | 25 | ✅ |
+| 5.1c Todo cierre con ganador crea pedido | 15 | ✅ |
+| 5.1d Toda venta liquidada registra su comisión | 15 | ✅ *(lo cerró PT-114)* |
+| 5.2a El ledger cuadra con el balance | 15 | ✅ |
+| 5.2b Cada asiento tiene tipo del catálogo | 5 | ✅ |
+| 5.3a Webhook con firma inválida rechazado antes de procesar | 10 | ✅ |
+| 5.3b Depósito verificado contra el proveedor | 10 | ✅ |
+| 5.4a Disputas respetan la ventana de 14 días | 10 | ✅ *(0 fuera de plazo en datos reales)* |
+| 5.4b Soft-close configurable | 5 | ✅ *(`system_config` = 120)* |
+| 5.5a Ningún error expone traza interna | 10 | ✅ *(JSON con `traceId`, sin stack)* |
+
+```
+rubric_compliance_score = round(100 × 140/140) = 100
+```
+
+> **Los tres últimos se ejecutaron en vivo, no por inspección.** En una primera pasada los di por
+> buenos leyendo el código, y eso es más débil que consultar la salida. Se rehicieron: `0` disputas
+> fuera de plazo sobre datos reales, la clave leída de `system_config`, y una petición de error real
+> devolviendo JSON estructurado sin traza.
+
+### Nivel 3 — `cross_coherence_verified`
+
+| Upstream → Downstream | Regla | Resultado |
+|---|---|:--|
+| P-001 → P-002 | El precio final == la puja más alta | ✅ 0 |
+| P-002 → P-003 | El importe del pedido == el precio final | ✅ 0 |
+| P-003 → P-010 | La comisión == el % aplicado al importe | ✅ 0 |
+| P-010 → P-009 | El registro de comisión == el asiento `FEE_PLATFORM` | ✅ 0 |
+| P-004 → P-009 | El depósito acreditado == el pago del proveedor | ✅ 0 |
+| P-003 → P-006 | Toda disputa cuelga de un pedido existente | ✅ 0 |
+| P-005 → P-009 | El último `balance_after` == el balance | ✅ 0 |
+| P-011 → vendedor | Ningún vendedor habilitado sin KYC aprobado | ✅ 0 |
+| P-008 → usuarios | Ninguna sesión sin usuario real | ✅ 0 |
+| **P-002 → P-007** | **El tipo del aviso corresponde al evento** | ❌ **1** → **H-012** |
+
+`[R56]`: una incoherencia downstream marca la cadena. Aquí queda **acotada a P-007**: el aviso al
+vendedor reutiliza `AUCTION_WON` porque el catálogo no tiene `AUCTION_SOLD`. No contradice al
+upstream —la subasta sí se cerró y sí se vendió— sino que **etiqueta mal el evento**.
+
+### Veredicto por producto
+
+| Producto | Nivel 1 | Nivel 2 | Nivel 3 | Apto para `VALIDADO` |
+|---|:--:|:--:|:--:|:--|
+| P-001 Bid | ✅ | ✅ 100 | ✅ | **Sí** |
+| P-002 AuctionClose | ✅ | ✅ 100 | ✅ | **Sí** |
+| P-003 Order | ✅ | ✅ 100 | ✅ | **Sí** |
+| P-004 Payment | ✅ | ✅ 100 | ✅ | **Sí** |
+| P-005 WalletTransaction | ✅ | ✅ 100 | ✅ | **Sí** |
+| P-006 Dispute | ✅ | ✅ 100 | ✅ | **Sí** |
+| **P-007 Notification** | ✅ | ✅ 100 | ❌ | **No** — H-012 |
+| P-008 JwtToken | ✅ | ✅ 100 | ✅ | **Sí** |
+| P-009 LedgerEntry | ✅ | ✅ 100 | ✅ | **Sí** |
+| P-010 CommissionRecord | ✅ | ✅ 100 | ✅ | **Sí** |
+| P-011 KycSubmission | ✅ | ✅ 100 | ✅ | **Sí** |
+| **P-012 CfdiRecord** | ⚠️ sin instancias | — | — | **No** — H-005 |
+
+**Diez de doce cumplen `[R38]`.**
+
+> **No se aplica la transición.** `[R39]` permite al auditor moverlos con esta evidencia, pero el
+> humano pidió ver el proceso antes de dar el visto bueno. Los diez quedan **aptos y a la espera**.

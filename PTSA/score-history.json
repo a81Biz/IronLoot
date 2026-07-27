@@ -377,6 +377,50 @@
         "cerrados": []
       },
       "nota": "Primera Clase A sin cap. Las anteriores fueron A por Health con Confidence insuficiente; esta lo es con cobertura del 92% y frescura FRESH."
+    },
+    {
+      "session": "DS-008",
+      "date": "2026-07-27",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 85,
+        "D2": 95,
+        "D3": 100,
+        "D4": 100,
+        "health": 94.0,
+        "risk": 40,
+        "confidence": 94.2
+      },
+      "classification": "A",
+      "classification_without_cap": "A",
+      "cap_reason": null,
+      "score_freshness": {
+        "last_verified": "2026-07-27",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "trigger": "Acid Test Niveles 2 y 3 + PT-117 + transiciones a VALIDADO con VoBo humano",
+      "findings_changes": {
+        "nuevos": [
+          "H-012 (D1, BAJA) — el aviso al vendedor reutilizaba el tipo del comprador"
+        ],
+        "revisados": [
+          "H-012 -> CORREGIDA por PT-117 el mismo dia que se detecto",
+          "11 de 12 productos: IDENTIFICADO -> VALIDADO [R38] con VoBo humano"
+        ],
+        "cerrados": []
+      },
+      "evidencias_nuevas": [
+        "E-015"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "IDENTIFICADO": 1,
+        "nota": "P-012 CfdiRecord sin instancias por H-005, bloqueado por decision de dominio"
+      },
+      "nota": "Primera sesion con productos en VALIDADO. rubric_compliance_score=100 sobre los once criterios de F-1 §5, ejecutados contra salida real."
     }
   ]
 }

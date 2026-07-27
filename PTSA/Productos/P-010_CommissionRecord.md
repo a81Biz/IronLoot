@@ -3,14 +3,14 @@ producto_id: P-010
 nombre: Commission Record — Registro de comisión
 clase: secundario
 criticidad: MEDIA
-estado: IDENTIFICADO
+estado: VALIDADO
 dimension_primaria: D1
 confidence: 100
 audit_due: 2026-08-26
 domain_validation:
   semantic_drift_detected: false
-  rubric_compliance_score: null
-  cross_coherence_verified: false
+  rubric_compliance_score: 100
+  cross_coherence_verified: true
 hallazgos_relacionados: [H-010]
 ---
 
@@ -88,3 +88,24 @@ registro: 95.00 MXN al 10.00%   ==   asiento: 95.00 MXN
 riesgo real: dos cifras distintas de la misma comisión habrían sido peor que ninguna.
 
 Sigue sin llegar a `VALIDADO` por el mismo motivo que los demás: la rúbrica no está definida en F-1.
+
+
+---
+
+## Transición a VALIDADO — DS-008 (2026-07-27)
+
+**`IDENTIFICADO` → `VALIDADO`** · VoBo humano recibido.
+
+`[R38]` exige `rubric = 100` ∧ `¬drift` ∧ `cross_coherence`. Los tres se cumplen:
+
+```
+rubric_compliance_score  = 100   (F-1 §5, once criterios pesados, ejecutados sobre salida real)
+semantic_drift_detected  = false (el producto ES el registro: no hay significado que derive)
+cross_coherence_verified = true
+```
+
+**Evidencia de este producto**: N1 post-fix observado en BD (PT-114); N3 con P-003 y P-009: 95.00 == 95.00
+
+`[R39]` prohíbe llegar aquí por inferencia. Toda la evidencia es **observada en la fuente real** —
+consultas contra `ironloot_db` con los productos que dejó una corrida completa de QA, incluidos dos
+pagos por pasarelas de verdad y una subasta que el cron cerró solo.

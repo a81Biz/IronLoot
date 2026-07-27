@@ -1,74 +1,47 @@
-# PLAN_ACTUAL — PT-115: la ventana de disputa se mide desde la entrega (H-011)
+# PLAN_ACTUAL — PT-117: el vendedor recibe su propio tipo de aviso (H-012)
 
-**Fecha**: 2026-07-27 · **Tipo**: BUG · **Complejidad**: STANDARD · **Estado**: STATE 2
-**Entrada**: `DISCOVERY.md` § PT-115 · PTSA H-011
+**Fecha**: 2026-07-27 · **Tipo**: BUG · **Complejidad**: TRIVIAL · **Estado**: STATE 2
+**Entrada**: `DISCOVERY.md` § PT-117 · PTSA H-012
 
 ---
 
 ## 1. Objetivo
 
-Que la ventana de 14 días se cuente desde la entrega, que es lo que `CR-007` declara y lo que el
-propio comentario del código promete.
+Que el tipo de notificacion identifique el evento, no el momento. Es lo unico que separa a P-007 de
+`VALIDADO`.
 
-**No hay ninguna decisión de dominio que tomar aquí.** La regla ya está escrita en F-1; lo que falta
-es que el código la cumpla. Es distinto de F-40, donde la regla no existía en ningún sitio.
+## 2. Solucion
 
-## 2. Solución propuesta
-
-### 2.1 El dato se lee donde está
-
-`orders` no tiene `delivered_at`. **`shipments` sí**, y se puebla: `shipments.service.ts:105-106`
-la escribe al marcar `DELIVERED`.
-
-El repositorio ya lo sabe en otro sitio — `ratings.service.ts:40` lee `order.shipment.status`.
-
-```ts
-const referenceDate: Date = order.shipment?.deliveredAt ?? order.updatedAt;
-```
-
-Y la consulta del pedido incluye el envío, que hoy no incluye.
-
-### 2.2 Los `as any` desaparecen
-
-Son la razón por la que esto compiló durante meses. Sin ellos, el compilador vuelve a proteger: un
-campo que no existe deja de ser `undefined` silencioso y pasa a ser un error.
-
-### 2.3 El respaldo se conserva, y se explica
-
-`shipment` es una relación **opcional** (`Shipment?`): un pedido puede estar `DELIVERED` sin envío
-registrado. En ese caso se sigue usando `updatedAt`.
-
-No es lo ideal, pero es honesto y es lo único disponible. Lo que cambia es que ahora **es un
-respaldo declarado**, no la única rama que se ejecuta.
+1. **`AUCTION_SOLD` al enum** `NotificationType`, en Prisma y en la BD.
+2. **`auction-scheduler.service.ts:204`** lo usa para el aviso al vendedor.
+3. El comentario del atajo desaparece: ya no hay atajo que explicar.
 
 ## 3. Alternativas consideradas
 
-| Alternativa | Por qué no |
+| Alternativa | Por que no |
 |---|---|
-| **Añadir `delivered_at` a `orders`** | Duplica un dato que ya existe en `shipments`, con dos sitios que pueden divergir. Es el mismo error que H-010 con la comisión |
-| **Exigir envío para disputar** | Cambia una regla de negocio que nadie ha pedido cambiar. Un pedido sin envío también puede tener problemas |
-| **Corregir el comentario y `CR-007`** para que digan «desde la última modificación» | Sería documentar el defecto en vez de arreglarlo. Y «14 días que se reinician solos» no es una promesa que se pueda hacer a un comprador |
-| **Dejarlo** | La ventana es una promesa al comprador y hoy es elástica sin que nadie lo sepa |
+| **Dejarlo y documentarlo** | Es lo que habia. El comentario ya lo documentaba, y aun asi el invariante de P-007 no se cumplia |
+| **Distinguir por `entityType` o por el titulo** | El titulo ya distingue; el problema es que el **tipo** no. Un filtro por tipo seguiria mintiendo |
+| **Renombrar `AUCTION_WON` a algo neutro** | Rompe a todos los consumidores existentes para arreglar un caso |
 
-## 4. Análisis de regresión
+## 4. Analisis de regresion
 
-| Qué | Riesgo | Cómo se comprueba |
+| Que | Riesgo | Como se comprueba |
 |---|---|---|
-| **Disputas que hoy se aceptan y dejarían de aceptarse** | **Alto y real**: un pedido entregado hace 20 días pero modificado ayer hoy admite disputa; después, no. Es el defecto, pero es un cambio de comportamiento visible | Tests con ambos casos, y queda dicho en el commit |
-| Pedidos sin envío | Que el `?.` no cubra bien el caso | Test explícito |
-| La consulta del pedido | Incluir el envío cambia la forma del objeto | Suite del API |
-| Las disputas existentes | Ninguna: sólo cambia la validación al crear | Fase `e2e` |
+| **La migracion del enum** | `ALTER TYPE … ADD VALUE` **no corre dentro de una transaccion** en PostgreSQL. Si se envuelve, falla | Se aplica suelto con `psql` y se verifica el `enum_range` |
+| Las notificaciones existentes | Ninguna: anadir un valor no toca las filas | `SELECT` sobre `notifications` antes y despues |
+| Los consumidores del tipo | Que alguien espere solo los siete valores viejos | `grep` sobre `AUCTION_WON` en los tres sitios |
+| El cierre de subasta | Es la ruta del dinero | Cerrar una subasta real y mirar la BD |
 
-## 5. Criterios de éxito
+## 5. Criterios de exito
 
-1. Con envío entregado hace 20 días → **rechaza**, aunque el pedido se haya tocado hoy.
-2. Con envío entregado hace 2 días → **acepta**, aunque el pedido lleve meses sin tocarse.
-3. Sin envío → sigue usando `updatedAt`, y hay un test que lo fija.
-4. **Cero `as any`** en esa expresión.
-5. `npm test` y suite completa en verde.
+1. `AUCTION_SOLD` existe en el enum de la BD y en Prisma.
+2. Tras cerrar una subasta: el comprador recibe `AUCTION_WON`, el vendedor `AUCTION_SOLD`.
+3. **Cero** notificaciones `AUCTION_WON` cuyo destinatario no tenga pedido.
+4. `npm test` y suite en verde.
 
 ## 6. Restricciones
 
-- Tests en RED antes (RULE-06).
-- No se añade `delivered_at` a `orders`: el dato ya existe.
-- H-011 **no se cierra**: lo cierra el humano.
+- Test en RED antes (RULE-06).
+- El SQL se comprueba **aditivo** antes de aplicarlo.
+- H-012 **no se cierra**: lo cierra el humano.

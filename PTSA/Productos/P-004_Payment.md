@@ -3,14 +3,14 @@ producto_id: P-004
 nombre: Payment — Pago procesado
 clase: primario
 criticidad: CRITICA
-estado: IDENTIFICADO
+estado: VALIDADO
 dimension_primaria: D1
 confidence: 100
 audit_due: 2026-08-26
 domain_validation:
   semantic_drift_detected: false
-  rubric_compliance_score: null
-  cross_coherence_verified: false
+  rubric_compliance_score: 100
+  cross_coherence_verified: true
 hallazgos_relacionados: []
 ---
 
@@ -74,3 +74,24 @@ genera.
 > no es calculable todavía. Declararlo `VALIDADO` sería inventarse el número.
 >
 > Definir las rúbricas es trabajo de F12 (Gobernanza de Dominio) y queda en `PENDIENTES.md`.
+
+
+---
+
+## Transición a VALIDADO — DS-008 (2026-07-27)
+
+**`IDENTIFICADO` → `VALIDADO`** · VoBo humano recibido.
+
+`[R38]` exige `rubric = 100` ∧ `¬drift` ∧ `cross_coherence`. Los tres se cumplen:
+
+```
+rubric_compliance_score  = 100   (F-1 §5, once criterios pesados, ejecutados sobre salida real)
+semantic_drift_detected  = false (el producto ES el registro: no hay significado que derive)
+cross_coherence_verified = true
+```
+
+**Evidencia de este producto**: N1 con dos pasarelas reales; N3 con P-009 (deposito == pago del proveedor)
+
+`[R39]` prohíbe llegar aquí por inferencia. Toda la evidencia es **observada en la fuente real** —
+consultas contra `ironloot_db` con los productos que dejó una corrida completa de QA, incluidos dos
+pagos por pasarelas de verdad y una subasta que el cron cerró solo.

@@ -227,3 +227,63 @@ FRESH: el número alto viene de haber mirado.
 
 **Lo único que separa al sistema de la certificación plena**: ningún producto llega a `VALIDADO`
 porque las rúbricas no están definidas en F-1. Es trabajo de F12.
+
+---
+
+## DS-008 — Niveles 2 y 3, y las primeras transiciones a VALIDADO (2026-07-27)
+
+**Disparador**: el humano pidió ver la validación en navegador antes de dar el visto bueno.
+
+### Corrección de premisa
+
+DS-006 y DS-007 declararon que **«las rúbricas no están definidas en F-1»**. Era **falso**. F-1 §5
+las declara, y ya adaptadas a un sistema transaccional: *«la rúbrica es la correcta aplicación de
+reglas de negocio y validaciones»*, con cinco bloques y vocabulario prohibido.
+
+Lo que faltaba no era escribirlas: era **ejecutarlas y pesarlas**. Dos emisiones dieron por
+bloqueado algo que sólo estaba sin hacer.
+
+### Nivel 2 — `rubric_compliance_score = 100`
+
+Once criterios derivados de F-1 §5, con pesos según lo que el dominio no puede permitirse.
+**Los once cumplen** sobre salida real.
+
+Tres se habían dado por buenos leyendo código; se rehicieron en vivo: `0` disputas fuera de plazo
+en datos reales, la clave leída de `system_config`, y una petición de error devolviendo JSON con
+`traceId` y **sin traza interna**.
+
+### Nivel 3 — `cross_coherence_verified`
+
+Diez parejas upstream→downstream. **Nueve limpias, una falló** → **H-012**: el aviso al vendedor
+reutilizaba `AUCTION_WON` porque el catálogo no tenía `AUCTION_SOLD`.
+
+**Corregido el mismo día** (PT-117), con migración comprobada aditiva.
+
+### Validación en navegador
+
+El informe financiero del panel —el consumidor que H-010 dejaba ciego— muestra ahora:
+
+```
+$458.9 Ventas totales · $95 Comisiones · $363.9 Ingreso neto
+```
+
+6/6 en el recorrido, cero violaciones de CSP.
+
+### Transiciones
+
+**Once de doce productos: `IDENTIFICADO` → `VALIDADO`**, con VoBo humano.
+
+P-012 se queda en `IDENTIFICADO`: sin instancias, bloqueado por H-005.
+
+### Scores
+
+| | DS-007 | **DS-008** |
+|---|--:|--:|
+| Health | 94.0 | **94.0** |
+| Risk | 40 | **40** |
+| Confidence | 93.9 | **94.2** |
+| Clase | A | **A** |
+| Productos VALIDADO | 0 | **11** |
+
+Los scores apenas se mueven porque no había nada roto que arreglar: lo que cambia es **qué se sabe
+del sistema**. Es la primera sesión con productos en `VALIDADO` desde que existe la auditoría.
