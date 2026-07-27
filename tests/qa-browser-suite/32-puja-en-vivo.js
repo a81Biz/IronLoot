@@ -5,7 +5,7 @@
 // comprobaba que el segundo navegador se enterase. Ese era el hueco por el que se coló F-34.
 const fs = require('fs');
 const path = require('path');
-const L = require('./lib.cjs');
+const L = require('./lib.js');
 const cfg = L.cfg;
 const OUT = fs.readFileSync(path.join(cfg.OUT_ROOT, '.last-run'), 'utf8').trim();
 const actors = JSON.parse(fs.readFileSync(path.join(OUT, '.actors.json'), 'utf8'));

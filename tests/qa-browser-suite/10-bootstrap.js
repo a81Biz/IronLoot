@@ -2,7 +2,7 @@
 // subasta activa y fondos. Headed. Cada paso es caso de prueba QA-BOOT-NN.
 const fs = require('fs');
 const path = require('path');
-const L = require('./lib.cjs');
+const L = require('./lib.js');
 const cfg = L.cfg;
 
 const OUT = process.argv[2] || fs.readFileSync(path.join(cfg.OUT_ROOT, '.last-run'), 'utf8').trim();

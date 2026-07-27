@@ -1,7 +1,7 @@
 // Fase 6 (escritura) — acciones admin representativas con verificación en BD.
 const fs = require('fs');
 const path = require('path');
-const L = require('./lib.cjs');
+const L = require('./lib.js');
 const cfg = L.cfg;
 const OUT = fs.readFileSync(path.join(cfg.OUT_ROOT, '.last-run'), 'utf8').trim();
 const DIR = L.ensureDir(path.join(OUT, '50-admin-writes'));

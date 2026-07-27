@@ -8,7 +8,7 @@
 // sistema tuviera forma de enterarse. La via garantizada impide que vuelva a pasar de ahora en
 // adelante; esto sirve para lo que ya ocurrio.
 //
-// Uso: node reconcile-report.cjs [dias-atras]
+// Uso: node reconcile-report.js [dias-atras]
 
 const fs = require('fs');
 const { execSync } = require('child_process');

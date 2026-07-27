@@ -12,9 +12,9 @@ const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
-const L = require('./lib.cjs');
+const L = require('./lib.js');
 const cfg = L.cfg;
-const { createOrder, esperarOrden } = require('./mp-orders.cjs');
+const { createOrder, esperarOrden } = require('./mp-orders.js');
 
 const OUT = process.argv[2] || fs.readFileSync(path.join(cfg.OUT_ROOT, '.last-run'), 'utf8').trim();
 const actors = JSON.parse(fs.readFileSync(path.join(OUT, '.actors.json'), 'utf8'));
