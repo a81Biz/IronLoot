@@ -7,6 +7,7 @@ import {
   Request,
   Query,
   ParseIntPipe,
+  Param,
   BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -16,6 +17,7 @@ import { DepositDto, WithdrawDto, WalletBalanceDto, TransactionHistoryDto } from
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WalletService } from './wallet.service';
 import { WithdrawalsService } from './withdrawals.service';
+import { AccountVerificationService } from './account-verification.service';
 import { PrismaService } from '../../database/prisma.service';
 import {
   Log,
@@ -41,6 +43,7 @@ export class WalletController {
     private readonly prisma: PrismaService,
     private readonly paymentsService: PaymentsService,
     private readonly withdrawalsService: WithdrawalsService,
+    private readonly accountVerification: AccountVerificationService,
   ) {}
 
   // ... (existing methods)
@@ -127,6 +130,64 @@ export class WalletController {
   @ApiOperation({ summary: 'List my registered payment methods' })
   async listPaymentMethods(@Request() req: AuthenticatedRequest) {
     return this.paymentsService.listPaymentMethods(req.user.id);
+  }
+
+  // PT-092 — Cuenta de PayPal como destino. Solo se admite UNA por vendedor.
+  @Post('payment-methods/paypal')
+  @ApiOperation({ summary: 'Registrar una cuenta de PayPal como destino de cobro' })
+  @ApiResponse({ status: 201, description: 'Cuenta registrada, sin verificar todavia' })
+  @ApiResponse({ status: 400, description: 'Correo invalido o ya hay un PayPal registrado' })
+  async addPaypalMethod(
+    @Request() req: AuthenticatedRequest,
+    @Body() dto: { paypalEmail: string; alias?: string },
+  ) {
+    return this.paymentsService.addPaypalAccount(req.user.id, dto);
+  }
+
+  /**
+   * PT-092 — Abre la verificacion de una cuenta.
+   *
+   * Genera el codigo que viajara con el movimiento de dinero. **La respuesta NO lo incluye**:
+   * si lo devolviera aqui, quien pide la verificacion sabria el codigo sin haber accedido nunca
+   * a la cuenta, y la verificacion no probaria nada.
+   */
+  @Post('payment-methods/:id/verify')
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+  @ApiOperation({ summary: 'Iniciar la verificacion de una cuenta de cobro' })
+  @ApiResponse({ status: 201, description: 'Verificacion abierta' })
+  @ApiResponse({ status: 400, description: 'Saldo insuficiente o cuenta ya verificada' })
+  @ApiResponse({ status: 404, description: 'No existe o no es del usuario' })
+  async startVerification(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
+    const v = await this.accountVerification.start(req.user.id, id);
+    return {
+      id: v.id,
+      status: v.status,
+      amount: v.amount,
+      currency: v.currency,
+      expiresAt: v.expiresAt,
+      // Deliberadamente sin `token`.
+      instructions:
+        'Te enviaremos este importe con un codigo de 6 caracteres como referencia. ' +
+        'Busca el codigo en tu cuenta y confirmalo aqui.',
+    };
+  }
+
+  /**
+   * PT-092 — El vendedor declara el codigo que vio en su cuenta.
+   *
+   * Limitado por `Throttle` ademas de por los 5 intentos del servicio: el limite de intentos
+   * protege la cuenta concreta; el throttle, la fuerza bruta distribuida.
+   */
+  @Post('payment-methods/:id/verify/confirm')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Confirmar el codigo de verificacion' })
+  @ApiResponse({ status: 201, description: 'Resultado de la comprobacion' })
+  async confirmVerification(
+    @Request() req: AuthenticatedRequest,
+    @Param('id') id: string,
+    @Body() dto: { token: string },
+  ) {
+    return this.accountVerification.confirm(req.user.id, id, dto?.token ?? '');
   }
 
   // PT-072 — Solicitud de retiro (reemplaza el retiro inmediato: ahora requiere aprobación admin).
