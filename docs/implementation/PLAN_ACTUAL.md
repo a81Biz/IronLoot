@@ -1,77 +1,79 @@
-# PLAN_ACTUAL — PT-118: el checkpoint D2 de dependencias
+# PLAN_ACTUAL — PT-120: Domain Rules as Code (checkpoint D1.N1)
 
 **Fecha**: 2026-07-27 · **Tipo**: FEATURE · **Complejidad**: STANDARD · **Estado**: STATE 2
-**Entrada**: `DISCOVERY.md` § PT-118 · PTSA H-008 · `audit-scope.yaml`
+**Entrada**: `DISCOVERY.md` § PT-120 · `[R57]` · `audit-scope.yaml`
 
 ---
 
 ## 1. Objetivo
 
-Que una vulnerabilidad **nueva** en dependencias de producción rompa el CI el día que aparece, no
-treinta y cuatro días después.
+Que las reglas de dominio de F-1 se puedan **volver a verificar sin reescribir el guion**.
+
+Hoy se han verificado tres veces —DS-004, DS-006, DS-008— con guiones que viven en una carpeta
+temporal y se pierden. Cada delta sync rehace el mismo trabajo, y el próximo también.
 
 ## 2. Solución propuesta
 
-### 2.1 Línea base versionada
+### 2.1 Un catálogo, no un script
 
-Un fichero `src/api/security-baseline.json` con los avisos **ya triados**: paquete, severidad, y por
-qué siguen ahí. Vive en el repositorio, con fecha.
+Las reglas se declaran como **datos**: identificador, enunciado, peso, y la consulta que las decide.
 
-```json
-{
-  "generado": "2026-07-27",
-  "motivo": "TD-015 — exigen saltos de version mayor sobre Express o @nestjs/core",
-  "avisos": { "tar": "critical", "glob": "high", … }
-}
+```
+{ id: 'CR-001', enunciado: '…', peso: 20, sql: '…', esperado: '0' }
 ```
 
-### 2.2 El script compara, no cuenta
+Añadir una regla es añadir una entrada, no tocar el motor. Es lo que permite que F12 amplíe el
+catálogo sin que nadie reescriba nada.
 
-`npm audit --omit=dev --json` → se comparan **paquete y severidad** contra la línea base:
+### 2.2 El motor separa «no cumple» de «no hay datos»
 
-| Situación | Resultado |
-|---|---|
-| Paquete nuevo con aviso | **Falla**, y lo nombra |
-| Paquete de la base que sube de severidad | **Falla** |
-| Paquete de la base igual | Pasa |
-| Paquete de la base que desaparece | Pasa, y sugiere reducir la base |
+Tres veredictos, no dos: `CUMPLE`, `VIOLADA`, `SIN_DATOS`.
 
-Contar avisos no sirve: 27 hoy y 27 mañana puede significar que uno se arregló y entró otro.
+Un catálogo que devuelve «cumple» sobre una base vacía es peor que no tenerlo — es la misma familia
+que un `catch` mudo. Si no hay productos que evaluar, hay que decirlo.
 
-### 2.3 Un paso en el CI
+### 2.3 El score se calcula
 
-Job propio en `ci.yml`, después de `lint`. Y un script `npm run audit:check` para poder correrlo a
-mano — un control que sólo existe en el CI no se usa mientras se programa.
+`rubric_compliance_score = round(100 × Σpeso(cumplidas) / Σpeso(aplicables))`, con las `SIN_DATOS`
+**fuera del denominador**: no se puede puntuar lo que no se ha podido mirar.
+
+En DS-008 ese número lo calculé a mano. Un número de auditoría transcrito a mano es un número que
+nadie puede reproducir.
+
+### 2.4 Nivel 3 aparte
+
+La coherencia inter-producto va en el mismo comando pero en su propio bloque, y **no entra en el
+score de rúbrica**: son dos métricas distintas de `[R38]` y mezclarlas las hace ilegibles.
 
 ## 3. Alternativas consideradas
 
 | Alternativa | Por qué no |
 |---|---|
-| **`npm audit --audit-level=high` a secas** | Fallaría desde el primer día por las 27 ya triadas. Quedaría rojo permanente y alguien lo desactivaría — que es exactamente cómo muere un control |
-| **Umbral numérico** («no más de 27») | 27 hoy y 27 mañana puede ser un arreglo y una entrada nueva. Mide la cifra, no el riesgo |
-| **`npm audit fix` automático en CI** | Cambiar dependencias sin que nadie lo mire, en un servidor de pagos |
-| **Un servicio externo** (Snyk, Dependabot) | Mejor a largo plazo, pero exige cuenta y configuración fuera del repositorio. Esto funciona hoy y sin dependencias |
+| **Tests de Jest** | Se ejecutan contra la BD de desarrollo y son lentos de leer como informe. Además, un fallo de dominio no es un fallo de test: es un hallazgo, y quiere salida legible |
+| **Dejarlo como guiones sueltos** | Es lo que hay, y es lo que ha hecho repetir el trabajo tres veces |
+| **Reglas embebidas en el motor** | Añadir una regla obligaría a tocar código; F12 amplía el catálogo, y debe poder hacerlo sin eso |
+| **Un servicio o dashboard** | Desproporcionado. Un comando que se puede correr y pegar en una evidencia basta |
 
 ## 4. Análisis de regresión
 
 | Qué | Riesgo | Cómo se comprueba |
 |---|---|---|
-| **El CI se pone rojo de golpe** | Si la línea base no cubre las 27, el primer commit falla | Se genera **de** la salida real y se prueba en verde antes de commitear |
-| Que la base se quede obsoleta | Un aviso arreglado sigue listado y nadie lo quita | El script lo dice cuando sobra |
-| Ruido tras un `npm install` | Que el árbol cambie y aparezcan avisos transitivos nuevos | Es el comportamiento deseado: **eso es exactamente lo que debe avisar** |
-| Tiempo del CI | Que se alargue | `npm audit` sobre el árbol ya instalado: segundos |
+| **Que el catálogo mienta** | Una consulta mal escrita da verde sobre un sistema roto | Cada regla lleva un **caso de control**: se inyecta la violación y debe fallar |
+| Falsos positivos | Una regla demasiado estricta acaba con el checkpoint desactivado | Se derivan de F-1, no se inventan |
+| BD vacía | Que diga «cumple» | `SIN_DATOS` explícito y fuera del denominador |
+| El resto del sistema | Ninguno: sólo lee | — |
 
 ## 5. Criterios de éxito
 
-1. Con el estado actual (27 avisos, todos en base) → **pasa**.
-2. Con un aviso inventado fuera de base → **falla, nombrándolo**.
-3. Con un aviso de base subido de severidad → **falla**.
-4. `npm run audit:check` corre en local.
-5. El job aparece en `ci.yml`.
-6. El mensaje se entiende **sin abrir el JSON**.
+1. `npm run audit:domain` ejecuta el catálogo y calcula el score.
+2. Con la BD actual: mismo resultado que DS-008 (`rubric = 100`), **reproducido, no transcrito**.
+3. Con una violación inyectada: **falla nombrando la regla**.
+4. Con BD vacía: `SIN_DATOS`, no `CUMPLE`.
+5. Añadir una regla no toca el motor.
+6. Código de salida ≠ 0 si hay violación — comprobado **sin tubería** (la lección de PT-118).
 
 ## 6. Restricciones
 
 - Tests en RED antes (RULE-06).
-- La línea base se genera **de la salida real**, no a mano.
-- No se arregla ninguna de las 27: eso es PT-119.
+- Las reglas se derivan de F-1: no se inventan ni se relajan.
+- El score se **calcula**; ninguna cifra de auditoría se transcribe a mano.

@@ -1431,3 +1431,50 @@ Lo que NO se hizo: los 12 restantes exigen saltos mayores de verdad (@nestjs/cor
   4->5, bcrypt 5->6, uuid 13->14 y cinco utilidades transitivas). Es una migracion de plataforma y
   merece su propia decision. Desde PT-118 estan ACOTADOS: el CI falla si aparece el numero 13.
 PTSA reference: TD-015 / H-008
+
+## PT-120 — FEATURE: Domain Rules as Code (checkpoint D1.N1)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: feature/PT-120-domain-rules-as-code
+Root cause: `[R57]` exige que toda regla objetiva sea un test ejecutable, y audit-scope.yaml lo
+  declaraba desde el 23-jun. Lo incomodo: las reglas YA se habian verificado tres veces (DS-004,
+  DS-006, DS-008) con guiones que escribi en una carpeta temporal y perdi. Cada delta sync rehacia
+  el trabajo y el score se transcribia a mano.
+Solution: 14 reglas de F-1 §4 y §5 como DATOS, no codigo. Tres decisiones: SIN_DATOS es un veredicto
+  propio y queda FUERA del denominador; todas sin datos -> rubric null, nunca 100; el Nivel 3 va
+  aparte y no entra en el score. CR-007 y CR-008 no entran: su entrada es la peticion, no el
+  producto ([R57] dice que lo que exige juicio no se fuerza a codigo).
+Evidence: reproduce DS-008 (rubric 100, coherencia true) y ademas dice lo que mi calculo a mano no
+  decia: dos reglas SIN DATOS. Con un balance negativo inyectado, 3 reglas violadas en cascada,
+  rubric 69, codigo 1.
+
+## PT-121 — FEATURE: el checkpoint D3 de observabilidad
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: feature/PT-121-checkpoint-observabilidad
+Objective: `silent_failure_count` y `trace_completeness`, declarados desde el 23-jun sin existir.
+Por que esta metrica: en una sesion aparecieron CINCO fallos silenciosos -F-34, F-39, H-010, H-011,
+  H-012- y ninguno lo encontro un test. Todos de la misma familia: el codigo anuncia una cosa y
+  hace otra, sin ruido.
+Solution: 25 catch que no registran ni relanzan, en linea base. OCHO estan en el JavaScript de
+  navegador —donde vivia F-34— y es el ambito que nada miraba: un barrido solo sobre .ts habria
+  dado 17 y habria dejado fuera el caso que origino todo.
+La decision que mas pense: EL COMENTARIO NO CUENTA COMO RASTRO. Casi los 25 llevan explicacion y son
+  deliberados, pero el catch de F-34 tambien tenia comentario. CM-04 lo reproduce literal.
+Evidence: estado real OK codigo 0; con un silencio inyectado lo nombra con fichero y linea, codigo 1.
+  trace_completeness = 100% sobre ciclos reales.
+
+## PT-122 — FEATURE: las metricas D5 de fiabilidad operacional
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: feature/PT-122-fiabilidad-operacional
+Correccion de alcance: D5 SALE de ci_checkpoints. Success y Retry Rate se calculan sobre historia de
+  ejecucion, y en CI la base nace vacia: el checkpoint devolveria SIN_DATOS siempre y alguien
+  acabaria leyendolo como verde. Es una clasificacion equivocada, no algo pendiente.
+Error mio cazado antes de commitear: la primera version daba Retry Rate 75% ROJO y
+  health_unstable=true, que habria capado la clase del sistema a B. El denominador incluia ciclos
+  ABIERTOS —3 de 4 en REQUESTED, nunca pagados, con la via garantizada sondeandolos—. Un ciclo que
+  aun no ha terminado no necesito un reintento: esta esperando. Con el denominador correcto la tasa
+  es 0% verde. Un numero de auditoria equivocado no es inocuo: decide.
+Evidence: Success 100% VERDE · Retry 0% VERDE · Failure 0% VERDE · health_unstable false.
+  FO-01..FO-10 fijan los bordes exactos de los umbrales de F-1 §6.

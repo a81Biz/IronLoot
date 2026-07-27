@@ -3203,3 +3203,238 @@ vigila, y por eso durante cinco semanas la auditoria emitio D2 = 99.
 Architecture Confidence: 100% — el CI existe y su forma esta leida.
 Implementation Confidence: 90% — el 10% es acertar con el formato de la linea base para que
 sobreviva a un `npm install` sin volverse ruido.
+
+
+---
+
+## PT-120 — FEATURE: Domain Rules as Code (checkpoint D1.N1)
+
+**Fecha**: 2026-07-27 · **Complejidad**: STANDARD · **Estado**: STATE 1-E
+**Origen**: `audit-scope.yaml` declara `ci_checkpoints: [… "D1.N1"]` desde el 23-jun. No existe.
+
+### Que
+
+`[R57]` de la especificacion es explicito:
+
+> Toda regla de dominio **objetiva y repetible** identificada en F-1/F12 **DEBE** transformarse en
+> un test ejecutable (Domain Rules as Code) para reducir subjetividad y permitir su verificacion
+> automatica en cada Delta Sync y en CI.
+
+F-1 declara **quince reglas `CR-001…CR-015`** y una rubrica de cinco bloques. Ninguna es codigo.
+
+### Lo incomodo: yo ya las escribi, y las tire
+
+Durante DS-004, DS-006 y DS-008 escribi tres guiones que ejecutan justo esas reglas contra la
+salida real —`acid-test.py`, `acid2.py`, `nivel2y3.py`—. **Viven en una carpeta temporal.**
+
+O sea: las reglas se han verificado tres veces y **no se pueden volver a verificar sin reescribir
+el guion**. Cada delta sync ha rehecho el mismo trabajo, y el proximo tambien.
+
+Eso es exactamente lo que `[R57]` viene a impedir, y es peor que no haberlas escrito nunca: da la
+impresion de que estan cubiertas.
+
+### Criterio de elegibilidad, aplicado
+
+La especificacion dice que una regla es candidata a codigo si **(a)** es determinista, **(b)** su
+entrada es extraible del producto y **(c)** su veredicto es binario o numerico.
+
+De las quince `CR`, se comprobo cuales cumplen las tres:
+
+| Cumple las tres | No las cumple |
+|---|---|
+| CR-001, CR-002, CR-003, CR-004, CR-005, CR-006, CR-010, CR-014, CR-015 — se leen de la BD | CR-008 (firma HMAC): su entrada no es el producto, es la peticion |
+| CR-009, CR-011, CR-012, CR-013 — se leen de configuracion o comportamiento | CR-007 (ventana de disputa): binaria, pero exige provocar un rechazo |
+
+Las que no encajan **no se fuerzan**: la especificacion dice que las reglas que exigen juicio
+«permanecen como evaluacion reproducible documentada, no como codigo». Forzarlas seria inventar un
+veredicto.
+
+### Criterios de aceptacion
+
+1. Un comando —`npm run audit:domain`— ejecuta las reglas elegibles contra la BD.
+2. Cada regla dice **su identificador, su veredicto y lo observado**, no solo si paso.
+3. `rubric_compliance_score` se **calcula**, no se transcribe a mano.
+4. Falla con codigo distinto de cero si alguna regla se viola.
+5. **Sin datos, no miente**: dice `SIN_DATOS`, que no es lo mismo que `CUMPLE`.
+
+### Escenarios
+
+| Caso | Esperado |
+|---|---|
+| BD con productos reales y todo correcto | Pasa, `rubric = 100` |
+| Un monedero con balance negativo | **Falla**, nombrando CR-001 y el monedero |
+| BD vacia | `SIN_DATOS` por regla, **no** «cumple» |
+| Una regla nueva anadida al catalogo | Aparece en la salida sin tocar el runner |
+
+### NFR
+
+- Corre en **segundos**: son consultas.
+- **Sin dependencias nuevas**: usa lo que ya hay.
+- La salida debe poder pegarse en una evidencia PTSA sin reformatear.
+
+### Fuera de alcance
+
+- Las reglas no elegibles (CR-007, CR-008): quedan documentadas como evaluacion reproducible.
+- El Nivel 3 (coherencia inter-producto): **es otra cosa** y va en su propio sitio dentro del mismo
+  comando, pero no se mezcla con el score de rubrica.
+
+### Confianza
+
+Implementation Confidence: 95% — las consultas ya estan escritas y ejecutadas tres veces; lo que
+falta es darles un hogar.
+
+
+---
+
+## PT-121 — FEATURE: el checkpoint D3 de observabilidad
+
+**Fecha**: 2026-07-27 · **Complejidad**: STANDARD · **Estado**: STATE 1-E
+**Origen**: `audit-scope.yaml` declara `ci_checkpoints: [… D3 …]` desde el 23-jun. No existe.
+
+### Que mide D3, segun la especificacion
+
+| Metrica | Definicion |
+|---|---|
+| `trace_completeness` | % de productos con cadena de trazabilidad F4 completa |
+| `silent_failure_count` | **Fallos que no dejan rastro en logs** |
+| `fallback_quality` | Calidad garantizada por los fallbacks |
+| `prompt_provenance` | `NO_APLICA` — sistema determinista, sin LLM |
+
+### La metrica que esta sesion ha ganado el derecho a medir
+
+`silent_failure_count`. En esta sesion han aparecido **cinco fallos silenciosos**, y ninguno lo
+encontro un test:
+
+| | |
+|---|---|
+| **F-34** | Un `catch` rotulado «live feed is optional» apago la puja en vivo durante dias, con 168/168 en verde |
+| **F-39** | «Sesiones en Redis» anunciado mientras cada escritura fallaba con `ERR syntax error` |
+| **H-010** | Una funcion probada que nadie invocaba: la comision se cobraba sin registrarse |
+| **H-011** | Dos `as any` sobre un campo inexistente: la ventana de disputa medida desde otro sitio |
+| **H-012** | Un tipo de aviso reutilizado, declarado en un comentario |
+
+Todos de la misma familia: **el codigo anuncia una cosa y hace otra, sin ruido**.
+
+### Lo medido hoy
+
+**25 bloques `catch` que no registran ni relanzan**, repartidos asi:
+
+| Ambito | Cuantos |
+|---|--:|
+| API (`src/api/src`) | 8 |
+| SSR (base, client, admin) | 8 |
+| Core | 1 |
+| **JavaScript de navegador** (`public/js`) | **8** |
+
+Los ocho del navegador importan especialmente: **es donde vivia F-34**, y es el ambito que ninguna
+herramienta de este repositorio miraba.
+
+### El comentario NO basta
+
+Casi todos llevan una explicacion —«Audit failure must never break the action», «Ignore if funds
+weren't held»— y son decisiones deliberadas.
+
+Pero **F-34 tambien tenia comentario**: `/* live feed is optional; the page still works without it */`.
+Un comentario dice que alguien penso en ello; no dice que siga siendo cierto.
+
+Por eso la metrica **no juzga cuales son aceptables**: los pone en linea base, como hizo PT-118 con
+las dependencias, y **falla cuando aparece el numero 26**.
+
+### Criterios de aceptacion
+
+1. `npm run audit:observability` cuenta los `catch` mudos y los compara con una linea base.
+2. Cubre el **JavaScript de navegador**, no solo TypeScript.
+3. Mide `trace_completeness` sobre los ciclos de pago reales.
+4. Falla con codigo != 0 si aparece uno nuevo.
+5. `SIN_DATOS` cuando no hay ciclos que evaluar — no «100%».
+
+### Fuera de alcance
+
+- **Arreglar los 25**: son decisiones tomadas, muchas correctas. Este PT hace que el 26 se vea.
+- `fallback_quality`: exige juicio sobre cada fallback. Queda como evaluacion documentada, que es
+  lo que `[R57]` prescribe para lo no automatizable.
+
+### Confianza
+
+Implementation Confidence: 90% — el barrido esta hecho y medido; el 10% es afinar el patron para
+que no cuente un `catch` que si informa al usuario aunque no escriba en el log.
+
+
+---
+
+## PT-122 — FEATURE: las metricas D5 de fiabilidad operacional
+
+**Fecha**: 2026-07-27 · **Complejidad**: STANDARD · **Estado**: STATE 1-E
+**Origen**: `audit-scope.yaml` declara `ci_checkpoints: [… D5 …]` desde el 23-jun. No existe.
+
+### Que mide D5
+
+| Metrica | Definicion | Umbral (F-1 §6) |
+|---|---|---|
+| `Success Rate` | % de transformaciones que producen un producto valido **al primer intento** | verde ≥95%, ambar 85–95%, rojo <85% |
+| `Retry Rate` | % que requirieron ≥1 reintento | verde ≤10%, ambar 10–25%, rojo >25% |
+| `Failure Rate` | % que fallaron definitivamente | — |
+| `Hallucination Rate` | | **NO_APLICA** — sistema determinista |
+| `Output Drift` | | **NO_APLICA** |
+
+### Una correccion al propio alcance
+
+**D5 no puede correr en CI, y ponerlo alli mide cero.**
+
+`Success Rate` y `Retry Rate` se calculan sobre **historia de ejecucion real**: cuantos ciclos de
+pago se resolvieron a la primera y cuantos necesitaron sondeo. En CI no hay historia — la base nace
+vacia en cada corrida. Un checkpoint de D5 en el pipeline devolveria `SIN_DATOS` siempre, y con el
+tiempo alguien lo leeria como «verde».
+
+`audit-scope.yaml` lo lista bajo `ci_checkpoints` desde el 23-jun. **Es una clasificacion
+equivocada**, no una implementacion pendiente: D5 es una metrica de **delta sync**, que se toma
+contra un entorno con historia.
+
+Se corrige el alcance en vez de fabricar un checkpoint que no mediria nada.
+
+### De donde sale la señal, medido
+
+BullMQ tiene las colas (`bull:notification-jobs`, `bull:webhook-retry`) pero **sus contadores estan
+a cero**: los trabajos se limpian al completarse. No sirven.
+
+Lo que si tiene señal es el **ciclo de pago**, que es la transformacion principal del sistema:
+
+```
+payment_cycles        SETTLED 1 · REQUESTED 3
+POLL_ATTEMPT          3 ciclos necesitaron sondeo
+error_events          10
+```
+
+| Metrica | Como se deriva |
+|---|---|
+| `Success Rate` | ciclos resueltos **sin** `POLL_ATTEMPT` / ciclos resueltos |
+| `Retry Rate` | ciclos con ≥1 `POLL_ATTEMPT` / ciclos totales |
+| `Failure Rate` | ciclos `EXPIRED` o `FAILED` / ciclos totales |
+
+### El matiz que hay que declarar
+
+Un `POLL_ATTEMPT` **no es un fallo**: es la via garantizada haciendo exactamente lo que PT-087
+diseño —encontrar un pago que la notificacion no trajo—. Un `Retry Rate` alto en este sistema
+significa «las pasarelas no notifican», no «el sistema falla».
+
+Medirlo sigue valiendo: si sube, algo cambio en las pasarelas. Pero leerlo como calidad del codigo
+seria un error, y por eso el informe lo dice.
+
+### Criterios de aceptacion
+
+1. `npm run audit:reliability` calcula las tres tasas sobre la BD.
+2. Las clasifica en verde/ambar/rojo segun los umbrales de F-1 §6.
+3. `SIN_DATOS` cuando no hay ciclos — nunca «100%».
+4. El informe explica que un reintento **no es un fallo** en este sistema.
+5. `audit-scope.yaml` mueve D5 de `ci_checkpoints` a metricas de delta sync, con el motivo escrito.
+
+### Fuera de alcance
+
+- Meterlo en el CI. Es la correccion, no el objetivo.
+- Metricas de BullMQ: sus contadores se limpian y no hay retencion configurada. Cambiarla es otra
+  decision.
+
+### Confianza
+
+Implementation Confidence: 90% — las consultas son directas; el 10% es acertar con la definicion de
+«resuelto a la primera» de forma que no cuente como fallo lo que es diseño.
