@@ -7,6 +7,7 @@ import helmet from 'helmet';
 import { AppModule } from './app.module';
 import { StructuredLogger } from './common/observability';
 import { validateStartupConfig } from './common/config/validate-startup-config';
+import { checkPublicDomain } from './common/config/public-domain-check';
 
 async function bootstrap(): Promise<void> {
   // Create application
@@ -30,6 +31,21 @@ async function bootstrap(): Promise<void> {
     console.error('STARTUP CONFIGURATION ERRORS:');
     startupErrors.forEach((e) => console.error(`  - ${e}`));
     process.exit(1);
+  }
+
+  // PT-095 (TD-011) — Aviso, no error: si el dominio de desarrollo no resuelve, los flujos
+  // autenticados fallan EN SILENCIO —se inicia sesion en BASE y CLIENT trata al usuario como
+  // anonimo— y cuesta media hora averiguar por que. No aborta: es un problema del entorno de
+  // quien desarrolla, no del codigo, y abortar impediria correr los tests de integracion.
+  const dominio = (process.env.PUBLIC_DOMAIN || '').trim();
+  if (dominio) {
+    const avisos = await checkPublicDomain(dominio, env);
+    if (avisos.length > 0) {
+      console.warn('');
+      console.warn('=== ATENCION: el dominio de desarrollo no resuelve ===');
+      avisos.forEach((a) => console.warn(a));
+      console.warn('');
+    }
   }
 
   // Security
