@@ -70,7 +70,12 @@ audit_due_policy:
   BAJA: 180d
 
 ci_checkpoints:
-  - D2    # tests + schema + vulnerabilidades
+  # PT-118 — D2 deja de ser una declaracion: se dice DONDE corre cada parte.
+  # Estuvo declarado sin existir desde el 23-jun, y por eso H-008 llego con 34 dias de retraso.
+  - D2    # tests (.github/workflows/ci.yml: test-unit, test-integration)
+          # schema (npm run typecheck + prisma)
+          # vulnerabilidades -> ci.yml: security-audit  ->  npm run audit:check
+          #   compara contra src/api/security-baseline.json (13 paquetes triados, TD-015)
   - D3    # trazabilidad + logging
   - D5    # Success/Retry/Failure Rate (métricas determinísticas)
   - "D1.N1"  # Domain Rules as Code (reglas de negocio objetivas)

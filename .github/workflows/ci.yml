@@ -37,6 +37,37 @@ jobs:
         run: npm run typecheck
 
   # ===========================================
+  # Dependencias vulnerables (checkpoint D2)
+  # ===========================================
+  # PT-118 (PTSA H-008) — `audit-scope.yaml` declara este checkpoint desde el 23-jun y no
+  # existia. La consecuencia se midio: H-008 llego con 34 dias de retraso, con 71 avisos en
+  # produccion y uno alcanzable SIN AUTENTICAR contra la puja en vivo. Un checkpoint previsto
+  # y no ejecutado es peor que no tenerlo: da por cubierta un area que nadie mira.
+  #
+  # Compara contra `src/api/security-baseline.json`, no contra un umbral: `--audit-level=high`
+  # fallaria desde el primer dia por las 13 ya triadas, el CI quedaria rojo permanente, y
+  # alguien lo desactivaria.
+  security-audit:
+    name: Dependencias vulnerables (D2)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Comprobar avisos nuevos contra la linea base
+        run: npm --prefix ./src/api run audit:check
+
+  # ===========================================
   # Unit Tests
   # ===========================================
   test-unit:
