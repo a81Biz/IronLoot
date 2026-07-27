@@ -451,3 +451,29 @@ connect-redis a la v9. Es F-33 otra vez, en un comentario en vez de en un regist
 `new Redis()` falla en asíncrono. Lo comprobé y era falso — el log sí traía el aviso. La causa real
 es el `.default` inexistente. Se anota porque la hipótesis equivocada era plausible y alguien podría
 repetirla.
+
+
+### F-40 — H-005 esta mal caracterizada: el PAC no es el bloqueo principal (detectado en PT-113)
+
+**Dimensión D1 · ALTA · investigación.** H-005 dice «CFDI/PAC integration es un stub» y lleva desde
+el 23-jun declarada «bloqueada por contratar un PAC ante el SAT». La investigación de PT-113
+comprobó esa causa raíz y **no se sostiene**.
+
+Si mañana apareciera el contrato con el PAC, **seguiría sin poder emitirse un CFDI**, por tres
+razones que no dependen del SAT:
+
+1. **`CfdiData` tiene 6 campos y un CFDI 4.0 exige muchos más**: `UsoCFDI`, `RegimenFiscal` de
+   emisor y receptor, `LugarExpedicion`, `MetodoPago`, `FormaPago`, `ClaveProdServ`, `ClaveUnidad`,
+   desglose de impuestos. Implementar el contrato tal cual produciría un **rechazo del PAC**, no
+   una factura.
+2. **Los datos fiscales no se capturan.** En toda la base de datos hay **una** columna fiscal:
+   `profiles.rfc`. Ni régimen, ni código postal fiscal, ni uso de CFDI.
+3. **No está decidido quién emite la factura.** Se buscó en el PRD y en la Declaración de Valor de
+   PTSA: no está en ningún sitio. Y de esa decisión —el vendedor, IronLoot por cuenta del vendedor,
+   o sólo la comisión— dependen los campos, el modelo de datos y **qué contrato firmar con el PAC**.
+
+**El bloqueo real es una decisión de dominio que nadie ha tomado**, no un trámite con un tercero.
+Reordenado: (1) decidir quién emite → (2) ampliar el contrato → (3) capturar los datos → (4) PAC.
+
+Se propone actualizar H-005 con esta caracterización. **No se cierra**: sigue abierta, con la causa
+raíz corregida.

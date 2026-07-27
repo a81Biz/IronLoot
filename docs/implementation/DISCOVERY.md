@@ -2757,3 +2757,103 @@ usuario autorizo trabajarlo de forma autonoma en esta sesion.
 Root Cause: 100% — `git check-ignore` y `git ls-files` lo dicen sin ambiguedad.
 Solution: 90% — el criterio es claro; el 10% es acordar que entra de `evidence/`, que es lo unico
 que mezcla decision y artefacto.
+
+
+---
+
+## PT-113 — INVESTIGATION: que falta de verdad para emitir CFDI (H-005)
+
+**Fecha**: 2026-07-27 · **Complejidad**: STANDARD · **Estado**: STATE 1-B (modo investigacion)
+**Origen**: H-005 (PTSA D1, ALTA), abierta desde S-001 el 23-jun y declarada «bloqueada por
+contratar un PAC ante el SAT».
+
+### Por que se investiga algo que se declaro bloqueado
+
+Porque «bloqueado por un tercero» es una respuesta que **no se ha comprobado**. Se repite desde
+junio en cuatro documentos, y la Puerta de Investigacion de FDGE dice que una causa raiz no
+confirmada exige investigar antes de planificar. Esta investigacion pregunta: **si manana
+apareciera el contrato con el PAC, ¿se podria emitir un CFDI?**
+
+La respuesta es **no**, y por razones que no tienen nada que ver con el PAC.
+
+### Lo que si esta hecho — mas de lo que H-005 sugiere
+
+| | Estado |
+|---|---|
+| Modelo `cfdi_records` | Completo: `uuid_sat`, `xml_path`, `pdf_path`, `status`, `error_message`, `cancelled_at` |
+| Interruptor `CFDI_ENABLED` | Existe, **apagado por defecto** (PT-047). Sin el, los pedidos se completan sin factura |
+| Claves de configuracion | `CFDI_RFC_EMISOR`, `CFDI_PAC_URL`, `CFDI_PAC_API_KEY` |
+| **Contrato `ICfdiPacProvider`** | **Existe** en `src/packages/core/src/integrations/cfdi-pac-provider.interface.ts` |
+| Mensajes de error | Accionables: dicen que configurar y donde |
+
+`cfdi.service.ts` no es un hueco: es un adaptador sin implementacion concreta, con el punto de
+extension ya definido. Eso es mejor de lo que decia el hallazgo.
+
+### Lo que falta, y no es el PAC
+
+#### 1. El contrato no basta para un CFDI real
+
+```ts
+export interface CfdiData {
+  orderId; sellerRfc; buyerRfc; amount; currency; description;
+}
+```
+
+Un CFDI 4.0 exige ademas, como minimo: `UsoCFDI`, `RegimenFiscal` **del emisor y del receptor**,
+`LugarExpedicion` (codigo postal), `MetodoPago`, `FormaPago`, `ClaveProdServ` y `ClaveUnidad` de los
+catalogos del SAT, y el desglose de impuestos.
+
+Ningun PAC sella con estos seis campos. **Implementar este contrato tal cual no produciria una
+factura valida**, produciria un rechazo del PAC.
+
+#### 2. Los datos fiscales no se capturan
+
+```
+columnas fiscales en toda la BD: profiles.rfc
+```
+
+**Una sola.** No hay regimen fiscal, ni codigo postal fiscal, ni uso de CFDI. El KYC guarda
+`docs_json` sin esquema — no hay garantia de que contenga nada fiscal.
+
+#### 3. Y la pregunta que nadie ha respondido: **¿quien emite?**
+
+Se busco en el PRD y en la Declaracion de Valor de PTSA: **no esta decidido en ningun sitio**.
+
+IronLoot intermedia ventas entre particulares. Caben tres modelos, con consecuencias muy distintas:
+
+| Modelo | Que exige |
+|---|---|
+| **El vendedor emite** | Cada vendedor necesita su propio PAC y su e.firma. IronLoot no factura nada |
+| **IronLoot emite por cuenta del vendedor** | Figura de «intermediario»; exige autorizacion expresa del vendedor, sus datos fiscales completos y un PAC con esa capacidad |
+| **IronLoot solo factura su comision** | Lo mas simple y lo unico enteramente bajo su control. No cubre la venta entre particulares |
+
+**Esta decision bloquea mas que el PAC.** Sin ella no se sabe que campos capturar, a quien pedirselos,
+ni que contrato firmar — porque el contrato con el PAC depende del modelo.
+
+### Veredicto de la investigacion
+
+`H-005` esta **mal caracterizada**. Dice «integracion con PAC es un stub» y la causa raiz es otra:
+
+> **No esta decidido quien emite la factura**, y por eso ni el modelo de datos ni el contrato de
+> integracion pueden terminarse. El PAC es la ultima pieza, no la primera.
+
+Reordenado, el bloqueo real es:
+
+1. **Decision de dominio**: quien emite. *(humano, no tecnica, y hoy nadie la ha tomado)*
+2. Ampliar `CfdiData` a los campos que el SAT exige.
+3. Capturar los datos fiscales que hoy no existen.
+4. Contratar el PAC e implementar el adaptador.
+
+### Lo que se puede hacer sin PAC — y se propone
+
+Nada de esto exige el contrato con el SAT:
+
+- **Escribir la decision de dominio** en F-1 y en el PRD, aunque sea «solo se factura la comision».
+- **Ampliar `CfdiData`** a la forma real del CFDI 4.0. Es una interfaz: no necesita implementacion.
+- **Anadir los campos fiscales** al perfil, detras del interruptor `CFDI_ENABLED` que ya existe.
+
+### Confianza
+
+Root Cause: 95% — el contrato, el esquema y la ausencia de decision estan leidos, no inferidos. El
+5% es si algun documento fuera del repositorio ya fija el modelo de emision.
+Solution: **no aplica** — es una investigacion; no propone implementacion.
