@@ -78,7 +78,11 @@ ci_checkpoints:
           #   compara contra src/api/security-baseline.json (13 paquetes triados, TD-015)
   - D3    # trazabilidad + logging
   - D5    # Success/Retry/Failure Rate (métricas determinísticas)
-  - "D1.N1"  # Domain Rules as Code (reglas de negocio objetivas)
+  # PT-120 — D1.N1 deja de ser una declaracion.
+  - "D1.N1"  # Domain Rules as Code -> src/api/scripts/domain-rules.ts
+             #   `npm run audit:domain` — 14 reglas de F-1 §4 y §5, con pesos.
+             #   Incluye Nivel 3 (coherencia inter-producto) en bloque aparte.
+             #   CR-007 y CR-008 NO entran: su entrada es la peticion, no el producto ([R57]).
 
 # Nota: Nivel 4 (Guardrails IA) = NO_APLICA — sistema determinístico sin LLM
 # D5 Hallucination Rate = NO_APLICA, Output Drift = NO_APLICA
