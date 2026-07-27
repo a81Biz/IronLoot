@@ -556,6 +556,10 @@ model Dispute {
 /// Notification Type enum
 enum NotificationType {
   AUCTION_WON
+  /// PT-117 (H-012) — El aviso al vendedor tenia que reutilizar AUCTION_WON porque no habia
+  /// tipo propio. El titulo distinguia los dos casos, pero el TIPO no: un filtro por
+  /// AUCTION_WON para «mis subastas ganadas» le mostraba al vendedor su propia venta.
+  AUCTION_SOLD
   AUCTION_LOST
   BID_OUTBID
   ORDER_PAID

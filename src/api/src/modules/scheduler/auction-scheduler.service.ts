@@ -201,7 +201,9 @@ export class AuctionSchedulerService {
             this.notificationsService
               .create(
                 auction.sellerId,
-                NotificationType.AUCTION_WON, // Reuse type or add AUCTION_SOLD if exists, for now WON implies completion
+                // PT-117 (H-012) — El vendedor tiene su propio tipo: comprar y vender son eventos
+                // distintos, y el tipo debe poder distinguirlos aunque el titulo ya lo haga.
+                NotificationType.AUCTION_SOLD,
                 'Auction Sold!',
                 `Your auction "${auction.title}" has been sold for $${winnerBid.amount}.`,
                 { entityType: 'ORDER', entityId: auction.id },
