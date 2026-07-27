@@ -2857,3 +2857,220 @@ Nada de esto exige el contrato con el SAT:
 Root Cause: 95% — el contrato, el esquema y la ausencia de decision estan leidos, no inferidos. El
 5% es si algun documento fuera del repositorio ya fija el modelo de emision.
 Solution: **no aplica** — es una investigacion; no propone implementacion.
+
+
+---
+
+## PT-114 — BUG: la comision se cobra pero nunca se registra (H-010)
+
+**Fecha**: 2026-07-27 · **Complejidad**: STANDARD · **Estado**: STATE 1-B
+**Origen**: H-010 (PTSA D1, ALTA), detectado en el Acid Test de DS-006 sobre la salida real.
+
+### Que
+
+`CommissionRecord` es un producto declarado del sistema (**P-010**) y **no se genera nunca**.
+
+| | |
+|---|---|
+| `commission_records` | **0 filas** |
+| `ledger` tipo `FEE_PLATFORM` | **95.00 MXN** cobrados |
+| Pedido correspondiente | `PAID`, 950.00 MXN |
+
+### Donde — la cadena completa, leida
+
+`auction-scheduler.service.ts:145-166` cierra la subasta dentro de **una transaccion**:
+
+1. Crea el `Order` con `sellerNet` ya calculado.
+2. Llama a `walletService.captureHeldFunds(..., tx, feePercent)`.
+
+Y `wallet.service.ts:370-372` calcula ahi la comision:
+
+```ts
+const feePercentage = new Decimal(feePercent).div(100);
+const feeAmount = amountDecimal.mul(feePercentage);
+```
+
+…asienta `DEBIT_ORDER`, `CREDIT_SALE` y `FEE_PLATFORM`, y **ahi acaba todo**. Nadie crea el
+`CommissionRecord`.
+
+### La causa raiz
+
+`CommissionsService.calculateForOrder()` es el **unico** sitio del sistema que crea un
+`CommissionRecord` —comprobado buscando `commissionRecord.create` y `.upsert` en todo
+`src/api/src/`: una sola aparicion— y **no lo invoca nadie en produccion**. Sus tres referencias
+estan en los tests.
+
+**Es una funcion probada que nunca corre.** Los tests pasan; el producto no existe.
+
+### Impacto
+
+**El dinero no se pierde.** El vendedor cobra su neto y la plataforma retiene su parte: el ledger
+lo refleja y el Acid Test lo verifico.
+
+**Lo que falla es la contabilidad.** `admin.service.ts:534` construye el informe financiero leyendo
+`commissionRecord.findMany()`, **no el ledger**. Con la tabla vacia, ese informe declara **cero
+ingresos por comision** mientras se han cobrado 95 MXN.
+
+Una plataforma de subastas vive de la comision, y su propio informe de ingresos esta ciego a ella.
+
+### El detalle que decide el diseño
+
+`calculateForOrder()` **recalcula** la comision por su cuenta:
+
+```ts
+const rate = await this.resolveRate(order.sellerId, order.auction?.id);
+const amount = new Decimal(order.totalAmount).mul(rate).div(100).toDecimalPlaces(2);
+```
+
+Mientras `captureHeldFunds` la calculo ya con el `feePercent` que le paso el orquestador. **Son dos
+calculos independientes de la misma cifra.** Invocar `calculateForOrder()` sin mas dejaria dos
+fuentes que pueden divergir —basta con que la tarifa del vendedor cambie entre el cierre y la
+llamada— y entonces el ledger y la contabilidad dirian numeros distintos.
+
+Eso es peor que no tener registro: un registro que contradice al ledger obliga a averiguar cual de
+los dos miente.
+
+### Por que no se detecto antes
+
+Los tests de `commissions.service` **pasan**: ejercitan `calculateForOrder()` directamente. Nadie
+comprobo que alguien la llamara. Es el mismo hueco que F-34 —una suite verde sobre una funcion
+muerta— y el que PT-104 encontro en la fase 70.
+
+### Confianza
+
+Root Cause: 100% — la ausencia de invocantes es verificable con un `grep`, y las dos cifras
+(0 filas / 95.00 MXN) estan leidas de la BD.
+Solution: 90% — el punto de insercion es claro; el 10% es decidir si el registro se crea con la
+cifra ya calculada o recalculando, y eso se resuelve en STATE 2.
+
+
+---
+
+## PT-115 — BUG: la ventana de disputa se mide desde la ultima modificacion (H-011)
+
+**Fecha**: 2026-07-27 · **Complejidad**: STANDARD · **Estado**: STATE 1-B
+**Origen**: H-011 (PTSA D1, MEDIA), detectado en el Acid Test de DS-006 sobre P-006.
+
+### Que
+
+`CR-007` dice: *«Una disputa fuera de la ventana de 14 dias es rechazada»*, contada **desde la
+entrega**. El codigo lo declara en un comentario y no lo aplica.
+
+```ts
+// For DELIVERED orders, enforce the 14-day window from deliveredAt (domain invariant).
+const referenceDate: Date =
+  order.status === 'DELIVERED' && (order as any).deliveredAt   // siempre undefined
+    ? (order as any).deliveredAt
+    : order.updatedAt;                                          // siempre esta rama
+```
+
+### Donde — y el dato SI existe, en otro sitio
+
+| Tabla | Tiene fecha de entrega |
+|---|---|
+| `orders` | **No.** Sus columnas: `id, created_at, updated_at, total_amount, status, seller_net, seller_settled_at, auction_id, buyer_id, seller_id` |
+| **`shipments`** | **Si**: `delivered_at`, y **se puebla** — `shipments.service.ts:105-106` la escribe al marcar `DELIVERED` |
+
+**El dato estaba ahi todo el tiempo.** `disputes.service.ts` lo busca en el pedido, donde no esta,
+en vez de en el envio, donde si.
+
+Y el propio repositorio ya lo sabe: `ratings.service.ts:40` comprueba
+`order.shipment.status !== 'DELIVERED'` — lee la entrega del envio, como corresponde.
+
+### Por que no lo caza nada
+
+Por los dos `as any`. Un acceso a un campo inexistente compila sin una sola queja cuando se pide por
+`any`, y el ternario lo convierte en un `undefined` silencioso en vez de un error.
+
+Es la misma familia que F-34 (un `catch` mudo), F-39 (un `default` inexistente) y H-010 (una
+funcion sin invocantes): **el codigo anuncia una cosa y hace otra, sin ruido**.
+
+### Consecuencia, comprobada sobre la salida real
+
+`updatedAt` cambia con **cualquier** modificacion del pedido —cambio de estado, liquidacion al
+vendedor, ajuste administrativo— y cada una **reinicia los 14 dias**.
+
+Medido en DS-006 (P-006, 7/7): envejeciendo `updated_at` a 20 dias la API rechaza con
+`HTTP 400 «Dispute period has expired»`; devolviendola a `now()`, acepta. **La ventana responde a
+`updated_at`.**
+
+En la practica:
+
+- Un pedido tocado por un administrador **vuelve a ser disputable** aunque se entregara hace meses.
+- Un pedido entregado tarde pero sin modificaciones posteriores puede tener la ventana **ya vencida
+  el dia de la entrega**.
+
+### Lo que hay que decidir, y lo que no
+
+**No hace falta decidir nada nuevo.** `CR-007` ya declara la regla en F-1, y el comentario del
+codigo la repite. Ambos dicen «desde la entrega». Lo que falta no es una decision: es que el codigo
+cumpla la que ya esta escrita.
+
+Es distinto de F-40 (quien emite la factura), donde la regla **no existia** en ningun sitio.
+
+### Confianza
+
+Root Cause: 100% — el esquema y el codigo estan leidos; el comportamiento, medido.
+Solution: 95% — el dato existe en `shipments.delivered_at`; el 5% es que un pedido `DELIVERED`
+pueda no tener envio asociado, y eso hay que comprobarlo.
+
+
+---
+
+## PT-116 — REFACTOR: la cadena del mailer, ultima unidad de TD-015
+
+**Fecha**: 2026-07-27 · **Complejidad**: STANDARD · **Estado**: STATE 1-R (alcance)
+**Origen**: TD-015, registrada por PT-110 al triar H-008.
+
+### Que
+
+De los 63 avisos que PT-110 dejo abiertos, **once cuelgan de `@nestjs-modules/mailer`**:
+`handlebars`, `liquidjs`, `mjml`, `html-minifier`, `mailparser`, `nodemailer`, `linkify-it`,
+`js-cookie`, `file-type`, `multer` y `uuid`. Entre ellos **dos de los tres criticos**.
+
+PT-110 no los toco porque `npm audit fix` fallaba con `ERESOLVE` justo ahi, y porque son **una sola
+unidad de actualizacion**: no se pueden subir por separado.
+
+### Donde esta el bloqueo, medido
+
+```
+@nestjs-modules/mailer  instalado 2.0.2   -> exige nodemailer >=6.4.6
+@nestjs-modules/mailer  objetivo  2.3.7   -> exige nodemailer >=8.0.5
+nodemailer              instalado 7.0.12
+nodemailer              publicado 9.0.3
+```
+
+El salto es **nodemailer 7 -> 8** (mayor) y **mailer 2.0.2 -> 2.3.7** (menor).
+
+### Superficie real de contacto — mas pequeña de lo que el numero sugiere
+
+La aplicacion **no usa nodemailer directamente**. Solo lo toca a traves del mailer, con una
+configuracion estandar (`notifications.module.ts:20-41`): transporte SMTP, remitente por defecto y
+el adaptador de Handlebars.
+
+Y hay **3 llamadas a `sendMail`** en todo el codigo.
+
+### Como se verifica de verdad
+
+La fase `bootstrap` de la suite **registra un usuario y verifica su correo contra Mailhog**. Es
+decir: el envio de correo esta cubierto de punta a punta por una prueba que ya existe y que corre
+en cada corrida.
+
+Eso convierte esta subida en una de las pocas de version mayor que se pueden hacer con una red
+debajo.
+
+### El riesgo que queda
+
+`nodemailer` 8 cambio requisitos de Node y algunas opciones de transporte. La configuracion de aqui
+es la mas simple posible —host, puerto, `secure: false`, `ignoreTLS`, auth— pero **`ignoreTLS` con
+`secure: false` es exactamente el tipo de opcion que las versiones mayores endurecen**.
+
+Si el correo dejara de salir, el sintoma seria un registro de usuario que nunca recibe su enlace de
+verificacion. Silencioso para el sistema, bloqueante para el usuario.
+
+### Confianza
+
+Root Cause: 100% — el bloqueo de versiones esta medido con `npm view`.
+Solution: 75% — la superficie es pequeña y hay prueba de punta a punta, pero es un salto de version
+mayor sobre el unico camino por el que un usuario nuevo entra al sistema. El 25% se resuelve
+midiendo, no opinando.

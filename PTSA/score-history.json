@@ -341,6 +341,42 @@
         "E-014"
       ],
       "cobertura": "11 de 12 productos con salida real auditada (92%). P-012 sin instancias por H-005."
+    },
+    {
+      "session": "DS-007",
+      "date": "2026-07-27",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 85,
+        "D2": 95,
+        "D3": 100,
+        "D4": 100,
+        "health": 94.0,
+        "risk": 40,
+        "confidence": 93.9
+      },
+      "classification": "A",
+      "classification_without_cap": "A",
+      "cap_reason": null,
+      "score_freshness": {
+        "last_verified": "2026-07-27",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "trigger": "Ciclos FDGE sobre los hallazgos de DS-006 (PT-114, PT-115, PT-116)",
+      "findings_changes": {
+        "nuevos": [],
+        "revisados": [
+          "H-010 -> CORREGIDA (registro 95.00 == asiento 95.00, verificado sobre salida real)",
+          "H-011 -> CORREGIDA (la ventana se cuenta desde shipments.delivered_at)",
+          "H-008 -> sigue CORREGIDA_PARCIAL: 63 -> 27 avisos, de 3 criticos a 1",
+          "P-010 -> IDENTIFICADO con evidencia post-fix observada en la BD [R39]"
+        ],
+        "cerrados": []
+      },
+      "nota": "Primera Clase A sin cap. Las anteriores fueron A por Health con Confidence insuficiente; esta lo es con cobertura del 92% y frescura FRESH."
     }
   ]
 }

@@ -1,68 +1,74 @@
-# PLAN_ACTUAL — PT-112: el repositorio versiona decisiones, no artefactos (H-009 + F-37)
+# PLAN_ACTUAL — PT-115: la ventana de disputa se mide desde la entrega (H-011)
 
-**Fecha**: 2026-07-27 · **Tipo**: REFACTOR · **Complejidad**: STANDARD · **Estado**: STATE 2
-**Entrada**: `DISCOVERY.md` § PT-112 · PTSA H-009 · matriz F-37
+**Fecha**: 2026-07-27 · **Tipo**: BUG · **Complejidad**: STANDARD · **Estado**: STATE 2
+**Entrada**: `DISCOVERY.md` § PT-115 · PTSA H-011
 
 ---
 
 ## 1. Objetivo
 
-Que el `.gitignore` distinga entre lo que hay que **conservar** y lo que se **regenera**.
+Que la ventana de 14 días se cuente desde la entrega, que es lo que `CR-007` declara y lo que el
+propio comentario del código promete.
 
-Hoy hace lo contrario: deja fuera la arquitectura, la historia de decisiones y la auditoría entera,
-y deja dentro 164 MB de capturas de corridas de QA.
+**No hay ninguna decisión de dominio que tomar aquí.** La regla ya está escrita en F-1; lo que falta
+es que el código la cumpla. Es distinto de F-40, donde la regla no existía en ningún sitio.
 
-## 2. El criterio
+## 2. Solución propuesta
 
-**Se versiona lo que registra una decisión. No se versiona lo que se puede volver a generar.**
+### 2.1 El dato se lee donde está
 
-| Entra | Por qué |
-|---|---|
-| `docs/enterprise-documentation/` (196 K) | Arquitectura, PRD, TRD, seguridad. Es lo que `audit-scope.yaml` declara auditable — sin historial, la frescura de D4 no es calculable |
-| `docs/methodology/` (288 K) | Los frameworks que gobiernan el trabajo |
-| `docs/implementation/*.md` y `HISTORY.log` | La historia de decisiones. `HISTORY.log` es **append-only** por diseño: es literalmente un registro histórico fuera del control de versiones |
-| `changes/` (601 K) | Los Proposal Packages: el razonamiento de cada PT |
-| `PTSA/` (320 K) | Hallazgos, evidencias, scores. **Es el rastro de auditoría** |
-| `CLAUDE.md` | Lo que lee cualquier agente antes de tocar el repositorio |
+`orders` no tiene `delivered_at`. **`shipments` sí**, y se puebla: `shipments.service.ts:105-106`
+la escribe al marcar `DELIVERED`.
 
-| Sale | Por qué |
-|---|---|
-| **`qa-out/`** (164 M, 2828 ficheros) | Salida de corridas. Se regenera con `bash run-all.sh`. Y `.last-run` ensucia `git status` tras cada ejecución |
-| `docs/implementation/evidence/` salvo `.md` | Las capturas y volcados son artefactos; el `self-review.md` y los resúmenes son decisión |
-| `graphify-out/` | Generado. Se reconstruye desde el código |
+El repositorio ya lo sabe en otro sitio — `ratings.service.ts:40` lee `order.shipment.status`.
 
-Total que entra: **~3.3 MB de texto**. Total que sale: **164 MB de binarios**.
+```ts
+const referenceDate: Date = order.shipment?.deliveredAt ?? order.updatedAt;
+```
+
+Y la consulta del pedido incluye el envío, que hoy no incluye.
+
+### 2.2 Los `as any` desaparecen
+
+Son la razón por la que esto compiló durante meses. Sin ellos, el compilador vuelve a proteger: un
+campo que no existe deja de ser `undefined` silencioso y pasa a ser un error.
+
+### 2.3 El respaldo se conserva, y se explica
+
+`shipment` es una relación **opcional** (`Shipment?`): un pedido puede estar `DELIVERED` sin envío
+registrado. En ese caso se sigue usando `updatedAt`.
+
+No es lo ideal, pero es honesto y es lo único disponible. Lo que cambia es que ahora **es un
+respaldo declarado**, no la única rama que se ejecuta.
 
 ## 3. Alternativas consideradas
 
 | Alternativa | Por qué no |
 |---|---|
-| **Versionar sólo los 5 documentos que cita `audit-scope.yaml`** | Cierra H-009 a medias: la guarda de PT-103 lee `HISTORY.log`, que seguiría fuera, así que seguiría sin correr en CI |
-| **Dejarlo y retirar los documentos del alcance de PTSA** | Honesto pero peor: el alcance dejaría de prometer lo que no puede cumplir, a cambio de renunciar a auditar D4 por diff |
-| **Versionarlo todo, `qa-out` incluido** | 164 MB de capturas que se regeneran. Un repositorio no es un almacén de artefactos |
-| **`git lfs` para `qa-out`** | Añade una herramienta y una configuración para conservar algo que nadie va a consultar |
+| **Añadir `delivered_at` a `orders`** | Duplica un dato que ya existe en `shipments`, con dos sitios que pueden divergir. Es el mismo error que H-010 con la comisión |
+| **Exigir envío para disputar** | Cambia una regla de negocio que nadie ha pedido cambiar. Un pedido sin envío también puede tener problemas |
+| **Corregir el comentario y `CR-007`** para que digan «desde la última modificación» | Sería documentar el defecto en vez de arreglarlo. Y «14 días que se reinician solos» no es una promesa que se pueda hacer a un comprador |
+| **Dejarlo** | La ventana es una promesa al comprador y hoy es elástica sin que nadie lo sepa |
 
 ## 4. Análisis de regresión
 
 | Qué | Riesgo | Cómo se comprueba |
 |---|---|---|
-| **Perder el historial de `qa-out`** | Las corridas del 24-jul dejan de estar en el árbol | **Siguen en los commits anteriores.** `git show <commit>:qa-out/...` las recupera |
-| Que entre un secreto al versionar `docs/` | **Alto** — `docs/` nunca se ha revisado con ese ojo | Barrido explícito de credenciales antes de añadir nada |
-| `paypal-sandbox.json` u otros ficheros con credenciales | Deben seguir fuera | Se comprueba uno a uno |
-| El tamaño del repositorio | Que crezca de golpe | 3.3 MB de texto: irrelevante |
-| La guarda de PT-103 | Debe **empezar** a correr en CI | Se comprueba que deja de saltarse |
+| **Disputas que hoy se aceptan y dejarían de aceptarse** | **Alto y real**: un pedido entregado hace 20 días pero modificado ayer hoy admite disputa; después, no. Es el defecto, pero es un cambio de comportamiento visible | Tests con ambos casos, y queda dicho en el commit |
+| Pedidos sin envío | Que el `?.` no cubra bien el caso | Test explícito |
+| La consulta del pedido | Incluir el envío cambia la forma del objeto | Suite del API |
+| Las disputas existentes | Ninguna: sólo cambia la validación al crear | Fase `e2e` |
 
 ## 5. Criterios de éxito
 
-1. `git check-ignore` deja de marcar los 5 documentos de `audit-scope.yaml`.
-2. `git ls-files qa-out/` → **0**.
-3. **Cero credenciales** en lo que se añade — comprobado, no supuesto.
-4. La guarda de coherencia documental **deja de saltarse**.
-5. `git status` limpio tras una corrida de QA.
-6. `npm test` y la suite siguen verdes.
+1. Con envío entregado hace 20 días → **rechaza**, aunque el pedido se haya tocado hoy.
+2. Con envío entregado hace 2 días → **acepta**, aunque el pedido lleve meses sin tocarse.
+3. Sin envío → sigue usando `updatedAt`, y hay un test que lo fija.
+4. **Cero `as any`** en esa expresión.
+5. `npm test` y suite completa en verde.
 
 ## 6. Restricciones
 
-- **Ningún secreto entra al repositorio.** Se barre antes de añadir.
-- `git rm --cached` no borra del disco ni de la historia: sólo deja de seguir.
-- H-009 y F-37 **no se cierran**: los cierra el humano.
+- Tests en RED antes (RULE-06).
+- No se añade `delivered_at` a `orders`: el dato ya existe.
+- H-011 **no se cierra**: lo cierra el humano.

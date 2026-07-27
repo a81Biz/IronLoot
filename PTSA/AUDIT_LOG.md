@@ -195,3 +195,35 @@ verdad encontró dos productos que no cumplen.
 > deja en 50, y entonces el Health se capa a 50: **Clase F**, con la técnica intacta.
 
 **Ningún hallazgo cerrado.** El agente no cierra hallazgos.
+
+---
+
+## DS-007 — Tras atender los hallazgos de DS-006 (2026-07-27)
+
+**Disparador**: ciclos FDGE completos sobre H-010, H-011 y TD-015 (PT-114, PT-115, PT-116).
+
+| Hallazgo | Resultado | PT |
+|---|---|---|
+| **H-010** | **CORREGIDA** — el registro de comisión existe y coincide al céntimo con el asiento | PT-114 |
+| **H-011** | **CORREGIDA** — la ventana se cuenta desde `shipments.delivered_at`; los `as any` fuera | PT-115 |
+| **H-008** | Sigue CORREGIDA_PARCIAL — **63 → 27 avisos**, de 3 críticos a 1 | PT-116 |
+| **P-010** | `REQUIERE_REVISION` → `IDENTIFICADO`, con evidencia post-fix observada en la BD | PT-114 |
+
+**Ningún hallazgo nuevo.** Es la primera sesión desde DS-004 que no destapa uno.
+
+### Scores
+
+| | DS-006 | **DS-007** |
+|---|--:|--:|
+| Health | 88.0 | **94.0** |
+| D1 | 65 | **85** |
+| Risk | 100 | **40** |
+| Confidence | 93.4 | **93.9** |
+| Clase | B | **A — sin cap** |
+
+**Es la primera Clase A que se sostiene.** DS-003 emitió A con Confidence 85, que por §15.6 no
+alcanzaba; DS-004 y DS-005 fueron B por ese mismo cap. Esta lo es con cobertura del 92 % y frescura
+FRESH: el número alto viene de haber mirado.
+
+**Lo único que separa al sistema de la certificación plena**: ningún producto llega a `VALIDADO`
+porque las rúbricas no están definidas en F-1. Es trabajo de F12.

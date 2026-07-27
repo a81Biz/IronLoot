@@ -865,3 +865,34 @@ mantiene abierta, la suite falla.
 | `npm audit fix --force` rompe la ruta del dinero | **No se usa.** Solo se sube lo acotado y se mide |
 | Acotar conexiones deja fuera a usuarios legitimos | Un limite generoso y medido, no un numero inventado |
 | Quedan 22 avisos sin arreglar | Se declaran, con su motivo. Un hallazgo parcialmente resuelto que se declara cerrado es F-33 otra vez |
+
+
+---
+
+## PT-114 — Analisis de contexto — El registro de comision (STATE 1-B)
+
+### Componentes implicados
+
+| Componente | Papel | Riesgo al tocarlo |
+|---|---|---|
+| `auction-scheduler.service.ts:145-166` | Orquesta el cierre dentro de UNA transaccion | **Alto**: aqui se mueve el dinero de cada venta |
+| `wallet.service.ts:357-460` (`captureHeldFunds`) | Calcula la comision y asienta los tres movimientos | **Alto**: es la ruta del dinero |
+| `commissions.service.ts:11` (`calculateForOrder`) | Crea el `CommissionRecord`, recalculando | Medio |
+| `admin.service.ts:534` | El informe financiero, unico consumidor del producto | Bajo — solo lee |
+
+### Restriccion de capas
+
+`WalletModule` **no debe depender** de `CommissionsModule`: la cartera es infraestructura de dinero
+y las comisiones son politica de negocio. Meter la creacion del registro dentro de
+`captureHeldFunds` invertiria esa dependencia.
+
+El orquestador (`auction-scheduler`) **si** puede depender de ambos: es su trabajo.
+
+### Riesgos identificados
+
+| Riesgo | Mitigacion |
+|---|---|
+| **Dos cifras distintas** de la misma comision | El registro debe nacer con la cifra que **ya se asento**, no recalculada |
+| Que el registro quede fuera de la transaccion | Si el registro falla, la venta no puede quedar a medias: o ambos o ninguno |
+| Que un reintento duplique el registro | `calculateForOrder` ya comprueba `findUnique` por `orderId`; hay que conservar esa idempotencia |
+| Romper el cierre de subasta | Es la ruta del dinero. La verificacion es la fase `e2e` de la suite y una corrida completa |

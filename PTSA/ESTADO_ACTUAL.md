@@ -1,5 +1,5 @@
 # ESTADO ACTUAL — PTSA V3
-**Última actualización**: 2026-07-27 | **Sesión**: DS-006 — ampliación de cobertura
+**Última actualización**: 2026-07-27 | **Sesión**: DS-007 — tras atender los hallazgos de DS-006
 
 ---
 
@@ -7,72 +7,58 @@
 
 ```
 Sistema:        IronLoot Auction Platform v1.0.0
-Fase actual:    CERTIFICADO — Clase B
-Health:         88.0 / 100     (DS-005: 94.0)
-Risk:           100 / 100      (DS-005: 40)   ALTO
-Confidence:     93.4 / 100     (DS-005: 63.4) ALTA
-Freshness:      FRESH          (era STALE)
-Clasificación:  B
+Fase actual:    CERTIFICADO — Clase A
+Health:         94.0 / 100     (DS-006: 88.0)
+Risk:           40 / 100       (DS-006: 100)   MODERADO
+Confidence:     93.9 / 100     (DS-006: 93.4)  ALTA
+Freshness:      FRESH
+Clasificación:  A  —  sin cap
 ```
+
+> **Es la primera Clase A que se sostiene.** DS-003 emitió A con Confidence 85, que por §15.6 no
+> alcanzaba. Esta lo hace con **cobertura del 92 %** y frescura **FRESH**: el número alto viene de
+> haber mirado, no de no haber mirado.
 
 ## Dimensiones
 
-| | DS-005 | **DS-006** | Hallazgos activos |
+| | DS-006 | **DS-007** | Hallazgo activo |
 |---|--:|--:|---|
-| D1 Dominio | 85 | **65** | H-005, **H-010**, **H-011** |
-| D2 Arquitectura | 95 | **95** | H-008 (CORREGIDA_PARCIAL) |
+| D1 Dominio | 65 | **85** | H-005 — CFDI |
+| D2 Arquitectura | 95 | **95** | H-008 — CORREGIDA_PARCIAL |
 | D3 Observabilidad | 100 | **100** | — |
 | D4 Documental | 100 | **100** | — |
 
-> ⚠️ **D1 = 65 está a 5 puntos del cap.** La Regla del Agua Potable se activa por debajo de 60: un
-> solo hallazgo ALTA más en D1 lo deja en 50 y el Health se capa a 50 — **Clase F con la técnica
-> intacta**. Es el margen más estrecho que ha tenido este sistema.
+**D1 sube 20 puntos** y se aleja del cap: en DS-006 estaba a 5 puntos de la Regla del Agua Potable.
 
-## Lo que cambió, y por qué no es lo que parece
+## Hallazgos
 
-**El sistema no ha empeorado. La auditoría ha empezado a mirar.**
+| ID | Dim | Estado | Qué |
+|---|:--|---|---|
+| **H-005** | D1 | **ABIERTA** | CFDI. El bloqueo no es el PAC: nadie ha decidido quién emite la factura (F-40). **Esperando decisión** |
+| H-008 | D2 | CORREGIDA_PARCIAL | 71 → 27 avisos. Quedan 13 paquetes que exigen saltos mayores sobre Express o el framework (TD-015) |
+| H-009 | D4 | CORREGIDA | Documentación crítica versionada |
+| **H-010** | D1 | **CORREGIDA** | La comisión se registra: 95.00 MXN, coincidiendo al céntimo con el asiento |
+| **H-011** | D1 | **CORREGIDA** | La ventana de disputa se cuenta desde `shipments.delivered_at` |
 
-- **Confidence sube 30 puntos** (63.4 → 93.4): la cobertura pasa del 50 % al **92 %** —11 de 12
-  productos con su salida real auditada— y la frescura de STALE a **FRESH**.
-- **Health baja 6** (94.0 → 88.0): auditar de verdad encontró **dos productos que no cumplen**.
-- **Risk sube a 100**: tres hallazgos D1 activos, uno de ellos con probabilidad 4 porque ocurre
-  siempre.
-
-Es la primera emisión en la que el Confidence es alto **y** honesto: hasta ahora el número era bajo
-porque no se había mirado, no porque el sistema fuera dudoso.
-
-## Hallazgos activos
-
-| ID | Dim | Sev | Qué | Estado |
-|---|:--|:--|---|---|
-| **H-010** | D1 | ALTA | La comisión se cobra (95 MXN en ledger) pero **nunca se registra**: 0 filas en `commission_records`. El informe financiero está ciego a los ingresos | **ABIERTA** (nuevo) |
-| **H-005** | D1 | ALTA | CFDI: el bloqueo no es el PAC, es que nadie ha decidido quién emite | ABIERTA |
-| **H-011** | D1 | MEDIA | La ventana de disputa se mide desde `updatedAt`, no desde la entrega. Cualquier modificación la reinicia | **ABIERTA** (nuevo) |
-| **H-008** | D2 | — | 71 → 63 avisos; vector sin autenticar cerrado | CORREGIDA_PARCIAL |
-| **H-009** | D4 | — | Documentación crítica versionada | CORREGIDA |
-
-**Ninguno cerrado.** El agente no cierra hallazgos.
+**Ninguno cerrado.** El agente no cierra hallazgos: los cuatro corregidos esperan validación humana.
 
 ## Productos
 
-**Los 12 salen de `BORRADOR`**, donde llevaban desde el 23-jun.
-
 | Estado | Productos |
 |---|---|
-| `IDENTIFICADO` | P-001, P-002, P-003, P-004, P-005, P-006, P-007, P-008, P-009, P-011, P-012 |
-| `REQUIERE_REVISION` | **P-010** — el producto no se genera |
+| `IDENTIFICADO` | Los **doce** |
 
-**Ninguno llega a `VALIDADO`**, y el motivo es concreto: `[R38]` exige `rubric = 100`, y **las
-rúbricas no están definidas en F-1**. Sólo hay reglas `CR-XXX` sueltas. Declarar `VALIDADO` sin
-rúbrica sería inventarse el número — `[R39]` lo prohíbe expresamente.
+P-010 subió de `REQUIERE_REVISION` con evidencia post-corrección **observada en la base** (`[R39]`):
+se venció una subasta y el cron la cerró solo.
 
-Definirlas es trabajo de **F12 (Gobernanza de Dominio)**.
+**Ninguno llega a `VALIDADO`**, y el motivo sigue siendo el mismo: `[R38]` exige `rubric = 100` y
+**las rúbricas no están definidas en F-1**. Inventarse ese número es lo que `[R39]` prohíbe.
+
+Es lo único que separa a este sistema de la certificación plena, y es trabajo de **F12**.
 
 ## Siguiente acción
 
-1. **H-010** es el más barato de los tres D1 y el que más sube el Health: invocar
-   `calculateForOrder()` donde ya se asienta el `FEE_PLATFORM`.
-2. **H-011**: decidir si el negocio mide desde la entrega. Si sí, añadir `delivered_at` y quitar
-   los `as any`.
-3. **H-005**: sigue esperando la decisión sobre quién emite la factura.
-4. **F12**: definir las rúbricas, que es lo único que permite llegar a `VALIDADO`.
+1. **H-005** — sigue esperando la decisión sobre quién emite la factura. Es lo único que mueve D1.
+2. **F12: definir las rúbricas.** Sin ellas ningún producto puede llegar a `VALIDADO`.
+3. **TD-015** — los 27 avisos restantes exigen saltos mayores sobre Express (`body-parser` 1→2,
+   `path-to-regexp` 3→8) o el propio `@nestjs/core`. Es un trabajo de plataforma, no de parcheo.

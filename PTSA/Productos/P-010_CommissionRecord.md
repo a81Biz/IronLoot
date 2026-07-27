@@ -3,9 +3,9 @@ producto_id: P-010
 nombre: Commission Record — Registro de comisión
 clase: secundario
 criticidad: MEDIA
-estado: REQUIERE_REVISION
+estado: IDENTIFICADO
 dimension_primaria: D1
-confidence: 0
+confidence: 100
 audit_due: 2026-08-26
 domain_validation:
   semantic_drift_detected: false
@@ -65,3 +65,26 @@ genera.
 > no es calculable todavía. Declararlo `VALIDADO` sería inventarse el número.
 >
 > Definir las rúbricas es trabajo de F12 (Gobernanza de Dominio) y queda en `PENDIENTES.md`.
+
+
+---
+
+## Auditoría F6 — DS-007 (2026-07-27)
+
+**Transición**: `REQUIERE_REVISION` → **`IDENTIFICADO`** · **Confidence**: 100
+
+`[R39]` exige evidencia post-corrección **observada en la fuente real**, no inferida de haber
+editado el código. Se obtuvo así: se venció una subasta `ACTIVE` con 3 pujas y se dejó que el cron
+la cerrara solo.
+
+```
+subasta            CLOSED
+pedidos            1
+commission_records 1
+registro: 95.00 MXN al 10.00%   ==   asiento: 95.00 MXN
+```
+
+**El producto se genera.** Y su importe coincide al céntimo con el asiento del ledger, que era el
+riesgo real: dos cifras distintas de la misma comisión habrían sido peor que ninguna.
+
+Sigue sin llegar a `VALIDADO` por el mismo motivo que los demás: la rúbrica no está definida en F-1.
