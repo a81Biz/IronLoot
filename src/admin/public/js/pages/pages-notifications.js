@@ -10,8 +10,15 @@
 document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+      // PT-105 (TD-014) — classList, no style.display.
+      //
+      // Antes esto vaciaba el estilo inline (`= ''`) para "volver a lo que diga el CSS". Mientras
+      // el CSS no decia nada, eso mostraba el panel. Al sacar los `style=` de las plantillas, lo
+      // que oculta es la clase `.oculto` — y "lo que diga el CSS" paso a ser *oculto*: la pestana
+      // dejaba de abrirse. Los otros 30 usos de style.display escriben un valor explicito y no
+      // tienen este problema; estos cuatro si.
+      document.querySelectorAll('.tab-panel').forEach(p => p.classList.add('oculto'));
       btn.classList.add('active');
-      document.getElementById('tab-' + btn.dataset.tab).style.display = '';
+      document.getElementById('tab-' + btn.dataset.tab).classList.remove('oculto');
     });
   });

@@ -11,7 +11,7 @@
 <div class="card">
   <div class="card-header">
     <form method="GET" action="/refunds" class="d-flex gap-2">
-      <select id="statusFilter" name="status" class="form-select form-select-sm" style="max-width:160px;">
+      <select id="statusFilter" name="status" class="form-select form-select-sm ancho-160">
         <option value="" {% if not statusFilter %}selected{% endif %}>Todos los estados</option>
         <option value="PENDING_REFUND" {% if statusFilter == 'PENDING_REFUND' %}selected{% endif %}>Pendiente</option>
         <option value="PROCESSING" {% if statusFilter == 'PROCESSING' %}selected{% endif %}>Procesando</option>
@@ -36,13 +36,13 @@
             <td>{{ r.createdAt | truncate(10, true, '') }}</td>
             <td>
               {% if r.status == 'PENDING_REFUND' %}
-              <form method="POST" action="/refunds/{{ r.id }}/status" style="display:inline;">
+              <form class="en-linea" method="POST" action="/refunds/{{ r.id }}/status">
                 <input type="hidden" name="status" value="PROCESSING">
                 <button class="btn btn-xs btn-success" type="submit">Procesar</button>
               </form>
               {% endif %}
               {% if r.status == 'PROCESSING' %}
-              <form method="POST" action="/refunds/{{ r.id }}/status" style="display:inline;">
+              <form class="en-linea" method="POST" action="/refunds/{{ r.id }}/status">
                 <input type="hidden" name="status" value="COMPLETED">
                 <button class="btn btn-xs btn-primary" type="submit">Completar</button>
               </form>

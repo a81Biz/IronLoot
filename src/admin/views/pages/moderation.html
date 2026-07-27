@@ -31,7 +31,7 @@
         <td>{{ item.updatedAt }}</td>
         <td>
           <div class="action-group">
-            <form action="/moderation/{{ item.id }}/approve" method="POST" style="display:inline">
+            <form class="en-linea" action="/moderation/{{ item.id }}/approve" method="POST">
               <button type="submit" class="btn btn-success btn-xs">
                 <span class="material-symbols-outlined">check</span> Aprobar
               </button>
@@ -54,7 +54,7 @@
 {% endif %}
 
 <!-- Reject modal -->
-<div id="reject-modal" class="modal-backdrop" style="display:none">
+<div id="reject-modal" class="modal-backdrop oculto">
   <div class="modal">
     <h3>Rechazar subasta</h3>
     <p id="reject-modal-title" class="text-muted"></p>

@@ -4,25 +4,25 @@
 {% block content %}
 {% if auction %}
 {# PT-096 - El id viaja aqui, no interpolado dentro de un <script>. #}
-<div class="auction-detail" data-auction-id="{{ auction.id }}" style="max-width: 820px;">
+<div class="auction-detail ancho-820" data-auction-id="{{ auction.id }}">
   {% if auction.images and auction.images.length %}
-  <img src="{{ auction.images[0] }}" alt="{{ auction.title }}"
-       style="max-width: 100%; border-radius: 8px; margin-bottom: 1rem;">
+  <img class="imagen-subasta" src="{{ auction.images[0] }}" alt="{{ auction.title }}"
+      >
   {% endif %}
   <p>{{ auction.description }}</p>
 
-  <div class="bid-panel" style="border: 1px solid #31363F; border-radius: 8px; padding: 1rem; margin: 1rem 0;">
+  <div class="bid-panel caja-oscura">
     <p>Precio actual: <strong id="currentPrice">${{ auction.currentPrice }}</strong> MXN</p>
     <p>Estado: <span id="auctionStatus">{{ auction.status }}</span></p>
     <p>Cierra en: <span id="countdown" data-ends-at="{{ auction.endsAt }}">…</span></p>
     <p>Tu saldo disponible: <strong>${{ wallet.balance if wallet else '0' }}</strong> MXN</p>
 
-    <form id="bidForm" style="display: flex; gap: .5rem; align-items: center;">
-      <input type="number" id="bidAmount" step="0.01" min="0" placeholder="Tu puja (MXN)" required
-             style="flex: 1;">
+    <form class="fila-centrada" id="bidForm">
+      <input class="flex-1" type="number" id="bidAmount" step="0.01" min="0" placeholder="Tu puja (MXN)" required
+            >
       <button type="submit" class="btn btn-primary">Pujar ahora</button>
     </form>
-    <div id="bidMsg" class="alert" style="display: none; margin-top: .5rem;"></div>
+    <div id="bidMsg" class="alert oculto mensaje-accion-corto"></div>
   </div>
 
   <h3>Pujas recientes</h3>

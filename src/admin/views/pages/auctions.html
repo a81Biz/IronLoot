@@ -54,29 +54,29 @@
             <a href="/auctions/{{ a.id }}" class="btn btn-ghost btn-xs">Ver</a>
 
             {% if a.status == 'DRAFT' or a.status == 'PENDING_MODERATION' %}
-            <form action="/auctions/{{ a.id }}/approve" method="POST" style="display:inline">
+            <form class="en-linea" action="/auctions/{{ a.id }}/approve" method="POST">
               <button class="btn btn-success btn-xs">Aprobar</button>
             </form>
             {% endif %}
 
             {% if a.status == 'ACTIVE' %}
-            <form action="/auctions/{{ a.id }}/suspend" method="POST" style="display:inline">
+            <form class="en-linea" action="/auctions/{{ a.id }}/suspend" method="POST">
               <button class="btn btn-warning btn-xs">Suspender</button>
             </form>
-            <form action="/auctions/{{ a.id }}/force-close" method="POST" style="display:inline"
+            <form class="en-linea" action="/auctions/{{ a.id }}/force-close" method="POST"
                   data-confirm="¿Forzar cierre?">
               <button class="btn btn-danger btn-xs">Forzar cierre</button>
             </form>
             {% endif %}
 
             {% if a.status == 'SUSPENDED' or a.status == 'CLOSED' %}
-            <form action="/auctions/{{ a.id }}/reopen" method="POST" style="display:inline">
+            <form class="en-linea" action="/auctions/{{ a.id }}/reopen" method="POST">
               <button class="btn btn-primary btn-xs">Reabrir</button>
             </form>
             {% endif %}
 
             {% if a.status != 'CANCELLED' and a.status != 'CLOSED' %}
-            <form action="/auctions/{{ a.id }}/cancel" method="POST" style="display:inline"
+            <form class="en-linea" action="/auctions/{{ a.id }}/cancel" method="POST"
                   data-confirm="¿Cancelar?">
               <button class="btn btn-ghost btn-xs">Cancelar</button>
             </form>

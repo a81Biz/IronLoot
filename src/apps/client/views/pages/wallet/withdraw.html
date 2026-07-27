@@ -2,7 +2,7 @@
 {% block title %}Retirar fondos — IronLoot{% endblock %}
 {% block page_title %}Retirar fondos{% endblock %}
 {% block content %}
-<div class="card" style="max-width:480px;">
+<div class="card ancho-480">
   <form id="withdrawForm">
     <div class="form-group">
       <label for="amount">Monto a retirar (MXN)</label>
@@ -13,7 +13,7 @@
       <input class="form-control" type="text" id="account" placeholder="18 dígitos CLABE" required>
     </div>
     <button type="submit" class="btn btn-primary">Solicitar retiro</button>
-    <div id="withdrawMsg" class="alert" style="display:none;margin-top:.75rem;"></div>
+    <div id="withdrawMsg" class="alert oculto mensaje-accion"></div>
   </form>
 </div>
 {% endblock %}

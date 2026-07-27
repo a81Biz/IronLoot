@@ -2,7 +2,7 @@
 {% block title %}Mi perfil — IronLoot{% endblock %}
 {% block page_title %}Mi perfil{% endblock %}
 {% block content %}
-<div class="card" style="max-width:600px;">
+<div class="card ancho-600">
   <form id="profileForm">
     <div class="form-group">
       <label>Nombre completo</label>
@@ -17,7 +17,7 @@
       <input class="form-control" value="{{ profile.email }}" disabled>
     </div>
     <button type="submit" class="btn btn-primary">Guardar cambios</button>
-    <div id="profileMsg" style="display:none;margin-top:.75rem;" class="alert"></div>
+    <div id="profileMsg" class="alert oculto mensaje-accion"></div>
   </form>
 </div>
 {% endblock %}

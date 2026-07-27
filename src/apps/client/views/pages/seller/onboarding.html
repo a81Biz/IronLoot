@@ -2,7 +2,7 @@
 {% block title %}Activar cuenta vendedor — IronLoot{% endblock %}
 {% block page_title %}Activar cuenta de vendedor{% endblock %}
 {% block content %}
-<div class="card" style="max-width:600px;">
+<div class="card ancho-600">
   <p class="text-muted mb-2">Para vender en IronLoot necesitas completar tu información de vendedor (KYC).</p>
   <form id="onboardingForm">
     <div class="form-group">
@@ -17,7 +17,7 @@
       <label for="address">Dirección</label>
       <input class="form-control" id="address" required placeholder="Calle, número, colonia">
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1rem;">
+    <div class="rejilla-2">
       <div class="form-group">
         <label for="city">Ciudad</label>
         <input class="form-control" id="city" required placeholder="Ciudad de México">
@@ -32,13 +32,13 @@
       <input class="form-control" id="phone" required placeholder="+525500000000">
     </div>
     <div class="form-group">
-      <label style="display:flex;align-items:center;gap:.5rem;font-weight:normal;">
+      <label class="fila-centrada etiqueta-normal">
         <input type="checkbox" id="acceptTerms" required>
         Acepto los términos y condiciones de vendedor de IronLoot.
       </label>
     </div>
     <button type="submit" class="btn btn-primary">Activar cuenta vendedor</button>
-    <div id="onboardingMsg" class="alert" style="display:none;margin-top:.75rem;"></div>
+    <div id="onboardingMsg" class="alert oculto mensaje-accion"></div>
   </form>
 </div>
 {% endblock %}
