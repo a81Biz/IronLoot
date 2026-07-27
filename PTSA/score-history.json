@@ -300,6 +300,47 @@
       "evidencias_nuevas": [
         "E-013"
       ]
+    },
+    {
+      "session": "DS-006",
+      "date": "2026-07-27",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 65,
+        "D2": 95,
+        "D3": 100,
+        "D4": 100,
+        "health": 88.0,
+        "risk": 100,
+        "confidence": 93.4
+      },
+      "classification": "B",
+      "classification_without_cap": "B",
+      "cap_reason": null,
+      "score_freshness": {
+        "last_verified": "2026-07-27",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "potable_water_margin": "D1=65, a 5 puntos del cap (<60). Un solo hallazgo ALTA mas en D1 lo activa.",
+      "health_unstable": false,
+      "trigger": "Ampliacion de cobertura: Acid Test sobre la salida real de los productos sin auditar",
+      "findings_changes": {
+        "nuevos": [
+          "H-010 (D1, ALTA) — la comision se cobra pero nunca se registra: P-010 no se genera",
+          "H-011 (D1, MEDIA) — la ventana de disputa se mide desde updatedAt, no desde la entrega"
+        ],
+        "revisados": [
+          "Los 12 productos salen de BORRADOR: 10 a IDENTIFICADO, P-010 a REQUIERE_REVISION"
+        ],
+        "cerrados": []
+      },
+      "evidencias_nuevas": [
+        "E-013",
+        "E-014"
+      ],
+      "cobertura": "11 de 12 productos con salida real auditada (92%). P-012 sin instancias por H-005."
     }
   ]
 }

@@ -140,3 +140,58 @@ El Confidence apenas se mueve: este delta **atendió hallazgos, no amplió cober
 y la frescura STALE, y por eso la clase no sube a A pese al Health.
 
 **Ningún hallazgo se cerró.** El agente no cierra hallazgos.
+
+---
+
+## DS-006 — Ampliación de cobertura (2026-07-27)
+
+**Disparador**: los seis productos que DS-004 y DS-005 dejaron sin auditar. Era lo único que podía
+mover el Confidence.
+
+### Lo que se hizo
+
+Domain Acid Test sobre la **salida real en base de datos** (`[R55]`) de **11 de los 12 productos**.
+Para P-006 no había instancias: se **generó una disputa real por la API** en vez de declararlo «sin
+datos».
+
+| Producto | Resultado |
+|---|---|
+| P-001 · P-002 · P-003 · P-004 · P-005 · P-007 · P-008 · P-009 · P-011 | **Todos los invariantes cumplen** |
+| **P-006** | 7/7 en el Acid Test — pero destapó **H-011** |
+| **P-010** | **VIOLADO**: el producto no se genera nunca → **H-010** |
+| P-012 | Sin instancias (H-005, bloqueado) |
+
+**Los 12 productos salen de `BORRADOR`**, donde llevaban desde el 23-jun: 10 a `IDENTIFICADO`,
+P-010 a `REQUIERE_REVISION`.
+
+### Hallazgos nuevos
+
+**H-010 (D1, ALTA)** — `commission_records` tiene **0 filas** mientras el ledger registra **95.00
+MXN** de `FEE_PLATFORM` cobrados. `CommissionsService.calculateForOrder()` es el único sitio que
+crea el registro y **no lo invoca nadie en producción**: sus tres referencias están en los tests.
+El dinero se cobra; la contabilidad no lo ve. El informe financiero del panel lee esa tabla vacía.
+
+**H-011 (D1, MEDIA)** — `CR-007` dice «14 días desde la entrega» y el código mide desde
+`updatedAt`: `orders` **no tiene** `delivered_at`, ni en Prisma ni en la BD, y dos `as any` hacen
+que el acceso compile y devuelva `undefined`. Cualquier modificación del pedido **reinicia la
+ventana**.
+
+### Scores
+
+| | DS-005 | **DS-006** |
+|---|--:|--:|
+| Health | 94.0 | **88.0** |
+| D1 | 85 | **65** |
+| Risk | 40 | **100** |
+| Confidence | 63.4 | **93.4** |
+| Freshness | STALE | **FRESH** |
+| Clase | B | **B** |
+
+**El sistema no ha empeorado: la auditoría ha empezado a mirar.** El Confidence sube 30 puntos
+porque la cobertura pasa del 50 % al 92 % y la frescura a FRESH. El Health baja porque auditar de
+verdad encontró dos productos que no cumplen.
+
+> ⚠️ **D1 = 65 está a 5 puntos de la Regla del Agua Potable.** Un solo hallazgo ALTA más en D1 lo
+> deja en 50, y entonces el Health se capa a 50: **Clase F**, con la técnica intacta.
+
+**Ningún hallazgo cerrado.** El agente no cierra hallazgos.

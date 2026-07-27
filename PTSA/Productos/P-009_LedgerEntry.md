@@ -3,10 +3,10 @@ producto_id: P-009
 nombre: Ledger Entry — Entrada de ledger
 clase: secundario
 criticidad: CRITICA
-estado: BORRADOR
+estado: IDENTIFICADO
 dimension_primaria: D1
-confidence: 0
-audit_due: 2026-07-23
+confidence: 100
+audit_due: 2026-08-26
 domain_validation:
   semantic_drift_detected: false
   rubric_compliance_score: null
@@ -47,3 +47,23 @@ P-009 Ledger Entry
 
 ## Estado de validación
 `BORRADOR` — pendiente F5/F6
+
+
+---
+
+## Auditoría F6 — DS-006 (2026-07-27)
+
+**Transición**: `BORRADOR` → **`IDENTIFICADO`** · **Confidence**: 100 · **Evidencia**: [E-010]
+
+El ultimo balance_after cuadra con el balance en los 3 monederos
+
+Ejecutado sobre la **salida real extraída de la base de datos** (`[R55]`), con los productos que
+dejó la corrida completa de QA del 27-jul — no sobre tests unitarios ni sobre el código que los
+genera.
+
+> **Por qué no llega a `VALIDADO`.** `[R38]` exige para esa transición `rubric = 100` ∧ `¬drift` ∧
+> `cross_coherence` verificada, y `[R39]` prohíbe llegar por inferencia. La rúbrica de este producto
+> **no está definida** en F-1 —sólo hay reglas `CR-XXX` sueltas—, así que `rubric_compliance_score`
+> no es calculable todavía. Declararlo `VALIDADO` sería inventarse el número.
+>
+> Definir las rúbricas es trabajo de F12 (Gobernanza de Dominio) y queda en `PENDIENTES.md`.

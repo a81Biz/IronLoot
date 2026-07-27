@@ -3,15 +3,15 @@ producto_id: P-006
 nombre: Dispute — Disputa gestionada
 clase: primario
 criticidad: ALTA
-estado: BORRADOR
+estado: IDENTIFICADO
 dimension_primaria: D1
-confidence: 0
-audit_due: 2026-08-22
+confidence: 85
+audit_due: 2026-08-26
 domain_validation:
   semantic_drift_detected: false
   rubric_compliance_score: null
   cross_coherence_verified: false
-hallazgos_relacionados: []
+hallazgos_relacionados: [H-011]
 ---
 
 # P-006 — Dispute (Disputa)
@@ -51,3 +51,23 @@ P-006 Dispute
 ## Notas de coherencia inter-producto
 - P-006 depende de P-003 (Order): requiere orderId con pedido DELIVERED
 - La disputa no bloquea fondos directamente pero puede derivar en P-005 (refund)
+
+
+---
+
+## Auditoría F6 — DS-006 (2026-07-27)
+
+**Transición**: `BORRADOR` → **`IDENTIFICADO`** · **Confidence**: 85 · **Evidencia**: [E-014]
+
+Acid Test 7/7 sobre una disputa real; pero H-011: la ventana se mide desde updatedAt
+
+Ejecutado sobre la **salida real extraída de la base de datos** (`[R55]`), con los productos que
+dejó la corrida completa de QA del 27-jul — no sobre tests unitarios ni sobre el código que los
+genera.
+
+> **Por qué no llega a `VALIDADO`.** `[R38]` exige para esa transición `rubric = 100` ∧ `¬drift` ∧
+> `cross_coherence` verificada, y `[R39]` prohíbe llegar por inferencia. La rúbrica de este producto
+> **no está definida** en F-1 —sólo hay reglas `CR-XXX` sueltas—, así que `rubric_compliance_score`
+> no es calculable todavía. Declararlo `VALIDADO` sería inventarse el número.
+>
+> Definir las rúbricas es trabajo de F12 (Gobernanza de Dominio) y queda en `PENDIENTES.md`.

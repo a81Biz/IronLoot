@@ -3,10 +3,10 @@ producto_id: P-008
 nombre: JWT Authentication Token
 clase: primario
 criticidad: ALTA
-estado: BORRADOR
+estado: IDENTIFICADO
 dimension_primaria: D2
-confidence: 0
-audit_due: 2026-08-22
+confidence: 100
+audit_due: 2026-08-26
 domain_validation:
   semantic_drift_detected: false
   rubric_compliance_score: null
@@ -54,3 +54,23 @@ P-008 JWT Token
 ## Notas de coherencia inter-producto
 - P-008 es prerrequisito para todos los demás productos que requieren JWT
 - Dimensión primaria D2 (seguridad arquitectónica) en lugar de D1 porque el valor del token es de acceso/seguridad, no de dominio de negocio directo
+
+
+---
+
+## Auditoría F6 — DS-006 (2026-07-27)
+
+**Transición**: `BORRADOR` → **`IDENTIFICADO`** · **Confidence**: 100 · **Evidencia**: [E-010]
+
+21 sesiones: todas con caducidad, 0 caducadas vivas, 0 tokens repetidos, guardadas como hash de 64 hex
+
+Ejecutado sobre la **salida real extraída de la base de datos** (`[R55]`), con los productos que
+dejó la corrida completa de QA del 27-jul — no sobre tests unitarios ni sobre el código que los
+genera.
+
+> **Por qué no llega a `VALIDADO`.** `[R38]` exige para esa transición `rubric = 100` ∧ `¬drift` ∧
+> `cross_coherence` verificada, y `[R39]` prohíbe llegar por inferencia. La rúbrica de este producto
+> **no está definida** en F-1 —sólo hay reglas `CR-XXX` sueltas—, así que `rubric_compliance_score`
+> no es calculable todavía. Declararlo `VALIDADO` sería inventarse el número.
+>
+> Definir las rúbricas es trabajo de F12 (Gobernanza de Dominio) y queda en `PENDIENTES.md`.

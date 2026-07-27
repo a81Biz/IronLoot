@@ -3,10 +3,10 @@ producto_id: P-005
 nombre: Wallet Transaction — Transacción de monedero
 clase: primario
 criticidad: CRITICA
-estado: BORRADOR
+estado: IDENTIFICADO
 dimension_primaria: D1
-confidence: 0
-audit_due: 2026-07-23
+confidence: 100
+audit_due: 2026-08-26
 domain_validation:
   semantic_drift_detected: false
   rubric_compliance_score: null
@@ -55,3 +55,23 @@ P-005 Wallet Transaction
 - P-004 (Payment) crea P-005 (depósito)
 - P-001 (Bid) crea P-005 (hold de fondos)
 - P-002 (Auction Close) crea múltiples P-005 (release perdedores + debit ganador)
+
+
+---
+
+## Auditoría F6 — DS-006 (2026-07-27)
+
+**Transición**: `BORRADOR` → **`IDENTIFICADO`** · **Confidence**: 100 · **Evidencia**: [E-010]
+
+Balance nunca negativo, held<=balance, ledger cuadra con el balance
+
+Ejecutado sobre la **salida real extraída de la base de datos** (`[R55]`), con los productos que
+dejó la corrida completa de QA del 27-jul — no sobre tests unitarios ni sobre el código que los
+genera.
+
+> **Por qué no llega a `VALIDADO`.** `[R38]` exige para esa transición `rubric = 100` ∧ `¬drift` ∧
+> `cross_coherence` verificada, y `[R39]` prohíbe llegar por inferencia. La rúbrica de este producto
+> **no está definida** en F-1 —sólo hay reglas `CR-XXX` sueltas—, así que `rubric_compliance_score`
+> no es calculable todavía. Declararlo `VALIDADO` sería inventarse el número.
+>
+> Definir las rúbricas es trabajo de F12 (Gobernanza de Dominio) y queda en `PENDIENTES.md`.

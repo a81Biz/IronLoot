@@ -62,3 +62,16 @@
 | 4 | Subir los 12 productos de `BORRADOR`; auditar la salida real de los 6 que faltan | F3, próxima sesión |
 | 5 | Poner a correr el checkpoint D2 de dependencias — **ahora sí es posible**: `dependencias-vulnerables.spec.ts` lo hace en milisegundos | Próximo PT |
 | 6 | `CLAUDE.md` cita `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`; ninguno existe | Humano |
+
+---
+
+## DS-006 (2026-07-27)
+
+| # | Pendiente | Responsable |
+|---|---|---|
+| 1 | **H-010** — invocar `calculateForOrder()` donde se asienta el `FEE_PLATFORM`. Es el D1 más barato y el que más sube el Health | Próximo PT |
+| 2 | **H-011** — decidir si la ventana se mide desde la entrega; si sí, añadir `delivered_at` y **quitar los `as any`** | Humano decide, luego PT |
+| 3 | **H-005** — quién emite la factura | Humano (negocio + fiscal) |
+| 4 | **Definir las rúbricas en F-1.** Sin ellas ningún producto puede llegar a `VALIDADO` (`[R38]`) | F12 |
+| 5 | ⚠️ **D1 = 65, a 5 puntos del cap.** Un hallazgo ALTA más en D1 lleva el sistema a Clase F | Vigilar |
+| 6 | Reconstruir los `CommissionRecord` históricos desde el ledger, si se quiere que el informe cuadre hacia atrás | Humano (es contabilidad con fecha pasada) |

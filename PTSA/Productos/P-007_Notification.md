@@ -3,10 +3,10 @@ producto_id: P-007
 nombre: Notification — Notificación entregada
 clase: primario
 criticidad: MEDIA
-estado: BORRADOR
+estado: IDENTIFICADO
 dimension_primaria: D3
-confidence: 0
-audit_due: 2026-09-21
+confidence: 100
+audit_due: 2026-08-26
 domain_validation:
   semantic_drift_detected: false
   rubric_compliance_score: null
@@ -52,3 +52,23 @@ P-007 Notification
 - P-007 es generado por P-002 (Auction Close): AUCTION_WON + AUCTION_LOST
 - P-007 es generado por P-001 (Bid): BID_OUTBID para pujador superado
 - P-007 tiene dimensión primaria D3 porque su criticidad es de entrega/observabilidad más que de dominio
+
+
+---
+
+## Auditoría F6 — DS-006 (2026-07-27)
+
+**Transición**: `BORRADOR` → **`IDENTIFICADO`** · **Confidence**: 100 · **Evidencia**: [E-010]
+
+4 notificaciones reales: destinatario existente, sin mensajes vacios, tipos del catalogo
+
+Ejecutado sobre la **salida real extraída de la base de datos** (`[R55]`), con los productos que
+dejó la corrida completa de QA del 27-jul — no sobre tests unitarios ni sobre el código que los
+genera.
+
+> **Por qué no llega a `VALIDADO`.** `[R38]` exige para esa transición `rubric = 100` ∧ `¬drift` ∧
+> `cross_coherence` verificada, y `[R39]` prohíbe llegar por inferencia. La rúbrica de este producto
+> **no está definida** en F-1 —sólo hay reglas `CR-XXX` sueltas—, así que `rubric_compliance_score`
+> no es calculable todavía. Declararlo `VALIDADO` sería inventarse el número.
+>
+> Definir las rúbricas es trabajo de F12 (Gobernanza de Dominio) y queda en `PENDIENTES.md`.
