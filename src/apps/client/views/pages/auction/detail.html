@@ -41,13 +41,27 @@
 {% endif %}
 {% endblock %}
 {% block scripts %}
-<script src="/js/pages/pages-auction-detail.js"></script>
 {% if auction %}
+{# PT-102 (F-34) — El ORDEN es un contrato, y aqui estaba invertido.
+
+   `pages-auction-detail.js` llama a `io(...)`, que lo define socket.io. Iba delante, asi que
+   `io` no existia todavia: ReferenceError, tragado por un catch mudo, y la puja en vivo
+   apagada sin que nadie se enterase. PT-096 lo invirtio al sacar el JS de la plantilla — el
+   contenido se movio tal cual, pero la posicion tambien era un contrato.
+
+   `defer` en AMBOS: garantiza el orden de aparicion por especificacion, no por posicion, y
+   ademas espera al DOM. Lo segundo tambien hacia falta: el script lee #countdown en su primera
+   linea util y hoy funcionaba por accidente.
+
+   Y van dentro del `if`: sin subasta no hay nada que escuchar, y el script reventaba al leer
+   #countdown en la pagina de «subasta no encontrada».
+
+   Lo vigila `src/apps/client/test/orden-de-scripts.spec.ts`. #}
 {# PT-089 — SRI: la puja en vivo depende de este fichero; si el CDN se compromete, el
    navegador lo rechaza en vez de ejecutarlo. #}
-<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js" defer
         integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
         crossorigin="anonymous"></script>
-
+<script src="/js/pages/pages-auction-detail.js" defer></script>
 {% endif %}
 {% endblock %}
