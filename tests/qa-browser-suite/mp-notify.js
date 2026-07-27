@@ -7,9 +7,9 @@
 // y con cualquiera de los identificadores.
 //
 // Uso:
-//   node mp-notify.cjs webhook payment <id>  <buyerId>
-//   node mp-notify.cjs ipn     payment <id>  <buyerId>
-//   node mp-notify.cjs ipn     merchant_order <id> <buyerId>
+//   node mp-notify.js webhook payment <id>  <buyerId>
+//   node mp-notify.js ipn     payment <id>  <buyerId>
+//   node mp-notify.js ipn     merchant_order <id> <buyerId>
 //
 //   webhook -> query `data.id`, cuerpo {id,type,action,data:{id}}, firmado con el secret
 //   ipn     -> query `topic` + `id`, sin `data.id`, sin firma validable (asi lo documenta MP)
@@ -72,7 +72,7 @@ async function deliverIpn(topic, resourceId) {
   const [format, resourceType, resourceId, buyerId] = process.argv.slice(2);
 
   if (!format || !resourceType || !resourceId) {
-    console.error('uso: node mp-notify.cjs <webhook|ipn> <payment|order|merchant_order> <id> [buyerId]');
+    console.error('uso: node mp-notify.js <webhook|ipn> <payment|order|merchant_order> <id> [buyerId]');
     process.exit(1);
   }
 

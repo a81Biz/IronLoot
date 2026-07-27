@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium, firefox, webkit } = require('playwright');
-const L = require('./lib.cjs');
+const L = require('./lib.js');
 const cfg = L.cfg;
 
 const OUT = fs.readFileSync(path.join(cfg.OUT_ROOT, '.last-run'), 'utf8').trim();

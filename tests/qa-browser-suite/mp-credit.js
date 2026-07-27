@@ -51,7 +51,7 @@ async function deliverSignedWebhook(paymentId) {
 (async () => {
   const externalRef = process.argv[2];
   const buyerId = process.argv[3];
-  if (!externalRef || !buyerId) { console.error('uso: node mp-credit.cjs <external_reference> <buyerId>'); process.exit(1); }
+  if (!externalRef || !buyerId) { console.error('uso: node mp-credit.js <external_reference> <buyerId>'); process.exit(1); }
 
   const balBefore = db(`SELECT balance FROM wallets WHERE user_id='${buyerId}'`);
   console.log(`Esperando pago aprobado para ${externalRef} ... (saldo actual: ${balBefore})`);

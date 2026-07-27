@@ -3,7 +3,7 @@
 const fs = require('fs');
 const crypto = require('crypto');
 const { execSync } = require('child_process');
-const { createOrder } = require('./mp-orders.cjs');
+const { createOrder } = require('./mp-orders.js');
 function readEnv(k) { const t = fs.readFileSync('C:/DevOps/Desarrollos/IronLoot/src/api/.env', 'utf8'); const m = t.match(new RegExp('^' + k + '=(.*)$', 'm')); return m ? m[1].trim() : ''; }
 const SECRET = readEnv('MERCADO_PAGO_WEBHOOK_SECRET');
 const LOCAL = 'http://localhost:3000';

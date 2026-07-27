@@ -2,7 +2,7 @@
 const fs = require('fs');
 const path = require('path');
 const { chromium } = require('playwright');
-const cfg = require('./config.cjs');
+const cfg = require('./config.js');
 
 function ts() {
   const d = new Date();

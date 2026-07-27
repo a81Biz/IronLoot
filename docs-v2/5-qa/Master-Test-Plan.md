@@ -61,7 +61,7 @@
 
 ## Fase 70 — Pago real por Mercado Pago y traza completa (PT-080 / PT-085 / PT-086)
 
-`tests/qa-browser-suite/70-payment-trace.cjs`, integrada en `run-all.sh`. **16 casos**, todos
+`tests/qa-browser-suite/70-payment-trace.js`, integrada en `run-all.sh`. **16 casos**, todos
 contra la pasarela real:
 
 | Bloque | Qué verifica |
@@ -80,7 +80,7 @@ contra la pasarela real:
 
 ## Fase 71 — Pago real por PayPal acreditado por la vía garantizada (PT-076 / PT-087)
 
-`tests/qa-browser-suite/71-paypal-guaranteed.cjs`, integrada en `run-all.sh`. **17 casos**,
+`tests/qa-browser-suite/71-paypal-guaranteed.js`, integrada en `run-all.sh`. **17 casos**,
 todos contra la pasarela real. La diferencia con la fase 70 es el punto: aquí **no hay
 notificación**. El comprador aprueba en el checkout real de PayPal —navegador headless, cuenta
 personal de sandbox— y nadie avisa a la API, igual que en desarrollo, donde PayPal no puede

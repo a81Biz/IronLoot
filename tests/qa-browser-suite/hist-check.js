@@ -1,4 +1,4 @@
-const L = require('./lib.cjs');
+const L = require('./lib.js');
 const cfg = L.cfg; const fs = require('fs');
 const act = JSON.parse(fs.readFileSync('C:/tmp/act.json', 'utf8'));
 

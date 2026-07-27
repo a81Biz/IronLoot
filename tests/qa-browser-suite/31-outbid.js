@@ -1,7 +1,7 @@
 // E2E-6 aislado: comprador2 puja 700 → outbid de comprador1 (liberación de fondos).
 const fs = require('fs');
 const path = require('path');
-const L = require('./lib.cjs');
+const L = require('./lib.js');
 const cfg = L.cfg;
 const OUT = fs.readFileSync(path.join(cfg.OUT_ROOT, '.last-run'), 'utf8').trim();
 const DIR = L.ensureDir(path.join(OUT, '30-e2e'));

@@ -1,7 +1,7 @@
 // Fase 0 — Smoke / disponibilidad. Barre todas las rutas, headed, con screenshots + captura de consola.
 const fs = require('fs');
 const path = require('path');
-const L = require('./lib.cjs');
+const L = require('./lib.js');
 const cfg = L.cfg;
 
 // El dir de salida se pasa por argv[2] para compartir timestamp entre fases
