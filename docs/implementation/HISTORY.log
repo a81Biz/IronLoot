@@ -1241,3 +1241,73 @@ Graphify: regenerado. 2442 nodos, 5100 aristas, 178 comunidades. La suite de QA 
 Nota sobre el README de enterprise-documentation: se deja dicho que es un recorrido del 23-jun con
   correcciones encima, NO una regeneracion. Foundation Protocol dice que una nueva ejecucion
   sobrescribe todo; eso no se ha hecho y la decision es del humano.
+
+## PT-110 — BUG: 71 vulnerabilidades en produccion (PTSA H-008)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-110-vulnerabilidades-y-sockets
+Root cause: `engine.io` 6.6.5 en el rango vulnerable 4.1.0-6.6.7, y el namespace `auctions` es
+  PUBLICO sin autenticar por diseño (PT-039): el agotamiento de conexiones lo podia provocar
+  cualquiera contra la puja en vivo.
+Lo que aporto consultar el grafo: hay DOS gateways publicos, no uno, y NINGUNO tenia cota de
+  conexion. El @nestjs/throttler global cubre HTTP, no sockets. La CVE amplificaba un hueco que ya
+  estaba abierto.
+Solution: override engine.io>=6.6.9 + cotas (maxHttpBufferSize, ping) en ambos gateways + cinco
+  overrides mas SOLO dentro del mismo mayor. 71 -> 63 avisos.
+Lo que NO se hizo: `npm audit fix` sin --force falla con ERESOLVE (el mailer exige nodemailer>=8),
+  y 7 de 12 candidatos exigian salto de version MAYOR sobre un servidor de pagos. TD-015.
+Correccion durante el trabajo: primero puse overrides a «la ultima version» de los 12. Eso era
+  --force con otro nombre y lo prohibia mi propio plan. Rehecho comparando mayor a mayor.
+Evidence: docs/implementation/evidence/PT-110/ — npm test 724/724, puja en vivo 8/8 con ws y
+  engine.io cambiados debajo, payment-trace 16/16 con cobro real.
+PTSA reference: H-008 -> CORREGIDA_PARCIAL
+
+## PT-111 — BUG: ADMIN no compilaba y sus sesiones nunca llegaron a Redis (F-38 + F-39)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-111-arranque-admin-tsconfig
+Como aparecio: al verificar PT-110. La suite dio 21 checks de ADMIN en rojo y admin-writes sin
+  ejecutarse. NO lo causo PT-110 —solo toco src/api/package.json—.
+F-38: `src/admin/tsconfig.json` tenia `rootDir: ./src` SIN `exclude`, asi que recogia los tests que
+  PT-101 anadio (TS6059). Sobrevivio tres semanas porque el `deleteOutDir: false` de PT-094 servia
+  un dist viejo: el arreglo de una averia tapaba otra.
+F-39: `require("connect-redis").default` — v9 no tiene `default`. El catch caia a memoria
+  anunciando «Redis unavailable» con Redis sano: el mensaje culpaba a la infraestructura de un
+  error del codigo. Y al corregirlo aparecio el segundo defecto: connect-redis v9 habla el dialecto
+  de node-redis, no el de ioredis; cada escritura respondia `ERR syntax error` EN SILENCIO mientras
+  el arranque anunciaba exito.
+Solution: `exclude` en el tsconfig; cliente node-redis; REDIS_URL en docker-compose (apuntaba a
+  localhost:6379, que dentro del contenedor no es Redis); manejador de error; y el aviso de caida
+  NOMBRA el motivo.
+Evidence: login 302, clave sess:* en Redis, `docker restart` y la sesion SIGUE ABIERTA (antes
+  rebotaba a /login). 0 ECONNREFUSED frente a 77. Suite completa: smoke 57/57, admin-writes 4/4.
+
+## PT-112 — REFACTOR: el repositorio versiona decisiones, no artefactos (H-009 + F-37)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: refactor/PT-112-versionar-decisiones
+Root cause: el .gitignore hacia lo contrario de lo que sirve. Fuera: arquitectura, historia de
+  decisiones y la auditoria PTSA completa. Dentro: 164 MB y 2658 ficheros de capturas de QA.
+Solution: 238 ficheros de decision entran (~3.3 MB); qa-out/ sale del indice (no del disco ni de la
+  historia). Dos patrones corregidos: `implementation/` sin ruta capturaba docs/implementation/, y
+  `*.log` dejaba fuera HISTORY.log, que es el registro append-only de FDGE.
+Barrido de credenciales antes de anadir: 3 coincidencias, las tres falsos positivos.
+Evidence: la guarda coherencia-deuda-tecnica deja de saltarse; commits_since_audit pasa a ser
+  calculable para los 5 documentos del alcance, que era lo que H-009 senalaba como roto.
+PTSA reference: H-009 -> CORREGIDA
+
+## PT-113 — INVESTIGATION: el bloqueo del CFDI no es el PAC (H-005 / F-40)
+Date: 2026-07-27
+Status: CLOSED (investigacion documentada)
+Branch: investigation/PT-113-cfdi-quien-emite
+Pregunta: si manana apareciera el contrato con el PAC, ¿se podria emitir un CFDI?
+Respuesta: NO, y por razones ajenas al SAT.
+  1. `CfdiData` tiene 6 campos; un CFDI 4.0 exige ademas UsoCFDI, RegimenFiscal de emisor y
+     receptor, LugarExpedicion, MetodoPago, FormaPago, ClaveProdServ, ClaveUnidad e impuestos.
+  2. En toda la base hay UNA columna fiscal: profiles.rfc.
+  3. NO ESTA DECIDIDO QUIEN EMITE LA FACTURA. Se busco en el PRD y en F-1: no esta.
+Lo que si estaba hecho y H-005 no reconocia: modelo completo, interruptor CFDI_ENABLED, claves de
+  configuracion, y el contrato ICfdiPacProvider YA EXISTE en core.
+No se amplia CfdiData a proposito: hacerlo antes de decidir el modelo de emision seria inventarse
+  la forma. La advertencia queda en el propio contrato y la pregunta en F-1 § U-005.
+PTSA reference: H-005 sigue ABIERTA con la causa raiz corregida (F-40)
