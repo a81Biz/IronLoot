@@ -259,6 +259,47 @@
         "E-011",
         "E-012"
       ]
+    },
+    {
+      "session": "DS-005",
+      "date": "2026-07-27",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 85,
+        "D2": 95,
+        "D3": 100,
+        "D4": 100,
+        "health": 94.0,
+        "risk": 40,
+        "confidence": 63.4
+      },
+      "classification": "B",
+      "classification_without_cap": "A",
+      "cap_reason": "Confidence 63.4 < 90 (§15.6). La cobertura sigue al 50% y la frescura STALE: el delta atendio hallazgos, no amplio cobertura de productos.",
+      "score_freshness": {
+        "last_verified": "2026-07-27",
+        "commits_since_audit": 0,
+        "status": "STALE"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "trigger": "Ciclos FDGE sobre los hallazgos de DS-004 (PT-110..PT-113)",
+      "findings_changes": {
+        "nuevos": [
+          "F-38 el contenedor de ADMIN no compilaba desde PT-101",
+          "F-39 las sesiones de ADMIN nunca llegaron a Redis",
+          "F-40 H-005 esta mal caracterizada: el PAC no es el bloqueo principal"
+        ],
+        "revisados": [
+          "H-008 -> CORREGIDA_PARCIAL (71->63 avisos; vector sin autenticar cerrado)",
+          "H-009 -> CORREGIDA (238 decisiones versionadas, 2658 artefactos fuera)",
+          "H-005 -> sigue ABIERTA, causa raiz corregida"
+        ],
+        "cerrados": []
+      },
+      "evidencias_nuevas": [
+        "E-013"
+      ]
     }
   ]
 }

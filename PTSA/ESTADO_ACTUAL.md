@@ -1,5 +1,5 @@
 # ESTADO ACTUAL — PTSA V3
-**Última actualización**: 2026-07-27 | **Sesión**: DS-004 — Delta Sync
+**Última actualización**: 2026-07-27 | **Sesión**: DS-005 — tras atender los hallazgos
 
 ---
 
@@ -8,54 +8,57 @@
 ```
 Sistema:        IronLoot Auction Platform v1.0.0
 Fase actual:    CERTIFICADO — Clase B
-Health:         90.5 / 100
-Clasificación:  B      (sin cap sería A; Confidence 62.8 < 90 lo impide, §15.6)
-Risk:           92 / 100   (ALTO)
-Confidence:     62.8 / 100 (BAJA)
-Freshness:      STALE  (177 commits sin reauditar del todo; audit_due vencido en 5 productos)
+Health:         94.0 / 100     (DS-004: 90.5)
+Clasificación:  B              (sin cap sería A; Confidence 63.4 < 90, §15.6)
+Risk:           40 / 100       (DS-004: 92)  MODERADO
+Confidence:     63.4 / 100     (BAJA)
+Freshness:      STALE
 ```
 
 ## Dimensiones
 
-| | Score | Hallazgo activo |
-|---|--:|---|
-| D1 Dominio | 85 | H-005 — CFDI sin PAC |
-| D2 Arquitectura | 85 | H-008 — 71 vulnerabilidades |
-| D3 Observabilidad | 100 | — |
-| D4 Documental | 95 | H-009 — docs fuera de git |
+| | DS-004 | **DS-005** | Hallazgo activo |
+|---|--:|--:|---|
+| D1 Dominio | 85 | **85** | H-005 — CFDI (causa raíz corregida) |
+| D2 Arquitectura | 85 | **95** | H-008 — CORREGIDA_PARCIAL |
+| D3 Observabilidad | 100 | **100** | — |
+| D4 Documental | 95 | **100** | H-009 — CORREGIDA |
 
-## Lo que cambió respecto a DS-003
+## Lo que cambió
 
-| | DS-003 | DS-004 |
-|---|--:|--:|
-| Health | 95.2 | **90.5** |
-| Risk | 44 | **92** |
-| Confidence | 85 | **62.8** |
-| Clasificación | A | **B** |
+**Risk cae de 92 a 40**: el vector alcanzable sin autenticar está cerrado y la documentación crítica
+ya tiene historial.
 
-**El sistema no ha empeorado — la auditoría se ha puesto al día.** D1 y D3 están donde estaban;
-el Acid Test sobre la salida real no encontró **ninguna** violación de invariante. Lo que bajó fue
-D2, por 71 vulnerabilidades que nadie había mirado, y D4, por una limitación del propio alcance.
+**Confidence apenas se mueve** (62.8 → 63.4), y es lo honesto: este delta **atendió hallazgos, no
+amplió cobertura**. Seis de doce productos siguen sin auditar su salida real, y los doce siguen en
+`BORRADOR`. Por eso la clase no sube a A pese al Health de 94.
 
-Y el Confidence cayó porque **se está midiendo con honestidad**: cobertura real 50 %, frescura
-STALE, y una evidencia de cinco caducada.
+## Hallazgos
 
-## Hallazgos activos
+| ID | Dim | Estado |
+|---|:--|---|
+| **H-005** | D1 | **ABIERTA** — el bloqueo no es el PAC: es que nadie ha decidido quién emite la factura (F-40) |
+| **H-008** | D2 | **CORREGIDA_PARCIAL** — 71→63 avisos; quedan 63 sin alcance directo, en TD-015 |
+| **H-009** | D4 | **CORREGIDA** — 238 ficheros de decisión versionados, 2658 artefactos fuera |
 
-- **H-005** (D1, ALTA) — bloqueado por contratar un PAC ante el SAT. Sin cambios.
-- **H-008** (D2, ALTA) — **nuevo**. `engine.io` alcanzable sin autenticar contra la puja en vivo.
-- **H-009** (D4, MEDIA) — **nuevo**. Los 5 documentos del alcance están gitignored.
+**Ninguno cerrado.** El agente no cierra hallazgos.
 
-## Productos
+## Lo que apareció al trabajarlos
 
-**Los 12 siguen en `BORRADOR`.** Ninguno ha llegado nunca a `IDENTIFICADO`. Cinco tienen el
-`audit_due` vencido desde el 23-jul: P-001, P-002, P-004, P-005, P-009 (todos CRÍTICOS).
+Tres defectos que sólo salen al tocar el sistema, no al leerlo:
 
-Con la evidencia de E-010, cuatro de ellos (P-001, P-004, P-005, P-009) tienen base suficiente para
-subir a `IDENTIFICADO`. Es trabajo de F3.
+- **F-38** — ADMIN llevaba **desde PT-101 sin compilar**. El `dist` conservado por PT-094 servía
+  código viejo y tapaba el fallo.
+- **F-39** — Las sesiones de ADMIN **nunca estuvieron en Redis** pese a que el código lo anunciaba.
+  Dos causas encadenadas: un `default` inexistente y, debajo, un dialecto de cliente equivocado.
+- **F-40** — H-005 llevaba cinco semanas con la causa raíz equivocada.
+
+Los tres son de la misma familia: **un éxito anunciado con un fallo callado**.
 
 ## Siguiente acción
 
-Triar H-008 empezando por `engine.io`. Después, decidir sobre H-009.
-
-**Ningún hallazgo se cierra sin validación humana.**
+1. **Decidir quién emite la factura** (H-005/F-40). Es una decisión de negocio, no técnica, y
+   desbloquea D1.
+2. **Subir productos de `BORRADOR`** y auditar la salida real de los seis que faltan. Es lo único
+   que mueve el Confidence, y con él la clasificación.
+3. TD-015: la cadena del mailer, como unidad de actualización propia.

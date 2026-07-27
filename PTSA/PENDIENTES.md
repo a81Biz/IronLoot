@@ -49,3 +49,16 @@
 | 4 | Subir P-001, P-004, P-005, P-009 de `BORRADOR` a `IDENTIFICADO` con la evidencia de E-010 | F3, próxima sesión |
 | 5 | Auditar la salida real de P-003, P-006, P-007, P-008, P-010, P-011 (hoy `coverage` = 50 %) | Próxima sesión |
 | 6 | `CLAUDE.md` cita `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`; **ninguno existe** | Humano |
+
+---
+
+## DS-005 (2026-07-27)
+
+| # | Pendiente | Responsable |
+|---|---|---|
+| 1 | **Decidir quién emite la factura** — las tres opciones están en F-1 § U-005. Desbloquea H-005 | Humano (negocio + fiscal) |
+| 2 | Validar H-008 (CORREGIDA_PARCIAL) y H-009 (CORREGIDA) | Humano |
+| 3 | **TD-015**: la cadena del mailer (11 paquetes, exige `nodemailer >= 8`) como unidad propia | Próximo PT |
+| 4 | Subir los 12 productos de `BORRADOR`; auditar la salida real de los 6 que faltan | F3, próxima sesión |
+| 5 | Poner a correr el checkpoint D2 de dependencias — **ahora sí es posible**: `dependencias-vulnerables.spec.ts` lo hace en milisegundos | Próximo PT |
+| 6 | `CLAUDE.md` cita `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`; ninguno existe | Humano |

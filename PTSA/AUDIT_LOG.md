@@ -113,3 +113,30 @@ productos CRÍTICOS.
 **Hallazgos cerrados**: ninguno. *El agente no cierra hallazgos.*
 
 **Evidencias nuevas**: E-009, E-010, E-011, E-012. Ninguna evidencia previa se sobrescribió (A6).
+
+---
+
+## DS-005 — Delta Sync tras atender los hallazgos (2026-07-27)
+
+**Disparador**: ciclos FDGE completos sobre los hallazgos de DS-004 (PT-110 … PT-113).
+
+| Hallazgo | Antes | Después | PT |
+|---|---|---|---|
+| **H-008** D2 ALTA | 71 avisos, `engine.io` alcanzable sin autenticar | **CORREGIDA_PARCIAL** — 63 avisos, vector cerrado, cotas en los dos gateways | PT-110 |
+| **H-009** D4 MEDIA | 5 documentos del alcance fuera de git | **CORREGIDA** — 238 ficheros de decisión dentro, 2658 artefactos fuera | PT-112 |
+| **H-005** D1 ALTA | «bloqueada por contratar un PAC» | **ABIERTA, causa raíz corregida**: el bloqueo es una decisión de dominio sin tomar | PT-113 |
+
+**Hallazgos nuevos, los tres encontrados al trabajar los anteriores:**
+
+| | |
+|---|---|
+| **F-38** | El contenedor de ADMIN **no compilaba desde PT-101**: `TS6059`, los tests fuera de `rootDir`. 21 checks en rojo. Sobrevivió tres semanas porque `deleteOutDir: false` (PT-094) servía un `dist` viejo — el arreglo de una avería tapaba otra |
+| **F-39** | Las sesiones de ADMIN **nunca llegaron a Redis**. `connect-redis@9` no tiene `default`; el `catch` caía a memoria anunciando «Redis unavailable» con Redis sano. Y al corregirlo apareció el segundo: v9 habla el dialecto de `node-redis`, no el de `ioredis` — cada escritura fallaba con `ERR syntax error` mientras el arranque anunciaba éxito |
+| **F-40** | H-005 estaba mal caracterizada |
+
+**Scores**: Health **94.0** (era 90.5) · Risk **40** (era 92) · Confidence **63.4** · Clase **B**.
+
+El Confidence apenas se mueve: este delta **atendió hallazgos, no amplió cobertura**. Sigue al 50 %
+y la frescura STALE, y por eso la clase no sube a A pese al Health.
+
+**Ningún hallazgo se cerró.** El agente no cierra hallazgos.
