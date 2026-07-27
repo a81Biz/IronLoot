@@ -11,8 +11,10 @@
 
 ## 1. Estrategia y alcance
 
-- **Niveles:** unitario (core + api), integración (api con Postgres/Redis efímeros), e2e (api con DB). **Frontends: 0 tests** (base/client/admin).
-- **Herramienta:** Jest. Core = 12 suites / **157 casos** (por CLAUDE.md; ~104 bloques fuente). API = 30 unit/integración (~161) + 15 e2e (~79). **Total ~57 suites / ~344 bloques.**
+- **Niveles:** unitario (core + api), integración (api con Postgres/Redis efímeros), e2e (api con DB). **Frontends: 119 casos** — CLIENT 103, ADMIN 13, BASE 3. ADMIN y BASE no tenían dónde poner una prueba hasta PT-101; CLIENT ya tenía, y ahí viven las guardas estáticas de plantillas.
+- **Herramienta:** Jest, **cinco proyectos** desde PT-099 (antes `npm test` corría uno solo y
+  omitía 205 casos). Cifras reales al **2026-07-27**: **85 suites / 720 casos** —
+  API 66/467 · CLIENT 8/103 · CORE 8/134 · ADMIN 2/13 · BASE 1/3.
 - **CI (`.github/workflows/ci.yml`):** lint→typecheck→test-unit(cobertura→Codecov, `fail_ci_if_error:false`)→test-integration(Postgres+Redis)→build→docker(prod/prep). **Riesgo:** scripts invocados en raíz sin `package.json` raíz que los defina (`AUD-028`).
 
 ## 2. Inventario de suites (resumen)
@@ -102,3 +104,41 @@ alcanzar un contenedor local.
 > cuenta **personal** de sandbox (ver `paypal-sandbox.example.json`). La fase se **salta sola** si
 > falta. La cuenta *business* no sirve: PayPal responde `CANNOT_PAY_SELF` porque es la que cobra.
 
+
+
+---
+
+## Anexo — Estado real de las suites (2026-07-27, PT-109)
+
+Este plan se escribió con cifras que hoy no describen el sistema. Se corrigen aquí en vez de
+reescribir el documento: lo de arriba conserva el diagnóstico, que sigue siendo válido.
+
+### Lo que hay
+
+| Proyecto | Suites | Casos | Nota |
+|---|--:|--:|---|
+| API | 66 | 467 | |
+| CLIENT | 8 | 103 | Incluye las guardas estáticas de plantillas (PT-096, PT-102, PT-105) |
+| CORE | 8 | 134 | Sin NestJS ni BD |
+| ADMIN | 2 | 13 | **No existían** hasta PT-101 |
+| BASE | 1 | 3 | **No existían** hasta PT-101 |
+| **Total** | **85** | **720** | |
+
+**Suite de navegador**: `bash run-all.sh` → **193 casos en diez fases**, incluidas dos pasarelas
+reales de punta a punta (Mercado Pago y PayPal).
+
+### Lo que este plan no podía prever, y conviene que conste
+
+- **Una suite verde no es un producto sano.** La puja en vivo estuvo apagada varios días con
+  **168/168 en verde** (F-34): las pruebas ejercitaban la puja por HTTP y nadie comprobaba que el
+  *otro* navegador se enterase. Lo cierra la fase 32, con dos navegadores reales.
+- **Doce comprobaciones de traza no se ejecutaban nunca** (F-35/PT-104): la fase 70 trataba como
+  síncrona una API que no lo es, y se rendía antes de llegar a ellas. 4 casos → 16.
+- **Las guardas llevan casos de control.** Cada guarda estática incluye un caso que *debe*
+  rechazar y otro que *debe* aceptar. Una guarda que solo ha visto verde no ha demostrado que sepa
+  ver rojo.
+
+### Lo que sigue sin cobertura, y este plan ya señalaba
+
+`commissions` y `refunds` siguen con **0 tests**. Es la deuda de cobertura más cara que queda:
+ambos tocan dinero. No se ha abierto PT para ellas.

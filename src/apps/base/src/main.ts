@@ -60,7 +60,7 @@ async function bootstrap() {
           // Si algo deja de funcionar tras esto, la respuesta NO es devolver la palabra: es que
           // queda codigo en una plantilla. Las guardas de `plantillas-sin-js-inline.spec.ts` lo
           // dicen en segundos.
-          scriptSrc: ["'self'"], // Nunjucks templates may have inline event handlers
+          scriptSrc: ["'self'"], // PT-096: sin `unsafe-inline`; el JS vive en public/js/
           // PT-105 (TD-014) — `'unsafe-inline'` RETIRADO tambien de los estilos.
           //
           // PT-096 lo quito de `script-src`, donde el riesgo es ejecutar codigo, y dejo esta
