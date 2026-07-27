@@ -50,6 +50,24 @@ export function validateStartupConfig(config: ConfigService, env: string): strin
     errors.push('ADMIN_USERNAME must be set to a non-default value (not "admin") in production');
   }
 
+  // PT-093 (TD-004) — El backoffice aprueba retiros, suspende usuarios y cancela subastas: es
+  // el contexto de mas privilegio del sistema. Hasta ahora `ADMIN_TOTP_SECRET` venia vacio por
+  // defecto y el panel calculaba `requiresTotp = !!secret`, de modo que en produccion podia
+  // quedar protegido solo con contrasena sin que nada lo advirtiera.
+  //
+  // No se exige en desarrollo: la carga de un segundo factor no compensa para entrar a un panel
+  // local, y obligarlo llevaria a desactivarlo de formas peores.
+  //
+  // El minimo de 16 caracteres es el de un secreto TOTP base32 de 80 bits (RFC 4226 recomienda
+  // 128); mas corto reduce el espacio de busqueda y anula el segundo factor que se pretende.
+  const totpSecret = config.get<string>('ADMIN_TOTP_SECRET', '');
+  if (!totpSecret || totpSecret.length < 16 || PLACEHOLDER_SECRETS.has(totpSecret)) {
+    errors.push(
+      'ADMIN_TOTP_SECRET must be set (>=16 chars) in production: the admin panel is the ' +
+        'highest-privilege surface and must not rely on a password alone',
+    );
+  }
+
   const adminPass = config.get<string>('ADMIN_PASSWORD', '');
   if (!adminPass || adminPass === DEFAULT_ADMIN_CREDENTIAL || PLACEHOLDER_SECRETS.has(adminPass)) {
     errors.push(
