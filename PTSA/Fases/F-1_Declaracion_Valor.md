@@ -158,3 +158,26 @@ Consecuencias:
 - [x] ¿Usa IA/LLM? → No → Nivel 4 = NO_APLICA
 
 **Estado: COMPLETADA** | Confidence: 95%
+
+
+---
+
+## Update U-005 — DS-005 / PT-113 (2026-07-27): la pregunta fiscal que falta
+
+La investigación de PT-113 buscó en esta declaración y en el PRD **quién emite la factura de una
+venta entre particulares**. No está en ninguno de los dos.
+
+Es una regla de dominio ausente, no una implementación pendiente, y bloquea `H-005` más que el
+trámite con el PAC. Las tres opciones, con lo que exige cada una:
+
+| Modelo | Qué exige | Quién decide |
+|---|---|---|
+| **El vendedor emite** | Cada vendedor con su propio PAC y su e.firma. IronLoot no factura la venta | Negocio + fiscal |
+| **IronLoot emite por cuenta del vendedor** | Figura de intermediario, autorización expresa del vendedor, sus datos fiscales completos, y un PAC con esa capacidad | Negocio + fiscal + legal |
+| **IronLoot factura sólo su comisión** | Lo único enteramente bajo su control. No cubre la venta entre particulares | Negocio |
+
+**Mientras no se decida, `CR-011` no es verificable**: dice que «toda transacción gravable debe
+producir un `CfdiRecord` válido», pero no dice de quién es la obligación. Una regla de dominio que
+no nombra al obligado no se puede auditar.
+
+Se registra aquí para que la próxima sesión no vuelva a buscarla.
