@@ -1,5 +1,10 @@
-import { ExceptionFilter, Catch, NotFoundException, ArgumentsHost } from '@nestjs/common';
-import { Response } from 'express';
+import {
+  ExceptionFilter,
+  Catch,
+  NotFoundException,
+  ArgumentsHost,
+} from "@nestjs/common";
+import { Response } from "express";
 
 @Catch(NotFoundException)
 export class NotFoundExceptionFilter implements ExceptionFilter {
@@ -7,6 +12,6 @@ export class NotFoundExceptionFilter implements ExceptionFilter {
     const ctx = host.switchToHttp();
     const response = ctx.getResponse<Response>();
 
-    response.status(404).render('pages/404.html');
+    response.status(404).render("pages/404.html");
   }
 }

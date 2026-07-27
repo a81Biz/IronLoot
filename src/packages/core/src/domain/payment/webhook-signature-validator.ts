@@ -1,4 +1,4 @@
-import * as crypto from 'crypto';
+import * as crypto from "crypto";
 
 /**
  * Timing-safe HMAC-SHA256 signature validation for payment provider webhooks.
@@ -12,14 +12,21 @@ export class WebhookSignatureValidator {
    * @param secret - Shared webhook secret configured in the payment provider dashboard.
    * @returns true only if the computed HMAC matches the provided signature.
    */
-  static validateHmacSignature(payload: string, signature: string, secret: string): boolean {
+  static validateHmacSignature(
+    payload: string,
+    signature: string,
+    secret: string,
+  ): boolean {
     try {
-      const computed = crypto.createHmac('sha256', secret).update(payload).digest('hex');
+      const computed = crypto
+        .createHmac("sha256", secret)
+        .update(payload)
+        .digest("hex");
 
       // timingSafeEqual requires buffers of equal byte length.
       // Mismatched lengths would throw — we return false instead of exposing length info.
-      const computedBuf = Buffer.from(computed, 'hex');
-      const signatureBuf = Buffer.from(signature, 'hex');
+      const computedBuf = Buffer.from(computed, "hex");
+      const signatureBuf = Buffer.from(signature, "hex");
 
       if (computedBuf.length !== signatureBuf.length) {
         return false;

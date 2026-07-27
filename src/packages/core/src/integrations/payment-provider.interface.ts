@@ -20,10 +20,10 @@
  */
 
 export enum PaymentStatus {
-  PENDING = 'PENDING',
-  COMPLETED = 'COMPLETED',
-  FAILED = 'FAILED',
-  REFUNDED = 'REFUNDED',
+  PENDING = "PENDING",
+  COMPLETED = "COMPLETED",
+  FAILED = "FAILED",
+  REFUNDED = "REFUNDED",
 }
 
 /** Resultado de iniciar un pago: a dónde se envía al comprador. */
@@ -51,7 +51,7 @@ export interface NormalizedPaymentResult {
   paymentId: string;
   /** Nuestra referencia: `DEP-<userId>-<timestamp>`. */
   externalId: string;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED' | 'REFUNDED';
+  status: "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED";
   /** Importe normalizado por el adaptador, en la moneda de la operación. */
   amount?: number;
   metadata?: Record<string, unknown>;
@@ -104,5 +104,7 @@ export interface IPaymentProvider extends PaymentProviderIdentity {
    * Vía garantizada: busca el pago de una solicitud por nuestra referencia.
    * Devuelve null si la pasarela aún no tiene un pago resuelto para ella.
    */
-  findPaymentByReference?(reference: string): Promise<NormalizedPaymentResult | null>;
+  findPaymentByReference?(
+    reference: string,
+  ): Promise<NormalizedPaymentResult | null>;
 }

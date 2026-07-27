@@ -12,8 +12,8 @@ export interface ReqLike {
 }
 
 export function injectAuthHeader(proxyReq: ProxyReqLike, req: ReqLike): void {
-  const token = req.cookies?.['access_token'];
+  const token = req.cookies?.["access_token"];
   if (token) {
-    proxyReq.setHeader('Authorization', `Bearer ${token}`);
+    proxyReq.setHeader("Authorization", `Bearer ${token}`);
   }
 }

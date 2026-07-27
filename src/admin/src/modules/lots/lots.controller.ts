@@ -1,67 +1,89 @@
-import { Body, Controller, Get, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
-import { LotsService } from './lots.service';
-import { AdminAuthGuard } from '../../auth/auth.guard';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  Res,
+  UseGuards,
+} from "@nestjs/common";
+import { LotsService } from "./lots.service";
+import { AdminAuthGuard } from "../../auth/auth.guard";
 
 @Controller()
 export class LotsController {
   constructor(private readonly lotsService: LotsService) {}
 
-  @Get('lots')
+  @Get("lots")
   @UseGuards(AdminAuthGuard)
   async lots(
     @Req() req,
     @Res() res,
-    @Query('page') page = '1',
-    @Query('blocked') blocked?: string,
+    @Query("page") page = "1",
+    @Query("blocked") blocked?: string,
   ) {
     const result = await this.lotsService.getLots(Number(page), blocked);
-    return res.render('pages/lots', {
-      title: 'Lotes',
+    return res.render("pages/lots", {
+      title: "Lotes",
       result,
       blocked,
       adminUser: req.session.adminUser,
-      activePage: 'lots',
+      activePage: "lots",
     });
   }
 
-  @Get('lots/:id')
+  @Get("lots/:id")
   @UseGuards(AdminAuthGuard)
-  async lotDetail(@Param('id') id: string, @Req() req, @Res() res) {
+  async lotDetail(@Param("id") id: string, @Req() req, @Res() res) {
     const lot = await this.lotsService.getLot(id);
-    return res.render('pages/lot-detail', {
-      title: 'Detalle de lote',
+    return res.render("pages/lot-detail", {
+      title: "Detalle de lote",
       lot,
       adminUser: req.session.adminUser,
-      activePage: 'lots',
+      activePage: "lots",
     });
   }
 
-  @Post('lots/:id/block')
+  @Post("lots/:id/block")
   @UseGuards(AdminAuthGuard)
-  async blockLot(@Param('id') id: string, @Req() req, @Res() res) {
+  async blockLot(@Param("id") id: string, @Req() req, @Res() res) {
     await this.lotsService.blockLot(id, req.session.adminUser);
     return res.redirect(`/lots/${id}`);
   }
 
-  @Post('lots/:id/unblock')
+  @Post("lots/:id/unblock")
   @UseGuards(AdminAuthGuard)
-  async unblockLot(@Param('id') id: string, @Req() req, @Res() res) {
+  async unblockLot(@Param("id") id: string, @Req() req, @Res() res) {
     await this.lotsService.unblockLot(id, req.session.adminUser);
     return res.redirect(`/lots/${id}`);
   }
 
-  @Post('lots/:id/update')
+  @Post("lots/:id/update")
   @UseGuards(AdminAuthGuard)
-  async updateLot(@Param('id') id: string, @Body() body: any, @Req() req, @Res() res) {
+  async updateLot(
+    @Param("id") id: string,
+    @Body() body: any,
+    @Req() req,
+    @Res() res,
+  ) {
     await this.lotsService.updateLot(id, { adminNotes: body.adminNotes });
     return res.redirect(`/lots/${id}`);
   }
 
-  @Post('lots/:id/update-category')
+  @Post("lots/:id/update-category")
   @UseGuards(AdminAuthGuard)
-  async updateLotCategory(@Param('id') id: string, @Body() body: any, @Req() req, @Res() res) {
+  async updateLotCategory(
+    @Param("id") id: string,
+    @Body() body: any,
+    @Req() req,
+    @Res() res,
+  ) {
     if (body.categoryId) {
-      await this.lotsService.updateLot(id, { adminNotes: `Category changed to: ${body.categoryId}` });
+      await this.lotsService.updateLot(id, {
+        adminNotes: `Category changed to: ${body.categoryId}`,
+      });
     }
     return res.redirect(`/lots/${id}`);
   }

@@ -9,8 +9,8 @@
  * Antes se llamaba `GET /api/v1/bids/my` (inexistente → 404 → tabla vacía).
  */
 
-export const MY_ACTIVE_BIDS_PATH = '/api/v1/bids/my-active';
-export const MY_BIDS_HISTORY_PATH = '/api/v1/bids/my-history';
+export const MY_ACTIVE_BIDS_PATH = "/api/v1/bids/my-active";
+export const MY_BIDS_HISTORY_PATH = "/api/v1/bids/my-history";
 
 export interface BidAuctionRef {
   id?: string;
@@ -39,7 +39,9 @@ export interface BidView extends BidRaw {
  * `isWinning` comparando el monto de la puja con el precio actual de la subasta.
  * Devuelve `{ items: [] }` ante entrada nula (p. ej. `apiGet` devolvió `null`).
  */
-export function mapBidsList(raw: BidRaw[] | null | undefined): { items: BidView[] } {
+export function mapBidsList(raw: BidRaw[] | null | undefined): {
+  items: BidView[];
+} {
   if (!raw || !Array.isArray(raw)) return { items: [] };
   return {
     items: raw.map((bid) => ({

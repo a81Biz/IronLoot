@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from "@nestjs/common";
 
 /**
  * Singleton HTTP client for admin SSR → API calls.
@@ -9,10 +9,11 @@ import { Injectable, Logger } from '@nestjs/common';
 @Injectable()
 export class AdminApiClient {
   private readonly logger = new Logger(AdminApiClient.name);
-  private readonly apiUrl = process.env.ADMIN_API_URL || 'http://localhost:3000';
-  private readonly apiKey = process.env.ADMIN_API_KEY || 'dev-admin-key';
-  private readonly username = process.env.ADMIN_USERNAME || 'admin';
-  private readonly password = process.env.ADMIN_PASSWORD || 'admin';
+  private readonly apiUrl =
+    process.env.ADMIN_API_URL || "http://localhost:3000";
+  private readonly apiKey = process.env.ADMIN_API_KEY || "dev-admin-key";
+  private readonly username = process.env.ADMIN_USERNAME || "admin";
+  private readonly password = process.env.ADMIN_PASSWORD || "admin";
 
   private token: string | null = null;
   private tokenExpiresAt = 0;
@@ -27,13 +28,18 @@ export class AdminApiClient {
   private async refreshToken(): Promise<string | null> {
     try {
       const res = await fetch(`${this.apiUrl}/api/v1/admin/auth/login`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: this.username, password: this.password }),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          username: this.username,
+          password: this.password,
+        }),
       });
 
       if (!res.ok) {
-        this.logger.warn('Admin JWT refresh failed — falling back to API key auth');
+        this.logger.warn(
+          "Admin JWT refresh failed — falling back to API key auth",
+        );
         this.token = null;
         return null;
       }
@@ -44,23 +50,31 @@ export class AdminApiClient {
       };
       this.token = access_token;
       this.tokenExpiresAt = Date.now() + expires_in * 1000;
-      this.logger.debug('Admin JWT refreshed successfully');
+      this.logger.debug("Admin JWT refreshed successfully");
       return this.token;
     } catch {
-      this.logger.warn('Admin JWT refresh threw — falling back to API key auth');
+      this.logger.warn(
+        "Admin JWT refresh threw — falling back to API key auth",
+      );
       this.token = null;
       return null;
     }
   }
 
-  async call<T>(method: string, path: string, body?: unknown): Promise<T | null> {
+  async call<T>(
+    method: string,
+    path: string,
+    body?: unknown,
+  ): Promise<T | null> {
     const jwt = await this.getToken();
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
 
     if (jwt) {
-      headers['Authorization'] = `Bearer ${jwt}`;
+      headers["Authorization"] = `Bearer ${jwt}`;
     } else {
-      headers['X-Admin-Key'] = this.apiKey;
+      headers["X-Admin-Key"] = this.apiKey;
     }
 
     try {
@@ -85,9 +99,9 @@ export class AdminApiClient {
     const jwt = await this.getToken();
     const headers: Record<string, string> = {};
     if (jwt) {
-      headers['Authorization'] = `Bearer ${jwt}`;
+      headers["Authorization"] = `Bearer ${jwt}`;
     } else {
-      headers['X-Admin-Key'] = this.apiKey;
+      headers["X-Admin-Key"] = this.apiKey;
     }
 
     try {

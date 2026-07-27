@@ -1,5 +1,5 @@
-import { Module, Global } from '@nestjs/common';
-import { AdminApiClient } from './admin-api-client.service';
+import { Module, Global } from "@nestjs/common";
+import { AdminApiClient } from "./admin-api-client.service";
 
 @Global()
 @Module({

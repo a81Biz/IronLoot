@@ -1,10 +1,18 @@
-import { DisputeStatus } from './dispute-status.enum';
+import { DisputeStatus } from "./dispute-status.enum";
 
-type DisputeTransitionMap = Partial<Record<DisputeStatus, ReadonlySet<DisputeStatus>>>;
+type DisputeTransitionMap = Partial<
+  Record<DisputeStatus, ReadonlySet<DisputeStatus>>
+>;
 
 const VALID_DISPUTE_TRANSITIONS: DisputeTransitionMap = {
-  [DisputeStatus.OPEN]: new Set([DisputeStatus.IN_MEDIATION, DisputeStatus.CLOSED]),
-  [DisputeStatus.IN_MEDIATION]: new Set([DisputeStatus.RESOLVED, DisputeStatus.CLOSED]),
+  [DisputeStatus.OPEN]: new Set([
+    DisputeStatus.IN_MEDIATION,
+    DisputeStatus.CLOSED,
+  ]),
+  [DisputeStatus.IN_MEDIATION]: new Set([
+    DisputeStatus.RESOLVED,
+    DisputeStatus.CLOSED,
+  ]),
   [DisputeStatus.RESOLVED]: new Set([DisputeStatus.CLOSED]),
   // CLOSED is terminal — no outbound transitions.
 };

@@ -8,7 +8,7 @@
  * Antes se llamaba `GET /api/v1/wallet` (inexistente → 404 → saldo mostrado como 0.00).
  */
 
-export const WALLET_BALANCE_PATH = '/api/v1/wallet/balance';
+export const WALLET_BALANCE_PATH = "/api/v1/wallet/balance";
 
 export interface WalletBalanceRaw {
   available: number;
@@ -29,7 +29,9 @@ export interface WalletView {
  * Devuelve `null` si la respuesta es falsy (p. ej. `apiGet` devolvió `null` ante un error),
  * lo que las plantillas manejan con `default('0.00')`.
  */
-export function mapWalletBalance(raw: WalletBalanceRaw | null | undefined): WalletView | null {
+export function mapWalletBalance(
+  raw: WalletBalanceRaw | null | undefined,
+): WalletView | null {
   if (!raw) return null;
   return {
     balance: raw.available,

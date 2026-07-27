@@ -1,5 +1,5 @@
 export interface AuctionClosedEvent {
-  eventName: 'auction.closed';
+  eventName: "auction.closed";
   auctionId: string;
   winnerId: string | null;
   winningBidId: string | null;

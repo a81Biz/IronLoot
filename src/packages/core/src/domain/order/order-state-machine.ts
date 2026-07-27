@@ -1,9 +1,14 @@
-import { OrderStatus } from './order-status.enum';
+import { OrderStatus } from "./order-status.enum";
 
-type OrderTransitionMap = Partial<Record<OrderStatus, ReadonlySet<OrderStatus>>>;
+type OrderTransitionMap = Partial<
+  Record<OrderStatus, ReadonlySet<OrderStatus>>
+>;
 
 const VALID_ORDER_TRANSITIONS: OrderTransitionMap = {
-  [OrderStatus.PENDING_PAYMENT]: new Set([OrderStatus.PAID, OrderStatus.CANCELLED]),
+  [OrderStatus.PENDING_PAYMENT]: new Set([
+    OrderStatus.PAID,
+    OrderStatus.CANCELLED,
+  ]),
   [OrderStatus.PAID]: new Set([OrderStatus.SHIPPED, OrderStatus.REFUNDED]),
   [OrderStatus.SHIPPED]: new Set([OrderStatus.DELIVERED]),
   [OrderStatus.DELIVERED]: new Set([OrderStatus.REFUNDED]),

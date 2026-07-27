@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 
 @Injectable()
 export class AdminAuthGuard implements CanActivate {
@@ -7,7 +7,7 @@ export class AdminAuthGuard implements CanActivate {
     const res = context.switchToHttp().getResponse();
 
     if (!req.session?.isAdmin) {
-      res.redirect('/login');
+      res.redirect("/login");
       return false;
     }
     return true;

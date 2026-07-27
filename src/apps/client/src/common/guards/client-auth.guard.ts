@@ -1,11 +1,11 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
-import { Response, Request } from 'express';
-import * as jwt from 'jsonwebtoken';
+import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
+import { Response, Request } from "express";
+import * as jwt from "jsonwebtoken";
 
-const BASE_URL = process.env.BASE_URL || 'http://localhost:5174';
+const BASE_URL = process.env.BASE_URL || "http://localhost:5174";
 // PT-040 (AUD-026): no weak fallback secret. If JWT_SECRET is unset the guard fails closed
 // (jwt.verify throws → redirect to login) instead of trusting a known placeholder.
-const JWT_SECRET = process.env.JWT_SECRET || '';
+const JWT_SECRET = process.env.JWT_SECRET || "";
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
 
 @Injectable()
@@ -14,7 +14,7 @@ export class ClientAuthGuard implements CanActivate {
     const req = context.switchToHttp().getRequest<Request>();
     const res = context.switchToHttp().getResponse<Response>();
 
-    const token = req.cookies?.['access_token'];
+    const token = req.cookies?.["access_token"];
     if (!token) {
       res.redirect(`${BASE_URL}/auth/login`);
       return false;
@@ -25,7 +25,7 @@ export class ClientAuthGuard implements CanActivate {
       (req as any).user = payload;
       return true;
     } catch {
-      res.clearCookie('access_token', { domain: COOKIE_DOMAIN, path: '/' });
+      res.clearCookie("access_token", { domain: COOKIE_DOMAIN, path: "/" });
       res.redirect(`${BASE_URL}/auth/login`);
       return false;
     }
