@@ -38,6 +38,9 @@ services:
     ports:
       - "${ADMIN_PORT:-3001}:3001"
     environment:
+      # PT-111 (F-39): sin esto ADMIN apuntaba a localhost:6379, que dentro del contenedor no es
+      # Redis, y las sesiones caian a memoria sin que nadie lo notara.
+      - REDIS_URL=redis://redis:6379
       - NODE_ENV=development
       - ADMIN_PORT=3001
       - ADMIN_API_URL=http://api:3000

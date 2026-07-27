@@ -67,22 +67,46 @@ async function bootstrap() {
     }),
   );
 
-  // PT-013: Redis session store for admin (BRECHA-8 resolved)
-  // Falls back to in-memory store if Redis is unavailable (dev without Redis)
+  // PT-013: almacen de sesiones en Redis. PT-111 (F-39): nunca llego a usarse.
+  //
+  // Esto pedia `require("connect-redis").default`, y **connect-redis v9 no tiene `default`**:
+  // exporta `RedisStore` con nombre. `new undefined(...)` lanzaba, el catch se disparaba, y el
+  // panel arrancaba con sesiones en memoria diciendo «Redis unavailable» — con Redis levantado y
+  // sano. El mensaje culpaba a la infraestructura de un error del codigo: manda a buscar donde no
+  // esta. Y el comentario de arriba afirmaba «BRECHA-8 resolved», que era falso.
+  //
+  // Ademas quedaba un cliente ioredis huerfano reintentando para siempre (77 ECONNREFUSED en un
+  // arranque). Ahora, si falla, se cierra.
   let store: session.Store | undefined;
+  const redisUrl = process.env.REDIS_URL || "redis://redis:6379";
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const { Redis } = require("ioredis");
+    const { RedisStore } = require("connect-redis");
+    if (typeof RedisStore !== "function") {
+      throw new Error(
+        "connect-redis no exporta `RedisStore`: revisa su version antes de tocar nada mas",
+      );
+    }
+    // El cliente es `node-redis`, NO `ioredis`. connect-redis v9 llama a `set(k, v, {EX: ttl})`,
+    // que es el dialecto de node-redis; ioredis espera `set(k, v, 'EX', ttl)` y responde
+    // `ERR syntax error`. Con ioredis el arranque decia «Sesiones en Redis» y las escrituras
+    // fallaban una a una: la peor combinacion posible — un exito anunciado y un fallo callado.
     // eslint-disable-next-line @typescript-eslint/no-var-requires
-    const RedisStore = require("connect-redis").default;
-    const redisClient = new Redis(
-      process.env.REDIS_URL || "redis://localhost:6379",
-    );
+    const { createClient } = require("redis");
+    const redisClient = createClient({ url: redisUrl });
+    // Sin esto, un fallo de conexion tumba el proceso por evento no gestionado.
+    redisClient.on("error", (e: Error) => {
+      console.error(`[Admin] Redis (${redisUrl}):`, e.message);
+    });
+    await redisClient.connect();
     store = new RedisStore({ client: redisClient });
-    console.log("[Admin] Redis session store initialized");
-  } catch {
+    console.log(`[Admin] Sesiones en Redis (${redisUrl})`);
+  } catch (e) {
+    // El fallo se NOMBRA. Un aviso que no dice que fallo manda a buscar donde no esta.
     console.warn(
-      "[Admin] Redis unavailable — using in-memory session store (not for production)",
+      `[Admin] Sesiones EN MEMORIA (no apto para produccion). Motivo: ${
+        e instanceof Error ? e.message : String(e)
+      }`,
     );
   }
 
