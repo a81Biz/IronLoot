@@ -153,7 +153,7 @@ export class AppController {
 
   @Get('/wallet/withdraw')
   @Render('pages/wallet/withdraw.html')
-  withdraw(@Req() req: Request) {
+  withdraw(@Req() _req: Request) {
     return {};
   }
 
@@ -222,7 +222,7 @@ export class AppController {
   // ── Seller Portal ─────────────────────────────────────────────────────
   @Get('/seller/onboarding')
   @Render('pages/seller/onboarding.html')
-  sellerOnboarding(@Req() req: Request) {
+  sellerOnboarding(@Req() _req: Request) {
     return {};
   }
 
@@ -244,7 +244,7 @@ export class AppController {
 
   @Get('/auctions/create')
   @Render('pages/auction/create.html')
-  auctionCreate(@Req() req: Request) {
+  auctionCreate(@Req() _req: Request) {
     return {};
   }
 

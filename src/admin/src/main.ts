@@ -88,4 +88,10 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`Iron Loot Admin running on: http://localhost:${port}`);
 }
-bootstrap();
+// PT-091 — Se maneja el fallo de arranque, como ya hacia la API. Antes era una promesa
+// suelta: si el arranque fallaba, el rechazo quedaba sin manejar y el proceso podia
+// sobrevivir en un estado roto sin decirlo. Es justo lo que `no-floating-promises` detecta.
+bootstrap().catch((error) => {
+  console.error('Failed to start application', error);
+  process.exit(1);
+});

@@ -6,9 +6,7 @@ import {
   Query,
   Redirect,
   Render,
-  Res,
 } from '@nestjs/common';
-import { Response } from 'express';
 
 const API_URL = process.env.API_URL || 'http://localhost:3000';
 const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5175';

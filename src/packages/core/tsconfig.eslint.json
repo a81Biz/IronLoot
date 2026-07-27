@@ -1,0 +1,12 @@
+{
+  "_comentario": "PT-091 — Solo para el linter. El tsconfig de compilacion excluye los .spec.ts (no deben ir al dist), pero el linter si tiene que analizarlos: es donde vive la mitad de la logica de prueba. Se anula el exclude heredado.",
+  "extends": "./tsconfig.json",
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

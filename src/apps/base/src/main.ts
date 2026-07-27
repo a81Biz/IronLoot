@@ -8,9 +8,10 @@ import { AppModule } from './app.module';
 import { NotFoundExceptionFilter } from './common/filters/not-found.filter';
 import * as nunjucks from 'nunjucks';
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const cookieParser = require('cookie-parser');
+
 import { createProxyMiddleware, responseInterceptor } from 'http-proxy-middleware';
 import helmet from 'helmet';
+import cookieParser from 'cookie-parser';
 
 // COOKIE_DOMAIN controls cross-subdomain SSO. Set to `.ironloot.local` for local dev
 // with hosts-file entries, or `.ironloot.com` for production.
@@ -123,4 +124,10 @@ async function bootstrap() {
   await app.listen(port);
   console.log(`BASE service running on port ${port}`);
 }
-bootstrap();
+// PT-091 — Se maneja el fallo de arranque, como ya hacia la API. Antes era una promesa
+// suelta: si el arranque fallaba, el rechazo quedaba sin manejar y el proceso podia
+// sobrevivir en un estado roto sin decirlo. Es justo lo que `no-floating-promises` detecta.
+bootstrap().catch((error) => {
+  console.error('Failed to start application', error);
+  process.exit(1);
+});
