@@ -24,7 +24,8 @@ export class DisputesService {
   async create(userId: string, dto: CreateDisputeDto): Promise<Dispute> {
     const order = await this.prisma.order.findUnique({
       where: { id: dto.orderId },
-      include: { dispute: true },
+      // PT-115 (H-011) — el envio entra en la consulta: ahi vive la fecha de entrega.
+      include: { dispute: true, shipment: true },
     });
 
     if (!order) {
@@ -44,13 +45,23 @@ export class DisputesService {
       throw new BadRequestException('Order must be PAID, SHIPPED or DELIVERED to open a dispute');
     }
 
-    // Use CORE DisputeStateMachine for the time window.
-    // For DELIVERED orders, enforce the 14-day window from deliveredAt (domain invariant).
-    // For PAID/SHIPPED orders without deliveredAt, fall back to updatedAt.
-    const referenceDate: Date =
-      order.status === 'DELIVERED' && (order as any).deliveredAt
-        ? (order as any).deliveredAt
-        : order.updatedAt;
+    // PT-115 (H-011) — La ventana de 14 dias se cuenta desde la ENTREGA, que es lo que declara
+    // CR-007 en F-1.
+    //
+    // Antes esto pedia `(order as any).deliveredAt`, y `orders` NO TIENE esa columna —ni en la BD
+    // ni en Prisma—. Los dos `as any` hacian que compilara y devolviera `undefined`, asi que la
+    // rama de la entrega estaba muerta y la ventana respondia siempre a `updatedAt`: cualquier
+    // modificacion del pedido (un cambio de estado, la liquidacion al vendedor, un ajuste
+    // administrativo) reiniciaba los 14 dias.
+    //
+    // El dato existia todo el tiempo en `shipments.delivered_at`, que puebla
+    // `shipments.service.ts:105` al marcar la entrega. `ratings.service` ya leia la entrega del
+    // envio; esto solo deja de buscarla donde no esta.
+    //
+    // El respaldo a `updatedAt` se conserva porque `shipment` es una relacion OPCIONAL: un pedido
+    // puede estar DELIVERED sin envio registrado. La diferencia es que ahora es una rama declarada
+    // y no la unica que se ejecuta.
+    const referenceDate: Date = order.shipment?.deliveredAt ?? order.updatedAt;
 
     if (!DisputeStateMachine.canOpenDispute(referenceDate)) {
       throw new BadRequestException(
