@@ -1,2 +1,2 @@
 // Bid subdomain: validation rules for bid placement.
-export * from './bid-validation';
+export * from "./bid-validation";

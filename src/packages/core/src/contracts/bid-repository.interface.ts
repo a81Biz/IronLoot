@@ -8,5 +8,9 @@ export interface BidSummary {
 
 export interface IBidRepository {
   findHighestBid(auctionId: string): Promise<BidSummary | null>;
-  createBid(auctionId: string, bidderId: string, amount: number): Promise<BidSummary>;
+  createBid(
+    auctionId: string,
+    bidderId: string,
+    amount: number,
+  ): Promise<BidSummary>;
 }

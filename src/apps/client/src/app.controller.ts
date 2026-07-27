@@ -1,18 +1,39 @@
-import { Controller, Get, Param, Query, Render, Req, Res, UseGuards } from '@nestjs/common';
-import { Request, Response } from 'express';
-import { ClientAuthGuard } from './common/guards/client-auth.guard';
-import { WALLET_BALANCE_PATH, mapWalletBalance, WalletBalanceRaw } from './common/bff/wallet-view';
-import { MY_ACTIVE_BIDS_PATH, MY_BIDS_HISTORY_PATH, mapBidsList, BidRaw } from './common/bff/bids-view';
-import { toItems } from './common/bff/list-view';
+import {
+  Controller,
+  Get,
+  Param,
+  Query,
+  Render,
+  Req,
+  Res,
+  UseGuards,
+} from "@nestjs/common";
+import { Request, Response } from "express";
+import { ClientAuthGuard } from "./common/guards/client-auth.guard";
+import {
+  WALLET_BALANCE_PATH,
+  mapWalletBalance,
+  WalletBalanceRaw,
+} from "./common/bff/wallet-view";
+import {
+  MY_ACTIVE_BIDS_PATH,
+  MY_BIDS_HISTORY_PATH,
+  mapBidsList,
+  BidRaw,
+} from "./common/bff/bids-view";
+import { toItems } from "./common/bff/list-view";
 
-const API_URL = process.env.API_URL || 'http://localhost:3000';
-const BASE_URL = process.env.BASE_URL || 'http://localhost:5174';
+const API_URL = process.env.API_URL || "http://localhost:3000";
+const BASE_URL = process.env.BASE_URL || "http://localhost:5174";
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
 
 async function apiGet<T>(token: string, path: string): Promise<T | null> {
   try {
     const res = await fetch(`${API_URL}${path}`, {
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
     });
     if (!res.ok) return null;
     return res.json() as Promise<T>;
@@ -22,89 +43,101 @@ async function apiGet<T>(token: string, path: string): Promise<T | null> {
 }
 
 function getToken(req: Request): string {
-  return req.cookies?.['access_token'] || '';
+  return req.cookies?.["access_token"] || "";
 }
 
 @UseGuards(ClientAuthGuard)
 @Controller()
 export class AppController {
   // ── Buyer Portal ──────────────────────────────────────────────────────
-  @Get('/dashboard')
-  @Render('pages/dashboard.html')
+  @Get("/dashboard")
+  @Render("pages/dashboard.html")
   async dashboard(@Req() req: Request) {
     const token = getToken(req);
     const [profile, walletRaw, bidsRaw, auctions] = await Promise.all([
-      apiGet(token, '/api/v1/users/me'),
+      apiGet(token, "/api/v1/users/me"),
       apiGet<WalletBalanceRaw>(token, WALLET_BALANCE_PATH),
       apiGet<BidRaw[]>(token, MY_ACTIVE_BIDS_PATH),
-      apiGet(token, '/api/v1/auctions?status=ACTIVE&limit=6'),
+      apiGet(token, "/api/v1/auctions?status=ACTIVE&limit=6"),
     ]);
-    return { profile, wallet: mapWalletBalance(walletRaw), bids: mapBidsList(bidsRaw), auctions, baseUrl: BASE_URL };
+    return {
+      profile,
+      wallet: mapWalletBalance(walletRaw),
+      bids: mapBidsList(bidsRaw),
+      auctions,
+      baseUrl: BASE_URL,
+    };
   }
 
-  @Get('/auth/logout')
+  @Get("/auth/logout")
   logout(@Res() res: Response): void {
-    res.clearCookie('access_token', { domain: COOKIE_DOMAIN, path: '/' });
+    res.clearCookie("access_token", { domain: COOKIE_DOMAIN, path: "/" });
     res.redirect(`${BASE_URL}/auth/login`);
   }
 
-  @Get('/profile')
-  @Render('pages/profile.html')
+  @Get("/profile")
+  @Render("pages/profile.html")
   async profile(@Req() req: Request) {
-    const profile = await apiGet(getToken(req), '/api/v1/users/me');
+    const profile = await apiGet(getToken(req), "/api/v1/users/me");
     return { profile };
   }
 
-  @Get('/settings')
-  @Render('pages/settings.html')
+  @Get("/settings")
+  @Render("pages/settings.html")
   async settings(@Req() req: Request) {
-    const settings = await apiGet(getToken(req), '/api/v1/users/settings');
+    const settings = await apiGet(getToken(req), "/api/v1/users/settings");
     return { settings };
   }
 
-  @Get('/my-bids')
-  @Render('pages/bids/my.html')
-  async myBids(@Req() req: Request, @Query('page') page = 1) {
+  @Get("/my-bids")
+  @Render("pages/bids/my.html")
+  async myBids(@Req() req: Request, @Query("page") page = 1) {
     const bidsRaw = await apiGet<BidRaw[]>(getToken(req), MY_BIDS_HISTORY_PATH);
     return { bids: mapBidsList(bidsRaw), page };
   }
 
-  @Get('/auctions/won-auctions')
-  @Render('pages/won-auctions.html')
+  @Get("/auctions/won-auctions")
+  @Render("pages/won-auctions.html")
   async wonAuctions(@Req() req: Request) {
-    const orders = await apiGet(getToken(req), '/api/v1/orders?role=buyer');
+    const orders = await apiGet(getToken(req), "/api/v1/orders?role=buyer");
     return { orders: toItems(orders) };
   }
 
-  @Get('/auctions/watchlist')
-  @Render('pages/watchlist.html')
+  @Get("/auctions/watchlist")
+  @Render("pages/watchlist.html")
   async watchlist(@Req() req: Request) {
-    const items = await apiGet(getToken(req), '/api/v1/watchlist');
+    const items = await apiGet(getToken(req), "/api/v1/watchlist");
     return { items, baseUrl: BASE_URL };
   }
 
-  @Get('/wallet')
-  @Render('pages/wallet.html')
+  @Get("/wallet")
+  @Render("pages/wallet.html")
   async wallet(@Req() req: Request) {
-    const walletRaw = await apiGet<WalletBalanceRaw>(getToken(req), WALLET_BALANCE_PATH);
+    const walletRaw = await apiGet<WalletBalanceRaw>(
+      getToken(req),
+      WALLET_BALANCE_PATH,
+    );
     return { wallet: mapWalletBalance(walletRaw) };
   }
 
   /** Etiqueta visible por proveedor de pago. */
   private static readonly PROVIDER_LABELS: Record<string, string> = {
-    MERCADO_PAGO: 'MercadoPago',
-    PAYPAL: 'PayPal',
-    STRIPE: 'Stripe',
-    HEY_BANCO: 'Hey Banco',
+    MERCADO_PAGO: "MercadoPago",
+    PAYPAL: "PayPal",
+    STRIPE: "Stripe",
+    HEY_BANCO: "Hey Banco",
   };
 
-  @Get('/wallet/deposit')
-  @Render('pages/wallet/deposit.html')
+  @Get("/wallet/deposit")
+  @Render("pages/wallet/deposit.html")
   async deposit(@Req() req: Request) {
     // PT-076: los métodos se derivan de la configuración real de la API. Antes estaban
     // fijos en la plantilla, de modo que se ofrecía PayPal aunque no estuviera configurado
     // y el depósito fallaba al pulsar «Continuar al pago».
-    const res = await apiGet<{ providers: string[] }>(getToken(req), '/api/v1/payments/providers');
+    const res = await apiGet<{ providers: string[] }>(
+      getToken(req),
+      "/api/v1/payments/providers",
+    );
 
     const providers = (res?.providers ?? []).map((key) => ({
       key,
@@ -127,12 +160,12 @@ export class AppController {
    *
    * Y no se muestra «fallo» a un deposito abierto: efectivo y SPEI tardan horas.
    */
-  @Get('/wallet/deposit/return')
-  @Render('pages/wallet/deposit-return.html')
+  @Get("/wallet/deposit/return")
+  @Render("pages/wallet/deposit-return.html")
   async depositReturn(
     @Req() req: Request,
-    @Query('ref') ref = '',
-    @Query('status') status = '',
+    @Query("ref") ref = "",
+    @Query("status") status = "",
   ) {
     const deposito = ref
       ? await apiGet<Record<string, unknown>>(
@@ -147,119 +180,133 @@ export class AppController {
       reportado: status,
       // Lo que dice nuestra API, que es lo que manda.
       deposito,
-      etiqueta: deposito ? AppController.PROVIDER_LABELS[String(deposito.provider)] : null,
+      etiqueta: deposito
+        ? AppController.PROVIDER_LABELS[String(deposito.provider)]
+        : null,
     };
   }
 
-  @Get('/wallet/withdraw')
-  @Render('pages/wallet/withdraw.html')
+  @Get("/wallet/withdraw")
+  @Render("pages/wallet/withdraw.html")
   withdraw(@Req() _req: Request) {
     return {};
   }
 
-  @Get('/wallet/history')
-  @Render('pages/wallet/history.html')
-  async walletHistory(@Req() req: Request, @Query('page') page = 1) {
-    const history = await apiGet(getToken(req), `/api/v1/wallet/history?page=${page}`);
+  @Get("/wallet/history")
+  @Render("pages/wallet/history.html")
+  async walletHistory(@Req() req: Request, @Query("page") page = 1) {
+    const history = await apiGet(
+      getToken(req),
+      `/api/v1/wallet/history?page=${page}`,
+    );
     return { history, page };
   }
 
-  @Get('/payments')
-  @Render('pages/payments.html')
+  @Get("/payments")
+  @Render("pages/payments.html")
   async payments(@Req() req: Request) {
-    const history = await apiGet(getToken(req), '/api/v1/wallet/history?types=DEBIT_ORDER,CREDIT_SALE');
+    const history = await apiGet(
+      getToken(req),
+      "/api/v1/wallet/history?types=DEBIT_ORDER,CREDIT_SALE",
+    );
     return { history };
   }
 
-  @Get('/orders')
-  @Render('pages/orders/list.html')
-  async orders(@Req() req: Request, @Query('page') page = 1) {
+  @Get("/orders")
+  @Render("pages/orders/list.html")
+  async orders(@Req() req: Request, @Query("page") page = 1) {
     const orders = await apiGet(getToken(req), `/api/v1/orders?page=${page}`);
     return { orders: toItems(orders), page };
   }
 
-  @Get('/orders/:id')
-  @Render('pages/orders/detail.html')
-  async orderDetail(@Req() req: Request, @Param('id') id: string) {
+  @Get("/orders/:id")
+  @Render("pages/orders/detail.html")
+  async orderDetail(@Req() req: Request, @Param("id") id: string) {
     const order = await apiGet(getToken(req), `/api/v1/orders/${id}`);
     return { order };
   }
 
-  @Get('/notifications')
-  @Render('pages/notifications/list.html')
+  @Get("/notifications")
+  @Render("pages/notifications/list.html")
   async notifications(@Req() req: Request) {
-    const notifications = await apiGet(getToken(req), '/api/v1/notifications');
+    const notifications = await apiGet(getToken(req), "/api/v1/notifications");
     return { notifications };
   }
 
-  @Get('/disputes')
-  @Render('pages/disputes/list.html')
+  @Get("/disputes")
+  @Render("pages/disputes/list.html")
   async disputes(@Req() req: Request) {
-    const disputes = await apiGet(getToken(req), '/api/v1/disputes');
+    const disputes = await apiGet(getToken(req), "/api/v1/disputes");
     return { disputes };
   }
 
-  @Get('/disputes/create')
-  @Render('pages/disputes/create.html')
-  disputeCreate(@Query('orderId') orderId?: string) {
+  @Get("/disputes/create")
+  @Render("pages/disputes/create.html")
+  disputeCreate(@Query("orderId") orderId?: string) {
     return { orderId };
   }
 
-  @Get('/disputes/:id')
-  @Render('pages/disputes/detail.html')
-  async disputeDetail(@Req() req: Request, @Param('id') id: string) {
+  @Get("/disputes/:id")
+  @Render("pages/disputes/detail.html")
+  async disputeDetail(@Req() req: Request, @Param("id") id: string) {
     const dispute = await apiGet(getToken(req), `/api/v1/disputes/${id}`);
     return { dispute };
   }
 
-  @Get('/reputation')
-  @Render('pages/reputation.html')
+  @Get("/reputation")
+  @Render("pages/reputation.html")
   async reputation(@Req() req: Request) {
-    const profile = await apiGet(getToken(req), '/api/v1/users/me');
+    const profile = await apiGet(getToken(req), "/api/v1/users/me");
     return { profile };
   }
 
   // ── Seller Portal ─────────────────────────────────────────────────────
-  @Get('/seller/onboarding')
-  @Render('pages/seller/onboarding.html')
+  @Get("/seller/onboarding")
+  @Render("pages/seller/onboarding.html")
   sellerOnboarding(@Req() _req: Request) {
     return {};
   }
 
-  @Get('/seller/auctions')
-  @Render('pages/seller/auctions.html')
-  async sellerAuctions(@Req() req: Request, @Query('page') page = 1) {
+  @Get("/seller/auctions")
+  @Render("pages/seller/auctions.html")
+  async sellerAuctions(@Req() req: Request, @Query("page") page = 1) {
     // La API usa `mine=true` (no `role=seller`) para devolver TODAS las subastas del vendedor
     // (incluye DRAFT/CLOSED); responde `{data,total}` → toItems lo normaliza a `{items}`.
-    const auctions = await apiGet(getToken(req), `/api/v1/auctions?mine=true&page=${page}`);
+    const auctions = await apiGet(
+      getToken(req),
+      `/api/v1/auctions?mine=true&page=${page}`,
+    );
     return { auctions: toItems(auctions), page };
   }
 
-  @Get('/seller/orders')
-  @Render('pages/seller/orders.html')
-  async sellerOrders(@Req() req: Request, @Query('page') page = 1) {
-    const orders = await apiGet(getToken(req), `/api/v1/orders?role=seller&page=${page}`);
+  @Get("/seller/orders")
+  @Render("pages/seller/orders.html")
+  async sellerOrders(@Req() req: Request, @Query("page") page = 1) {
+    const orders = await apiGet(
+      getToken(req),
+      `/api/v1/orders?role=seller&page=${page}`,
+    );
     return { orders: toItems(orders), page };
   }
 
-  @Get('/auctions/create')
-  @Render('pages/auction/create.html')
+  @Get("/auctions/create")
+  @Render("pages/auction/create.html")
   auctionCreate(@Req() _req: Request) {
     return {};
   }
 
-  @Get('/auctions/:id/edit')
-  @Render('pages/auction/edit.html')
-  async auctionEdit(@Req() req: Request, @Param('id') id: string) {
+  @Get("/auctions/:id/edit")
+  @Render("pages/auction/edit.html")
+  async auctionEdit(@Req() req: Request, @Param("id") id: string) {
     const auction = await apiGet(getToken(req), `/api/v1/auctions/${id}`);
     return { auction };
   }
 
   // ── Bidding page (PT-044 / AUD-002) ───────────────────────────────────
   // Must be declared AFTER the specific /auctions/* routes so ":id" does not shadow them.
-  @Get('/auctions/:id')
-  @Render('pages/auction/detail.html')
-  async auctionDetail(@Req() req: Request, @Param('id') id: string) {
+  @Get("/auctions/:id")
+  @Render("pages/auction/detail.html")
+  async auctionDetail(@Req() req: Request, @Param("id") id: string) {
     const token = getToken(req);
     const [auction, walletRaw, bids] = await Promise.all([
       apiGet(token, `/api/v1/auctions/${id}`),

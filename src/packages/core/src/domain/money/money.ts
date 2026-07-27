@@ -3,14 +3,14 @@ export class InsufficientFundsError extends Error {
     super(
       `Insufficient funds: requested ${requested} ${currency} but only ${available} ${currency} available`,
     );
-    this.name = 'InsufficientFundsError';
+    this.name = "InsufficientFundsError";
   }
 }
 
 export class CurrencyMismatchError extends Error {
   constructor(a: string, b: string) {
     super(`Cannot operate on different currencies: ${a} and ${b}`);
-    this.name = 'CurrencyMismatchError';
+    this.name = "CurrencyMismatchError";
   }
 }
 
@@ -34,8 +34,11 @@ export class Money {
     this._currency = currency.toUpperCase();
   }
 
-  static fromDecimal(amount: number | { toNumber(): number }, currency: string): Money {
-    const num = typeof amount === 'number' ? amount : amount.toNumber();
+  static fromDecimal(
+    amount: number | { toNumber(): number },
+    currency: string,
+  ): Money {
+    const num = typeof amount === "number" ? amount : amount.toNumber();
     return new Money(Math.round(num * 100), currency);
   }
 
@@ -61,7 +64,11 @@ export class Money {
   subtract(other: Money): Money {
     this.assertSameCurrency(other);
     if (other._centavos > this._centavos) {
-      throw new InsufficientFundsError(this._centavos, other._centavos, this._currency);
+      throw new InsufficientFundsError(
+        this._centavos,
+        other._centavos,
+        this._currency,
+      );
     }
     return new Money(this._centavos - other._centavos, this._currency);
   }
@@ -77,7 +84,9 @@ export class Money {
   }
 
   equals(other: Money): boolean {
-    return this._currency === other._currency && this._centavos === other._centavos;
+    return (
+      this._currency === other._currency && this._centavos === other._centavos
+    );
   }
 
   toDecimal(): number {

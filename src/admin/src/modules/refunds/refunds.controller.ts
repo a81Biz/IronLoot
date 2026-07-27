@@ -1,46 +1,59 @@
-import { Body, Controller, Get, Param, Post, Req, Res, UseGuards } from '@nestjs/common';
-import { RefundsService } from './refunds.service';
-import { AdminAuthGuard } from '../../auth/auth.guard';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Req,
+  Res,
+  UseGuards,
+} from "@nestjs/common";
+import { RefundsService } from "./refunds.service";
+import { AdminAuthGuard } from "../../auth/auth.guard";
 
 @Controller()
 export class RefundsController {
   constructor(private readonly refundsService: RefundsService) {}
 
-  @Get('refunds')
+  @Get("refunds")
   @UseGuards(AdminAuthGuard)
   async refunds(@Req() req, @Res() res) {
     // PT-056: resolver la lista en servidor (antes fetch client-side → 404).
-    const statusFilter = (req.query.status as string) || '';
+    const statusFilter = (req.query.status as string) || "";
     const { items } = await this.refundsService.listRefunds(statusFilter);
-    return res.render('pages/refunds', {
-      title: 'Reembolsos',
+    return res.render("pages/refunds", {
+      title: "Reembolsos",
       adminUser: req.session.adminUser,
-      activePage: 'refunds',
+      activePage: "refunds",
       refunds: items,
       statusFilter,
     });
   }
 
-  @Post('refunds/create')
+  @Post("refunds/create")
   @UseGuards(AdminAuthGuard)
   async createRefund(
     @Body() body: { orderId: string; amount: string; reason: string },
     @Req() req,
     @Res() res,
   ) {
-    await this.refundsService.createRefund(body.orderId, parseFloat(body.amount), body.reason);
-    return res.redirect('/refunds');
+    await this.refundsService.createRefund(
+      body.orderId,
+      parseFloat(body.amount),
+      body.reason,
+    );
+    return res.redirect("/refunds");
   }
 
-  @Post('refunds/:id/status')
+  @Post("refunds/:id/status")
   @UseGuards(AdminAuthGuard)
   async updateRefundStatus(
-    @Param('id') id: string,
+    @Param("id") id: string,
     @Body() body: { status: string },
     @Req() req,
     @Res() res,
   ) {
     await this.refundsService.updateRefundStatus(id, body.status);
-    return res.redirect('/refunds');
+    return res.redirect("/refunds");
   }
 }

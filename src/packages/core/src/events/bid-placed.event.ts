@@ -1,5 +1,5 @@
 export interface BidPlacedEvent {
-  eventName: 'bid.placed';
+  eventName: "bid.placed";
   auctionId: string;
   bidId: string;
   bidderId: string;

@@ -1,4 +1,4 @@
-import { AuctionStatus } from './auction-status.enum';
+import { AuctionStatus } from "./auction-status.enum";
 
 /**
  * Defines valid state transitions for auctions and scheduler rules.
@@ -8,10 +8,23 @@ import { AuctionStatus } from './auction-status.enum';
 type TransitionMap = Partial<Record<AuctionStatus, ReadonlySet<AuctionStatus>>>;
 
 const VALID_TRANSITIONS: TransitionMap = {
-  [AuctionStatus.DRAFT]: new Set([AuctionStatus.PUBLISHED, AuctionStatus.CANCELLED]),
-  [AuctionStatus.PUBLISHED]: new Set([AuctionStatus.ACTIVE, AuctionStatus.CANCELLED]),
-  [AuctionStatus.ACTIVE]: new Set([AuctionStatus.CLOSED, AuctionStatus.CANCELLED, AuctionStatus.SUSPENDED]),
-  [AuctionStatus.PENDING_MODERATION]: new Set([AuctionStatus.PUBLISHED, AuctionStatus.CANCELLED]),
+  [AuctionStatus.DRAFT]: new Set([
+    AuctionStatus.PUBLISHED,
+    AuctionStatus.CANCELLED,
+  ]),
+  [AuctionStatus.PUBLISHED]: new Set([
+    AuctionStatus.ACTIVE,
+    AuctionStatus.CANCELLED,
+  ]),
+  [AuctionStatus.ACTIVE]: new Set([
+    AuctionStatus.CLOSED,
+    AuctionStatus.CANCELLED,
+    AuctionStatus.SUSPENDED,
+  ]),
+  [AuctionStatus.PENDING_MODERATION]: new Set([
+    AuctionStatus.PUBLISHED,
+    AuctionStatus.CANCELLED,
+  ]),
   [AuctionStatus.SUSPENDED]: new Set([AuctionStatus.PUBLISHED]),
   // CLOSED and CANCELLED are terminal — no outbound transitions.
 };

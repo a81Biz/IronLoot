@@ -3,11 +3,23 @@
 
 export PATH="/usr/local/bin:$PATH"
 
-# Run checks in api directory
-cd src/api
+# PT-091 — Antes este hook hacia `cd src/api` y solo revisaba la API. Ese fue el motivo por el
+# que TD-012 sobrevivio tanto: ADMIN, BASE, CLIENT y CORE declaraban un script `lint` que no
+# podia funcionar, y nada lo ejecutaba nunca, asi que nadie se enteraba.
+#
+# De nada sirve instalar el linter en cuatro proyectos si nada lo llama.
+#
+# `lint-staged` solo mira lo que esta en el indice: si un commit no toca un proyecto, ese
+# proyecto no cuesta nada.
 
-# Run lint-staged on staged files
-npx lint-staged
+set -e
 
-# Type check
-npm run typecheck
+for proyecto in src/api src/admin src/apps/base src/apps/client src/packages/core; do
+  if git diff --cached --name-only | grep -q "^$proyecto/"; then
+    echo "-> lint-staged en $proyecto"
+    (cd "$proyecto" && npx lint-staged)
+  fi
+done
+
+# El typecheck de la API se conserva: es donde vive el dominio y el que mas rompe.
+npm --prefix src/api run typecheck

@@ -1,69 +1,86 @@
-import { Body, Controller, Get, Param, Post, Query, Req, Res, UseGuards } from '@nestjs/common';
-import { KycService } from './kyc.service';
-import { AdminAuthGuard } from '../../auth/auth.guard';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  Req,
+  Res,
+  UseGuards,
+} from "@nestjs/common";
+import { KycService } from "./kyc.service";
+import { AdminAuthGuard } from "../../auth/auth.guard";
 
 @Controller()
 export class KycController {
   constructor(private readonly kycService: KycService) {}
 
-  @Get('kyc')
+  @Get("kyc")
   @UseGuards(AdminAuthGuard)
   async kyc(
     @Req() req,
     @Res() res,
-    @Query('page') page = '1',
-    @Query('status') status?: string,
+    @Query("page") page = "1",
+    @Query("status") status?: string,
   ) {
-    const result = await this.kycService.getKycQueue(Number(page), status || 'PENDING');
-    return res.render('pages/kyc', {
-      title: 'KYC',
+    const result = await this.kycService.getKycQueue(
+      Number(page),
+      status || "PENDING",
+    );
+    return res.render("pages/kyc", {
+      title: "KYC",
       result,
-      status: status || 'PENDING',
+      status: status || "PENDING",
       adminUser: req.session.adminUser,
-      activePage: 'kyc',
+      activePage: "kyc",
     });
   }
 
-  @Get('kyc/:id')
+  @Get("kyc/:id")
   @UseGuards(AdminAuthGuard)
-  async kycDetail(@Param('id') id: string, @Req() req, @Res() res) {
+  async kycDetail(@Param("id") id: string, @Req() req, @Res() res) {
     const submission = await this.kycService.getKycSubmission(id);
-    return res.render('pages/kyc-detail', {
-      title: 'Detalle KYC',
+    return res.render("pages/kyc-detail", {
+      title: "Detalle KYC",
       submission,
       adminUser: req.session.adminUser,
-      activePage: 'kyc',
+      activePage: "kyc",
     });
   }
 
-  @Post('kyc/:id/approve')
+  @Post("kyc/:id/approve")
   @UseGuards(AdminAuthGuard)
-  async approveKyc(@Param('id') id: string, @Req() req, @Res() res) {
+  async approveKyc(@Param("id") id: string, @Req() req, @Res() res) {
     await this.kycService.approveKyc(id, req.session.adminUser);
-    return res.redirect('/kyc');
+    return res.redirect("/kyc");
   }
 
-  @Post('kyc/:id/reject')
+  @Post("kyc/:id/reject")
   @UseGuards(AdminAuthGuard)
   async rejectKyc(
-    @Param('id') id: string,
+    @Param("id") id: string,
     @Body() body: { reason: string },
     @Req() req,
     @Res() res,
   ) {
     await this.kycService.rejectKyc(id, body.reason, req.session.adminUser);
-    return res.redirect('/kyc');
+    return res.redirect("/kyc");
   }
 
-  @Post('kyc/:id/request-correction')
+  @Post("kyc/:id/request-correction")
   @UseGuards(AdminAuthGuard)
   async requestKycCorrection(
-    @Param('id') id: string,
+    @Param("id") id: string,
     @Body() body: { notes: string },
     @Req() req,
     @Res() res,
   ) {
-    await this.kycService.requestKycCorrection(id, body.notes, req.session.adminUser);
-    return res.redirect('/kyc');
+    await this.kycService.requestKycCorrection(
+      id,
+      body.notes,
+      req.session.adminUser,
+    );
+    return res.redirect("/kyc");
   }
 }

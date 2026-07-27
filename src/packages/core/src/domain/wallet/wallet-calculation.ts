@@ -14,7 +14,11 @@ export class WalletCalculation {
    * Returns true if locking `amount` additional funds is possible given
    * the current balance and already-held funds.
    */
-  static canLockFunds(balance: number, heldFunds: number, amount: number): boolean {
+  static canLockFunds(
+    balance: number,
+    heldFunds: number,
+    amount: number,
+  ): boolean {
     if (amount <= 0) return false;
     return WalletCalculation.getAvailableBalance(balance, heldFunds) >= amount;
   }

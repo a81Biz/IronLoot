@@ -1,4 +1,4 @@
-import { OrderStatus } from '../domain/order/order-status.enum';
+import { OrderStatus } from "../domain/order/order-status.enum";
 
 export interface OrderSummary {
   id: string;
@@ -12,6 +12,11 @@ export interface OrderSummary {
 export interface IOrderRepository {
   findById(id: string): Promise<OrderSummary | null>;
   findByAuctionId(auctionId: string): Promise<OrderSummary | null>;
-  create(auctionId: string, buyerId: string, sellerId: string, amount: number): Promise<OrderSummary>;
+  create(
+    auctionId: string,
+    buyerId: string,
+    sellerId: string,
+    amount: number,
+  ): Promise<OrderSummary>;
   updateStatus(id: string, status: OrderStatus): Promise<void>;
 }

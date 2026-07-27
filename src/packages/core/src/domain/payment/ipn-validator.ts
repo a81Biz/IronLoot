@@ -26,5 +26,5 @@ export function buildIpnVerificationPayload(rawBody: string): string {
  * Returns true only when PayPal responds with the exact string "VERIFIED".
  */
 export function validateIpnResponse(response: string): boolean {
-  return response.trim() === 'VERIFIED';
+  return response.trim() === "VERIFIED";
 }

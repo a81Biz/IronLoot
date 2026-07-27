@@ -1,5 +1,5 @@
 export interface PaymentCompletedEvent {
-  eventName: 'payment.completed';
+  eventName: "payment.completed";
   orderId: string;
   paymentId: string;
   amount: number;

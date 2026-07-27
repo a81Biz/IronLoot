@@ -1,5 +1,5 @@
 export interface OrderCreatedEvent {
-  eventName: 'order.created';
+  eventName: "order.created";
   auctionId: string;
   orderId: string;
   buyerId: string;

@@ -1,4 +1,4 @@
-import { AuctionStatus } from '../domain/auction/auction-status.enum';
+import { AuctionStatus } from "../domain/auction/auction-status.enum";
 
 export interface AuctionSummary {
   id: string;
