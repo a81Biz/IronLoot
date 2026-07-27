@@ -291,4 +291,85 @@ describe('AccountVerificationService (PT-092)', () => {
     expect(r.verified).toBe(false);
     expect(metodoUpdate).not.toHaveBeenCalled();
   });
+
+  // ── PayPal se verifica solo ──────────────────────────────────────────
+
+  it('W-21: una cuenta de PayPal se cobra automaticamente al abrir la verificacion', async () => {
+    // Es la diferencia con la CLABE: PayPal SI puede cobrarse, asi que no espera a nadie.
+    const cobro = jest
+      .fn()
+      .mockResolvedValue({ orderId: 'ORD-1', approvalUrl: 'https://paypal/aprobar' });
+    metodoFind.mockResolvedValue(metodo({ type: 'PAYPAL', paypalEmail: 'v@ejemplo.com' }));
+
+    const conPaypal = new AccountVerificationService(
+      {
+        userPaymentMethod: { findUnique: metodoFind, update: metodoUpdate },
+        accountVerification: { create: verifCreate, findFirst: verifFind, update: verifUpdate },
+      } as never,
+      { getBalance: saldo } as never,
+      { record: trace } as never,
+      {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        child: jest.fn().mockReturnThis(),
+      } as never,
+      { createVerificationCharge: cobro } as never,
+    );
+
+    const v = await conPaypal.start(USUARIO, METODO);
+
+    expect(cobro).toHaveBeenCalledWith(`VER-${METODO}`, 20, expect.any(String));
+    expect((v as { approvalUrl?: string }).approvalUrl).toBe('https://paypal/aprobar');
+  });
+
+  it('W-22: si el cobro de PayPal falla, la verificacion queda FAILED, no a medias', async () => {
+    const cobro = jest.fn().mockRejectedValue(new Error('cuenta inexistente'));
+    metodoFind.mockResolvedValue(metodo({ type: 'PAYPAL', paypalEmail: 'v@ejemplo.com' }));
+
+    const conPaypal = new AccountVerificationService(
+      {
+        userPaymentMethod: { findUnique: metodoFind, update: metodoUpdate },
+        accountVerification: { create: verifCreate, findFirst: verifFind, update: verifUpdate },
+      } as never,
+      { getBalance: saldo } as never,
+      { record: trace } as never,
+      {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        child: jest.fn().mockReturnThis(),
+      } as never,
+      { createVerificationCharge: cobro } as never,
+    );
+
+    await expect(conPaypal.start(USUARIO, METODO)).rejects.toBeInstanceOf(BadRequestException);
+    expect(verifUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ status: 'FAILED' }) }),
+    );
+  });
+
+  it('W-23: una CLABE NO se cobra: espera al administrador', async () => {
+    const cobro = jest.fn();
+    const conPaypal = new AccountVerificationService(
+      {
+        userPaymentMethod: { findUnique: metodoFind, update: metodoUpdate },
+        accountVerification: { create: verifCreate, findFirst: verifFind, update: verifUpdate },
+      } as never,
+      { getBalance: saldo } as never,
+      { record: trace } as never,
+      {
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn(),
+        child: jest.fn().mockReturnThis(),
+      } as never,
+      { createVerificationCharge: cobro } as never,
+    );
+
+    const v = await conPaypal.start(USUARIO, METODO);
+
+    expect(cobro).not.toHaveBeenCalled();
+    expect(v.status).toBe('PENDING');
+  });
 });

@@ -4,6 +4,7 @@ import { PrismaService } from '../../database/prisma.service';
 import { StructuredLogger } from '../../common/observability';
 import { WalletService } from './wallet.service';
 import { PaymentTraceService } from '../payments/payment-trace.service';
+import { PaypalProvider } from '../payments/providers/paypal.provider';
 
 /**
  * PT-092 — Verificar que una cuenta de cobro pertenece de verdad al vendedor.
@@ -56,6 +57,12 @@ export class AccountVerificationService {
     private readonly wallet: WalletService,
     private readonly trace: PaymentTraceService,
     private readonly logger: StructuredLogger,
+    /**
+     * PT-092 — Opcional a proposito: PayPal se verifica cobrando de forma automatica, pero una
+     * CLABE no lo necesita —su movimiento lo envia el administrador— y los tests del camino de
+     * CLABE no tienen por que construir el adaptador.
+     */
+    private readonly paypal?: PaypalProvider,
   ) {}
 
   /**
@@ -122,6 +129,34 @@ export class AccountVerificationService {
         amount: AccountVerificationService.IMPORTE_MXN,
       },
     });
+
+    // PayPal se verifica solo: se cobra con el codigo visible y el titular lo aprueba. Una
+    // CLABE no puede cobrarse, asi que espera a que el administrador envie el micro-deposito.
+    if (metodo.type === 'PAYPAL' && this.paypal) {
+      try {
+        const cobro = await this.paypal.createVerificationCharge(
+          `VER-${paymentMethodId}`,
+          AccountVerificationService.IMPORTE_MXN,
+          token,
+        );
+        const conCobro = await this.prisma.accountVerification.update({
+          where: { id: verificacion.id },
+          data: { status: 'SENT', movementRef: cobro.orderId, sentAt: new Date() },
+        });
+        this.logger.info(`Cobro de verificacion creado para el metodo ${paymentMethodId}`);
+        return { ...conCobro, approvalUrl: cobro.approvalUrl };
+      } catch (error) {
+        // El cobro fallo: la verificacion queda FAILED con su motivo, no a medias.
+        await this.prisma.accountVerification.update({
+          where: { id: verificacion.id },
+          data: { status: 'FAILED' },
+        });
+        this.logger.error(`No se pudo crear el cobro de verificacion: ${(error as Error).message}`);
+        throw new BadRequestException(
+          'No se pudo iniciar la verificacion con PayPal. Revisa el correo e intentalo de nuevo.',
+        );
+      }
+    }
 
     this.logger.info(`Verificación de cuenta abierta para el método ${paymentMethodId}`);
     return verificacion;

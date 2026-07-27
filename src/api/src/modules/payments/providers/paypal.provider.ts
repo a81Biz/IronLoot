@@ -258,6 +258,128 @@ export class PaypalProvider implements PaymentProvider {
     };
   }
 
+  /**
+   * PT-092 — Cobro de verificación de una cuenta de PayPal.
+   *
+   * Cobra un importe pequeño **con el código visible para el titular** y devuelve el enlace donde
+   * tiene que aprobarlo. El cargo prueba las tres cosas de una vez: que la cuenta existe, que
+   * opera, y que **es suya** — porque aprobarlo exige iniciar sesión en PayPal.
+   *
+   * El código va en `description` y en `custom_id`: lo primero lo ve el titular en el resumen del
+   * cobro y en su historial; lo segundo nos permite reconocerlo al volver.
+   */
+  async createVerificationCharge(
+    reference: string,
+    amount: number,
+    codigo: string,
+  ): Promise<{ orderId: string; approvalUrl: string }> {
+    const clientUrl = process.env.CLIENT_URL || 'http://client.ironloot.local';
+    const endpoint = `${this.apiBaseUrl}/v2/checkout/orders`;
+
+    const peticion = {
+      intent: 'CAPTURE',
+      purchase_units: [
+        {
+          amount: { currency_code: 'MXN', value: amount.toFixed(2) },
+          custom_id: reference,
+          // Lo que el titular lee. Sin el codigo aqui, no tendria nada que declarar.
+          description: `IronLoot verificacion - codigo ${codigo}`,
+        },
+      ],
+      payment_source: {
+        paypal: {
+          experience_context: {
+            user_action: 'PAY_NOW',
+            return_url: `${clientUrl}/wallet/payment-methods?verificado=1`,
+            cancel_url: `${clientUrl}/wallet/payment-methods?cancelado=1`,
+          },
+        },
+      },
+    };
+
+    const {
+      data: order,
+      status,
+      durationMs,
+    } = await this.authorizedCall<{ id: string; status: string; links: PaypalLink[] }>(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'PayPal-Request-Id': reference },
+      body: JSON.stringify(peticion),
+    });
+
+    // El codigo NO entra en la traza: es el secreto que prueba la titularidad.
+    await this.traza({
+      reference,
+      step: 'PROVIDER_CREATE',
+      direction: 'OUTBOUND',
+      outcome: 'OK',
+      endpoint,
+      httpStatus: status,
+      durationMs,
+      externalId: order.id,
+      detail: 'Cobro de verificacion de cuenta',
+      data: { amount, currency: 'MXN', orderId: order.id },
+    });
+
+    return { orderId: order.id, approvalUrl: this.resolveApprovalUrl(order.links) };
+  }
+
+  /**
+   * PT-092 — Devuelve el importe de una verificación.
+   *
+   * **No lanza.** Un fallo devolviendo no puede tumbar la verificación ni hacer que el vendedor
+   * pierda el importe: se informa para que quede marcado como pendiente y se reintente. Misma
+   * disciplina que el ciclo de pago de PT-080.
+   */
+  async refundCapture(
+    captureId: string,
+    amount: number,
+    nota: string,
+  ): Promise<{ refunded: boolean; refundId?: string; error?: string }> {
+    const endpoint = `${this.apiBaseUrl}/v2/payments/captures/${captureId}/refund`;
+
+    try {
+      const {
+        data: devolucion,
+        status,
+        durationMs,
+      } = await this.authorizedCall<{ id: string; status: string }>(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          amount: { value: amount.toFixed(2), currency_code: 'MXN' },
+          note_to_payer: nota,
+        }),
+      });
+
+      await this.traza({
+        step: 'REFUND_RAISED',
+        direction: 'OUTBOUND',
+        outcome: 'OK',
+        endpoint,
+        httpStatus: status,
+        durationMs,
+        externalId: devolucion.id,
+        detail: 'Importe de verificacion devuelto',
+        data: { captureId, amount },
+      });
+
+      return { refunded: true, refundId: devolucion.id };
+    } catch (error) {
+      this.logger.error(`No se pudo devolver la captura ${captureId}: ${(error as Error).message}`);
+      await this.traza({
+        step: 'REFUND_RAISED',
+        direction: 'OUTBOUND',
+        outcome: 'ERROR',
+        endpoint,
+        externalId: captureId,
+        detail: (error as Error).message,
+        data: { captureId, amount },
+      });
+      return { refunded: false, error: (error as Error).message };
+    }
+  }
+
   async verifyPayment(externalId: string): Promise<WebhookResult> {
     const order = await this.authorizedFetch<PaypalOrder>(
       `${this.apiBaseUrl}/v2/checkout/orders/${externalId}`,
