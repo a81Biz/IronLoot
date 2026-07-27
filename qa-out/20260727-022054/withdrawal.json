@@ -1,0 +1,80 @@
+[
+  {
+    "id": "QA-WD-00",
+    "desc": "Login vendedor",
+    "status": "PASS",
+    "detail": "http://client.ironloot.local/dashboard"
+  },
+  {
+    "id": "QA-WD-01",
+    "desc": "KYC del vendedor APPROVED (gate de retiro)",
+    "status": "PASS",
+    "detail": "status=APPROVED approved=true"
+  },
+  {
+    "id": "QA-WD-02a",
+    "desc": "Rechazar CLABE con verificador inválido (RN-63)",
+    "status": "PASS",
+    "detail": "http=400"
+  },
+  {
+    "id": "QA-WD-02b",
+    "desc": "Registrar cuenta bancaria (CLABE válida, RN-63)",
+    "status": "PASS",
+    "detail": "http=201 db.clabe=002010077777777771"
+  },
+  {
+    "id": "QA-WD-03",
+    "desc": "Venta liquidada a pendingBalance (holdback 900, RN-64)",
+    "status": "PASS",
+    "detail": "pending 0→900 · disponible 0 (retenido, no retirable)"
+  },
+  {
+    "id": "QA-WD-04",
+    "desc": "Liberar holdback → saldo disponible (SETTLEMENT_RELEASE, RN-64)",
+    "status": "PASS",
+    "detail": "disponible 0→900 · pending 0"
+  },
+  {
+    "id": "QA-WD-04b",
+    "desc": "Verificar la cuenta: codigo incorrecto falla, correcto verifica (PT-092)",
+    "status": "PASS",
+    "detail": "verify=201 malo=false bueno=true verificada=t"
+  },
+  {
+    "id": "QA-WD-05",
+    "desc": "Solicitud de retiro REAL reserva fondos (RN-65)",
+    "status": "PASS",
+    "detail": "http=201 req=a12005f0 status=REQUESTED disponible 900→400 ledger=[WITHDRAWAL 500.00]"
+  },
+  {
+    "id": "QA-WD-06",
+    "desc": "Rechazar retiro por saldo disponible insuficiente (gate)",
+    "status": "PASS",
+    "detail": "http=400"
+  },
+  {
+    "id": "QA-WD-07a",
+    "desc": "Admin ve la solicitud en la cola (GET /admin/withdrawals)",
+    "status": "PASS",
+    "detail": "http=200 enCola=true total=1"
+  },
+  {
+    "id": "QA-WD-07b",
+    "desc": "Admin APRUEBA el retiro (REQUESTED→APPROVED, RN-66)",
+    "status": "PASS",
+    "detail": "http=200 status=APPROVED"
+  },
+  {
+    "id": "QA-WD-08",
+    "desc": "Admin marca PAGADO tras SPEI manual (APPROVED→PAID, RN-66)",
+    "status": "PASS",
+    "detail": "http=200 status=PAID ref=SPEI-QA-0001 disponible=400 (sin cambio, ya reservado)"
+  },
+  {
+    "id": "QA-WD-09",
+    "desc": "Rechazo de retiro reintegra fondos (→REJECTED + ADJUSTMENT, RN-66)",
+    "status": "PASS",
+    "detail": "status=REJECTED disponible 400→(reserva)200→(reintegro)400 ledger=[ADJUSTMENT 200.00]"
+  }
+]
