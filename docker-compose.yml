@@ -248,6 +248,8 @@ services:
       - ./src/apps/base/package.json:/app/package.json
       - ./src/apps/base/tsconfig.json:/app/tsconfig.json
       - ./src/apps/base/nest-cli.json:/app/nest-cli.json
+      # PT-108 (F-36) — sin este montaje, `docker restart ironloot-base` deja BASE en 503.
+      - ./src/apps/base/nest-cli.dev.json:/app/nest-cli.dev.json
       - /app/node_modules
     depends_on:
       api:
