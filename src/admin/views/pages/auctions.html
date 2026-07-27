@@ -3,7 +3,7 @@
 {% block content %}
 <div class="toolbar">
   <form action="/auctions" method="GET" class="filter-form">
-    <select name="status" class="form-select" onchange="this.form.submit()">
+    <select name="status" class="form-select" data-autosubmit>
       <option value="">Todos los estados</option>
       <option value="DRAFT" {% if status == 'DRAFT' %}selected{% endif %}>Borrador</option>
       <option value="PENDING_MODERATION" {% if status == 'PENDING_MODERATION' %}selected{% endif %}>Pendiente moderación</option>
@@ -64,7 +64,7 @@
               <button class="btn btn-warning btn-xs">Suspender</button>
             </form>
             <form action="/auctions/{{ a.id }}/force-close" method="POST" style="display:inline"
-                  onsubmit="return confirm('¿Forzar cierre?')">
+                  data-confirm="¿Forzar cierre?">
               <button class="btn btn-danger btn-xs">Forzar cierre</button>
             </form>
             {% endif %}
@@ -77,7 +77,7 @@
 
             {% if a.status != 'CANCELLED' and a.status != 'CLOSED' %}
             <form action="/auctions/{{ a.id }}/cancel" method="POST" style="display:inline"
-                  onsubmit="return confirm('¿Cancelar?')">
+                  data-confirm="¿Cancelar?">
               <button class="btn btn-ghost btn-xs">Cancelar</button>
             </form>
             {% endif %}

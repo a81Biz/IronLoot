@@ -1,4 +1,5 @@
 {% extends "layouts/base.html" %}
+{% block body_data %} data-client-url="{{ clientUrl }}"{% endblock %}
 {% block title %}Iniciar sesión — IronLoot{% endblock %}
 
 {% block content %}
@@ -43,31 +44,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-const CLIENT = '{{ clientUrl }}';
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const errEl = document.getElementById('loginError');
-  errEl.style.display = 'none';
-  const body = { email: e.target.email.value, password: e.target.password.value };
-  try {
-    const res = await fetch('/api/v1/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-      credentials: 'include',
-    });
-    const data = await res.json();
-    if (res.ok) {
-      window.location.href = CLIENT + '/dashboard';
-    } else {
-      errEl.textContent = data.message || 'Credenciales incorrectas.';
-      errEl.style.display = 'block';
-    }
-  } catch {
-    errEl.textContent = 'Error de conexión. Intenta de nuevo.';
-    errEl.style.display = 'block';
-  }
-});
-</script>
+<script src="/js/pages/pages-auth-login.js"></script>
+
 {% endblock %}

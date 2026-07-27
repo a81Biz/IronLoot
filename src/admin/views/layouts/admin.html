@@ -163,6 +163,9 @@
     </main>
   </div>
 
+  {# PT-096 — Comportamientos que antes vivian en atributos on*, bloqueados por
+     script-src-attr none. Ver src/admin/public/js/ui-behaviours.js #}
+  <script src="/js/ui-behaviours.js"></script>
   <script src="/js/admin.js"></script>
   <!-- CDN libraries (loaded on demand via block) -->
   {% block scripts %}{% endblock %}

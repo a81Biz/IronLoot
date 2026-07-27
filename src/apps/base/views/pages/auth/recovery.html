@@ -37,19 +37,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.getElementById('recoveryForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const msgEl = document.getElementById('recoveryMsg');
-  try {
-    await fetch('/api/v1/auth/forgot-password', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ email: e.target.email.value }),
-    });
-    msgEl.className = 'alert alert-success';
-    msgEl.textContent = 'Si el correo existe, recibirás las instrucciones en unos minutos.';
-    msgEl.style.display = 'block';
-  } catch { msgEl.className = 'alert alert-error'; msgEl.textContent = 'Error de conexión.'; msgEl.style.display = 'block'; }
-});
-</script>
+<script src="/js/pages/pages-auth-recovery.js"></script>
+
 {% endblock %}

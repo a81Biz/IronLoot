@@ -18,18 +18,6 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script>
-document.getElementById('disputeForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const msgEl = document.getElementById('disputeMsg');
-  const res = await fetch('/api/v1/disputes', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-    body: JSON.stringify({ orderId: document.getElementById('orderId').value, reason: document.getElementById('reason').value }),
-  });
-  msgEl.className = 'alert ' + (res.ok ? 'alert-success' : 'alert-error');
-  if (res.ok) { msgEl.textContent = 'Disputa abierta correctamente.'; setTimeout(() => window.location.href = '/disputes', 2000); }
-  else { const d = await res.json(); msgEl.textContent = d.message || 'Error al abrir disputa.'; }
-  msgEl.style.display = 'block';
-});
-</script>
+<script src="/js/pages/pages-disputes-create.js"></script>
+
 {% endblock %}

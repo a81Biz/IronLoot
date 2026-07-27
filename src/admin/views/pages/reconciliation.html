@@ -1,5 +1,6 @@
 {% extends "layouts/admin.html" %}
-{% block title %}Conciliación — IronLoot Admin{% endblock %}
+{% block title %}Conciliación — IronLoot Admin<script src="/js/pages/pages-reconciliation.js"></script>
+{% endblock %}
 {% block content %}
 <h1 class="h3 mb-4">Conciliación de pagos</h1>
 <div class="card mb-4">
@@ -21,7 +22,7 @@
         <input id="rcTo" type="date" class="form-control">
       </div>
       <div class="col-auto">
-        <button class="btn btn-primary" onclick="loadReconciliation()">Conciliar</button>
+        <button class="btn btn-primary" data-accion="conciliar">Conciliar</button>
         <a id="csvExportBtn" href="#" class="btn btn-outline-secondary ms-2" style="display:none;">Exportar CSV</a>
       </div>
     </div>
@@ -43,25 +44,5 @@
     </div>
   </div>
 </div>
-<script>
-const API = '/api/v1/admin';
-async function loadReconciliation() {
-  const provider = document.getElementById('rcProvider').value;
-  const from = document.getElementById('rcFrom').value;
-  const to = document.getElementById('rcTo').value;
-  if (!from || !to) { alert('Selecciona fechas'); return; }
-  const data = await (await fetch(`${API}/reconciliation?provider=${provider}&dateFrom=${from}&dateTo=${to}`)).json();
-  document.getElementById('rcResults').style.display = 'block';
-  document.getElementById('internalCount').textContent = data.internalCount;
-  document.getElementById('providerCount').textContent = data.providerOnly?.length ?? 0;
-  document.getElementById('providerNote').textContent = data.note || '';
-  document.getElementById('internalTable').innerHTML = (data.internalOnly || []).map(p => `<tr><td><code>${p.externalId || '—'}</code></td><td>MXN ${p.amount}</td></tr>`).join('');
-  const csvBtn = document.getElementById('csvExportBtn');
-  csvBtn.href = `${API}/reconciliation/export?provider=${provider}&dateFrom=${from}&dateTo=${to}`;
-  csvBtn.style.display = 'inline-block';
-}
-document.getElementById('rcTo').valueAsDate = new Date();
-const d = new Date(); d.setDate(d.getDate() - 30);
-document.getElementById('rcFrom').valueAsDate = d;
-</script>
+
 {% endblock %}

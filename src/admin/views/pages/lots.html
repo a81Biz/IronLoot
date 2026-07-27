@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-actions">
   <form method="GET" class="filter-bar">
-    <select name="blocked" class="form-select" onchange="this.form.submit()">
+    <select name="blocked" class="form-select" data-autosubmit>
       <option value="">Todos los lotes</option>
       <option value="false" {% if blocked == 'false' %}selected{% endif %}>Activos</option>
       <option value="true" {% if blocked == 'true' %}selected{% endif %}>Bloqueados</option>
@@ -50,7 +50,7 @@
             </form>
             {% else %}
             <form action="/lots/{{ lot.id }}/block" method="POST" style="display:inline"
-                  onsubmit="return confirm('¿Bloquear este lote?')">
+                  data-confirm="¿Bloquear este lote?">
               <button class="btn btn-danger btn-xs">Bloquear</button>
             </form>
             {% endif %}

@@ -26,20 +26,6 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script>
-document.getElementById('depositForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const errEl = document.getElementById('depositError');
-  errEl.style.display = 'none';
-  try {
-    const res = await fetch('/api/v1/payments/initiate', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      body: JSON.stringify({ amount: parseFloat(document.getElementById('amount').value), provider: document.getElementById('provider').value }),
-    });
-    const data = await res.json();
-    if (res.ok && data.redirectUrl) { window.location.href = data.redirectUrl; }
-    else { errEl.textContent = data.message || 'Error al iniciar pago.'; errEl.style.display = 'block'; }
-  } catch { errEl.textContent = 'Error de conexión.'; errEl.style.display = 'block'; }
-});
-</script>
+<script src="/js/pages/pages-wallet-deposit.js"></script>
+
 {% endblock %}

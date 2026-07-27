@@ -1,0 +1,16 @@
+{
+  "BUYER": {
+    "username": "comprador_005428",
+    "email": "comprador_005428@test.local",
+    "password": "Passw0rd!2026"
+  },
+  "SELLER": {
+    "username": "vendedor_005428",
+    "email": "vendedor_005428@test.local",
+    "password": "Passw0rd!2026"
+  },
+  "buyerId": "4b1a2c27-deba-4f59-b426-a9101c004f45",
+  "sellerId": "b01b90a3-f38c-489e-9a29-c09e22252078",
+  "auctionId": "0f9a948c-93d1-4410-8916-34a044657db0",
+  "runid": "005428"
+}

@@ -6,7 +6,7 @@
     <span class="material-symbols-outlined">settings</span> Config PAC
   </a>
   <form method="GET" class="filter-bar">
-    <select name="status" class="form-select" onchange="this.form.submit()">
+    <select name="status" class="form-select" data-autosubmit>
       <option value="">Todos</option>
       <option value="PENDING" {% if status == 'PENDING' %}selected{% endif %}>Pendientes</option>
       <option value="EMITTED" {% if status == 'EMITTED' %}selected{% endif %}>Emitidos</option>
@@ -40,7 +40,7 @@
             <a href="/cfdi/{{ cfdi.orderId }}/download/xml" class="btn btn-ghost btn-xs">XML</a>
             <a href="/cfdi/{{ cfdi.orderId }}/download/pdf" class="btn btn-ghost btn-xs">PDF</a>
             <form action="/cfdi/{{ cfdi.orderId }}/cancel" method="POST" style="display:inline"
-                  onsubmit="return confirm('¿Cancelar este CFDI?')">
+                  data-confirm="¿Cancelar este CFDI?">
               <button class="btn btn-danger btn-xs">Cancelar</button>
             </form>
             {% endif %}

@@ -45,21 +45,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script>
-document.getElementById('registerForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const errEl = document.getElementById('registerError');
-  errEl.style.display = 'none';
-  const body = { username: e.target.username.value, email: e.target.email.value, password: e.target.password.value };
-  try {
-    const res = await fetch('/api/v1/auth/register', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body), credentials: 'include',
-    });
-    const data = await res.json();
-    if (res.ok) { window.location.href = '/auth/verify-email-pending'; }
-    else { errEl.textContent = data.message || 'Error al registrar.'; errEl.style.display = 'block'; }
-  } catch { errEl.textContent = 'Error de conexión.'; errEl.style.display = 'block'; }
-});
-</script>
+<script src="/js/pages/pages-auth-register.js"></script>
+
 {% endblock %}

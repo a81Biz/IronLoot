@@ -34,23 +34,6 @@
 </div>
 {% endblock %}
 {% block scripts %}
-<script>
-document.getElementById('createAuctionForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const msgEl = document.getElementById('createMsg');
-  const body = {
-    title: document.getElementById('title').value,
-    description: document.getElementById('description').value,
-    startingPrice: parseFloat(document.getElementById('startingPrice').value),
-    startsAt: new Date(document.getElementById('startsAt').value).toISOString(),
-    endsAt: new Date(document.getElementById('endsAt').value).toISOString(),
-  };
-  const res = await fetch('/api/v1/auctions', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-    body: JSON.stringify(body),
-  });
-  if (res.ok) { const d = await res.json(); window.location.href = '/seller/auctions'; }
-  else { const d = await res.json(); msgEl.className = 'alert alert-error'; msgEl.textContent = d.message || 'Error al crear subasta.'; msgEl.style.display = 'block'; }
-});
-</script>
+<script src="/js/pages/pages-auction-create.js"></script>
+
 {% endblock %}
