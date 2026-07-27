@@ -28,10 +28,26 @@ const auctionId =
   setInterval(tick, 1000);
 
   // Live bid feed via Socket.io (public read-only namespace)
+  //
+  // PT-102 (F-34) — Este bloque estuvo apagado y NADIE se entero. El catch de abajo decia
+  // «live feed is optional» y no registraba nada, asi que un ReferenceError -io no existia
+  // todavia- se volvia invisible. La pagina funcionaba; el producto, no.
+  //
+  // El try/catch se queda: si el CDN cae, el usuario debe poder seguir pujando por HTTP. Lo
+  // que cambia es que ahora deja rastro. Un fallo que nadie puede observar no es un fallo
+  // tolerado: es un fallo oculto.
   try {
+    if (typeof io !== 'function') {
+      throw new Error(
+        'socket.io no se cargo (CDN inaccesible, o el <script> va en el orden equivocado)',
+      );
+    }
     // PT-098 — Relativo al propio origen: CLIENT lo reenvia a la API. Una URL relativa
     // no puede apuntar a un host que el navegador no resuelve.
     const socket = io('/auctions', { transports: ['websocket', 'polling'] });
+    socket.on('connect_error', (err) => {
+      console.error('Puja en vivo: no se pudo conectar —', err && err.message);
+    });
     socket.on('connect', () => socket.emit('joinAuction', { auctionId }));
     socket.on('bid:new', (bid) => {
       if (bid && bid.amount != null) {
@@ -51,7 +67,8 @@ const auctionId =
       cd.textContent = 'Finalizada';
     });
   } catch (e) {
-    /* live feed is optional; the page still works without it */
+    // La puja en vivo es opcional para que la pagina siga sirviendo; NO es opcional que se sepa.
+    console.error('Puja en vivo no disponible:', e && e.message ? e.message : e);
   }
 
   // Place a bid via the BFF proxy (relative path → server-side injects the Bearer token)
