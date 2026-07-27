@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "src",
+  "compilerOptions": {
+    "//": "PT-108 (F-36) — El mismo arreglo que PT-094 hizo para ADMIN, que se quedo alli.",
+    "//2": "TD-013 se OBSERVO en ADMIN, pero su causa vive en la configuracion de compilacion",
+    "//3": "en desarrollo, identica en los tres sitios. `docker restart ironloot-base` dejaba",
+    "//4": "BASE en HTTP 503 con `Cannot find module './app.module'`.",
+    "//5": "Con deleteOutDir por defecto, nest borra dist/, recompila, y en los montajes de",
+    "//6": "Windows `node dist/main` se dispara antes de que la compilacion aterrice: Node muere",
+    "//7": "y se lleva el vigilante por delante.",
+    "//8": "El nest-cli.json de produccion conserva deleteOutDir: true, que ahi si es correcto.",
+    "deleteOutDir": false
+  }
+}
