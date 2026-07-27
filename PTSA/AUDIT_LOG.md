@@ -287,3 +287,40 @@ P-012 se queda en `IDENTIFICADO`: sin instancias, bloqueado por H-005.
 
 Los scores apenas se mueven porque no había nada roto que arreglar: lo que cambia es **qué se sabe
 del sistema**. Es la primera sesión con productos en `VALIDADO` desde que existe la auditoría.
+
+---
+
+## DS-009 — El mecanismo que faltaba (2026-07-27)
+
+**Disparador**: el trabajo pendiente que no depende del PAC.
+
+| PT | Qué | Resultado |
+|---|---|---|
+| **PT-117** | Se le completó el **STATE 5** que me había saltado | Evidencia y self-review escritos |
+| **PT-118** | El **checkpoint D2** que `audit-scope.yaml` declara desde el 23-jun y no existía | Corre en CI, probado en los dos sentidos |
+| **PT-119** | Triaje de TD-015 | 27 → 26 avisos; una afirmación mía corregida |
+
+### Lo que PT-118 arregla de verdad
+
+No es una vulnerabilidad: es **la razón por la que H-008 llegó con 34 días de retraso**. Durante
+cinco semanas la auditoría emitió D2 = 99 sobre un área que nadie miraba, porque el mecanismo que
+debía mirarla estaba declarado y no existía.
+
+Se compara contra una **línea base**, no contra un umbral: `--audit-level=high` fallaría desde el
+primer día por los 12 ya triados, el CI quedaría rojo permanente, y alguien lo desactivaría. Así es
+como muere un control — no se borra, se ignora hasta que estorba.
+
+### Una corrección mía, en PT-119
+
+TD-015 afirmaba que **los 13 paquetes exigían salto mayor**. Al medirlo de nuevo —después de que
+PT-116 cambiara el árbol— `nodemailer` no: la app ya estaba en 9.0.3 y el aviso venía de una
+**segunda copia en 8.0.5** anidada tres niveles abajo. Heredé el marco de un PT anterior sin
+recomprobarlo. **Es lo mismo que F-33, en otro sitio.**
+
+### Scores
+
+Sin cambios: Health **94.0** · Risk **40** · Confidence **94.2** · Clase **A** · 11 productos
+`VALIDADO`.
+
+Los números no se mueven porque no había nada roto. Lo que cambia es que **la próxima vulnerabilidad
+se verá el día que llegue**.

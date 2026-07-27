@@ -421,6 +421,40 @@
         "nota": "P-012 CfdiRecord sin instancias por H-005, bloqueado por decision de dominio"
       },
       "nota": "Primera sesion con productos en VALIDADO. rubric_compliance_score=100 sobre los once criterios de F-1 §5, ejecutados contra salida real."
+    },
+    {
+      "session": "DS-009",
+      "date": "2026-07-27",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 85,
+        "D2": 95,
+        "D3": 100,
+        "D4": 100,
+        "health": 94.0,
+        "risk": 40,
+        "confidence": 94.2
+      },
+      "classification": "A",
+      "classification_without_cap": "A",
+      "cap_reason": null,
+      "score_freshness": {
+        "last_verified": "2026-07-27",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "trigger": "El mecanismo que faltaba: checkpoint D2 en CI (PT-118) y triaje de TD-015 (PT-119)",
+      "findings_changes": {
+        "nuevos": [],
+        "revisados": [
+          "H-008 — el checkpoint D2 declarado desde el 23-jun ya EXISTE y corre en CI",
+          "TD-015 — 27 -> 26 avisos; y su afirmacion «los 13 exigen salto mayor» era falsa: eran 12"
+        ],
+        "cerrados": []
+      },
+      "nota": "Los scores no se mueven: no habia nada roto. Lo que cambia es que la proxima vulnerabilidad se vera el dia que llegue, no 34 dias despues."
     }
   ]
 }
