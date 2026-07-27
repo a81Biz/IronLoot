@@ -3135,3 +3135,71 @@ ADD VALUE`— pero hay que verificarlo, no suponerlo.
 Root Cause: 100% — el comentario del codigo nombra el atajo y el enum confirma la ausencia.
 Solution: 95% — es un valor de enum y una linea; el 5% es que `ADD VALUE` no puede correr dentro de
 una transaccion en PostgreSQL, y eso condiciona como se aplica.
+
+
+---
+
+## PT-118 — FEATURE: el checkpoint D2 de dependencias, declarado y nunca ejecutado
+
+**Fecha**: 2026-07-27 · **Complejidad**: STANDARD · **Estado**: STATE 1-E (enriquecimiento)
+**Origen**: PTSA H-008 y PENDIENTES DS-004 #2. No depende del PAC.
+
+### Que
+
+`audit-scope.yaml` declara desde el 23-jun:
+
+```yaml
+ci_checkpoints:
+  - D2    # tests + schema + vulnerabilidades
+  - D3    # trazabilidad + logging
+  - D5    # Success/Retry/Failure Rate
+  - "D1.N1"  # Domain Rules as Code
+```
+
+Y `.github/workflows/ci.yml` corre **lint, typecheck, tests unitarios y de integracion**. De
+vulnerabilidades, **nada**.
+
+### La consecuencia, medida
+
+**H-008 llego con 34 dias de retraso.** 71 avisos en dependencias de produccion —3 criticos, 53
+altos— entre ellos uno alcanzable **sin autenticar** contra la puja en vivo. Nadie los habia mirado
+porque el mecanismo que debia mirarlos estaba declarado y no existia.
+
+Un checkpoint previsto y no ejecutado es **peor que no tenerlo**: da por cubierta un area que nadie
+vigila, y por eso durante cinco semanas la auditoria emitio D2 = 99.
+
+### Criterios de aceptacion
+
+1. El CI **falla** si aparece una vulnerabilidad **nueva** respecto a la linea base declarada.
+2. El CI **no falla** por las 27 que ya estan triadas y registradas en TD-015 — si lo hiciera,
+   quedaria rojo desde el primer dia y alguien lo desactivaria.
+3. La linea base **vive en el repositorio**, versionada, con fecha y motivo.
+4. El informe dice **que** aparecio y **por donde entra**, no solo cuantas hay.
+
+### Escenarios
+
+| Caso | Esperado |
+|---|---|
+| Estado actual (27 avisos, todos en la linea base) | **Pasa** |
+| Aparece un aviso nuevo en un paquete de produccion | **Falla**, nombrandolo |
+| Un aviso de la linea base desaparece | **Pasa**, y avisa de que la linea base se puede reducir |
+| Un aviso sube de severidad | **Falla**: la linea base fija el paquete Y su severidad |
+| Dependencias de desarrollo | **No** cuentan: no llegan a produccion |
+
+### NFR
+
+- Debe correr en **menos de un minuto**: si tarda, se salta.
+- **Sin red mas alla de `npm audit`**: nada de servicios externos.
+- El fallo debe ser **legible sin abrir el JSON**.
+
+### Fuera de alcance
+
+- Arreglar las 27 de la linea base. Eso es TD-015 y va aparte (PT-119).
+- Los checkpoints D3, D5 y D1.N1, tambien declarados y tambien sin ejecutar. Cada uno mide algo
+  distinto y merece su propio trabajo; meterlos aqui haria el PT irrevisable.
+
+### Confianza
+
+Architecture Confidence: 100% — el CI existe y su forma esta leida.
+Implementation Confidence: 90% — el 10% es acertar con el formato de la linea base para que
+sobreviva a un `npm install` sin volverse ruido.

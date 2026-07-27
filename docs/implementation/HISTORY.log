@@ -1390,3 +1390,25 @@ Resultado: rubric_compliance_score = 100 sobre once criterios; cross_coherence v
 Transiciones: 11 de 12 productos IDENTIFICADO -> VALIDADO, con VoBo humano. P-012 se queda por
   H-005.
 Scores: Health 94.0 · Risk 40 · Confidence 94.2 · Clase A · 11 productos VALIDADOS.
+
+## PT-118 — FEATURE: el checkpoint D2 de dependencias (PTSA H-008)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: feature/PT-118-checkpoint-de-dependencias
+Root cause: `audit-scope.yaml` declaraba el checkpoint D2 con «tests + schema + vulnerabilidades»
+  desde el 23-jun, y `ci.yml` no lo tenia. H-008 llego con 34 DIAS DE RETRASO -71 avisos, uno
+  alcanzable sin autenticar- y durante cinco semanas la auditoria emitio D2 = 99 sobre un area que
+  nadie miraba. Un checkpoint previsto y no ejecutado es peor que no tenerlo.
+Solution: `scripts/audit-check.ts` + `security-baseline.json` + job `security-audit` en el CI.
+  LINEA BASE, no umbral: `--audit-level=high` fallaria desde el primer dia por los 13 paquetes ya
+  triados, el CI quedaria rojo permanente y alguien lo desactivaria. Se compara paquete Y
+  severidad, nunca la cifra.
+Evidence: docs/implementation/evidence/PT-118/ — probado en los dos sentidos (OK codigo 0 con el
+  estado real; FALLA codigo 1 nombrando el aviso nuevo y el agravado). 7/7 en los tests, con AC-02
+  y AC-03 como casos de control.
+Lo que casi se me cuela: comprobe el codigo de salida con `| tail` y devolvia 0 con el checkpoint
+  fallando —era el codigo de tail—. Habria quedado un control que parece funcionar y no rompe el CI
+  jamas. Repetido sin tuberia.
+Delta: TD-015 decia «63 vulnerabilidades» y son 27 (13 paquetes); corregida. `audit-scope.yaml`
+  ahora dice DONDE corre cada parte del checkpoint, no solo que existe.
+PTSA reference: H-008 — el mecanismo que faltaba

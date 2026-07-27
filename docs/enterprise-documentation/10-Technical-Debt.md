@@ -310,8 +310,14 @@ de una página, pero `script-src` ya le impide ejecutar nada.
 
 ---
 
-### TD-015 — 63 vulnerabilidades que exigen salto de version mayor
-**Status:** Open. Registrada por PT-110 (PTSA H-008) 2026-07-27.
+### TD-015 — 27 avisos (13 paquetes) que exigen salto de version mayor
+**Status:** Open. Registrada por PT-110 (PTSA H-008) y **reducida por PT-116**: la cadena del
+mailer —11 paquetes, dos de los tres criticos— se subio entera. De 63 avisos a **27**, y de 3
+criticos a **1**.
+
+**Desde PT-118 esta acotada, no solo registrada.** `src/api/security-baseline.json` lista los 13
+paquetes con su severidad, y el checkpoint D2 del CI **falla si aparece el numero 14**. Se comprueba
+con `npm run audit:check`.
 
 **Que es.** Tras PT-110 quedan **63 avisos** en dependencias de produccion (3 criticos, 48 altos).
 Ninguno es alcanzable sin autenticar —eso lo cerro PT-110— pero siguen ahi.
