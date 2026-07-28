@@ -1,10 +1,22 @@
 name: CI
 
+# PT-136 — El disparador se declara contra la realidad, no contra una aspiracion.
+#
+# Esto decia `[dev, qa, prep, prod]`. Ninguna de las cuatro ha existido nunca: la unica rama de
+# este repositorio es `master`. El YAML era valido, GitHub listaba el workflow como `active`, y
+# los ocho jobs **no se ejecutaron ni una sola vez** en toda la historia del proyecto.
+#
+# Conservarlas "por si algun dia" reproduce la causa exacta. Si se quiere un flujo por entornos,
+# entra con su ADR y con las ramas creadas.
+#
+# `workflow_dispatch` no es un extra: permite lanzar la corrida a mano y mirarla. Un workflow que
+# solo corre cuando alguien empuja es un workflow que no se puede interrogar.
 on:
   push:
-    branches: [dev, qa, prep, prod]
+    branches: [master]
   pull_request:
-    branches: [dev, qa, prep, prod]
+    branches: [master]
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '20'
