@@ -19,8 +19,8 @@
     "db:seed": "npx prisma db seed",
     "db:studio": "npx prisma studio",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-    "lint:check": "eslint \"{src,apps,libs,test}/**/*.ts\"",
+    "lint": "eslint \"{src,test}/**/*.ts\" --fix",
+    "lint:check": "eslint \"{src,test}/**/*.ts\"",
     "prepare": "cd ../.. && husky install",
     "setup": "cp -n .env.example .env || true && npm install && npx prisma generate",
     "start": "nest start",
@@ -164,9 +164,11 @@
       "@nestjs/common": "$@nestjs/common",
       "@nestjs/core": "$@nestjs/core"
     },
-    "brace-expansion": ">=5.0.8",
     "js-yaml": ">=5.2.2",
     "linkify-it": ">=5.0.1",
-    "minimatch": ">=9.0.6"
+    "brace-expansion": ">=5.0.8",
+    "eslint": {
+      "brace-expansion": "^1.1.11"
+    }
   }
 }

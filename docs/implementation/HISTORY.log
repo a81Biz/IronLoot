@@ -1533,3 +1533,92 @@ Transiciones de hallazgo PTSA en el mismo acto:
 - H-005 sigue ABIERTA: depende de una decision fiscal del negocio, no de codigo.
 
 Evidence: docs/implementation/evidence/ (por PT) + PTSA/Evidencias/
+
+## PT-124 — BUG (seguridad): la subida dejaba al cliente elegir la extension de guardado
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-124-subida-tipo-real
+Objective: que el tipo y el nombre con que se persiste un fichero salgan de su contenido.
+Root cause: un unico principio incumplido en dos ficheros — un dato bajo control del cliente
+decidia como se persiste algo. `originalname` daba la extension, `mimetype` decidia si pasaba, y
+ninguno miraba el contenido. Por separado los dos ficheros parecian correctos; el defecto vivia en
+la juntura, y por eso ninguna auditoria previa lo vio.
+Solution: `file-signature.ts` decide por bytes de cabecera (4 formatos, longitud fija, cero
+parsing). `limits.fileSize` 5 MB en el interceptor —no en el controlador: el almacenamiento por
+defecto es en memoria—. SVG fuera: es image/* y ejecuta script. NO se uso `file-type`, que ya
+estaba en el arbol: su aviso era inalcanzable *porque aqui solo se suben imagenes*, y llamarlo lo
+habria vuelto alcanzable.
+Ademas, F-41: el mapa estado->codigo enumeraba seis estados y mandaba el resto a INTERNAL_ERROR. El
+413 nuevo se registraba como fallo del servidor. `severity` ya lo hacia bien (`status >= 500`) — dos
+clasificaciones del mismo suceso que no coincidian, y la del panel era la mala. Ahora el defecto
+conoce el lado del 500; añadir el 413 a la lista habria garantizado que el siguiente repitiera.
+Modified files: src/api/src/modules/upload/{file-signature.ts,upload.limits.ts,upload.controller.ts,
+upload.service.ts}, src/api/src/common/observability/{status-to-code.ts,exception.filter.ts},
++3 ficheros de prueba
+Evidence: PTSA/Evidencias/E-016.md · verificado contra el API en ejecucion con sesion real:
+400 / 201-.png / 400 / 413 / 401. Repetido identico tras Express 5.
+Delta (real vs planeado): el hallazgo original de PT-123 era «falta un limite de tamaño». Al mirarlo
+aparecio algo mayor —el `Content-Type` lo elegia quien subia— y F-41 de rebote.
+PTSA reference: H-013 (nuevo, CORREGIDA) · E-016
+
+## PT-125 — REFACTOR: bcrypt 5->6 y fuera la dependencia uuid
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: refactor/PT-125-bcrypt-uuid
+Objective: los dos saltos baratos que recomendo PT-123. De 12 paquetes con aviso a 10, de 1 critico
+a 0.
+Solution: bcrypt 6 saca `tar` (el unico CRITICO) del arbol. El riesgo era uno solo —que los hashes
+existentes dejaran de validar— y se comprobo congelando un hash generado con bcrypt 5.1.1 ANTES de
+tocar package.json. Esa prueba se queda: es la que le dira a quien vuelva a subir bcrypt, en
+segundos, si la base de usuarios sobrevive.
+En `uuid` el plan cambio por una medida: el rango vulnerable era `<11.1.1` y el unico nodo afectado
+la copia anidada de `mercadopago`. Nuestra dependencia directa **nunca fue el problema**; subirla a
+14 no cerraba nada, añadia una copia y —por ser ESM— dejaba 54 de 79 suites sin arrancar. Se quito
+a favor de `crypto.randomUUID()` (4 ficheros) y la anidada va por override a la MINIMA parcheada,
+no a la ultima: la 14 tambien cierra el aviso y volveria a romper Jest dentro de ese arbol.
+Modified files: src/api/package.json, package-lock.json, 4 ficheros que usaban uuid, +2 de prueba
+Evidence: usuario creado ANTES de la subida, hash `$2b$12$` escrito por bcrypt 5, entra con bcrypt 6
+(HTTP 200); clave incorrecta, 401.
+Delta (real vs planeado): el alcance declaraba «quitar uuid es un PT propio». Se hizo aqui, y el
+motivo esta escrito en el propio REFACTOR_SCOPE — no una preferencia, dos medidas.
+PTSA reference: H-008 (parcial)
+
+## PT-126 — REFACTOR (MAJOR): NestJS 10->11 y Express 4->5 en los cuatro servicios
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: refactor/PT-126-nestjs-11
+Objective: cerrar TD-015 del todo. **Cero avisos en los cinco proyectos.**
+Solution: @nestjs/* 11 en API, BASE, CLIENT y ADMIN; Express 5, path-to-regexp 3->8, body-parser
+1->2. El resto de la cadena del mailer por override a versiones parcheadas.
+EL riesgo estaba identificado antes de empezar: `forRoutes('*')` es quien pone el traceId, y si
+dejaba de casar no fallaba nada. Se escribio la guarda ANTES de migrar y se dejo verde sobre Nest 10
+como linea base. Verificado despues contra el sistema en ejecucion: traceId presente, filas nuevas
+en request_logs.
+Lo que destapo la migracion, y **ninguno era del framework**:
+- JWT_SECRET se leia en 6 sitios sin exigir que existiera. `validate-startup-config` lo pedia SOLO
+  en produccion. Los tipos de @nestjs/jwt 11 lo señalaron; la salida facil era un `!`, que calla al
+  compilador y deja el sistema igual. Ahora una funcion que lanza, con minimo de longitud y sin
+  escupir el valor al log.
+- JWT_ACCESS_EXPIRY podia estar mal escrita sin protesta: `ms('pronto')` devuelve undefined en
+  silencio. Se valida con `ms` —el parser que usa jsonwebtoken— y no con regex propia: el primer
+  intento reimplemento la gramatica y rechazaba '15min', que es valido.
+- El adaptador de Handlebars se importaba entrando en `dist/` del paquete. Latente; lo destapo la
+  reinstalacion limpia.
+- **F-42**: ningun servicio tenia `.dockerignore`. `COPY . .` no lee `.gitignore`, asi que
+  `tsconfig.tsbuildinfo` viajaba a la imagen de ADMIN; dentro, tsc concluia que ya habia emitido
+  todo y no emitia nada. Con `deleteOutDir: false` —puesto por PT-094 para cerrar TD-013— nadie
+  rellenaba el hueco: `Cannot find module '/app/dist/main'`. **Sintoma identico al de F-36 y ya
+  «arreglado» dos veces en otro sitio.** Cuatro `.dockerignore` + guarda que exige que todo
+  Dockerfile con `COPY . .` declare su contexto. Comprobado: ninguna imagen llevaba `.env`.
+`nestjs-throttler-storage-redis` no tiene version para Nest 11. Se leyo su `.d.ts`: la 0.5.1 SI
+implementa la firma de 5 argumentos de throttler v6 — el peer range es metadato viejo. Override
+acotado a ese paquete, no `--legacy-peer-deps`, que apagaria la comprobacion para todo el arbol.
+Reescribir el limitador a mano habria sido mas arriesgado: el Lua atomico es justo lo que aporta.
+Modified files: package.json/lock de los 4 servicios, 4 .dockerignore, jwt-secret.ts, jwt-expiry.ts
+y sus 6 puntos de uso, notifications.module.ts, security-baseline.json, +4 ficheros de prueba
+Evidence: 603 pruebas en API + 253 en el resto. `npm audit --omit=dev` = 0 en los cinco. Los cuatro
+servicios responden (200/200/302/302). traceId, request_logs, Swagger, login, saldo, rutas con :id,
+handshake de socket.io, y las 5 pruebas de subida de PT-124 identicas.
+Delta (real vs planeado): el alcance preveia bajar de 10 avisos a «3 o menos». Quedaron 0. Y preveia
+un solo punto de rotura; aparecieron cuatro mas, ninguno del framework y todos latentes.
+PTSA reference: H-008 (CERRADA) · TD-015 (CERRADA)

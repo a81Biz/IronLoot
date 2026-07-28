@@ -1,19 +1,6 @@
 {
   "generado": "2026-07-27",
-  "motivo": "TD-015 — 10 paquetes que exigen salto MAYOR de plataforma. Analizados uno a uno en docs/implementation/ANALISIS-TD-015.md (PT-123): 6 no llegan a produccion, 3 estan en el arbol sin uso alcanzable, 3 estan en el camino con mitigacion. Los cierra la migracion NestJS 10->11 / Express 4->5 (PT-126). Ninguno alcanzable sin autenticar.",
-  "revisar_antes_de": "2026-10-27",
-  "avisos": {
-    "@nestjs/core": "moderate",
-    "body-parser": "low",
-    "brace-expansion": "high",
-    "file-type": "moderate",
-    "glob": "high",
-    "js-yaml": "high",
-    "linkify-it": "high",
-    "minimatch": "high",
-    "multer": "high",
-    "path-to-regexp": "high"
-  },
-  "revisado": "2026-07-27",
-  "nota": "PT-125 cerro tar (bcrypt 5->6, node-pre-gyp fuera del arbol) y uuid (dependencia directa eliminada a favor de crypto.randomUUID; la copia anidada de mercadopago va por override a ^11.1.1). Quedan 10, todos analizados en docs/implementation/ANALISIS-TD-015.md."
+  "motivo": "PT-126 cerro TD-015. Los cuatro servicios NestJS pasaron a la 11 con Express 5, y los avisos que quedaban de la cadena del mailer se fijaron por override a sus versiones parcheadas. La linea base esta VACIA a proposito: no queda ningun aviso triado pendiente.",
+  "nota": "Una linea base vacia NO significa «no se ha mirado»: significa que se miro y no quedaba nada. La diferencia la marca el campo `generado`. Si aparece un aviso nuevo, el checkpoint D2 falla — que es exactamente lo que debe hacer. Ojo: el campo se llama `generado` y no `revisado`; escribir la fecha en una clave que el script no lee dejaba «Linea base de undefined» sin que nada fallara.",
+  "avisos": {}
 }

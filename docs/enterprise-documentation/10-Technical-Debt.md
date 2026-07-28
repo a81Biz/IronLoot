@@ -311,8 +311,38 @@ de una página, pero `script-src` ya le impide ejecutar nada.
 ---
 
 ### TD-015 — 26 avisos (12 paquetes) que exigen salto de version mayor
-**Status:** Open. Registrada por PT-110 (PTSA H-008) y **reducida por PT-116**: la cadena del
-mailer —11 paquetes, dos de los tres criticos— se subio entera. De 63 avisos a **27**, y de 3
+**Status: CERRADA — 2026-07-27 (PT-125 + PT-126).** **Cero avisos** en los cinco proyectos.
+Se comprueba con `cd src/api && npm audit --omit=dev` (y lo mismo en `src/apps/base`,
+`src/apps/client`, `src/admin`, `src/packages/core`), o con `npm run audit:check`, cuya linea base
+esta ahora **vacia a proposito**.
+
+**Como se cerro, en dos pasos deliberadamente separados** —para que si algo se rompia se supiera
+cual de los dos fue—:
+
+- **PT-125** (12 -> 10 paquetes, 1 critico -> 0): `bcrypt` 5->6 saco `tar` del arbol. Y `uuid`
+  resulto **no ser nuestra dependencia**: el rango vulnerable era `<11.1.1` y el unico nodo
+  afectado, la copia anidada de `mercadopago`. Se quito la dependencia directa a favor de
+  `crypto.randomUUID()` y la anidada se fijo por override a la **minima parcheada**.
+- **PT-126** (10 -> **0**): los cuatro servicios NestJS a la 11 con **Express 5**
+  (`path-to-regexp` 3->8, `body-parser` 1->2). El resto de la cadena del mailer, por override a sus
+  versiones parcheadas.
+
+El analisis que ordeno los tres pasos —y descarto el orden inverso— sigue siendo valido y esta en
+`docs/implementation/ANALISIS-TD-015.md` (PT-123).
+
+**Lo que dejo escrito, y vale mas que el cierre**: la severidad de un aviso es del paquete en
+abstracto, no de este sistema. Medirla paquete a paquete (cadena con `npm ls`, punto de uso en el
+codigo) dijo que **ninguno de los 12 era alcanzable sin autenticar**, y eso convirtio una urgencia
+aparente en un trabajo planificable. Tambien destapo, de lado, un defecto **mas grave que los 12**
+que ningun `npm audit` iba a señalar: **H-013 / PT-124**.
+
+---
+
+<details>
+<summary>Historia de la deuda mientras estuvo abierta (PT-110 → PT-123)</summary>
+
+**Status original:** Open. Registrada por PT-110 (PTSA H-008) y **reducida por PT-116**: la cadena
+del mailer —11 paquetes, dos de los tres criticos— se subio entera. De 63 avisos a **27**, y de 3
 criticos a **1**.
 
 **Correccion de PT-119**: la entrada afirmaba que los 13 exigian salto mayor. Al volver a medirlo
@@ -363,4 +393,6 @@ y sin usar; `handlebars` si esta en el camino, pero su aviso exige controlar la 
 plantillas son del proyecto. **No se ha demostrado explotabilidad de ninguno** — afirmarla sin
 demostrarla seria opinion.
 
-**Como se comprueba.** `cd src/api && npm audit --omit=dev`.
+**Como se comprobaba entonces.** `cd src/api && npm audit --omit=dev`.
+
+</details>

@@ -19,12 +19,7 @@ const CHECK_BACKOFF_TAIL_MS = 43_200_000;
 const DEPOSIT_REFERENCE = /^DEP-(.+)-\d+$/;
 
 export type CycleOutcome =
-  | 'PROCESSED'
-  | 'DUPLICATE'
-  | 'CANCELLED'
-  | 'REJECTED'
-  | 'ANOMALY'
-  | 'ORPHAN';
+  'PROCESSED' | 'DUPLICATE' | 'CANCELLED' | 'REJECTED' | 'ANOMALY' | 'ORPHAN';
 
 export interface CycleDecision {
   /** Si el llamante debe acreditar el wallet. */
