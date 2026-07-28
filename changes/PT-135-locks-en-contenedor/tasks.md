@@ -10,7 +10,11 @@ Ninguna empieza antes del ACK del Proposal Gate.
 
 - **Objetivo**: una prueba que falle **hoy**, con el lock roto que está en `master`.
 - **Entrada**: `src/api/package-lock.json`; patrón de `coherencia-documentacion-codigo.spec.ts`.
-- **Salida**: `src/api/test/unit/infraestructura/lock-declara-plataformas.spec.ts`. Lee el lock **como
+- **Salida**: `src/api/test/unit/despliegue/lock-declara-plataformas.spec.ts` — **la ruta real; este
+  documento decía `infraestructura/`, que no existe.** Lo destapó el grafo de conocimiento, no una
+  prueba: un subagente de graphify leyó esta línea y creó un nodo apuntando a un fichero inexistente.
+  Es H-016 en el propio paquete de propuesta que lo denuncia. Va en `despliegue/` porque ahí vive la
+  guarda hermana, `healthcheck-apunta-a-ruta-real.spec.ts` de PT-129. Lee el lock **como
   JSON**; para cada paquete con `optionalDependencies` divididas por plataforma, exige entradas de
   `linux-x64-gnu` y `linux-x64-musl` en el árbol instalado. **Presencia de claves, nunca versiones.**
 - **Validación**: **falla** contra el lock actual, nombrando los paquetes que faltan.
