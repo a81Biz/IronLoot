@@ -1,5 +1,5 @@
 import request = require('supertest');
-import { subastaValida, ponerEnCurso } from '../core/auction-helper';
+import { subastaValida, ponerEnCurso, cerrarYObtenerPedido } from '../core/auction-helper';
 import { TestApp } from '../core/test-app';
 import { AuthHelper, TestUser } from '../core/auth-helper';
 import { CreateAuctionDto } from '../../src/modules/auctions/dto';
@@ -52,17 +52,13 @@ describe('Disputes Module (e2e)', () => {
       .send({ amount: 60 })
       .expect(201);
 
-    // 5. Wait for Close
-    await new Promise((r) => setTimeout(r, 3000));
-
-    // 6. Create Order
-    const orderRes = await request(testApp.getApp().getHttpServer())
-      .post('/api/v1/orders')
-      .set('Authorization', `Bearer ${buyer.token}`)
-      .send({ auctionId })
-      .expect(201);
-
-    orderId = orderRes.body.id;
+    // 5-6. PT-131 — El pedido lo crea el CIERRE, no una peticion del comprador.
+    //      `POST /api/v1/orders` ya no existe: `OrdersController` solo tiene `@Get()` y
+    //      `@Get(':id')`. Y la espera de 3 s sobraba: se invoca el cierre real en vez de
+    //      confiar en que el cron pase.
+    const pedido = await cerrarYObtenerPedido(testApp.getApp(), testApp.getPrisma(), auctionId);
+    if (!pedido) throw new Error('El cierre no genero pedido: el escenario no se puede montar');
+    orderId = pedido.id;
 
     // 7. Pay Order (Direct DB update to simulate PAID)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,36 +1,49 @@
 # PT-131 — Las capas, medidas una a una
 
-Cada corrección destapa la siguiente. No es dispersión: es **sedimento**. Los specs dejaron de
-ejecutarse (H-015 impedía que el job terminara) y el contrato siguió cambiando debajo de ellos.
+**42 fallos → 8. De 6 suites en verde a 13 de 16.** Cero cambios en `src/api/src/`.
 
-| Corrida | Capa corregida | Fallos | Pasan |
-|---|---|--:|--:|
-| inicial | — | **42** | 38 |
-| 1 | Fechas de subasta: `startsAt` futuro + duración mínima 1 h (helper) | 42 | 38 |
-| 2 | Subasta **en curso**: se crea con inicio futuro y se mueve el reloj después | 42 | 38 |
-| 3 | **Incremento mínimo de puja** (PT-041/AUD-009): 105 sobre 100 ya no vale, hace falta 110 | 42 | 38 |
-| 4 | **Monedero inexistente**: pujar retiene fondos y el usuario de prueba no tenía monedero | 42 | 38 |
-| 5 | **`isActive`**: el monedero se activa con el primer depósito real | **38** | **42** |
+Cada corrección destapaba la siguiente. No era dispersión: era **sedimento**. Los specs dejaron de
+ejecutarse (H-015 impedía que el job terminara) y el contrato del producto siguió cambiando debajo
+de ellos, cambio tras cambio, sin que nadie lo notara.
 
-## Las capas que quedan, ya identificadas
+## Las once capas
 
-```
- 10  Invalid credentials
-  3  Cannot POST /api/v1/orders          <- ruta que ya no existe
-  3  Validation failed (uuid is expected) <- cascada de un id no obtenido
-  2  Se requiere KYC aprobado para retirar
-  2  Invalid email or password
-  1  Wallet not found
-```
+| # | Capa | Qué cambió en el producto |
+|---|---|---|
+| 1 | `startsAt` en el pasado | Se añadió `isFutureDate` al DTO |
+| 2 | Duración de 2 s | Se impuso duración mínima de **1 hora** |
+| 3 | Subasta creada ya en curso | No se puede: hay que crear futura y mover el reloj |
+| 4 | Puja de 105 sobre 100 | **PT-041** impuso incremento mínimo de 10 |
+| 5 | Usuario sin monedero | Pujar pasó a **retener fondos** |
+| 6 | Monedero inactivo | Se activa con el primer depósito real |
+| 7 | `GET /auctions` como array | Pasó a respuesta **paginada** `{data,total,page,limit}` |
+| 8 | `POST /orders` | **Eliminado.** El pedido lo crea el cierre de la subasta |
+| 9 | `CreateCheckoutDto` sin `amount` | Se añadió `amount` obligatorio |
+| 10 | Borrado de datos sin cascada | Aparecieron `shipments`, `ratings`, `commission_records`, `notifications` colgando |
+| 11 | Neto del vendedor en `balance` | **PT-071**: va a `pendingBalance` (retención de liquidación) |
 
-`Cannot POST /api/v1/orders` es la más informativa: el spec llama a una ruta **que el API ya no
-expone**. Otra capa del mismo sedimento.
+Once cambios de contrato. **Todos correctos en el producto. Ninguno llegó a los tests.**
 
-## Lo que esto demuestra
+## Lo que queda, y por qué NO es sedimento
 
-Cinco cambios de contrato del producto —fechas de subasta, activación, incremento mínimo, monedero
-obligatorio, activación del monedero— entraron **correctamente** en el producto y **ninguno** llegó
-a los specs, porque nadie podía ejecutarlos.
+Tres suites, 8 tests. Ninguno es contrato viejo:
 
-**El producto no tiene ni un defecto en esta lista.** Los tests son un registro fósil de un contrato
-de hace meses.
+| Suite | Causa | Dónde vive |
+|---|---|---|
+| `settings` | **H-019** — `PATCH` parcial borra las ramas no enviadas | Defecto real de producto |
+| `wallet` | **H-018** — el depósito devuelve 500 con referencia desconocida | Defecto real de producto |
+| `payments` | Prueba contra la pasarela **real**; sin simulación no puede pasar en CI | Diseño de test |
+
+Los dos primeros **están registrados como hallazgos y el test los está delatando correctamente**.
+Maquillarlos para que pasen sería certificar el defecto.
+
+El tercero es una conversación aparte: un e2e que llama a `api-m.sandbox.paypal.com` no es un test
+de integración, es un test de contrato contra un tercero.
+
+## La lección
+
+**El producto no tenía ni un defecto en las once capas.** Los tests eran un registro fósil de un
+contrato de hace meses.
+
+Y los dos defectos reales que sí había —H-018 y H-019— **los encontraron estos mismos tests**, que
+llevaban meses diciendo la verdad sin que nadie los escuchara.

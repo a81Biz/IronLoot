@@ -68,7 +68,9 @@ describe('Wallet (e2e)', () => {
 
     expect(res.body).toHaveProperty('available');
     expect(res.body).toHaveProperty('held');
-    expect(res.body.currency).toBe('USD');
+    // PT-131 — El sistema es MXN EXCLUSIVAMENTE desde hace meses (CR-010). El spec seguia
+    // esperando USD. No se toca el producto: se corrige el spec.
+    expect(res.body.currency).toBe('MXN');
     expect(Number(res.body.available)).toBe(0);
   });
 

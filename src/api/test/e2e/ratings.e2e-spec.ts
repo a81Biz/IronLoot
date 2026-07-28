@@ -1,5 +1,5 @@
 import request = require('supertest');
-import { subastaValida, ponerEnCurso } from '../core/auction-helper';
+import { subastaValida, ponerEnCurso, cerrarYObtenerPedido } from '../core/auction-helper';
 import { TestApp } from '../core/test-app';
 import { AuthHelper, TestUser } from '../core/auth-helper';
 import { CreateAuctionDto } from '../../src/modules/auctions/dto';
@@ -53,17 +53,13 @@ describe('Ratings Module (e2e)', () => {
       .send({ amount: 150 })
       .expect(201);
 
-    // 5. Wait for Close
-    await new Promise((r) => setTimeout(r, 3000));
-
-    // 6. Create Order
-    const orderRes = await request(testApp.getApp().getHttpServer())
-      .post('/api/v1/orders')
-      .set('Authorization', `Bearer ${buyer.token}`)
-      .send({ auctionId })
-      .expect(201);
-
-    orderId = orderRes.body.id;
+    // 5-6. PT-131 — El pedido lo crea el CIERRE, no una peticion del comprador.
+    //      `POST /api/v1/orders` ya no existe: `OrdersController` solo tiene `@Get()` y
+    //      `@Get(':id')`. Y la espera de 3 s sobraba: se invoca el cierre real en vez de
+    //      confiar en que el cron pase.
+    const pedido = await cerrarYObtenerPedido(testApp.getApp(), testApp.getPrisma(), auctionId);
+    if (!pedido) throw new Error('El cierre no genero pedido: el escenario no se puede montar');
+    orderId = pedido.id;
 
     // 7. Pay Order (Direct DB update)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -150,8 +146,16 @@ describe('Ratings Module (e2e)', () => {
     });
 
     it('should list ratings for Seller', async () => {
+      // PT-131 — La ruta NO lleva `@Public()`, asi que la cubre el `JwtAuthGuard` global y exige
+      // sesion. El spec la pedia sin token y recibia 401.
+      //
+      // OBSERVACION, no corregida aqui: la reputacion de un vendedor es informacion que un
+      // comprador consulta ANTES de registrarse. Que exija sesion puede ser deliberado o puede ser
+      // un efecto colateral de haber hecho global el guard. **No se toca el producto** — queda
+      // anotado en PENDIENTES para que alguien lo decida.
       const res = await request(testApp.getApp().getHttpServer())
         .get(`/api/v1/users/${seller.id}/ratings`)
+        .set('Authorization', `Bearer ${buyer.token}`)
         .expect(200);
 
       expect(Array.isArray(res.body)).toBe(true);

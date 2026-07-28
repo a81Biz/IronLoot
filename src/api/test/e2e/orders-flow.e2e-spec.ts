@@ -21,11 +21,25 @@ describe('Orders Flow (E2E)', () => {
     prisma = app.get(PrismaService);
     await app.init();
 
-    // Cleanup & Setup (Simplified for demo, ideally use seed or strict isolation)
+    // PT-131 — El borrado tiene que respetar las claves ajenas, y el orden estaba incompleto.
+    //
+    //     Foreign key constraint violated: `shipments_order_id_fkey`
+    //
+    // Cuando se escribio esto, un pedido no tenia envios, valoraciones ni comisiones colgando.
+    // Ahora si. Se borra de las hojas hacia la raiz — y las tablas nuevas se anaden AQUI, que es
+    // la deuda que este orden explicito deja a la vista en vez de esconder.
+    await prisma.rating.deleteMany();
+    await prisma.shipment.deleteMany();
+    await prisma.commissionRecord.deleteMany();
+    await prisma.dispute.deleteMany();
     await prisma.ledger.deleteMany();
     await prisma.order.deleteMany();
     await prisma.bid.deleteMany();
     await prisma.auction.deleteMany();
+    // Los avisos y el monedero tambien cuelgan del usuario.
+    await prisma.notification.deleteMany();
+    await prisma.wallet.deleteMany();
+    await prisma.session.deleteMany();
     await prisma.user.deleteMany({
       where: {
         email: { in: ['buyer_e2e@test.com', 'seller_e2e@test.com'] },
@@ -114,7 +128,11 @@ describe('Orders Flow (E2E)', () => {
     // 7. Verify Seller Ledger (Credit Sale + Fee)
     const sellerWallet = await prisma.wallet.findUnique({ where: { userId: sellerId } });
     expect(sellerWallet).toBeDefined();
-    expect(Number(sellerWallet!.balance)).toBe(450); // 500 - 10%
+    // PT-131 — PT-071 introdujo la RETENCION DE LIQUIDACION: el neto del vendedor no entra en
+    // `balance`, entra en `pendingBalance` hasta que se libera. El spec seguia mirando el sitio
+    // de antes. El importe (500 - 10 %) no cambia; cambia donde vive.
+    expect(Number(sellerWallet!.pendingBalance)).toBe(450); // 500 - 10 %, retenido
+    expect(Number(sellerWallet!.balance)).toBe(0);
 
     const credit = await prisma.ledger.findFirst({
       where: { walletId: sellerWallet!.id, type: LedgerType.CREDIT_SALE },

@@ -1,5 +1,5 @@
 import request = require('supertest');
-import { subastaValida, ponerEnCurso } from '../core/auction-helper';
+import { subastaValida, ponerEnCurso, cerrarYObtenerPedido } from '../core/auction-helper';
 import { TestApp } from '../core/test-app';
 import { AuthHelper, TestUser } from '../core/auth-helper';
 import { CreateAuctionDto } from '../../src/modules/auctions/dto';
@@ -54,17 +54,11 @@ describe('Payments Module (e2e)', () => {
       .send({ amount: 60 })
       .expect(201);
 
-    // 4. Wait for expiration
-    await new Promise((r) => setTimeout(r, 2500));
-
-    // 5. Create Order
-    const orderRes = await request(testApp.getApp().getHttpServer())
-      .post('/api/v1/orders')
-      .set('Authorization', `Bearer ${winner.token}`)
-      .send({ auctionId })
-      .expect(201);
-
-    orderId = orderRes.body.id;
+    // 4-5. PT-131 — El pedido lo crea el CIERRE (`POST /api/v1/orders` ya no existe), y se invoca
+    //      el cierre real en vez de esperar 2,5 s a que pase el cron.
+    const pedido = await cerrarYObtenerPedido(testApp.getApp(), testApp.getPrisma(), auctionId);
+    if (!pedido) throw new Error('El cierre no genero pedido: el escenario no se puede montar');
+    orderId = pedido.id;
   });
 
   afterAll(async () => {
@@ -82,6 +76,9 @@ describe('Payments Module (e2e)', () => {
         .set('Authorization', `Bearer ${winner.token}`)
         .send({
           orderId,
+          // PT-131 — `CreateCheckoutDto` exige `amount` desde que el importe se valida contra el
+          // pedido en vez de deducirse. El spec no lo enviaba y recibia 400 de validacion.
+          amount: 110,
           provider: 'MERCADO_PAGO',
         })
         .expect(201);
@@ -99,6 +96,7 @@ describe('Payments Module (e2e)', () => {
         .set('Authorization', `Bearer ${winner.token}`)
         .send({
           orderId: fakeUuid,
+          amount: 110,
           provider: 'PAYPAL',
         })
         .expect(404); // Or 400 depending on service logic
