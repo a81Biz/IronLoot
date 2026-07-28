@@ -100,8 +100,17 @@ ci_checkpoints:
   # corrida: el checkpoint devolveria SIN_DATOS siempre y alguien acabaria leyendolo como verde.
   # D5 es metrica de DELTA SYNC -> src/api/scripts/reliability-check.ts
   #   `npm run audit:reliability`, contra un entorno CON historia.
-  # PT-120 — D1.N1 deja de ser una declaracion.
-  - "D1.N1"  # Domain Rules as Code -> src/api/scripts/domain-rules.ts
+  # PT-128 — D3 deja de ser una declaracion: ya CORRE en ci.yml (job `observabilidad`).
+  #   Su parte medible (silent_failure_count, analisis estatico de catch mudos) no necesita datos.
+  # PT-127 — El checkpoint de esquema deja de ser vago («typecheck + prisma»): es `audit:schema`,
+  #   job `schema-drift` en ci.yml, SIN needs. Falla si migraciones y schema.prisma divergen.
+  #
+  # PT-128 — D1.N1 SALE de ci_checkpoints, por el mismo motivo que PT-122 saco D5: su entrada es la
+  # SALIDA REAL, y en CI la base nace vacia en cada corrida. El checkpoint devolveria SIN_DATOS
+  # siempre y alguien acabaria leyendolo como verde. Es metrica de DELTA SYNC, contra un entorno
+  # con datos -> `npm run audit:domain`.
+  # (declaracion historica, conservada para trazabilidad)
+  # - "D1.N1"  # Domain Rules as Code -> src/api/scripts/domain-rules.ts
              #   `npm run audit:domain` — 14 reglas de F-1 §4 y §5, con pesos.
              #   Incluye Nivel 3 (coherencia inter-producto) en bloque aparte.
              #   CR-007 y CR-008 NO entran: su entrada es la peticion, no el producto ([R57]).

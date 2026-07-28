@@ -1,9 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
 import { Redis } from 'ioredis';
 import { randomUUID as uuid } from 'node:crypto';
 
 @Injectable()
-export class DistributedLockService {
+export class DistributedLockService implements OnModuleDestroy {
   private readonly logger = new Logger(DistributedLockService.name);
   private redis: Redis;
 
@@ -11,6 +11,34 @@ export class DistributedLockService {
     // Initialize Redis client (should be injected in real implementation)
     const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
     this.redis = new Redis(redisUrl);
+  }
+
+  /**
+   * PT-128 (PTSA H-015) — Cerrar la conexion al apagar.
+   *
+   * Sin esto, `app.close()` devuelve pero el socket de ioredis y su temporizador de reconexion
+   * siguen vivos: el proceso no termina. Es una de las dos razones por las que la suite e2e no
+   * salia sin `--forceExit`, y por las que el job «Integration Tests» no podia terminar en verde.
+   *
+   * No es solo cosa de tests: en un apagado ordenado (SIGTERM en un contenedor) esta conexion
+   * tampoco se cerraba. `app.close()` no liberaba todo lo que decia liberar.
+   */
+  async onModuleDestroy(): Promise<void> {
+    try {
+      await this.redis.quit();
+    } catch (e) {
+      // `quit()` puede fallar si la conexion ya cayo. Se fuerza el cierre y NO se propaga: un
+      // fallo al cerrar no debe impedir el apagado.
+      //
+      // Pero se registra. La primera version era un `catch` mudo y el checkpoint D3 lo canto en el
+      // acto (27 silencios contra una linea base de 25). Un cierre que falla en silencio es como se
+      // pierde un diagnostico de apagado.
+      this.logger.warn(
+        `No se pudo cerrar limpiamente la conexion Redis del cerrojo: ${(e as Error).message}. ` +
+          'Se fuerza la desconexion.',
+      );
+      this.redis.disconnect();
+    }
   }
 
   /**
