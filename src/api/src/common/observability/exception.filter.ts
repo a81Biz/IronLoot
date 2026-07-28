@@ -10,6 +10,7 @@ import { Request, Response } from 'express';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
 import { RequestContextService } from './request-context.service';
+import { httpStatusToCode } from './status-to-code';
 import { StructuredLogger } from './logger.service';
 import { BusinessException } from './exceptions';
 import { ErrorCode, ErrorResponse, ErrorSeverity, LogLevel } from './constants';
@@ -177,18 +178,11 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   }
 
   /**
-   * Map HTTP status to error code
+   * F-41 — vive en `status-to-code.ts` para poder probarlo sin montar el filtro entero.
+   * El mapa que habia aqui enumeraba seis estados y mandaba todo lo demas a INTERNAL_ERROR.
    */
   private httpStatusToCode(status: number): string {
-    const map: Record<number, string> = {
-      400: ErrorCode.VALIDATION_ERROR,
-      401: ErrorCode.UNAUTHORIZED,
-      403: ErrorCode.FORBIDDEN,
-      404: ErrorCode.NOT_FOUND,
-      409: ErrorCode.CONFLICT,
-      429: ErrorCode.RATE_LIMIT_EXCEEDED,
-    };
-    return map[status] || ErrorCode.INTERNAL_ERROR;
+    return httpStatusToCode(status);
   }
 
   /**
