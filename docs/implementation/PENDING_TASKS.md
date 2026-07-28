@@ -20,15 +20,18 @@ Aquí solo el índice.
 
 | PT | Qué | Estado |
 |---|---|---|
-| **PT-135** | **El contenedor del API no arranca**: el lock perdió los binarios de plataforma de Linux al regenerarse en Windows (PT-126). Paquete: `changes/PT-135-locks-en-contenedor/` | **PENDING — Proposal Gate, esperando ACK** |
 | **PT-104** | `QA-PP-09` mide un delta de saldo que otra fase puede tocar (F-35) | PENDING |
 | **TD-014** | `style-src 'unsafe-inline'` sigue en los tres sitios | PENDING |
-| — | *Nada mas pendiente de implementar.* Lo demas espera validacion (§2) | — |
+| **F-135-A** | **`REDIS_URL` parece la palanca y no lo es**: dos de los tres clientes leen `REDIS_HOST`/`REDIS_PORT` con reserva `localhost`, y lo que hace funcionar el contenedor es `src/api/.env`, **fuera de git**. Necesita PT y decisión | PENDING — **sin PT asignado** |
+| **F-135-B** | **Ocho guardas no pueden correr dentro del contenedor de desarrollo**: leen el árbol del monorepo y `docker-compose` no lo monta | PENDING — **sin PT asignado** |
+| — | *Nada más pendiente de implementar.* Lo demás espera validación (§2) | — |
 
-> **PT-135 (2026-07-28)** — MAJOR. Bloquea **el entorno de desarrollo completo**: con el API
-> `unhealthy`, nginx, admin, base y client no arrancan. Doce tareas atómicas; **el entorno vuelve a
-> estar vivo al terminar la .3** y el resto es el mecanismo que impide la cuarta vez (es la tercera:
-> PT-129 lo vio en musl, hoy en gnu). Ninguna rama abierta, ningún fichero de código tocado.
+> **PT-135 (2026-07-28) — implementado y FUSIONADO en `master`** (443f757, 11 commits). MAJOR.
+> Bloqueaba **el entorno de desarrollo completo**: con el API `unhealthy`, nginx, admin, base y client
+> no arrancaban. Las doce tareas hechas. Pasa a §2: es un BUG y **lo cierra el humano**.
+> Falta **empujar `master`** y ver los siete jobs con `npm ci` en un push real (criterio 10).
+> Los dos hallazgos de arriba salieron al verificarlo: **no son deuda diferida de PT-135**, son
+> defectos preexistentes que aparecieron al recorrer el camino entero.
 
 ### Bloqueado por algo externo — no se intenta
 
@@ -49,6 +52,11 @@ Y los quince de la matriz, con su guia en `VALIDACION-PT-090-101.md`:
 
 `PT-090` · `PT-091` · `PT-092` · `PT-093` · `PT-094` · `PT-095` · `PT-096` · `PT-097` · `PT-098` ·
 `PT-099` · `PT-100` · `PT-101` · `PT-102` · `PT-103`
+
+**`PT-135`** — fusionado en `master` el 2026-07-28. Guía de validación:
+`docs/implementation/evidence/PT-135/self-review.md` y `regresion.txt`. Lo que **no** se declara
+pasado y conviene mirar antes de dar el VoBo: los siete jobs en verde en un push real (criterio 10) y
+la fase `71-paypal-guaranteed.js`, que falla en el DOM de PayPal.
 
 > **PT-090** y **PT-096** estuvieron bloqueados por F-33 y F-34; PT-103 y PT-102 los desbloquean.
 > **PT-098** vuelve a ser demostrable en cuanto se valide PT-102.

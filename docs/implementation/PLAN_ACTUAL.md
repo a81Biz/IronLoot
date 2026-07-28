@@ -3,7 +3,18 @@
 **Fecha**: 2026-07-28 · **Revisión 2** (rehecha tras el ACK humano)
 **Origen**: reporte humano — «el contenedor de api no levanta». Sin hallazgo PTSA propio todavía.
 **PT en el plan**: PT-135
-**Estado**: **PENDIENTE DE ACK HUMANO** (STATE 2). Ninguna rama abierta, ningún fichero de código tocado.
+**Estado**: **CERRADO** — implementado y fusionado en `master` (443f757, 2026-07-28). Las doce tareas
+hechas; PT-135 queda `VALIDATION_PENDING` porque es un BUG y lo cierra el humano.
+
+> **Las cifras de abajo son las del momento de planificar, y se conservan a propósito** (919 unitarias
+> / 136 por navegador). Hoy son **944** y **176**: el inventario vivo está en
+> `docs-v2/5-qa/Master-Test-Plan.md`, y lo que realmente se midió en
+> `docs/implementation/evidence/PT-135/regresion.txt`.
+>
+> **Diez desviaciones respecto a este plan**, con su motivo, en
+> `changes/PT-135-locks-en-contenedor/tasks.md` § Cierre. Dos merecen leerse aquí porque el plan
+> estaba **equivocado**, no incompleto: el mecanismo de regeneración del lock que propone no funciona
+> tal como está escrito, y `docker compose down -v` **habría borrado la base de datos**.
 
 > El plan anterior (PT-127…PT-130) está cerrado en `HISTORY.log`. `PLAN_ACTUAL.md` es sobrescribible:
 > sólo puede haber un plan activo.

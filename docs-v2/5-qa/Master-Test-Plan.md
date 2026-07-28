@@ -117,25 +117,55 @@ reescribir el documento: lo de arriba conserva el diagnóstico, que sigue siendo
 
 | Proyecto | Suites | Casos | Nota |
 |---|--:|--:|---|
-| API | 91 | 666 | Incluye las guardas de S-002: esquema, CI, healthcheck, contrato SSR↔API, ajustes parciales, endpoints retirados |
+| API | 93 | 691 | Incluye las guardas de S-002 (esquema, CI, healthcheck, contrato SSR↔API, ajustes parciales, endpoints retirados) y **las dos de PT-135**: el lock declara los binarios de Linux, y npm no se ejecuta fuera del contenedor |
 | CLIENT | 8 | 103 | Incluye las guardas estáticas de plantillas (PT-096, PT-102, PT-105) |
 | CORE | 8 | 134 | Sin NestJS ni BD |
 | ADMIN | 2 | 13 | **No existían** hasta PT-101 |
 | BASE | 1 | 3 | **No existían** hasta PT-101 |
-| **Total** | **110** | **919** | |
+| **Total** | **112** | **944** | |
+
+> **Actualizado por PT-135 (2026-07-28).** **+24 casos**, contados uno a uno:
+>
+> | | |
+> |---|--:|
+> | `lock-declara-plataformas.spec.ts` (nueva, **5 casos de control**) | 12 |
+> | `solo-en-contenedor.spec.ts` (nueva, **2 casos de control**) | 8 |
+> | `coherencia-documentacion-codigo.spec.ts` — la guarda de PT-130 extendida **a las citas de la prosa** (2 de control) | +4 |
+>
+> Y una corrección de cifra: **la línea base del API era 667, no 666.** El `HANDOFF` anterior tenía un
+> desfase de uno, y con él el total documentado (919 cuando eran 920). Se dice porque un inventario que
+> miente por uno miente igual: 667 + 24 = **691**, y 920 + 24 = **944**.
 
 **Suite e2e** (`test/e2e`, contra Postgres con el esquema aplicado **por migración**): **16 de 16
 suites, 77 casos**. Hasta PT-131 no pasaba ninguna corrida completa — el job de CI no podía
 terminar (H-015) y los specs llevaban meses probando un contrato que ya no existía (**once capas**
 de cambios del producto que nunca llegaron a los tests).
 
-**Suite de navegador**: `bash run-all.sh` → **127 casos**, incluidas dos pasarelas reales de punta a
-punta (Mercado Pago y PayPal), el retiro real completo y recorridos en Firefox y WebKit.
+**Suite de navegador**: `bash run-all.sh` → **176 casos** (medido en PT-135; eran 127), incluidas dos
+pasarelas reales de punta a punta (Mercado Pago y PayPal), el retiro real completo y recorridos en
+Firefox y WebKit. Reparto: smoke 57 · authed 41 · extras 19 · payment-trace 16 · bootstrap 13 ·
+withdrawal 13 · puja-en-vivo 8 · e2e 5 · admin-writes 4.
 Más `node 90-validacion-hallazgos.js` → **9 casos** dirigidos a verificar hallazgos PTSA corregidos,
 como exigen `[R39]`/`[R68]`: evidencia observada en la fuente real, no inferida.
 
 > **`run-all.sh` trunca la base de datos.** Hacer copia antes si contiene salida real que sostenga
-> una validación PTSA.
+> una validación PTSA. En PT-135 se hizo con `docker exec ironloot-db pg_dump -U ironloot ironloot_db`.
+
+> **La fase `71-paypal-guaranteed.js` puede fallar por UI externa y no cuenta como regresión.** En
+> PT-135 dio `TimeoutError` de Playwright pulsando **dentro del contenedor de registro de PayPal**
+> (`<div class="loginSignUpSeparator"> … intercepts pointer events`). Conduce el checkout **real** del
+> sandbox: cuando PayPal cambia su formulario, esta fase se cae y `run-all.sh` continúa a propósito.
+> Un fallo ahí **no se declara pasado ni se cuenta como defecto propio** — se dice lo que es.
+
+### Dónde se ejecuta cada suite, que no es donde uno supone (PT-135)
+
+Esto costó tres intentos fallidos y merece quedar escrito:
+
+| Suite | Dónde SÍ | Dónde NO, y por qué |
+|---|---|---|
+| Unitarias | Host, o contenedor **con la raíz del monorepo montada** | Dentro de `ironloot-api` fallan **ocho** guardas: leen el árbol del monorepo y `docker-compose` no lo monta, así que `RAIZ` resuelve a `/` (F-135-B) |
+| e2e | Contenedor desechable en la red del stack, **con la imagen del API** | **En el host**: `db` y `redis` son nombres de la red de Docker, y Postgres está mapeado al **5433** · **dentro de `ironloot-api`**: exit **137**, lo mata el límite de 1 GB · **con `node:20-slim` pelado**: sin el binario `openssl`, Prisma pide el motor de OpenSSL 1.1 y no arranca (el bloqueo 6 de PT-129, reapareciendo) |
+| Navegador | Host, con la pila levantada | Dentro de un contenedor no hay navegador que conducir |
 
 ### Lo que este plan no podía prever, y conviene que conste
 

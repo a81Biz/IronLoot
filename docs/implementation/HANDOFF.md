@@ -1,12 +1,15 @@
 # HANDOFF — estado actual
 
 **Fecha**: 2026-07-28
-**Rama activa**: `fix/PT-135-locks-en-contenedor` — **sin fusionar**, 10 commits, árbol limpio.
-`master` sigue en 7f091c3.
+**Rama**: `master` — **PT-135 fusionado** (443f757, merge sin fast-forward de 11 commits).
+**Cero ramas sin fusionar**, árbol limpio. `origin/master` sigue en 7f091c3: **falta empujar**.
 
 **Pruebas**: **944/944** unitarias (API 691 · CORE 134 · CLIENT 103 · ADMIN 13 · BASE 3) ·
-**77/77 e2e** · `lint` 0 errores · `npm audit --omit=dev` **0** en los cinco ·
-`audit:check` **OK** contra la línea base.
+**77/77 e2e** · **176/176 por navegador** · `lint` 0 errores · `npm audit --omit=dev` **0** en los
+cinco · `audit:check` **OK** contra la línea base.
+
+> El total anterior de este documento (**919**) estaba desfasado en uno: el API tenía **667**, no 666.
+> PT-135 añade **24** casos. Inventario vivo: `docs-v2/5-qa/Master-Test-Plan.md`.
 
 **Plataforma**: NestJS **11.1.28** · Express **5.2.1** en los cuatro servicios.
 
@@ -43,9 +46,18 @@ defecto; las dos anteriores se cerraron con un parche en un Dockerfile.
 
 ## Lo que falta para cerrar PT-135
 
-1. **Ver los siete jobs en verde en un push real** (criterio 10). No es verificable sin empujar.
-   Ensayado en contenedor: `npm ci` en la raíz, exit 0, con el `postinstall` instalando api y admin.
-2. **El VoBo humano** sobre lo demás.
+1. **Empujar `master`.** Está fusionado en local y `origin/master` sigue en 7f091c3.
+2. **Ver los siete jobs en verde en un push real** (criterio 10). No es verificable sin empujar, y es
+   la primera vez que el lock gobierna de verdad en CI (`npm ci`). Ensayado en contenedor: `npm ci` en
+   la raíz, exit 0, con el `postinstall` instalando api y admin — **eso no lo sustituye**.
+3. **El VoBo humano** sobre lo demás. Es un BUG: el agente no cierra bugs.
+
+## Los scores PTSA están desfasados y NO se han tocado
+
+`PTSA/ESTADO_ACTUAL.md` cita **666 (API) + 134 (CORE)** unitarias; hoy son 691 y 944 en total. No se
+ha corregido a mano **a propósito**: los artefactos PTSA los gobiernan sus fases, y PTSA sólo se activa
+cuando se le invoca. La vía correcta es un **delta sync** (`resume PTSA`), que además recalculará
+freshness. Anotarlo aquí es lo que evita que el registro mienta mientras tanto.
 
 ---
 
