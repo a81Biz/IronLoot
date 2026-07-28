@@ -51,6 +51,18 @@ Los tres de CI van **sin `needs`**: un job roto no debe poder ocultarlos. Es lo 
 `build` y `docker`, que no se ejecutaron nunca porque colgaban de un job que no podía terminar
 (H-015).
 
+**El workflow dispara en `master` y admite ejecución manual** (`workflow_dispatch`). Hasta PT-136
+disparaba en `dev/qa/prep/prod` — cuatro ramas que **nunca han existido** en este repositorio— y el
+resultado fue que los **ocho** jobs no se ejecutaron **ni una sola vez**: `actions/runs` devolvía
+`total_count: 0`. El YAML era válido y GitHub listaba el workflow como `active`, así que nadie vio un
+error nunca. Los tres checkpoints de arriba llevaban semanas declarados «vigilados en CI» sin haber
+corrido solos jamás. **Declarar en el disparador una rama que no existe deja el pipeline entero sin
+ejecutarse y sin protestar** — el mismo principio que H-014, H-015 y H-017: *un mecanismo que no se
+ejecuta no avisa de nada.* Lo vigila `ramas-del-disparador-existen.spec.ts`.
+
+Los ocho jobs: `lint` · `security-audit` · `schema-drift` · `test-unit` · `test-integration` ·
+`observabilidad` · `build` · `docker`.
+
 **QA por navegador** (Playwright, `tests/qa-browser-suite/`):
 
 ```bash

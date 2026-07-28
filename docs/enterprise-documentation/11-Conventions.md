@@ -437,6 +437,29 @@ the `preinstall` prevents producing it.
 a real browser and there is none inside the API container. It is safe because its lock has **zero**
 platform-split packages, and a test keeps checking that it stays zero.
 
+### RULE-16: Every branch named in a workflow trigger must exist on the remote
+**What:** any branch listed under `on: push: branches:` or `on: pull_request: branches:` has to be a
+branch that actually exists. Prefer `workflow_dispatch` alongside it, so the pipeline can be
+interrogated instead of only reacting to pushes.
+**Why:** `.github/workflows/ci.yml` triggered on `[dev, qa, prep, prod]`. The only branch this
+repository has ever had is `master`. The YAML is valid and GitHub lists the workflow as `active`, so
+**nothing ever reported an error** — and the eight jobs never ran once in the project's entire
+history (`gh api .../actions/runs → total_count: 0`, PT-136). Three audit checkpoints
+(`schema-drift`, `security-audit`, `observabilidad`) were documented as CI-enforced, deliberately
+without `needs` so a broken job could not hide them, and **not one of them had ever executed**.
+This is the same principle as H-014 (`db push` instead of migrations), H-015 (the job that could not
+finish) and H-017 (the healthcheck nobody had seen pass): *a mechanism that does not run warns about
+nothing*. The difference is one of degree — here it was not a control that failed, but the platform
+where every control lives.
+**Correct:** `branches: [master]` plus `workflow_dispatch:`. If an environment-branch flow is ever
+wanted, it arrives with its own ADR **and the branches created**.
+**Incorrect:** keeping `dev/qa/prep/prod` "in case we adopt them one day" — declaring branches nobody
+has created is precisely what caused this.
+**Enforced by:** `ramas-del-disparador-existen.spec.ts`. It resolves branches from the clone's
+`refs/remotes/origin` without touching the network, and only asks the remote about ones it cannot
+find locally. A network failure does **not** absolve: an unconfirmable branch is reported, never
+approved.
+
 ---
 
 ## 5. Files Requiring Extra Care Before Modification

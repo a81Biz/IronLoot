@@ -444,7 +444,7 @@ que el contenedor del API murió al arrancar y con él los otros cuatro.
 | `src/admin/package-lock.json` regenerado en su contenedor y **seguido por git** | Era la mitad del inventario que faltaba |
 | `scripts/solo-en-contenedor.js` como `preinstall` en los tres puntos de instalación | Convierte la invariante en mecanismo. **Sin puerta de escape** |
 | `scripts/regenerar-lock.js` + `npm run lock:api` / `lock:admin` / `lock:root` | El camino correcto pasa a ser el más corto. Un procedimiento que exige memoria ya falló una vez |
-| `npm ci` en las imágenes de `api` y `admin`, en los siete jobs y en el `postinstall` de la raíz | Hasta ahora el lock era una sugerencia: cada build volvía a resolver |
+| `npm ci` en las imágenes de `api` y `admin`, en los **ocho** jobs y en el `postinstall` de la raíz | Hasta ahora el lock era una sugerencia: cada build volvía a resolver |
 | Excepción **declarada y vigilada**: `tests/qa-browser-suite/` | Instala en el host porque Playwright conduce un navegador real. Segura porque su lock tiene **cero** paquetes por plataforma, y hay una prueba que comprueba que siga siendo cero |
 
 **Decisión registrada en:** ADR-048 · **Regla:** `11-Conventions.md` RULE-15.
