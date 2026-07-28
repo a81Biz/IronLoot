@@ -8,7 +8,9 @@ Es un BUG: **lo cierra el humano.**
 **El pipeline de CI de este repositorio se ejecuta.** Antes de hoy no lo había hecho **nunca**:
 `gh api .../actions/runs → total_count: 0`, en toda la historia del proyecto.
 
-Tres corridas, con su triaje, en `01-las-tres-corridas.txt`.
+Cuatro corridas, con su triaje, en **`corridas-de-ci.md`** — en `.md` a propósito: `.gitignore:161`
+excluye los volcados de evidencia, así que un `.txt` citado desde aquí sería una cita a algo que **no
+está en el repositorio**. Ver **F-136-A** más abajo.
 
 ## Criterios de éxito — uno por uno, sin adornos
 
@@ -77,6 +79,34 @@ de que sirven.
 - [x] Sin `console.log` ni código comentado
 - [x] Documentación actualizada: `CLAUDE.md`, `11-Conventions.md`, `HANDOFF.md`, `PENDING_TASKS.md`,
       `10-Technical-Debt.md`
+
+## F-136-A — Documentos que citan evidencia que no está en el repositorio
+
+Encontrado al guardar esta misma evidencia, que es la mejor forma de encontrarlo.
+
+`.gitignore:161-163` versiona los `.md` de evidencia y **excluye los volcados**, con su razón escrita:
+*«los .md son razonamiento, el resto son volcados»*. La política es defendible.
+
+Lo que no lo es: **hay documentos que mandan leer esos volcados.**
+
+```
+docs/implementation/evidence/  ->  162 ficheros en disco
+                                    83 seguidos por git
+                                    79 que solo existen en una maquina
+```
+
+| Documento | Manda leer | ¿Está en el repositorio? |
+|---|---|---|
+| `PENDING_TASKS.md:58` | `evidence/PT-135/regresion.txt` | **No** |
+| `HISTORY.log` (6 citas) | `fase-32-corrida-completa.txt`, `fases-70-71.txt`, `guarda-caza-la-regresion.txt`, `npm-test.txt`, `regresion.txt`, `vieja-falla-nueva-pasa.txt` | **No** |
+
+`PENDING_TASKS.md:58` es una **guía de validación**: le dice al humano qué leer antes de dar el VoBo a
+PT-135, y la mitad de lo que nombra no está. Es la forma exacta de H-016 — una cita que se lee como
+verificable y no se puede seguir.
+
+**No lo corrijo aquí**: son dos vías (que los volcados citados se versionen, o que lo citable se
+resuma en un `.md`) y elegir es una decisión de política, como lo fue ADR-048 con los locks. Lo que sí
+hago es **no repetirlo**: la evidencia de PT-136 va en `.md`.
 
 ## Lo que falta para cerrar PT-136
 
