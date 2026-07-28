@@ -3968,3 +3968,109 @@ equivalente para las versiones y rutas citadas.
 - Architecture Confidence: **95%**.
 - Solution Confidence: **90%** — el patrón de prueba existe en el repositorio y se copia. El 10% es
   cuántos casos más aparecerán al barrer los cinco documentos.
+
+---
+
+## PT-131 — BUG (STANDARD): 42 de 80 tests e2e prueban un contrato que ya no existe
+
+Date: 2026-07-27
+Type: BUG
+Complexity: **STANDARD**
+Origen: **PT-128**, riesgo R1 materializado. Sin hallazgo PTSA propio — no es defecto de producto.
+
+Original Request:
+Del ACK humano tras PT-128: «abre PT-131».
+
+### What — qué pasa
+
+Al ejecutar los 17 ficheros e2e por primera vez con esquema aplicado: **42 fallos de 80 tests en 10
+suites**. La suite **termina** (PT-128 cerró las fugas), pero en rojo.
+
+```
+PASS  auth · admin-auth · watchlist · user-profile-sync · notifications · profile-persistence
+FAIL  ratings · bids · shipments · disputes · orders-flow · payments · wallet · orders
+      auctions · settings
+
+Test Suites: 10 failed, 6 passed, 16 total
+Tests:       42 failed, 38 passed, 80 total
+Time:        37.6 s
+```
+
+### Where — dónde
+
+`src/api/test/e2e/` — los 10 ficheros de la lista. **El producto no se toca.**
+
+### Why — la causa, medida
+
+El patrón domina: casi todos los fallos son `400 Bad Request` al **crear una subasta**, en el
+`beforeAll` que monta el escenario. Un `beforeAll` roto tumba la suite entera, y de ahí el efecto
+multiplicador de 42.
+
+`ratings.e2e-spec.ts:25-31` envía:
+
+```ts
+startsAt: new Date(Date.now() - 1000 * 60).toISOString(),   // 1 minuto EN EL PASADO
+endsAt:   new Date(Date.now() + 1000 * 2).toISOString(),    // 2 SEGUNDOS de duracion
+```
+
+`create-auction.dto.ts` exige hoy:
+
+```ts
+@ValidatorConstraint({ name: 'isFutureDate' })      // la fecha de inicio debe ser futura
+@ValidatorConstraint({ name: 'isAfterStartDate' })  // duracion minima: 1 HORA
+```
+
+**Los specs se escribieron contra un contrato anterior.** Alguien añadió las validaciones, el
+producto quedó correcto, y los tests que nadie ejecutaba se quedaron atrás.
+
+### Expected Result
+
+Los 17 ficheros e2e pasan, y `test-integration` puede ponerse verde — con lo que `build` y `docker`
+se ejecutan por primera vez.
+
+### Current Result
+
+42 fallos. `build` y `docker` siguen bloqueados.
+
+### Impact
+
+**Ninguno para el usuario: no hay defecto de producto.** El impacto es sobre la capacidad de
+verificar: mientras el job esté rojo, `build` y `docker` no corren, y el pipeline no produce
+artefacto.
+
+### Initial Evidence
+
+- `docs/implementation/evidence/PT-128/suite-e2e-host.txt` — la corrida completa
+- `docs/implementation/evidence/PT-128/self-review.md` § 4
+- `PTSA/Hallazgos/H-015.md` § Revisión
+
+### Initial Hypotheses
+
+**H1 (confirmada, dominante)** — Validaciones de `CreateAuctionDto` añadidas después de escribir los
+specs: fecha futura y duración mínima de 1 hora.
+
+**H2 (confirmada, en `wallet.e2e-spec.ts`)** — Specs anteriores incluso al prefijo global: llaman a
+`/wallet/deposit` en vez de `/api/v1/wallet/deposit`, y esperan `currency: 'USD'` cuando el sistema
+es **MXN exclusivamente** desde hace meses.
+
+**H3 (no medida)** — Cuántos fallos quedan una vez corregida H1. Con `beforeAll` en cascada, es
+plausible que 42 se reduzcan a unos pocos. **Es lo primero que hay que medir**, y determina el
+tamaño real del PT.
+
+**H4 (descartada como parte de este PT)** — El `500` de `wallet.e2e-spec.ts` **sí** es defecto de
+producto: es **PTSA H-018**, y tiene su propio camino.
+
+### Root Cause
+
+**Una suite que nadie podía ejecutar deja de decir la verdad y nadie se entera.** El job de CI no
+podía terminar (H-015), así que estos 17 ficheros llevaban sin correr el tiempo suficiente para que
+el contrato cambiara debajo de ellos. Es el mismo patrón de PT-118 y H-017 en otra forma: un
+mecanismo que no se ejecuta no avisa de nada — se pudre en silencio.
+
+### Confianza
+
+- Root Cause Confidence: **90%** — la causa dominante está medida contra el DTO. El 10% es H3: no se
+  sabe qué queda debajo.
+- Architecture Confidence: **95%** — no se toca arquitectura.
+- Solution Confidence: **65%** — es el número honesto. Corregir las fechas es trivial; **cuántos
+  fallos independientes aparecen detrás no se sabe hasta hacerlo**.
