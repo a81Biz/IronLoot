@@ -1,4 +1,5 @@
 import request = require('supertest');
+import { subastaValida, ponerEnCurso } from '../core/auction-helper';
 import { TestApp } from '../core/test-app';
 import { AuthHelper, TestUser } from '../core/auth-helper';
 import { CreateAuctionDto } from '../../src/modules/auctions/dto';
@@ -17,8 +18,8 @@ describe('Bids Module (e2e)', () => {
 
     // Create users
     seller = await authHelper.createAuthenticatedUser({ isSeller: true });
-    bidder1 = await authHelper.createAuthenticatedUser({ isSeller: false });
-    bidder2 = await authHelper.createAuthenticatedUser({ isSeller: false });
+    bidder1 = await authHelper.createAuthenticatedUser({ isSeller: false, saldo: 10000 });
+    bidder2 = await authHelper.createAuthenticatedUser({ isSeller: false, saldo: 10000 });
   });
 
   afterAll(async () => {
@@ -34,14 +35,10 @@ describe('Bids Module (e2e)', () => {
 
   it('should prepare an active auction', async () => {
     // 1. Create Auction (Draft)
-    const auctionDto: CreateAuctionDto = {
+    const auctionDto: CreateAuctionDto = subastaValida({
       title: 'Bidding Test Item',
-      description: 'Item for bidding tests',
       startingPrice: 100,
-      startsAt: new Date(Date.now() - 1000 * 60).toISOString(), // Started 1 min ago
-      endsAt: new Date(Date.now() + 1000 * 60 * 60).toISOString(), // Ends in 1 hour
-      images: [],
-    };
+    });
 
     const createRes = await request(testApp.getApp().getHttpServer())
       .post('/api/v1/auctions')
@@ -57,6 +54,10 @@ describe('Bids Module (e2e)', () => {
       .set('Authorization', `Bearer ${seller.token}`)
       .expect(200);
 
+    // PT-131 — La subasta se crea con inicio FUTURO porque el DTO lo exige
+    // (`isFutureDate`). Estos escenarios necesitan una subasta EN CURSO, asi que se
+    // mueve el reloj en la base DESPUES de crearla por la via publica.
+    await ponerEnCurso(testApp.getPrisma(), auctionId);
     // Verify it is PUBLISHED (and effectively active because startsAt < now)
     const getRes = await request(testApp.getApp().getHttpServer())
       .get(`/api/v1/auctions/${auctionId}`)
@@ -67,7 +68,10 @@ describe('Bids Module (e2e)', () => {
 
   describe('Place Bid', () => {
     it('should allow a valid bid', async () => {
-      const bidAmount = 105.0;
+      // PT-131 — PT-041 (AUD-009) impuso un incremento minimo de puja (AUCTION_MIN_INCREMENT_AMOUNT,
+      // por defecto 10). Con precio de salida 100, la primera puja valida es 110, no 105. Este spec
+      // se escribio cuando bastaba con superar el precio actual.
+      const bidAmount = 110.0;
       const res = await request(testApp.getApp().getHttpServer())
         .post(`/api/v1/auctions/${auctionId}/bids`)
         .set('Authorization', `Bearer ${bidder1.token}`)
@@ -91,7 +95,7 @@ describe('Bids Module (e2e)', () => {
       await request(testApp.getApp().getHttpServer())
         .post(`/api/v1/auctions/${auctionId}/bids`)
         .set('Authorization', `Bearer ${bidder2.token}`)
-        .send({ amount: 105.5 }) // Only +0.50
+        .send({ amount: 110.5 }) // Solo +0.50 sobre la puja anterior: por debajo del incremento minimo
         .expect(400); // Bad Request (BidTooLow)
     });
 
@@ -108,7 +112,7 @@ describe('Bids Module (e2e)', () => {
       await request(testApp.getApp().getHttpServer())
         .post(`/api/v1/auctions/${auctionId}/bids`)
         .set('Authorization', `Bearer ${bidder2.token}`)
-        .send({ amount: 110 })
+        .send({ amount: 130 })
         .expect(201);
     });
   });

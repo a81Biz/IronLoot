@@ -1,4 +1,5 @@
 import request = require('supertest');
+import { subastaValida, ponerEnCurso } from '../core/auction-helper';
 import { TestApp } from '../core/test-app';
 import { AuthHelper, TestUser } from '../core/auth-helper';
 // import { ShipmentProvider, ShipmentStatus } from '@prisma/client';
@@ -19,17 +20,13 @@ describe('Shipments Module (e2e)', () => {
 
     // 1. Create Users
     seller = await authHelper.createAuthenticatedUser({ isSeller: true });
-    buyer = await authHelper.createAuthenticatedUser({ isSeller: false });
+    buyer = await authHelper.createAuthenticatedUser({ isSeller: false, saldo: 10000 });
 
     // 2. Create Auction
-    const auctionDto: CreateAuctionDto = {
+    const auctionDto: CreateAuctionDto = subastaValida({
       title: 'Shipment Test Item',
-      description: 'Desc',
       startingPrice: 100,
-      startsAt: new Date(Date.now() - 1000 * 60).toISOString(),
-      endsAt: new Date(Date.now() + 1000 * 2).toISOString(),
-      images: [],
-    };
+    });
 
     const createRes = await request(testApp.getApp().getHttpServer())
       .post('/api/v1/auctions')
@@ -45,6 +42,10 @@ describe('Shipments Module (e2e)', () => {
       .set('Authorization', `Bearer ${seller.token}`)
       .expect(200);
 
+    // PT-131 — La subasta se crea con inicio FUTURO porque el DTO lo exige
+    // (`isFutureDate`). Estos escenarios necesitan una subasta EN CURSO, asi que se
+    // mueve el reloj en la base DESPUES de crearla por la via publica.
+    await ponerEnCurso(testApp.getPrisma(), auctionId);
     // 4. Buyer Bids
     await request(testApp.getApp().getHttpServer())
       .post(`/api/v1/auctions/${auctionId}/bids`)

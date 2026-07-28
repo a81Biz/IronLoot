@@ -1,4 +1,5 @@
 import request = require('supertest');
+import { subastaValida } from '../core/auction-helper';
 import { TestApp } from '../core/test-app';
 import { AuthHelper, TestUser } from '../core/auth-helper';
 import { CreateAuctionDto } from '../../src/modules/auctions/dto';
@@ -17,17 +18,13 @@ describe('Watchlist Module (e2e)', () => {
 
     // Create users
     seller = await authHelper.createAuthenticatedUser({ isSeller: true });
-    user = await authHelper.createAuthenticatedUser({ isSeller: false });
+    user = await authHelper.createAuthenticatedUser({ isSeller: false, saldo: 10000 });
 
     // Create an auction to watch
-    const auctionDto: CreateAuctionDto = {
+    const auctionDto: CreateAuctionDto = subastaValida({
       title: 'Watchlist Test Auction',
-      description: 'Auction for watchlist testing',
       startingPrice: 50,
-      startsAt: new Date(Date.now() + 1000 * 60 * 5).toISOString(), // Starts in 5 mins
-      endsAt: new Date(Date.now() + 1000 * 60 * 60 * 2).toISOString(), // Ends in 2 hours
-      images: [],
-    };
+    });
 
     const response = await request(testApp.getApp().getHttpServer())
       .post('/api/v1/auctions')

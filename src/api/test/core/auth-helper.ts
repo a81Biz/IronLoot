@@ -15,7 +15,22 @@ export class AuthHelper {
     private readonly prisma: PrismaService,
   ) {}
 
-  async createAuthenticatedUser(options: { isSeller?: boolean } = {}): Promise<TestUser> {
+  /**
+   * PT-131 — Crea un usuario listo para operar.
+   *
+   * `saldo` existe porque **pujar retiene fondos**: `BidsService.placeBid` llama a
+   * `walletService.holdFunds`, y sin monedero eso devuelve `Wallet not found` (404). Los specs
+   * e2e se escribieron antes de que la puja tocara el monedero, y por eso empezaron a fallar sin
+   * que nadie lo viera: el job de CI que los habria ejecutado no podia terminar (H-015).
+   *
+   * El monedero se crea y se acredita **directamente en la base**, a proposito. La via publica es
+   * `POST /wallet/deposit`, que exige una referencia de pago verificada contra la pasarela real —
+   * no es algo que un test de integracion deba hacer, y ademas hoy devuelve 500 con una referencia
+   * inventada (H-018).
+   */
+  async createAuthenticatedUser(
+    options: { isSeller?: boolean; saldo?: number } = {},
+  ): Promise<TestUser> {
     const uniqueId = Math.random().toString(36).substring(7);
     const email = `test-${uniqueId}@test.com`;
     const password = 'TestPassword123!';
@@ -53,6 +68,22 @@ export class AuthHelper {
           },
         },
       });
+    }
+
+    // 3.5 Monedero con saldo, si el escenario lo necesita.
+    //
+    // Directamente en la base y no por `POST /wallet/deposit`: la via publica exige una referencia
+    // de pago verificada contra la pasarela real. Un test de integracion no debe depender de eso —
+    // y hoy, ademas, con una referencia inventada devuelve 500 (H-018).
+    if (options.saldo && options.saldo > 0) {
+      const usuario = await this.prisma.user.findUnique({ where: { email } });
+      if (usuario) {
+        await this.prisma.wallet.upsert({
+          where: { userId: usuario.id },
+          create: { userId: usuario.id, balance: options.saldo, currency: 'MXN', isActive: true },
+          update: { balance: options.saldo, isActive: true },
+        });
+      }
     }
 
     // 4. Login
