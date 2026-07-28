@@ -266,3 +266,69 @@ Siguiente paso tras el ACK: **STATE 3** — Proposal Package en `changes/` para 
 (`design.md`, `tasks.md`, `spec-changes.md`, `test-scenarios.md`, `out-of-scope.md`), y **ahí está el
 Proposal Gate**: hasta ese segundo ACK no se abre ninguna rama ni se toca una línea de código.
 `[No Proposal Gate Skip]`
+
+---
+
+# Anexo — PT-142 y PT-143 (2026-07-28)
+
+**Origen**: los destapó la primera ejecución de CI, dentro de PT-136. No estaban en el plan de arriba
+porque **no se sabía que existían**: hacía falta que el pipeline corriera para verlos.
+**Decisión del humano**: PT-142 entra **antes** que PT-137/138/139.
+
+## PT-142 — La creación perezosa que no es atómica
+
+**Tipo**: BUG · **Complejidad**: STANDARD
+
+### Objetivo
+
+Que crear una fila que puede no existir deje de ser *comprobar y actuar*. Son **cuatro sitios**, y
+**tres están en el camino del dinero**.
+
+### Solución propuesta
+
+1. **RED**: una prueba concurrente — N creaciones simultáneas del mismo monedero — que falle hoy con
+   `P2002`. Sin RED no hay GREEN: una carrera «arreglada» sin prueba que falle no está arreglada.
+2. **`upsert`** en los cuatro sitios. La base resuelve la carrera, que es donde se resuelve.
+3. **Repetir el barrido** con `findFirst` y `count`, no sólo `findUnique`. Lo que quede se declara.
+4. **Ejercer el ciclo de pago real**, no sólo la suite: el monedero es dinero.
+5. **RULE-22** y su guarda: ninguna creación de una fila con restricción de unicidad se hace con
+   `findX` + `create`.
+
+### Alternativas rechazadas
+
+| Alternativa | Por qué no |
+|---|---|
+| `try/catch` sobre `P2002` y releer | Funciona y esconde la intención. `upsert` dice lo que quiere hacer |
+| Subir el nivel de aislamiento de la transacción | Caro y global, para resolver cuatro sitios |
+| Un cerrojo distribuido (existe: `distributed-lock.service.ts`) | Coordinación de red para algo que la base resuelve con una restricción que **ya está declarada** |
+| Arreglar sólo `system-config` (lo que CI cazó) | Dejaría los tres del dinero, que son los graves |
+
+### Criterios de éxito
+
+1. La prueba concurrente **falla antes** y pasa después.
+2. Los cuatro sitios, sin `findX` + `create`.
+3. `test-integration` en verde en CI → **`build` y `docker` se ejecutan por primera vez**.
+4. Un depósito real se acredita a un usuario **sin monedero previo**.
+5. 702 unitarias + 77 e2e sin pérdidas.
+
+### Análisis de regresión
+
+| Área | Qué podría romperse | Cómo se comprueba |
+|---|---|---|
+| **Depósito** (sitio 3) | Que la acreditación deje de ocurrir o se duplique | Depósito real; **un solo asiento** en `payments` por referencia |
+| **Cierre de subasta** (sitio 4) | El abono al vendedor, o el holdback de PT-071 | Ciclo completo de subasta con `pendingBalance` correcto |
+| **`getWallet()`** (sitio 2) | Que devuelva un monedero distinto del que crea el depósito | La misma fila: `userId` es única |
+| **Arranque** (sitio 1) | Que la configuración no se siembre | Arranque limpio contra base vacía |
+
+## PT-143 — La suite e2e no aísla sus datos
+
+**Tipo**: BUG · **Complejidad**: STANDARD · **Estado**: `PENDING`, después de PT-142.
+
+Se planifica cuando le toque. Lo único que este anexo fija es lo que **no** vale como solución:
+**`--runInBand` queda descartado**. Haría verde una suite que sigue sin poder correr en paralelo, y
+este PT existe porque algo verde tapaba un defecto.
+
+---
+
+**STOP para PT-142.** Su Proposal Package está en `changes/PT-142-creacion-perezosa-atomica/`.
+Ninguna rama abierta.

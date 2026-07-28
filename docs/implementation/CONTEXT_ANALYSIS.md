@@ -1502,3 +1502,86 @@ invisibles a H-014, H-015, H-017 y a F-33/F-34.
 | Ejecuciones de CI | **0** en toda la historia del repositorio |
 | Hallazgos PTSA activos | **1** (H-005). Los otros 19 cerrados, verificado leyendo los 20 ficheros |
 | Ramas sin fusionar | Ninguna |
+
+---
+
+## PT-142 · PT-143 — Análisis de contexto — Lo que la primera corrida de CI destapó (STATE 1-B)
+
+Date: 2026-07-28
+Origen: triaje de PT-136.5, corrida 30408275255. Los dos clasificados como **defecto del
+repositorio** por la regla escrita en `changes/PT-136-ci-que-se-ejecuta/design.md` § D3.
+
+Fuentes consultadas y verificadas: log completo del job `Integration Tests` ·
+`src/api/src/modules/system-config/system-config.service.ts` ·
+`src/api/src/modules/wallet/wallet.service.ts` · `src/api/prisma/schema.prisma:761` ·
+`src/api/test/core/auth-helper.ts` · barrido de `findUnique|findFirst` seguido de `.create(` en todo
+`src/api/src/`.
+
+### Components
+
+| Componente | Papel |
+|---|---|
+| `system-config.service.ts:189-205` | **PT-142, sitio 1.** `seed()` en `onModuleInit`: corre en cada arranque |
+| `wallet.service.ts:27-33` | **PT-142, sitio 2.** `getWallet()` crea el monedero de forma perezosa |
+| `wallet.service.ts:151-152` | **PT-142, sitio 3.** Depósito: crea el monedero dentro del asiento |
+| `wallet.service.ts:412-415` | **PT-142, sitio 4.** Cierre de subasta: monedero del vendedor |
+| `schema.prisma:761` | `userId @unique` — la restricción que convierte la carrera en error |
+| `auth-helper.ts:105-115` | **PT-143.** Limpieza que borra usuarios con subastas |
+| Jest en paralelo + base vacía | El disparador de los dos. Ninguna de las dos condiciones se da en desarrollo |
+
+### Services
+
+**PT-142 toca `WalletModule` y `SystemConfigModule`.** El primero es el dinero: saldo, fondos
+retenidos y ledger. Ningún cambio de contrato ni de datos — sólo cómo se crea una fila que puede no
+existir.
+
+**PT-143 no toca `src/`**: es infraestructura de pruebas.
+
+### Dependencies
+
+```
+PT-136 (CI corre)  ──>  destapa PT-142 y PT-143
+                            │
+PT-142  ──> desbloquea `build` y `docker`, que nunca se han ejecutado
+        ──> y sin el, el criterio 1 de PT-136 no se cierra jamas
+
+PT-143  ──> independiente. La suite puede seguir roja en paralelo sin
+            bloquear a nadie mas de lo que ya bloquea
+```
+
+### Data Flow
+
+El flujo que importa es el de creación perezosa, y tiene una ventana:
+
+```
+peticion A: findUnique(wallet) -> null ──┐
+peticion B: findUnique(wallet) -> null ──┤   las dos ven "no existe"
+peticion A: create(wallet)     -> OK   ──┤
+peticion B: create(wallet)     -> P2002 ─┘   una pierde
+```
+
+**Estar en una transacción no cierra la ventana**: *read committed* no impide que dos transacciones
+lean la ausencia de la misma fila. La transacción da atomicidad, no exclusión sobre algo que aún no
+existe.
+
+El caso concreto que preocupa: un usuario **sin monedero** cuya notificación de depósito llega
+mientras carga su panel. `getWallet()` y la acreditación corren a la vez y **la acreditación puede
+perder**. Es lo que PT-087 construyó el ciclo de pago para impedir.
+
+### Risks
+
+| # | Riesgo | Mitigación |
+|---|---|---|
+| R1 | `upsert` cambia el comportamiento observable del monedero | No debería: el resultado es el mismo. Se ejerce el ciclo de pago real, no sólo la suite |
+| R2 | Hay un quinto sitio que el barrido no vio (otro nombre, otro orden) | El barrido se repite con `findFirst` y con `count`; lo que quede se declara |
+| R3 | Reproducir la carrera es difícil y se «arregla» sin prueba que falle | **Prueba concurrente explícita**: N creaciones simultáneas del mismo monedero. Sin RED no hay GREEN |
+| R4 | PT-143 opción [A] (`--runInBand`) tienta porque es una línea | Descartada por escrito: haría verde una suite que sigue sin poder correr en paralelo |
+| R5 | La limpieza de `auth-helper` borra sobre una base equivocada | Ya es riesgo hoy. PT-143 lo acota |
+
+### Constraints
+
+- **El monedero es dinero.** Cualquier cambio ahí se ejerce contra el ciclo de pago real, no sólo
+  contra la suite (lección de PT-087 y de la validación por navegador).
+- **Tests primero (RED)**: la prueba concurrente tiene que fallar antes de tocar el servicio.
+- `Payment.reference` sigue siendo la clave de idempotencia del asiento; PT-142 no la toca.
+- **PT-143 no puede usar `--runInBand` como solución**, sólo como medida temporal si se declara.

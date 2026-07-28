@@ -4883,6 +4883,37 @@ PT-128 decidió al encontrarse 42 tests rojos: abrió PT-131 en vez de arreglarl
 - Solution Confidence: **90%** — `upsert` es directo. El 10% es si hay más sitios con el mismo patrón:
   **hay que barrer `findUnique` + `create` en todo `src/api/src/`** antes de dar el PT por cerrado.
 
+### Revisión U-001 — el barrido, y el PT crece (2026-07-28)
+
+**Son cuatro sitios, no uno. Y tres están en el camino del dinero.**
+
+| # | Sitio | ¿En transacción? | Qué crea |
+|---|---|:--:|---|
+| 1 | `system-config.service.ts:191-194` | No | Configuración. **El que CI cazó** |
+| 2 | `wallet.service.ts:27-33` — `getWallet()` | No | **Un monedero**, de forma perezosa |
+| 3 | `wallet.service.ts:151-152` — depósito | Sí (`tx`) | **Un monedero**, dentro del asiento |
+| 4 | `wallet.service.ts:412-415` — cierre de subasta | Sí (`tx`) | **El monedero del vendedor** |
+
+`schema.prisma:761` — `userId String @unique` en `Wallet`. La restricción existe, que es lo que
+convierte la carrera en un error en vez de en dos monederos.
+
+**Estar dentro de una transacción no salva.** Prisma usa *read committed* por defecto: dos
+transacciones concurrentes que no ven el monedero del otro intentan crearlo las dos, y una recibe
+P2002. La transacción garantiza atomicidad, no exclusión mutua sobre una fila que **todavía no
+existe**.
+
+**Por qué esto sube la gravedad.** Los sitios 2 y 3 están en el ciclo de pago. El caso concreto: un
+usuario sin monedero cuya notificación de depósito llega mientras él carga su panel — `getWallet()`
+y la acreditación corren a la vez, y **la acreditación es la que puede perder**. Eso es exactamente
+lo que PT-087 construyó el ciclo para impedir: *ningún pago cobrado queda sin acreditar*.
+
+El comentario del sitio 3 lo dice sin saberlo: *«o se crea y acredita, o no ocurre ninguna de las
+dos»*. Es cierto para el fallo, y por eso el reintento existe — pero un fallo evitable en el camino
+del dinero no es un fallo aceptable.
+
+**Corrección**: `upsert` en los cuatro. La base resuelve la carrera, que es donde se resuelve.
+Solution Confidence sube a **95%**.
+
 ---
 
 ## PT-143 — BUG: la suite e2e no aísla sus datos entre workers y su limpieza viola una clave ajena
