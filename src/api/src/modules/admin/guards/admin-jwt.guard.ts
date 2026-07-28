@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { jwtSecret } from '../../../common/config/jwt-secret';
 
 @Injectable()
 export class AdminJwtGuard implements CanActivate {
@@ -30,7 +31,7 @@ export class AdminJwtGuard implements CanActivate {
         role: string;
         type: string;
         username: string;
-      }>(token, { secret: this.config.get<string>('JWT_SECRET') });
+      }>(token, { secret: jwtSecret(this.config) });
 
       if (payload.role !== 'admin' || payload.type !== 'admin-session') {
         throw new ForbiddenException('Admin role required');

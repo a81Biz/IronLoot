@@ -8,6 +8,8 @@ import { JwtStrategy } from './strategies';
 import { JwtAuthGuard, OptionalJwtAuthGuard, RolesGuard, RecaptchaGuard } from './guards';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { TwoFactorAuthService } from './two-factor-auth.service';
+import { jwtSecret } from '../../common/config/jwt-secret';
+import { expiracionJwt } from '../../common/config/jwt-expiry';
 
 @Module({
   imports: [
@@ -16,9 +18,12 @@ import { TwoFactorAuthService } from './two-factor-auth.service';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET'),
+        secret: jwtSecret(config),
         signOptions: {
-          expiresIn: config.get<string>('JWT_ACCESS_EXPIRY', '15m'),
+          expiresIn: expiracionJwt(
+            config.get<string>('JWT_ACCESS_EXPIRY', '15m'),
+            'JWT_ACCESS_EXPIRY',
+          ),
         },
       }),
     }),

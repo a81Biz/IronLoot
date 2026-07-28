@@ -5,6 +5,7 @@ import { User, UserState } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
+import { expiracionJwt, type Expiracion } from '../../common/config/jwt-expiry';
 import {
   StructuredLogger,
   ChildLogger,
@@ -50,8 +51,8 @@ import { JwtPayload, AuthenticatedUser, Role } from './decorators';
 export class AuthService {
   private readonly log: ChildLogger;
   private readonly saltRounds = 12;
-  private readonly accessTokenExpiry: string;
-  private readonly refreshTokenExpiry: string;
+  private readonly accessTokenExpiry: Expiracion;
+  private readonly refreshTokenExpiry: Expiracion;
   private readonly accessTokenExpirySeconds: number;
 
   constructor(
@@ -67,9 +68,15 @@ export class AuthService {
   ) {
     // Initialize log AFTER logger is injected
     this.log = this.logger.child('AuthService');
-    this.accessTokenExpiry = this.config.get<string>('JWT_ACCESS_EXPIRY', '15m');
-    this.refreshTokenExpiry = this.config.get<string>('JWT_REFRESH_EXPIRY', '7d');
-    this.accessTokenExpirySeconds = this.parseExpiryToSeconds(this.accessTokenExpiry);
+    this.accessTokenExpiry = expiracionJwt(
+      this.config.get<string>('JWT_ACCESS_EXPIRY', '15m'),
+      'JWT_ACCESS_EXPIRY',
+    );
+    this.refreshTokenExpiry = expiracionJwt(
+      this.config.get<string>('JWT_REFRESH_EXPIRY', '7d'),
+      'JWT_REFRESH_EXPIRY',
+    );
+    this.accessTokenExpirySeconds = this.parseExpiryToSeconds(String(this.accessTokenExpiry));
   }
 
   // ===========================================
@@ -709,7 +716,7 @@ export class AuthService {
 
     const refreshToken = this.generateSecureToken();
     const refreshExpiresAt = new Date(
-      Date.now() + this.parseExpiryToSeconds(this.refreshTokenExpiry) * 1000,
+      Date.now() + this.parseExpiryToSeconds(String(this.refreshTokenExpiry)) * 1000,
     );
 
     // Create session

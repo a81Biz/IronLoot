@@ -1,0 +1,29 @@
+# F-42 (PT-126) — Lo que NO debe entrar en la imagen.
+#
+# `COPY . .` no lee `.gitignore`. Sin este fichero, la imagen se lleva lo que hubiera en la carpeta
+# de quien construyo: sus node_modules, su dist, y su estado de compilacion incremental.
+#
+# El caso que lo destapo: `tsconfig.tsbuildinfo` viajaba a la imagen de ADMIN. Dentro, `tsc` lo leia,
+# concluia que ya habia emitido todo, y no emitia nada. Con `deleteOutDir: false` —puesto por PT-094
+# para cerrar TD-013— nadie rellenaba el hueco, y el contenedor moria con
+# `Cannot find module '/app/dist/main'`. Sintoma identico al de F-36; causa distinta.
+
+# Estado de compilacion incremental — EL fichero de F-42
+*.tsbuildinfo
+
+# Se instalan y compilan dentro de la imagen, no se copian desde fuera
+node_modules
+dist
+
+# Credenciales. Hoy ninguna imagen las lleva; esto es para que siga siendo cierto.
+.env
+.env.*
+!.env.example
+
+# Ruido del entorno de quien construye
+.git
+.vscode
+.idea
+coverage
+*.log
+npm-debug.log*
