@@ -1,5 +1,5 @@
 import request = require('supertest');
-import { subastaValida, ponerEnCurso } from '../core/auction-helper';
+import { subastaValida, ponerEnCurso, cerrarYObtenerPedido } from '../core/auction-helper';
 import { TestApp } from '../core/test-app';
 import { AuthHelper, TestUser } from '../core/auth-helper';
 import { CreateAuctionDto } from '../../src/modules/auctions/dto';
@@ -62,41 +62,40 @@ describe('Orders Module (e2e)', () => {
     await request(testApp.getApp().getHttpServer())
       .post(`/api/v1/auctions/${auctionId}/bids`)
       .set('Authorization', `Bearer ${winner.token}`)
-      .send({ amount: 60 })
+      .send({ amount: 110 })
       .expect(201);
 
-    // 4. Wait for auction to expire (simple wait for test)
-    await new Promise((r) => setTimeout(r, 2500));
+    // 4. PT-131 — El pedido lo crea el CIERRE de la subasta, no una peticion del ganador.
+    //    `POST /api/v1/orders` ya no existe: `OrdersController` solo tiene `@Get()` y `@Get(':id')`.
+    //    Antes esto esperaba 2,5 s a que expirara una subasta de 2 segundos; hoy la duracion minima
+    //    es de una hora, asi que se adelanta el final y se invoca el cierre real.
+    pedido = await cerrarYObtenerPedido(testApp.getApp(), testApp.getPrisma(), auctionId);
   });
 
-  describe('Create Order', () => {
-    it('should prevent non-winner from creating order', async () => {
-      await request(testApp.getApp().getHttpServer())
-        .post('/api/v1/orders')
-        .set('Authorization', `Bearer ${loser.token}`)
-        .send({ auctionId })
-        .expect(403);
+  let pedido: { id: string; totalAmount: unknown; buyerId: string; sellerId: string } | null;
+
+  describe('El pedido lo produce el cierre de la subasta', () => {
+    it('el cierre crea el pedido para el ganador', () => {
+      expect(pedido).not.toBeNull();
+      expect(pedido!.buyerId).toBe(winner.id);
+      expect(Number(pedido!.totalAmount)).toBe(110);
     });
 
-    it('should allow winner to create order', async () => {
-      const res = await request(testApp.getApp().getHttpServer())
-        .post('/api/v1/orders')
-        .set('Authorization', `Bearer ${winner.token}`)
-        .send({ auctionId })
-        .expect(201);
-
-      expect(res.body.status).toBe('PENDING_PAYMENT');
-      expect(Number(res.body.totalAmount)).toBe(60);
+    it('el perdedor no aparece como comprador', () => {
+      // Antes esto era `POST /orders` con el token del perdedor esperando 403. Ya no hay endpoint
+      // que abusar: el ganador lo decide el cierre, y esta es la afirmacion equivalente.
+      expect(pedido!.buyerId).not.toBe(loser.id);
     });
 
-    it('should return existing order if called again (idempotency)', async () => {
-      const res = await request(testApp.getApp().getHttpServer())
-        .post('/api/v1/orders')
-        .set('Authorization', `Bearer ${winner.token}`)
-        .send({ auctionId })
-        .expect(201); // Or 200, depending on implementation choice. Service returns order.
+    it('cerrar dos veces no duplica el pedido (idempotencia)', async () => {
+      // La idempotencia sigue importando, pero el sujeto cambio: antes era «llamar dos veces al
+      // endpoint»; hoy es «que el cron pase dos veces por la misma subasta». La restriccion unica
+      // sobre `orders.auction_id` es lo que lo garantiza — la misma que PT-117 hizo saltar cuando
+      // una subasta con pedido volvio a ACTIVE.
+      const segunda = await cerrarYObtenerPedido(testApp.getApp(), testApp.getPrisma(), auctionId);
 
-      expect(Number(res.body.totalAmount)).toBe(60);
+      expect(segunda!.id).toBe(pedido!.id);
+      expect(await testApp.getPrisma().order.count({ where: { auctionId } })).toBe(1);
     });
   });
 

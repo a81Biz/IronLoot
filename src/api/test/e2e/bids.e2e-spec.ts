@@ -87,7 +87,7 @@ describe('Bids Module (e2e)', () => {
         .get(`/api/v1/auctions/${auctionId}`)
         .expect(200);
 
-      expect(Number(res.body.currentPrice)).toBe(105);
+      expect(Number(res.body.currentPrice)).toBe(110);
     });
 
     it('should prevent bid lower than current price + increment', async () => {
@@ -126,7 +126,7 @@ describe('Bids Module (e2e)', () => {
 
       expect(Array.isArray(res.body)).toBe(true);
       expect(res.body.length).toBe(2);
-      expect(Number(res.body[0].amount)).toBe(110); // Most recent first
+      expect(Number(res.body[0].amount)).toBe(130); // La mas reciente primero
     });
   });
 });

@@ -1,4 +1,6 @@
+import { INestApplication } from '@nestjs/common';
 import { PrismaClient } from '@prisma/client';
+import { AuctionSchedulerService } from '../../src/modules/scheduler/auction-scheduler.service';
 
 /**
  * PT-131 — Una subasta valida segun el contrato de HOY.
@@ -111,4 +113,31 @@ export async function ponerEnCurso(
     where: { id: auctionId },
     data: { startsAt: new Date(Date.now() - minutosEnElPasado * 60_000) },
   });
+}
+
+/**
+ * Cierra una subasta de verdad y devuelve el pedido que genera el cierre.
+ *
+ * **`POST /api/v1/orders` ya no existe.** `OrdersController` solo expone `@Get()` y `@Get(':id')`:
+ * los pedidos los crea el cierre de la subasta (`auction-scheduler.service.ts:146`), no una
+ * peticion del comprador. Media docena de specs seguian creandolos a mano y recibian 404.
+ *
+ * Es la capa mas gorda del sedimento de PT-131, y la mas informativa: no es que el spec enviara un
+ * dato mal, es que probaba **un flujo que el producto ya no tiene**. El pedido dejo de ser algo que
+ * el ganador pide y paso a ser algo que el sistema produce.
+ *
+ * Aqui se hace lo que hace el sistema: se adelanta el final y se invoca el cierre. No se simula el
+ * resultado — se ejecuta el cierre real, con su transaccion, sus fondos y sus avisos.
+ */
+export async function cerrarYObtenerPedido(
+  app: INestApplication,
+  prisma: PrismaClient,
+  auctionId: string,
+): Promise<{ id: string; totalAmount: unknown; buyerId: string; sellerId: string } | null> {
+  await adelantarCierre(prisma, auctionId);
+
+  // El cron corre cada minuto; en un test se invoca directamente para no esperarlo.
+  await app.get(AuctionSchedulerService).closeExpiredAuctions();
+
+  return prisma.order.findUnique({ where: { auctionId } }) as never;
 }
