@@ -611,6 +611,58 @@
         "IDENTIFICADO": 1
       },
       "nota": "Suite e2e COMPLETA en verde: 16/16 suites, 77 tests. El camino al despliegue —esquema, pipeline, imagen— recorrido entero por primera vez. Lo unico abierto de peso es H-005, que es una decision de negocio que ningun PT puede tomar. Leccion de la sesion: diagnosticar sin consultar docs-v2 me hizo encuadrar mal H-018 como defecto critico de un producto CRITICO cuando era un endpoint legado sin llamantes."
+    },
+    {
+      "session": "S-002-V",
+      "date": "2026-07-28",
+      "type": "validacion_humana",
+      "scores": {
+        "D1": 85,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "health": 95.5,
+        "risk": 24,
+        "confidence": 95.0
+      },
+      "classification": "A",
+      "classification_without_cap": "A",
+      "cap_reason": null,
+      "score_freshness": {
+        "last_verified": "2026-07-28",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "risk_detail": {
+        "risk_bruto": 6,
+        "detalle": "H-005, unico hallazgo activo"
+      },
+      "trigger": "PT-133 (retirada de endpoints legados) + validacion por NAVEGADOR y VoBo humano",
+      "findings_changes": {
+        "nuevos": [],
+        "revisados": [
+          "H-018 -> CERRADA por retirada del endpoint (PT-133/ADR-047), no por correccion: acreditaba dinero, no tenia llamantes y no tenia cobertura"
+        ],
+        "cerrados": [
+          "H-014",
+          "H-015",
+          "H-016",
+          "H-017",
+          "H-018",
+          "H-019",
+          "H-020"
+        ]
+      },
+      "evidencias_nuevas": [
+        "E-025"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "IDENTIFICADO": 1
+      },
+      "nota": "Siete hallazgos CERRADOS con VoBo humano tras validacion por navegador: suite QA completa (127 comprobaciones, 0 fallos, con cobro real en Mercado Pago y orden real en PayPal) mas 9 dirigidas. La suite corrio DESPUES de retirar los endpoints legados. Queda un unico hallazgo activo en todo el sistema: H-005, que es una decision de negocio que ningun PT puede tomar."
     }
   ]
 }

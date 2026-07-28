@@ -139,3 +139,20 @@ bloquea nada y H-006 está CERRADA.
 | 8 | La imagen del API se lleva las dependencias de desarrollo (541 MB) | Afinarlo, si importa |
 | 9 | `/api/v1/users/:id/ratings` exige sesión. La reputación de un vendedor es lo que un comprador mira **antes** de registrarse — puede ser deliberado o efecto colateral del guard global | Humano decide |
 | 10 | `CLAUDE.md` cita `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`; ninguno existe — pendiente desde DS-004 | Humano |
+
+---
+
+## S-002-V (2026-07-28) — tras la validación por navegador
+
+**Siete hallazgos cerrados.** Queda uno.
+
+| # | Pendiente | Responsable |
+|---|---|---|
+| 1 | **H-005 — quién emite la factura.** Único hallazgo activo del sistema. Tres opciones en F-1 § U-005. Mantiene D1 en 85 y bloquea P-012 | Humano (negocio + fiscal) |
+| 2 | ADMIN no tiene `favicon.ico` — cosmético, sale en la consola de todas sus pantallas | Trivial |
+| 3 | La suite QA corre sobre **HTTP**: lo que dependa de origen seguro (COOP, cookies `Secure`) no queda ejercido | Cuando haya TLS local |
+| 4 | La guarda del contrato CLIENT↔API no cubre **ADMIN ni BASE** | Ampliación barata |
+| 5 | **Nada comprueba vulnerabilidades de la imagen base** (`node:20-alpine`: 2 críticas, 23 altas según el IDE). `audit:check` sólo mira npm | Hueco de D2 |
+| 6 | ¿Más servicios que mezclen un DTO transformado contra un JSON almacenado? El patrón de H-019 podría repetirse | Barrido |
+| 7 | `/api/v1/users/:id/ratings` exige sesión; la reputación es lo que se mira **antes** de registrarse | Humano decide |
+| 8 | `CLAUDE.md` cita `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`; ninguno existe | Humano |

@@ -532,3 +532,64 @@ en ambos casos.
 
 `02-PRD.md`, `09-Security-Architecture.md` y el resto de `03-TRD.md` y `06-Backend-Architecture.md`
 **siguen sin barrer**. La severidad se sube por lo comprobado, no por lo sospechado.
+
+---
+
+## S-002-V — Validación por navegador y cierre (2026-07-28)
+
+**Disparador**: instrucción del humano — *«retira los endpoints, abre un navegador y valida los
+hallazgos completos»*.
+
+### PT-133 — Los endpoints legados, retirados
+
+`POST /wallet/deposit` y `POST /payments/checkout` no los invocaba **ningún** cliente: el único
+llamante en todo `src/` eran sus propios tests. El depósito real es `POST /payments/initiate`,
+documentado en `docs-v2/4-ingenieria/Catalogo-de-API.md`.
+
+Se retiran en vez de corregirse porque `/wallet/deposit` **acreditaba dinero** a partir de un
+`referenceId` elegido por el cliente. Superficie que mueve saldo, sin uso, sin cobertura y sin
+mantenimiento. **Cierra H-018 de raíz**, que es mejor que pulir el manejo de errores de una puerta
+que sobra. Queda escrito en **ADR-047**.
+
+`WalletService.deposit()` **se conserva** — es lo que usa `creditWallet` en la vía real. Hay un caso
+de prueba (AC-06) que lo fija, porque confundir el endpoint con el servicio habría roto el depósito
+de verdad mientras se retiraba el que nadie usa.
+
+### La validación, sobre la fuente real
+
+```
+Suite QA completa (Playwright, stack en Docker)   127 comprobaciones · 0 fallos
+Validación dirigida de hallazgos                    9 comprobaciones · 0 fallos
+```
+
+**La suite corrió DESPUÉS de la retirada**, y el cobro real por Mercado Pago pasó entero: orden
+aprobada en la pasarela, monedero acreditado por el importe exacto, traza de 7 pasos en orden, cero
+credenciales persistidas, y la reentrega sin acreditar de nuevo. Es la prueba de que se retiró la
+puerta que sobraba y no la que se usa.
+
+También pasó el retiro real completo —KYC, CLABE, holdback, aprobación de admin, PAID, y el rechazo
+reintegrando— y los recorridos en Firefox y WebKit.
+
+### Lo que la validación encontró de paso
+
+57 de 57 pantallas con errores de consola. Mirado uno a uno: **98 son la advertencia de COOP sobre
+HTTP** —los navegadores la ignoran sin TLS, y el entorno de desarrollo no lo tiene—, tres 404 y un
+401 son **casos que la propia suite provoca a propósito**, y queda uno real y cosmético: ADMIN no
+tiene `favicon.ico`. Anotado en `PENDIENTES`; no merece hallazgo.
+
+### Cierre
+
+**Siete hallazgos a `CERRADA`** con VoBo humano: H-014, H-015, H-016, H-017, H-018, H-019, H-020.
+`[R44]` reserva ese cierre a la persona, y su instrucción queda citada en cada ficha.
+
+| | S-002 | **S-002-V** |
+|---|--:|--:|
+| Health | 76.0 | **95.5** |
+| Risk | 100 | **24** |
+| Confidence | 90.0 | **95.0** |
+| Clase | B | **A** |
+
+D1 = 85 · **D2 = 100** · D3 = 100 · D4 = 100.
+
+**Queda un único hallazgo activo en todo el sistema: H-005** — quién emite la factura. Es una
+decisión de negocio y fiscal, y ningún PT puede tomarla.
