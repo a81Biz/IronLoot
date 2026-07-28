@@ -8,11 +8,19 @@ import { join } from 'path';
  * Esa columna es lo que convierte la tabla en verificable. Al comprobarla, en S-002:
  *
  *     5 de 5 citas apuntan a la LINEA EQUIVOCADA
- *     3 de 5 versiones son FALSAS
+ *     1 de 5 versiones era FALSA
  *
- *     NestJS      declarado ^10.3.0   real 11.1.28    cita package.json:36  -> `},`
- *     Prisma      declarado ^5.8.0    real 5.22.0     cita package.json:50  -> @nestjs/platform-express
- *     TypeScript  declarado ^5.3.3    real 5.9.3      cita package.json:101 -> prettier
+ *     Node.js     citaba :137  ->  la linea real es :152
+ *     npm         citaba :138  ->  :153
+ *     NestJS      citaba :36   ->  :47      y declaraba ^10.3.0 cuando el codigo dice ^11.0.0
+ *     Prisma      citaba :50   ->  :58      (la version SI coincidia: ^5.8.0)
+ *     TypeScript  citaba :101  ->  :110     (la version SI coincidia: ^5.3.3)
+ *
+ * La revision S-002-R2 de H-016 dijo «3 de 5 versiones falsas». **Era una.** Lo instalado (Prisma
+ * 5.22.0, TypeScript 5.9.3) difiere de lo declarado por deriva normal de semver dentro del rango
+ * `^`, y eso NO es un error documental. El dato quedo corregido en la ficha del hallazgo.
+ *
+ * Lo que se sostiene entero es el fondo: **ninguna de las cinco citas resolvia**.
  *
  * Las lineas se desplazaron segun crecia `package.json` y nadie las siguio. Es peor que un dato
  * viejo: es una tabla que **aparenta ser verificable** y en la que no se puede verificar nada. Un

@@ -513,6 +513,55 @@
         "nota": "Sin transiciones. Los tres hallazgos nuevos son sistemicos (producto_id: null). Salvedad en P-006: validado en DS-008 con E-015 sobre disputas reales, pero la base se reconstruyo despues y hoy disputes=0 — la evidencia sigue siendo valida como captura, no es reproducible hoy."
       },
       "nota": "Bajada de A a B. No es el dominio: D1 sigue en 85 y las 14 reglas cumplen sobre salida real. Es D2=40 — los tres hallazgos nuevos de D2 son el mismo camino visto desde tres sitios (esquema, pipeline, imagen), y ese camino no se ha recorrido nunca. Nueve sesiones no lo vieron porque nada de eso estaba en auditable_patterns. Cerrar H-014, H-015 y H-017 devuelve el Health a 95.0 y la Clase A."
+    },
+    {
+      "session": "S-002-C",
+      "date": "2026-07-27",
+      "type": "post_remediacion",
+      "scores": {
+        "D1": 85,
+        "D2": 90,
+        "D3": 100,
+        "D4": 100,
+        "health": 92.5,
+        "risk": 72,
+        "confidence": 90.0
+      },
+      "classification": "A",
+      "classification_without_cap": "A",
+      "cap_reason": null,
+      "score_freshness": {
+        "last_verified": "2026-07-27",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "risk_detail": {
+        "risk_bruto": 18,
+        "detalle": "H-005 6 + H-017 6 (CORREGIDA_PARCIAL) + H-018 6"
+      },
+      "trigger": "PT-127..PT-130 ejecutados tras ACK humano del Proposal Gate",
+      "findings_changes": {
+        "nuevos": [
+          "H-018 (D2, MEDIA) — POST /wallet/deposit devuelve 500 con referencia desconocida: el adaptador de PayPal lanza y nadie lo captura"
+        ],
+        "revisados": [
+          "H-014 CRITICA -> CORREGIDA (PT-127): via B, 23 migraciones colapsadas en una inicial generada. Verificado: drift 0, sondas 4/4 (antes 1/4), payments.reference UNIQUE, datos intactos",
+          "H-015 ALTA -> CORREGIDA (PT-128): dos clientes Redis fuera del ciclo de vida de Nest. La suite pasa de necesitar --forceExit a terminar sola en 13.2 s. El job aplica el esquema con migrate deploy",
+          "H-016 ALTA -> CORREGIDA (PT-130): 5 citas del TRD corregidas + guarda con caso de control. CORRECCION: eran 1 de 5 versiones falsas, no 3 — Prisma y TypeScript SI coincidian con package.json",
+          "H-017 ALTA -> CORREGIDA_PARCIAL (PT-129): 3 de 4 imagenes arrancan healthy; la del API destapo CINCO bloqueos independientes, cuatro corregidos y uno abierto"
+        ],
+        "cerrados": []
+      },
+      "evidencias_nuevas": [
+        "E-022"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "IDENTIFICADO": 1
+      },
+      "nota": "Vuelta a Clase A por trabajo verificado, no por reclasificacion. D2 40->90 y D4 85->100. Lo que queda abierto se dice: el job de integracion esta ROJO hasta PT-131 (42 specs viejos), la imagen del API no arranca (quinto bloqueo), y H-018 espera Gate propio. Tres controles nuevos, los tres probados en los dos sentidos; uno de ellos cazo un error del propio agente durante PT-128."
     }
   ]
 }
