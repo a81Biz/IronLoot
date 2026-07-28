@@ -156,3 +156,23 @@ bloquea nada y H-006 está CERRADA.
 | 6 | ¿Más servicios que mezclen un DTO transformado contra un JSON almacenado? El patrón de H-019 podría repetirse | Barrido |
 | 7 | `/api/v1/users/:id/ratings` exige sesión; la reputación es lo que se mira **antes** de registrarse | Humano decide |
 | 8 | `CLAUDE.md` cita `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`; ninguno existe | Humano |
+
+---
+
+## S-002-G (2026-07-28) — dos defectos que destapó la reconstrucción del grafo
+
+El grafo de conocimiento se reconstruyó tras cerrar los siete hallazgos. Al leer las plantillas de
+ADMIN, los extractores señalaron dos anomalías. **Ambas se verificaron en el código y son reales.**
+Las dos son de la misma familia que F-34 y que la regla de CSP sin `'unsafe-inline'`: **fallan en
+silencio**, sin error en consola y sin que ninguna suite lo note.
+
+| # | Pendiente | Evidencia |
+|---|---|---|
+| 9 | **La pantalla «Conciliación» de ADMIN no tiene JavaScript.** `reconciliation.html:2` declara `<script src="/js/pages/pages-reconciliation.js">` **dentro de `{% block title %}`**, y `layouts/admin.html` **no define ese bloque** (sólo `head`, `content` y `scripts`). Nunjucks descarta en silencio el contenido de un bloque que el padre no declara: el fichero existe (1749 B, extraído en PT-096) pero **nunca se carga**. El botón «Conciliar» no hace nada | `reconciliation.html:2-3` vs `layouts/admin.html:13,162,171` — única plantilla del repo con este patrón |
+| 10 | **El modal «+ Crear reembolso» de ADMIN no abre.** `refunds.html` usa `data-bs-toggle` / `data-bs-target` / `data-bs-dismiss` (atributos de Bootstrap) y **no hay Bootstrap en ninguna parte de ADMIN**: el layout carga sólo `ui-behaviours.js` y `admin.js`, y ninguno de los dos maneja modales. `refunds.html` tampoco declara `{% block scripts %}` | `refunds.html:8,73` · `grep -rn bootstrap src/admin/` = 0 resultados |
+
+**Por qué no se han corregido aquí.** FDGE exige STATE 1-B con ACK humano antes de tocar código.
+Son defectos de producto, no de documentación, y merecen su PT con su guarda: la lección de PT-102
+(F-34) es que un `<script>` mal colocado se queda muerto años con la suite en verde. Una guarda que
+compruebe que **todo bloque `{% block %}` de una plantilla existe en su layout** los habría cazado
+a los dos y es barata.

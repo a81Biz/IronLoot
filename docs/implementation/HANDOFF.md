@@ -59,6 +59,8 @@ el PAC, y P-012 pasa a existir.
 | | ¿Más servicios que mezclen un DTO transformado contra JSON almacenado? El patrón de H-019 podría repetirse |
 | | `ironloot_db` es a la vez base de desarrollo **y** dato que sostiene validaciones PTSA — y `run-all.sh` la trunca |
 | | ADMIN sin `favicon.ico`; sale en la consola de todas sus pantallas |
+| **NUEVO** | **La pantalla «Conciliación» de ADMIN no tiene JavaScript**: `reconciliation.html:2` mete el `<script>` dentro de `{% block title %}`, bloque que `layouts/admin.html` no declara — Nunjucks lo descarta en silencio. El botón «Conciliar» está muerto |
+| **NUEVO** | **El modal «+ Crear reembolso» de ADMIN no abre**: `refunds.html` usa atributos `data-bs-*` y **no hay Bootstrap en ningún sitio de ADMIN** |
 
 ---
 
@@ -89,3 +91,7 @@ el PAC, y P-012 pasa a existir.
    la primera.
 4. **Comprobar en un push real que `build` y `docker` se ejecutan.** Nunca lo han hecho; ahora
    deberían, y conviene verlo con los propios ojos antes de darlo por bueno.
+5. **Los dos defectos de ADMIN que destapó el grafo** (PTSA `PENDIENTES.md` § S-002-G, filas 9 y 10)
+   — y con ellos la guarda que los caza de raíz: **todo `{% block %}` de una plantilla tiene que
+   existir en su layout**. Es la misma familia que F-34: un `<script>` mal colocado se queda muerto
+   años con la suite entera en verde.
