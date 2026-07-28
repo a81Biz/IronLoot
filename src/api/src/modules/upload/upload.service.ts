@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { writeFile, mkdir } from 'fs/promises';
 import { join, resolve } from 'path';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID as uuidv4 } from 'node:crypto';
 import { Express } from 'express';
 import 'multer';
 import { apiOrigin } from '../../common/config/public-origins';

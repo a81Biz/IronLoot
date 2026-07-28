@@ -1,6 +1,6 @@
 {
   "generado": "2026-07-27",
-  "motivo": "TD-015 — exigen salto de version MAYOR: @nestjs/core 10->11, Express 4->5 (via @nestjs/platform-express), bcrypt 5->6, uuid 13->14, y utilidades transitivas (glob 10->13, minimatch 9->10, brace-expansion 2->5, file-type 20->22, linkify-it 5->6). Ninguno alcanzable sin autenticar.",
+  "motivo": "TD-015 — 10 paquetes que exigen salto MAYOR de plataforma. Analizados uno a uno en docs/implementation/ANALISIS-TD-015.md (PT-123): 6 no llegan a produccion, 3 estan en el arbol sin uso alcanzable, 3 estan en el camino con mitigacion. Los cierra la migracion NestJS 10->11 / Express 4->5 (PT-126). Ninguno alcanzable sin autenticar.",
   "revisar_antes_de": "2026-10-27",
   "avisos": {
     "@nestjs/core": "moderate",
@@ -12,8 +12,8 @@
     "linkify-it": "high",
     "minimatch": "high",
     "multer": "high",
-    "path-to-regexp": "high",
-    "tar": "critical",
-    "uuid": "moderate"
-  }
+    "path-to-regexp": "high"
+  },
+  "revisado": "2026-07-27",
+  "nota": "PT-125 cerro tar (bcrypt 5->6, node-pre-gyp fuera del arbol) y uuid (dependencia directa eliminada a favor de crypto.randomUUID; la copia anidada de mercadopago va por override a ^11.1.1). Quedan 10, todos analizados en docs/implementation/ANALISIS-TD-015.md."
 }
