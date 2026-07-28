@@ -181,63 +181,20 @@ export class PaymentsService {
 
     throw new BadRequestException('Unsupported or invalid payment provider');
   }
-
   /**
-   * Payment verification
+   * PT-133 — `verifyPayment()` y `createCheckoutSession()` RETIRADOS.
+   *
+   * Sus unicos llamantes eran los manejadores legados `POST /wallet/deposit` y
+   * `POST /payments/checkout`, que ningun cliente invocaba. Al retirar los endpoints se quedaron
+   * sin uso.
+   *
+   * `verifyPayment` era ademas donde vivia H-018: un `referenceId` desconocido hacia que el
+   * adaptador de PayPal lanzara un 404 sin captura y saliera como 500. Retirar el camino cierra el
+   * hallazgo de raiz, que es mejor que traducir el error de una puerta que sobra.
+   *
+   * La verificacion real de un pago vive en el ciclo (PT-080/PT-087): la notificacion o la via
+   * garantizada, con `findPayment(ctx)` por adaptador.
    */
-  async verifyPayment(referenceId: string): Promise<PaymentVerification> {
-    // 1. Determine Provider based on Reference ID prefix
-    let result;
-    let providerName = 'UNKNOWN';
-
-    // MercadoPago (MP-...)
-    if (referenceId.startsWith('MP-')) {
-      result = await this.mercadopagoProvider.verifyPayment(referenceId);
-      providerName = 'MERCADO_PAGO';
-    }
-    // PayPal (PAY-...)
-    else if (referenceId.startsWith('PAY-')) {
-      result = await this.paypalProvider.verifyPayment(referenceId);
-      providerName = 'PAYPAL';
-    }
-    // Stripe (cs_...)
-    else if (referenceId.startsWith('cs_')) {
-      result = await this.stripeProvider.verifyPayment(referenceId);
-      providerName = 'STRIPE';
-    }
-
-    if (result) {
-      // PT-080 — El importe lo normaliza el adaptador; el nucleo no interpreta campos de pasarela.
-      const amount = Number(result.amount ?? 0) || 0;
-
-      return {
-        status: result.status === 'COMPLETED' ? 'COMPLETED' : 'FAILED',
-        amount,
-        currency: 'MXN',
-        provider: providerName,
-      };
-    }
-
-    throw new BadRequestException('Invalid or unsupported payment reference');
-  }
-
-  async createCheckoutSession(
-    userId: string,
-    email: string,
-    dto: { amount: number; description?: string },
-  ): Promise<any> {
-    if (this.stripeProvider.checkStatus()) {
-      return this.stripeProvider.createPayment(
-        `DEP-${userId}-${Date.now()}`,
-        dto.amount,
-        'MXN',
-        dto.description || 'Wallet Deposit',
-        email,
-      );
-    }
-
-    throw new BadRequestException('Provider not available');
-  }
 
   async handleWebhook(
     provider: string,

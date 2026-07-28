@@ -143,23 +143,6 @@ describe('PaymentsService', () => {
     });
   });
 
-  describe('createCheckoutSession', () => {
-    it('should create a payment session for Wallet Deposit', async () => {
-      const userId = 'user-uuid';
-      const dto = { amount: 100, description: 'Test Deposit' };
-
-      const result = await service.createCheckoutSession(userId, 'test@example.com', dto);
-
-      expect(result).toBeDefined();
-      // Expect mock to be called (Stripe is now the default provider in the implementation shown in step 860)
-      // verify functionality
-    });
-
-    /* 
-    // OLD TEST FOR ORDERS - Commented out as functionality is possibly replaced
-    it('should throw error if order is already paid', async () => {
-      ...
-    });
-    */
-  });
+  // PT-133 — `createCheckoutSession` retirado: su unico llamante era el endpoint legado
+  // `POST /payments/checkout`, que ningun cliente invocaba.
 });

@@ -41,7 +41,7 @@
 | Método | Ruta | Guard | Throttle |
 |---|---|---|---|
 | GET | /wallet/balance \| /wallet/history | JWT | default |
-| POST | /wallet/deposit | JWT | 10/60s |
+| ~~POST~~ | ~~/wallet/deposit~~ | — | — | **RETIRADO (PT-133)**. Sin llamantes. El deposito real es `POST /payments/initiate` (ciclo de pago, PT-080/PT-087). Acreditaba dinero a partir de un `referenceId` elegido por el cliente: superficie que mueve saldo, sin uso ni cobertura. Ver ADR-047 |
 | POST | /wallet/withdraw | JWT | 5/60s |
 | GET/POST | /wallet/payment-methods | JWT | default |
 | GET/POST | /wallet/withdrawals | JWT | default |

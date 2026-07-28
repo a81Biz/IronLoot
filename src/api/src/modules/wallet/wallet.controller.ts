@@ -8,24 +8,17 @@ import {
   Query,
   ParseIntPipe,
   Param,
-  BadRequestException,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { PaymentsService } from '../payments/payments.service';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
-import { DepositDto, WithdrawDto, WalletBalanceDto, TransactionHistoryDto } from './dto/wallet.dto';
+import { WithdrawDto, WalletBalanceDto, TransactionHistoryDto } from './dto/wallet.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WalletService } from './wallet.service';
 import { WithdrawalsService } from './withdrawals.service';
 import { AccountVerificationService } from './account-verification.service';
 import { PrismaService } from '../../database/prisma.service';
-import {
-  Log,
-  AuditedAction,
-  AuditEventType,
-  EntityType,
-  PaymentMismatchException,
-} from '../../common/observability';
+import { Log, AuditedAction, AuditEventType, EntityType } from '../../common/observability';
 
 export interface AuthenticatedRequest extends Request {
   user: {
@@ -86,35 +79,22 @@ export class WalletController {
     };
   }
 
-  @Post('deposit')
-  @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @AuditedAction(
-    AuditEventType.PAYMENT_CONFIRMED,
-    EntityType.PAYMENT,
-    (args) => args[1].referenceId, // dto is 2nd arg
-    ['amount', 'referenceId'], // payload
-  )
-  @ApiOperation({ summary: 'Deposit funds' })
-  @ApiResponse({ status: 201, description: 'Deposit successful' })
-  @ApiResponse({ status: 400, description: 'Invalid payment' })
-  async deposit(@Request() req: AuthenticatedRequest, @Body() dto: DepositDto) {
-    // 1. Verify that the payment reference is valid and completed
-    const payment = await this.paymentsService.verifyPayment(dto.referenceId);
-
-    if (payment.status !== 'COMPLETED') {
-      throw new BadRequestException(`Payment verification failed: status is ${payment.status}`);
-    }
-
-    // 2. Use the amount from the VERIFIED payment, not the user input
-    // This prevents users from paying $1 and claiming $1000
-    if (payment.amount !== dto.amount) {
-      // Optionally throw or just use the real amount.
-      // Throwing is safer to alert the user of mismatch
-      throw new PaymentMismatchException(Number(payment.amount), dto.amount);
-    }
-
-    return this.walletService.deposit(req.user.id, payment.amount, dto.referenceId);
-  }
+  /**
+   * PT-133 — `POST /wallet/deposit` RETIRADO.
+   *
+   * No lo invocaba ningun cliente: el unico llamante en todo `src/` era su propio test e2e. El
+   * deposito real del portal usa `POST /payments/initiate` —lo llama
+   * `public/js/pages/pages-wallet-deposit.js`— que es el ciclo de pago de PT-080 con las garantias
+   * de PT-087, documentado en `docs-v2/4-ingenieria/Catalogo-de-API.md`.
+   *
+   * Se retira en vez de corregirse (H-018 describia que un fallo de la pasarela salia como 500)
+   * porque **acreditaba dinero**: recibia un `referenceId` elegido por el cliente, lo verificaba
+   * contra la pasarela y abonaba el monedero. Superficie que mueve saldo, sin llamantes, sin
+   * cobertura y sin nadie que la mantenga. Pulirle el manejo de errores habria sido arreglar una
+   * puerta que sobra.
+   *
+   * `WalletService.deposit()` NO se retira: es lo que usa `creditWallet` en la via real.
+   */
 
   // PT-070 — Métodos de pago bancarios (destino del retiro)
   @Post('payment-methods')

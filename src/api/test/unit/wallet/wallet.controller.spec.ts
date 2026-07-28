@@ -6,7 +6,7 @@ import { PaymentsService } from '../../../src/modules/payments/payments.service'
 import { AccountVerificationService } from '../../../src/modules/wallet/account-verification.service';
 import { WithdrawalsService } from '../../../src/modules/wallet/withdrawals.service';
 import { PrismaService } from '../../../src/database/prisma.service';
-import { DepositDto, WithdrawDto } from '../../../src/modules/wallet/dto/wallet.dto';
+import { WithdrawDto } from '../../../src/modules/wallet/dto/wallet.dto';
 import { JwtAuthGuard } from '../../../src/modules/auth/guards/jwt-auth.guard';
 
 describe('WalletController', () => {
@@ -87,13 +87,8 @@ describe('WalletController', () => {
     });
   });
 
-  describe('deposit', () => {
-    it('should call service.deposit', async () => {
-      const dto: DepositDto = { amount: 100, referenceId: 'ref-1' };
-      await controller.deposit(mockRequest, dto);
-      expect(service.deposit).toHaveBeenCalledWith('user-123', 100, 'ref-1');
-    });
-  });
+  // PT-133 — `deposit` retirado con su endpoint. `WalletService.deposit()` SI se conserva:
+  // es lo que usa `creditWallet` en la via real del ciclo de pago.
 
   describe('withdraw (PT-072 — delega en solicitud con aprobación)', () => {
     it('propaga el 400 de la solicitud cuando el método es inválido', async () => {

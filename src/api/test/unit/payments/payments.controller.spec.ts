@@ -4,7 +4,6 @@ import { PaymentCycleService } from '../../../src/modules/payments/payment-cycle
 import { PaymentsService } from '../../../src/modules/payments/payments.service';
 import { AuthenticatedUser, Role } from '../../../src/modules/auth/decorators';
 import { InitiatePaymentDto } from '../../../src/modules/payments/dto/initiate-payment.dto';
-import { CreateCheckoutDto } from '../../../src/modules/payments/dto/create-checkout.dto';
 import { JwtAuthGuard } from '../../../src/modules/auth/guards/jwt-auth.guard';
 
 describe('PaymentsController', () => {
@@ -58,20 +57,7 @@ describe('PaymentsController', () => {
     expect(controller).toBeDefined();
   });
 
-  describe('createCheckout', () => {
-    it('should call createCheckoutSession', async () => {
-      // @ts-expect-error Incomplete DTO for test purposes
-      const dto: CreateCheckoutDto = { orderId: 'order-1', amount: 100, provider: 'STRIPE' };
-      const expectedResult = { externalId: 'ex-1', redirectUrl: 'http://url' };
-
-      mockPaymentsService.createCheckoutSession.mockResolvedValue(expectedResult);
-
-      const result = await controller.createCheckout(mockUser, dto);
-
-      expect(service.createCheckoutSession).toHaveBeenCalledWith(mockUser.id, mockUser.email, dto);
-      expect(result).toEqual(expectedResult);
-    });
-  });
+  // PT-133 — `createCheckout` retirado con su endpoint: ningun cliente lo invocaba.
 
   describe('initiate', () => {
     it('should call initiatePayment', async () => {
