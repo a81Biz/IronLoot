@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "preinstall": "node scripts/solo-en-contenedor.js",
-    "postinstall": "npm --prefix ./src/api install --no-audit --no-fund && npm --prefix ./src/admin install --no-audit --no-fund",
+    "postinstall": "npm --prefix ./src/api ci --no-audit --no-fund && npm --prefix ./src/admin ci --no-audit --no-fund",
     "lock:root": "node scripts/regenerar-lock.js .",
     "lock:api": "node scripts/regenerar-lock.js src/api",
     "lock:admin": "node scripts/regenerar-lock.js src/admin",

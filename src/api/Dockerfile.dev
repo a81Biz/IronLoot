@@ -20,8 +20,16 @@ WORKDIR /app
 # Copy package files first for better caching
 COPY package*.json ./
 
-# Install all dependencies (including devDependencies)
-RUN npm install
+# PT-135 — `npm ci`, no `npm install`.
+#
+# Con `npm install` el lock era una sugerencia: cada build volvia a resolver y el fichero no gobernaba
+# nada. `npm ci` instala EXACTAMENTE el arbol del lock, o falla.
+#
+# Matiz honesto, para que nadie lo lea al reves: `npm ci` **no** habria evitado el defecto de PT-135.
+# Instala el lock, y el lock estaba mal — le faltaban los binarios de Linux por haberse generado en
+# Windows. Lo que impide eso es `scripts/solo-en-contenedor.js`, y lo que lo caza es
+# `lock-declara-plataformas.spec.ts`. Esta linea sirve para otra cosa: que el lock mande de verdad.
+RUN npm ci
 
 # Copy Prisma schema and generate client
 COPY prisma ./prisma

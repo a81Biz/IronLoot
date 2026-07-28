@@ -5,7 +5,19 @@ WORKDIR /app
 # Copy package file
 COPY package.json ./
 
-# Install dependencies
+# PT-135 — Aqui se queda `npm install`, y es una decision declarada, no un olvido.
+#
+# BASE es un **workspace** de la raiz (`package.json:5-8`): no tiene lock propio, su arbol vive en
+# `package-lock.json` de la raiz. Y ese fichero esta **fuera de este contexto de build**, que PT-126
+# acoto a `./src/apps/base` a proposito. Usar `npm ci` exigiria devolver el contexto a la raiz del
+# monorepo y deshacer esa decision, por una ganancia que aqui no existe.
+#
+# Por que no existe, medido: el lock de la raiz tiene **cero paquetes divididos por plataforma**
+# (antes y despues de PT-126), asi que este servicio no puede reproducir el defecto de PT-135. Y si
+# algun dia apareciera uno, `lock-declara-plataformas.spec.ts` vigila el lock de la raiz y lo exigiria.
+#
+# Resolver fresco en Linux, ademas, siempre baja el binario correcto: el riesgo esta en congelar un
+# arbol equivocado, no en resolverlo.
 RUN npm install
 
 # Copy source code

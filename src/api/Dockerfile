@@ -48,7 +48,10 @@ COPY src/api/package*.json ./src/api/
 WORKDIR /repo/src/api
 
 # Install all dependencies for build — ahora `file:../packages/core` resuelve
-RUN npm install
+#
+# PT-135 — `npm ci` en vez de `npm install`: instala EXACTAMENTE el arbol del lock, o falla. Con
+# `npm install` el lock era una sugerencia y cada build volvia a resolver.
+RUN npm ci
 
 # El binario musl de `@css-inline`, explicito.
 #
