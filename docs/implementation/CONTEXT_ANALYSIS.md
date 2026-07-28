@@ -896,3 +896,334 @@ El orquestador (`auction-scheduler`) **si** puede depender de ambos: es su traba
 | Que el registro quede fuera de la transaccion | Si el registro falla, la venta no puede quedar a medias: o ambos o ninguno |
 | Que un reintento duplique el registro | `calculateForOrder` ya comprueba `findUnique` por `orderId`; hay que conservar esa idempotencia |
 | Romper el cierre de subasta | Es la ruta del dinero. La verificacion es la fase `e2e` de la suite y una corrida completa |
+
+---
+
+## PT-127 — Análisis de contexto — El mecanismo de evolución del esquema (STATE 1-B)
+
+Date: 2026-07-27
+Fuentes consultadas: `docs/enterprise-documentation/07-Database-Architecture.md`,
+`03-TRD.md`, `06-Backend-Architecture.md`, `CLAUDE.md`, `graphify-out/GRAPH_REPORT.md`,
+`HISTORY.log` (PT-037, PT-070..PT-086, PT-117), `changes/PT-037-migration-reconciliation/`,
+código: `entrypoint.dev.sh`, `Dockerfile`, `ci.yml`, `package.json`, `schema.prisma`.
+
+### Components
+
+| Componente | Papel en este PT |
+|---|---|
+| `src/api/prisma/schema.prisma` | **Fuente de verdad declarada** del modelo. 33 modelos, 23 enums |
+| `src/api/prisma/migrations/` | 23 carpetas. **Artefacto desplegable — nunca ejecutado** |
+| `src/api/scripts/entrypoint.dev.sh` | Aplica el esquema en desarrollo con `db push` (línea 52) |
+| `src/api/Dockerfile` | Imagen de producción. **No aplica esquema** (`CMD ["node","dist/main"]`) |
+| `.github/workflows/ci.yml` | Sin job de despliegue. `test-integration` no aplica esquema (PT-128) |
+| `@prisma/client` generado | Consume `schema.prisma`; falla contra una base que no lo cumpla |
+
+### Services
+
+Ningún servicio de negocio cambia. El PT toca **infraestructura de datos**, no lógica. Los
+consumidores del cliente Prisma afectados por el drift medido:
+
+- `payments/payment-cycle.service.ts` — `payment_cycles.provider_ref`
+- `wallet/` y métodos de pago — `user_payment_methods.type|card_last4|paypal_email`
+- verificación de cuenta por microdepósito — tabla `account_verifications` completa
+- `notifications/` — valor de enum `AUCTION_SOLD` (PT-117)
+
+### Dependencies
+
+```
+schema.prisma  ──(prisma generate)──>  @prisma/client  ──>  toda la capa de datos
+      │
+      ├──(db push)──────────────────>  ironloot_db          [camino REAL, dev]
+      └──(migrate deploy)───────────>  <ningun entorno>     [camino DESPLEGABLE, roto]
+```
+
+Dependencia externa: **PostgreSQL 16**. Necesaria una base sombra para `migrate diff
+--from-migrations`. Está disponible (contenedor `ironloot-db` en marcha) — el mismo prerequisito
+que PT-037 declaró y resolvió.
+
+### Data Flow
+
+El flujo relevante no es de datos de negocio sino **de esquema**:
+
+```
+Desarrollador edita schema.prisma
+        │
+        ├─ hoy:  reinicia el contenedor -> db push -> la base cambia. FIN.
+        │        (no se genera migracion; nada la exige; nada la comprueba)
+        │
+        └─ deberia: prisma migrate dev -> migracion nueva -> la base cambia
+                    y el fichero queda versionado en el repositorio
+```
+
+El hueco está exactamente en la primera rama: es un camino completo, cómodo, y que no deja rastro.
+
+### Files Involved
+
+**Se leerán y probablemente se modificarán:**
+- `src/api/prisma/migrations/<nueva>/migration.sql` — nueva migración de reconciliación
+- `src/api/scripts/entrypoint.dev.sh` — el punto de aplicación
+- `src/api/package.json` — scripts `db:*`
+
+**Se leerán, y sólo se tocan si la vía elegida lo exige:**
+- `src/api/prisma/schema.prisma` — **objetivo, no se modifica**
+- `.github/workflows/ci.yml` — coordinado con PT-128
+
+### Risk Areas
+
+| # | Riesgo | Mitigación prevista |
+|---|---|---|
+| R1 | El SQL escrito a mano no refleja el esquema | **Generarlo** con `migrate diff`, nunca escribirlo. Es la decisión D1 de PT-037 y funcionó |
+| R2 | Aplicar la migración sobre la base de dev existente rompe datos | Probar primero en base sombra; la de dev se trata con `migrate resolve --applied` (baseline), que no ejecuta SQL |
+| R3 | **Pérdida de datos reales de la auditoría** | `ironloot_db` contiene la salida real que sostiene la validación de 11 productos PTSA. Ninguna operación destructiva sobre ella sin copia previa |
+| R4 | Colapsar las 23 migraciones pierde el historial | Es la vía B; se propone pero la decisión es humana |
+| R5 | El drift vuelve en cuatro días, como ya pasó tras PT-037 | **El PT no está completo sin el mecanismo que lo detecte.** Es la lección explícita de PT-118 |
+
+### Potential Intervention Points
+
+1. **Generar la migración que falta** (`migrate diff --from-migrations --to-schema-datamodel`).
+2. **Baselinear la base de desarrollo** (`migrate resolve --applied` ×23, o `migrate deploy` sobre
+   base limpia).
+3. **Cambiar el punto de aplicación** en `entrypoint.dev.sh`: `migrate deploy` en vez de `db push`.
+4. **Añadir el control**: una comprobación que falle si `schema.prisma` y las migraciones divergen.
+   Es el equivalente de `audit:check` (PT-118) para el esquema.
+
+### Existing Constraints
+
+- **PT-037 es precedente directo y su procedimiento está escrito.** No se parte de cero.
+- **`ironloot_db` es dato de auditoría.** PTSA S-002 validó 11 productos sobre esa base.
+- **`db push` es cómodo y hay que sustituirlo, no prohibirlo por documentación.** PT-037 intentó lo
+  segundo (decisión D5: «documentar que `db push` es sólo para prototipado») y falló en cuatro días.
+- **La corrección se coordina con PT-128**: el paso de esquema que le falta al job de CI es
+  exactamente la prueba de que esta corrección funciona.
+
+---
+
+## PT-128 — Análisis de contexto — El pipeline de integración (STATE 1-B)
+
+Date: 2026-07-27
+Fuentes consultadas: `.github/workflows/ci.yml` completo, `src/api/package.json`,
+`src/api/test/jest-e2e.json`, `src/api/test/e2e/` (17 ficheros), `HISTORY.log` (PT-118, PT-121),
+`PTSA/audit-scope.yaml` (`ci_checkpoints`), `PTSA/Evidencias/E-018.md`.
+
+### Components
+
+| Componente | Papel |
+|---|---|
+| `ci.yml: lint` | Independiente. `lint:check` + `typecheck` de los cinco paquetes |
+| `ci.yml: security-audit` | **Sin `needs`.** El checkpoint D2 de PT-118. Corre y da 0 avisos |
+| `ci.yml: test-unit` | `needs: lint`. `npm run test` en los cinco paquetes |
+| `ci.yml: test-integration` | `needs: lint`. **El defecto.** Postgres sin esquema + suite que no cierra |
+| `ci.yml: build` | `needs: [test-unit, test-integration]` — **bloqueado** |
+| `ci.yml: docker` | `needs: build` + `if: prod\|prep` — **bloqueado**, y además apunta a un fichero inexistente (PT-129) |
+
+### Services
+
+Ninguno en ejecución productiva. El job levanta `postgres:16-alpine` y `redis:7-alpine` como
+servicios de GitHub Actions.
+
+### Dependencies
+
+```
+lint ──┬── test-unit ──────────┐
+       └── test-integration ───┴── build ── docker
+       (security-audit, independiente)
+```
+
+La dependencia crítica: **dos jobs cuelgan de uno que no puede pasar.**
+
+### Data Flow
+
+```
+checkout -> npm install -> [ FALTA: prisma generate ]
+                        -> [ FALTA: aplicar esquema ]
+                        -> jest e2e contra base vacia -> nunca termina
+```
+
+Dos huecos, no uno. `npm install` en la raíz dispara el `postinstall` que instala `src/api` y
+`src/admin`, pero **ningún `prisma generate`**: el cliente puede quedar sin generar además de la
+base sin esquema.
+
+### Files Involved
+
+- `.github/workflows/ci.yml` — el job
+- `src/api/package.json` — el script `test:e2e`
+- `src/api/test/e2e/*.e2e-spec.ts` — 17 ficheros, si el diagnóstico de manejadores lo exige
+- posible `src/api/test/e2e/setup.ts` o `globalTeardown` — no existe hoy
+
+### Risk Areas
+
+| # | Riesgo | Mitigación |
+|---|---|---|
+| R1 | `--forceExit` tapa el síntoma y deja fugas reales en producción | Diagnosticar con `--detectOpenHandles` **antes** de decidir. Si la fuga es real, cerrarla |
+| R2 | Los 17 ficheros e2e fallan por razones ajenas (datos, orden, aislamiento) | Sólo se probó `auth` (2 suites, 9 tests). **El resto no se ha ejecutado nunca con éxito**: pueden aparecer fallos legítimos |
+| R3 | Elegir `db push` en CI hace verde un pipeline que sigue sin probar las migraciones | **El paso debe ser `migrate deploy`**: así el job es a la vez la prueba de PT-127 |
+| R4 | Alargar el job hasta agotar el tiempo del runner | Medido: `auth` tarda 22 s. 17 ficheros con `--runInBand` es del orden de minutos, no de horas |
+
+### Potential Intervention Points
+
+1. Añadir `prisma generate` + `prisma migrate deploy` al job, antes de los tests.
+2. Diagnosticar y cerrar los manejadores abiertos; `--forceExit` sólo como último recurso, y dicho.
+3. Añadir al pipeline los checkpoints que hoy sólo corre el auditor a mano: `audit:domain` (D1.N1)
+   y `audit:observability` (D3). `audit-scope.yaml` los declara desde PT-120 y PT-121.
+
+### Existing Constraints
+
+- **`security-audit` no se toca**: es lo único del pipeline que funciona y es de PT-118.
+- **El job debe fallar de verdad si algo va mal.** Es la lección de PT-118 escrita en
+  `audit-scope.yaml`: un control que se compara contra una línea base viva, no contra un umbral que
+  obliga a desactivarlo.
+- **Depende de PT-127**: si `migrate deploy` no produce un esquema correcto, este job no puede
+  pasar. **Orden de ejecución obligado: PT-127 antes que PT-128.**
+
+---
+
+## PT-129 — Análisis de contexto — Las imágenes de despliegue (STATE 1-B)
+
+Date: 2026-07-27
+Fuentes consultadas: los seis `Dockerfile*` del repositorio, `docker-compose.yml`,
+`src/api/src/main.ts`, `src/api/src/modules/health/`, `ci.yml`, `06-Backend-Architecture.md`,
+`PTSA/Evidencias/E-021.md`.
+
+### Components
+
+| Componente | Estado |
+|---|---|
+| `src/api/Dockerfile` | Producción, multi-stage, usuario no-root. **Healthcheck a `/health` -> 404** |
+| `src/api/Dockerfile.dev` | Desarrollo. Sin `HEALTHCHECK` propio; lo pone `docker-compose` |
+| `src/admin/Dockerfile.dev` | **Sólo desarrollo** |
+| `src/apps/base/Dockerfile.dev` | **Sólo desarrollo** |
+| `src/apps/client/Dockerfile.dev` | **Sólo desarrollo** |
+| `src/nginx/Dockerfile` | Producción. Sin healthcheck |
+| `docker-compose.yml` | Define los healthchecks correctos (`/api/v1/health`, `< 500`) |
+
+### Services
+
+Los cuatro servicios NestJS. Sólo el API tiene imagen de producción; los otros tres no existen como
+artefacto desplegable.
+
+### Dependencies
+
+```
+main.ts: setGlobalPrefix('api') + versionado  ->  /api/v1/*
+                                                     │
+        Dockerfile (produccion)  --pide-->  /health   X  404
+        docker-compose (desarrollo) --pide--> /api/v1/health  OK
+```
+
+La ruta es una **dependencia implícita** entre el arranque de NestJS y el healthcheck de la imagen.
+Nada la verifica; por eso llevan divergiendo desde que se introdujo el prefijo.
+
+### Data Flow
+
+No hay flujo de datos. El flujo relevante es el del ciclo de vida del contenedor:
+
+```
+docker run -> start-period 5s -> healthcheck cada 30s -> 404 -> exit 1 -> retries 3
+           -> UNHEALTHY permanente, con la aplicacion sirviendo trafico correctamente
+```
+
+### Files Involved
+
+- `src/api/Dockerfile` — corrección del healthcheck
+- `src/admin/Dockerfile`, `src/apps/base/Dockerfile`, `src/apps/client/Dockerfile` — **nuevos**
+- `.github/workflows/ci.yml:201-207` — la ruta del job `docker`
+- `docs/enterprise-documentation/06-Backend-Architecture.md` — si se documenta el despliegue
+
+### Risk Areas
+
+| # | Riesgo | Mitigación |
+|---|---|---|
+| R1 | Escribir tres Dockerfiles de producción **nuevos, sin precedente** en el repositorio | Copiar el patrón del de API (multi-stage, `npm prune --production`, usuario no-root) y **probar que cada imagen arranca** |
+| R2 | Los servicios SSR necesitan `views/` y `public/` en la imagen; olvidarlos da un 500 silencioso | Verificación obligatoria: arrancar cada imagen y pedir una página real, no sólo el healthcheck |
+| R3 | Duplicar el criterio del healthcheck en dos sitios y volver a divergir | Una sola definición. Si vive en la imagen, `docker-compose` la hereda |
+| R4 | `@ironloot/core` es un paquete del workspace: el build de producción debe resolverlo | El `entrypoint.dev.sh` lo enlaza a mano en desarrollo (líneas 29-41). **En producción no hay equivalente**: hay que resolverlo en el build |
+
+R4 es el riesgo real de este PT y no estaba en el hallazgo. Se registra aquí.
+
+### Potential Intervention Points
+
+1. `src/api/Dockerfile`: `/health` -> `/api/v1/health`, y alinear el criterio con desarrollo.
+2. Tres `Dockerfile` de producción nuevos, con `@ironloot/core` resuelto en el build.
+3. `ci.yml`: corregir la ruta, o construir los cuatro.
+4. **Que el pipeline arranque la imagen al menos una vez** — sin esto, el hallazgo vuelve.
+
+### Existing Constraints
+
+- **`docker-compose` no cambia de comportamiento.** Es el entorno de desarrollo de todos los días.
+- **Depende de PT-128** para el punto 4: sin pipeline en verde no hay dónde arrancar la imagen.
+- El healthcheck de producción exige `=== 200` y el de desarrollo `< 500`. **Hay que decidir cuál es
+  el correcto**, no copiar uno sobre otro sin pensarlo: `< 500` distingue «degradado» de «muerto»,
+  que es la distinción útil cuando `/health/detailed` reporta una dependencia caída.
+
+---
+
+## PT-130 — Análisis de contexto — La coherencia entre documentación y código (STATE 1-B)
+
+Date: 2026-07-27
+Fuentes consultadas: los cinco documentos de `coverage_targets.docs`, los cinco `package.json`,
+`src/api/src/main.ts`, `test/unit/documentacion/`, `HISTORY.log` (PT-090, PT-103, PT-126),
+`PTSA/Evidencias/E-020.md`.
+
+### Components
+
+| Componente | Papel |
+|---|---|
+| `docs/enterprise-documentation/03-TRD.md` | Tabla de stack con **citas a fichero:línea** |
+| `docs/enterprise-documentation/06-Backend-Architecture.md` | Árbol de servicios con versiones |
+| `CLAUDE.md` | Instrucciones vinculantes. Documenta rutas de `health` |
+| `02-PRD.md`, `09-Security-Architecture.md` | Los otros dos del alcance. **Sin revisar** |
+| `test/unit/documentacion/` | **Ya existe**: `contexto-de-construccion.spec.ts` |
+
+### Services
+
+Ninguno. Es documentación y una prueba.
+
+### Dependencies
+
+```
+package.json (x5)  ─────>  la verdad sobre versiones
+main.ts             ─────>  la verdad sobre rutas
+        ↑
+        └── hoy nada las compara con lo que los documentos afirman
+```
+
+### Data Flow
+
+No aplica. El flujo es de **autoría**: alguien cambia el código, y la segunda escritura —el
+documento— es opcional porque nada la exige.
+
+### Files Involved
+
+- `docs/enterprise-documentation/03-TRD.md`
+- `docs/enterprise-documentation/06-Backend-Architecture.md`
+- `CLAUDE.md`
+- `src/api/test/unit/documentacion/<nueva>.spec.ts` — **nueva prueba**
+
+### Risk Areas
+
+| # | Riesgo | Mitigación |
+|---|---|---|
+| R1 | La prueba se vuelve frágil y alguien la desactiva | Comprobar **sólo afirmaciones citadas con fichero:línea o versión explícita**, no prosa. Y con caso de control, como el resto de pruebas de este tipo en el repositorio |
+| R2 | Barrer los cinco documentos saca más casos de los previstos y el PT crece | Se acota: **este PT corrige lo encontrado y deja el mecanismo**. Lo que aparezca de más se registra, no se arrastra |
+| R3 | `docs/` está gitignored… | **Ya no**: H-009 se corrigió y los cinco están seguidos por git. Comprobado en S-002 |
+
+R3 merece nota: `coherencia-deuda-tecnica.spec.ts` **no corre en CI** justamente porque `docs/`
+estaba fuera de git. Esa razón ya no existe, así que la prueba nueva **sí puede correr en CI** — y
+conviene revisar si la vieja también.
+
+### Potential Intervention Points
+
+1. Corregir las tres afirmaciones falsas conocidas.
+2. Barrer los cinco documentos del alcance en busca de más.
+3. Escribir la prueba que compara versiones citadas contra `package.json` y rutas citadas contra el
+   prefijo global.
+4. Revisar si `coherencia-deuda-tecnica.spec.ts` ya puede entrar en CI.
+
+### Existing Constraints
+
+- **El patrón existe y se copia**: `coherencia-deuda-tecnica.spec.ts`,
+  `plantillas-sin-js-inline.spec.ts`, `estilos-fuera-de-plantillas.spec.ts`. Los tres con casos de
+  control.
+- **`CLAUDE.md` es instrucción vinculante para todo agente futuro.** Un dato falso ahí cuesta más
+  que en un documento de arquitectura.
+- Depende de PT-128 para el punto 4 (meter la prueba en CI de forma que sirva de algo).

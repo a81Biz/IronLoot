@@ -3580,3 +3580,391 @@ aviso hoy inalcanzable —PT-123 lo clasifico asi justamente porque solo se sube
 alcanzable.
 
 Se escribe la comprobacion de firmas en el proyecto: cinco formatos, bytes fijos, sin parser.
+
+---
+
+## PT-127 — BUG (MAJOR): las 23 migraciones no reproducen el esquema (PTSA H-014)
+
+Date: 2026-07-27
+Type: BUG
+Complexity: **MAJOR** — toca el mecanismo de evolución del esquema de toda la plataforma
+Origen: PTSA **H-014** (CRITICA, D2) · Evidencia **E-017**
+
+Original Request:
+«Comienza con el marco de trabajo FDGE para cada hallazgo» — H-014 de la sesión PTSA S-002.
+
+### What — qué pasa
+
+`_prisma_migrations` **no existe** en `ironloot_db`. Las 23 migraciones de `prisma/migrations/`
+nunca se han ejecutado. El esquema real lo construye `prisma db push --accept-data-loss`.
+
+Aplicadas a una base limpia, las 23 producen un esquema **distinto** del real:
+
+```
+[+] falta la tabla        account_verifications  (+ 2 enums, 3 indices, 1 FK)
+[+] falta la columna      payment_cycles.provider_ref
+[+] faltan las columnas   user_payment_methods.type · card_last4 · paypal_email
+[+] falta el valor        NotificationType.AUCTION_SOLD
+[-] payments.reference    indice CORRIENTE en migraciones, UNICO en el esquema real
+```
+
+### Where — dónde
+
+- `src/api/scripts/entrypoint.dev.sh:52` — `npx prisma db push --accept-data-loss` en cada arranque
+- `src/api/prisma/migrations/` — 23 carpetas, ninguna aplicada
+- `src/api/Dockerfile:66` — `CMD ["node", "dist/main"]`: producción **no aplica esquema alguno**
+- `.github/workflows/ci.yml` — no hay job de despliegue
+
+### When — desde cuándo
+
+**PT-037 (2026-07-23) ya arregló esto una vez.** Su entrada en `HISTORY.log` lo dice:
+
+> *baseline `migrate resolve --applied 20260723_reconcile_backoffice_schema_and_currency`
+> **pendiente** en dev/staging real*
+
+Ese baseline nunca se ejecutó. Y desde entonces el drift volvió a acumularse: ninguno de los
+cambios de PT-117 (`AUCTION_SOLD`) ni los de `account_verifications` / `provider_ref` /
+`user_payment_methods.*` tiene migración. Comprobado:
+
+```
+grep -rl "AUCTION_SOLD"          src/api/prisma/migrations/   -> sin resultados
+grep -rl "account_verifications" src/api/prisma/migrations/   -> sin resultados
+```
+
+PT-117 aplicó su `ALTER TYPE ... ADD VALUE` **directamente contra la base**, y su HISTORY lo
+describe como «migración comprobada aditiva» sin que exista fichero de migración.
+
+### How — cómo se reproduce
+
+```bash
+docker exec ironloot-db psql -U ironloot -d postgres -c "CREATE DATABASE ptsa_shadow"
+docker exec ironloot-api sh -c 'cd /app && DATABASE_URL=.../ptsa_shadow npx prisma migrate deploy'
+# -> All migrations have been successfully applied.
+docker exec ironloot-api sh -c 'DATABASE_URL=.../ptsa_shadow node -e "...findMany..."'
+# -> FALLA userPaymentMethod · FALLA paymentCycle · FALLA accountVerification · OK payment
+```
+
+### Expected Result
+
+`prisma migrate deploy` sobre una base limpia produce el esquema que la aplicación necesita, y
+`migrate status` sobre la base de desarrollo no reporta migraciones pendientes.
+
+### Current Result
+
+3 de 4 sondas del cliente Prisma fallan contra la base que producen las migraciones. `migrate
+status` reporta las 23 como no aplicadas sobre una base que ya las contiene todas de facto.
+
+### Impact — impacto
+
+**Ninguno hoy: no hay despliegue productivo.** El daño se materializa al reconstruir cualquier
+entorno desde las migraciones — despliegue, staging, o un CI que aplique esquema.
+
+Dos consecuencias de distinto orden:
+
+1. **Ruidosa**: la aplicación no arranca sus consultas (faltan columnas y una tabla). Se ve al
+   instante.
+2. **Silenciosa, y peor**: `payments.reference` deja de ser único. CLAUDE.md declara esa unicidad
+   como la garantía de que un reintento de acreditación no duplica el asiento contable. En el
+   artefacto desplegable esa garantía **no existe**.
+
+`--accept-data-loss` en un arranque automático es una tercera cosa que conviene no perder de vista:
+no se observó pérdida de datos, pero la bandera está ahí y se ejecuta sola.
+
+### Affected Users
+
+Ninguno hoy. Todo el sistema el día del primer despliegue.
+
+### Initial Evidence
+
+- `PTSA/Evidencias/E-017.md` — migraciones aplicadas a base sombra, comparación de esquemas, sondas
+- `PTSA/Hallazgos/H-014.md`
+- `docs/implementation/HISTORY.log` — entrada PT-037, línea del baseline pendiente
+- `changes/PT-037-migration-reconciliation/design.md` — decisión D5, que dejó `db push` en su sitio
+
+### Initial Hypotheses
+
+**H1 (confirmada)** — El drift reaparece porque PT-037 corrigió el síntoma (la migración de
+reconciliación) y dejó la causa: `db push` sigue siendo el camino de aplicación, y nada obliga a
+generar migración al tocar el esquema. Su propio `out-of-scope` lo dice: «No se elimina el script
+en este PT».
+
+**H2 (confirmada)** — El baseline `migrate resolve --applied` nunca se ejecutó, por eso
+`_prisma_migrations` no existe. PT-037 lo dejó declarado como pendiente y nadie lo recogió.
+
+**H3 (descartada)** — «Las migraciones están bien y el problema es sólo el registro». Falso: el
+`migrate diff` demuestra divergencia real de contenido, no sólo de bookkeeping.
+
+### Root Cause
+
+**No existe un mecanismo que obligue a que un cambio de `schema.prisma` produzca una migración.**
+El único camino de aplicación (`db push`) no lo necesita, y el que sí lo necesitaría
+(`migrate deploy`) no se ejecuta en ningún entorno. PT-037 lo arregló a mano una vez; sin
+mecanismo, volvió en cuatro días.
+
+Es el mismo patrón que PT-118 documentó para las dependencias: un control que no corre solo, no
+corre.
+
+### Confianza
+
+- Root Cause Confidence: **98%** — la cadena está medida de punta a punta. El 2% es no haber
+  identificado qué migración concreta introdujo cada divergencia (no cambia la corrección).
+- Architecture Confidence: **95%** — el mecanismo de esquema está leído; falta decidir la vía.
+- Solution Confidence: **80%** — hay dos vías legítimas y la elección es del humano. La ejecución
+  de cualquiera de las dos es conocida (PT-037 ya la recorrió).
+
+---
+
+## PT-128 — BUG (STANDARD): el job «Integration Tests» no puede terminar en verde (PTSA H-015)
+
+Date: 2026-07-27
+Type: BUG
+Complexity: **STANDARD**
+Origen: PTSA **H-015** (ALTA, D2) · Evidencia **E-018**
+
+### What
+
+`.github/workflows/ci.yml:104-152` levanta un Postgres y ejecuta la suite e2e contra él. **Entre
+ambas cosas no hay ningún paso que cree el esquema.** Y la suite, además, no cierra sus
+manejadores: no termina sin `--forceExit`.
+
+### Where
+
+- `.github/workflows/ci.yml:104-152` — job `test-integration`
+- `.github/workflows/ci.yml:160` — `build: needs: [test-unit, test-integration]`
+- `.github/workflows/ci.yml:191` — `docker: needs: build`
+- `src/api/package.json` — `"test:e2e": "jest --config ./test/jest-e2e.json"`, sin `--forceExit`
+- `src/api/test/e2e/` — 17 ficheros, así que `--passWithNoTests` no lo salva
+
+### When
+
+Desde que existe el job. **No se pudo determinar la fecha**: `gh` no está disponible en el entorno
+y no se consultó el historial de GitHub Actions.
+
+### How — reproducción
+
+```bash
+# 1. Como hace CI: base vacia, sin esquema
+CREATE DATABASE ptsa_ci;
+DATABASE_URL=.../ptsa_ci npx jest --config ./test/jest-e2e.json --passWithNoTests
+# -> no termina. >10 min sin salida; la corrida completa acabo matada por memoria (exit 137)
+
+# 2. Aislando la causa: base CON esquema
+CREATE DATABASE ptsa_e2e; prisma db push
+DATABASE_URL=.../ptsa_e2e npx jest ... --runInBand --forceExit --testPathPattern=auth
+# -> 2 suites, 9 tests, 22.5 s, TODAS VERDES
+# -> "Force exiting Jest: Have you considered using --detectOpenHandles..."
+```
+
+### Expected Result
+
+El job aplica el esquema, corre los 17 ficheros e2e, termina, y `build` y `docker` se ejecutan.
+
+### Current Result
+
+El job no puede terminar en verde por dos causas independientes. `build` y `docker` **nunca se
+ejecutan**: no sale del pipeline ni artefacto compilado ni imagen verificada.
+
+### Impact
+
+No hay red de seguridad automática sobre el comportamiento integrado. Es además la razón por la que
+H-014 y H-017 sobrevivieron: un pipeline que llegara al final habría intentado aplicar migraciones
+y arrancar la imagen, y ambos habrían fallado a la vista de todos.
+
+### Affected Users
+
+El equipo. Cada push cree tener verificación integrada y no la tiene.
+
+### Initial Evidence
+
+- `PTSA/Evidencias/E-018.md` — el fichero de CI y las dos reproducciones
+- `PTSA/Hallazgos/H-015.md`
+
+### Initial Hypotheses
+
+**H1 (confirmada)** — Falta el paso de esquema. Medido: con esquema los tests pasan.
+
+**H2 (confirmada)** — Manejadores abiertos impiden la salida de Jest. Medido: `--forceExit` los
+termina; el script de CI no lo lleva.
+
+**H3 (abierta, no medida)** — El origen de los manejadores abiertos. Candidatos por inspección:
+conexiones de Prisma sin `$disconnect`, el cliente de Redis del throttler, o el servidor de
+Socket.io. **No se ha ejecutado `--detectOpenHandles`**; es trabajo de este PT.
+
+### Root Cause
+
+El job nunca se ha ejecutado con éxito, así que nadie ha visto lo que le falta. Un job que no puede
+pasar no da señal: da silencio.
+
+### Confianza
+
+- Root Cause Confidence: **95%** — las dos causas están medidas por separado.
+- Architecture Confidence: **90%**.
+- Solution Confidence: **75%** — el paso de esquema es trivial; cerrar los manejadores abiertos
+  puede tocar el `beforeAll`/`afterAll` de 17 ficheros y no está diagnosticado todavía.
+
+---
+
+## PT-129 — BUG (STANDARD): la imagen de producción no es utilizable (PTSA H-017)
+
+Date: 2026-07-27
+Type: BUG
+Complexity: **STANDARD**
+Origen: PTSA **H-017** (ALTA, D2) · Evidencia **E-021**
+
+### What
+
+Tres defectos del mismo camino:
+
+1. `src/api/Dockerfile:60` pide `http://localhost:3000/health` para su healthcheck. Esa ruta
+   devuelve **404**.
+2. ADMIN, BASE y CLIENT **no tienen `Dockerfile` de producción**, sólo `.dev`.
+3. `ci.yml:205` construye `file: ./Dockerfile`, que **no existe** en la raíz del repositorio.
+
+### Where
+
+- `src/api/Dockerfile:60-61` — el healthcheck
+- `src/api/src/main.ts:77` — `app.setGlobalPrefix('api')` + versionado -> la ruta real es `/api/v1/health`
+- `docker-compose.yml` — el healthcheck de desarrollo, **ya corregido**, con `/api/v1/health` y `< 500`
+- `src/admin/`, `src/apps/base/`, `src/apps/client/` — sólo `Dockerfile.dev`
+- `.github/workflows/ci.yml:201-207` — job `docker`
+
+### How — medido en vivo
+
+```
+404  /health
+200  /api/v1/health
+404  /api/health
+```
+
+Y el healthcheck que sí corre hoy, tomado del contenedor:
+
+```
+CMD node -e "require('http').get('http://localhost:3000/api/v1/health',
+    (r) => process.exit(r.statusCode < 500 ? 0 : 1)).on('error', () => process.exit(1))"
+```
+
+**Se corrigió en `docker-compose` y no en la imagen.** Dos criterios distintos conviviendo: la
+imagen exige `=== 200`; desarrollo acepta `< 500` y captura el error de conexión.
+
+### Expected Result
+
+La imagen de producción arranca y su healthcheck pasa a verde. Los cuatro servicios tienen imagen
+desplegable. El job `docker` construye lo que existe.
+
+### Current Result
+
+Un contenedor de producción quedaría `unhealthy` **de forma permanente** desde los 5 s de arranque,
+con la aplicación funcionando perfectamente. Un orquestador lo reinicia en bucle o nunca le enruta
+tráfico.
+
+### Impact
+
+Ninguno hoy — no hay producción. El servicio sería inoperable el día que la haya. Falla
+ruidosamente, que es lo único bueno que tiene.
+
+### Affected Users
+
+Ninguno hoy. Todos el día del primer despliegue.
+
+### Initial Evidence
+
+- `PTSA/Evidencias/E-021.md`
+- `PTSA/Hallazgos/H-017.md`
+
+### Initial Hypotheses
+
+**H1 (confirmada)** — El healthcheck de la imagen quedó con la ruta anterior al prefijo global. La
+corrección se hizo en `docker-compose` y no se propagó.
+
+**H2 (confirmada por ausencia)** — Nunca se construyó ni arrancó la imagen de producción; si se
+hubiera hecho una sola vez, el `unhealthy` habría sido evidente.
+
+### Root Cause
+
+La misma que PT-127 y PT-128 desde otro ángulo: **el camino a producción no se ha recorrido nunca.**
+Un healthcheck que nadie ha visto pasar no es un healthcheck; es una línea de texto.
+
+### Confianza
+
+- Root Cause Confidence: **97%** — la ruta está medida en vivo; la ausencia de Dockerfiles, listada.
+- Architecture Confidence: **90%**.
+- Solution Confidence: **85%** — corregir el healthcheck es de una línea. Escribir tres Dockerfiles
+  de producción nuevos es trabajo real y sin precedente en el repositorio.
+
+---
+
+## PT-130 — BUG (STANDARD): la documentación describe un sistema que ya no corre (PTSA H-016)
+
+Date: 2026-07-27
+Type: BUG
+Complexity: **STANDARD** — la corrección es trivial; el mecanismo que impide la recurrencia no
+Origen: PTSA **H-016** (MEDIA, D4) · Evidencia **E-020**
+
+### What
+
+Dos afirmaciones falsas en documentos que `audit-scope.yaml` declara auditables:
+
+| Documento | Dice | Realidad |
+|---|---|---|
+| `03-TRD.md:13` | `NestJS \| ^10.3.0 \| src/api/package.json:36` | `^11.0.0` en los cuatro servicios |
+| `06-Backend-Architecture.md:9-13` | «NestJS 10» x4 | ídem |
+| `CLAUDE.md:138` | endpoints `/health` y `/health/detailed` | `/api/v1/health`; `/health` da 404 |
+
+### Where
+
+- `docs/enterprise-documentation/03-TRD.md:13`
+- `docs/enterprise-documentation/06-Backend-Architecture.md:9-13`
+- `CLAUDE.md:138`
+
+### When
+
+PT-126 (`6d6864d`, `6d1b4ef`, 2026-07-27) subió los cuatro servicios a NestJS 11 y Express 5 sin
+tocar la documentación. La discrepancia de `/health` es anterior y no está fechada.
+
+### Expected Result
+
+Las afirmaciones citadas coinciden con el código citado.
+
+### Current Result
+
+`03-TRD.md:13` **cita su fuente** —`src/api/package.json:36`— y esa línea dice otra cosa. Quien
+verifique la cita encuentra la contradicción; quien confíe en ella se lleva un dato falso avalado.
+
+### Impact
+
+Decisiones de compatibilidad tomadas sobre la versión equivocada del framework. Y un lector que
+pruebe `/health` en producción, obtenga 404 y concluya que el servicio está caído.
+
+### Affected Users
+
+Cualquiera que lea la documentación de arquitectura: el equipo, un agente FDGE en una sesión
+futura, la propia auditoría PTSA.
+
+### Initial Evidence
+
+- `PTSA/Evidencias/E-020.md`
+- `PTSA/Hallazgos/H-016.md` + su `## Revisión` con el segundo caso
+
+### Initial Hypotheses
+
+**H1 (confirmada)** — Es el patrón que CLAUDE.md ya describe para la deuda técnica: «cerrar una
+deuda técnica son dos escrituras… el registro llegó a mentir dos veces». Aquí la segunda escritura
+tampoco ocurrió.
+
+**H2 (probable, no medida)** — Hay más casos. Dos aparecieron sin buscarlos, uno de ellos mientras
+se comprobaba otra cosa. **No se ha hecho revisión exhaustiva de los cinco documentos del alcance**;
+es trabajo de este PT.
+
+### Root Cause
+
+Nada mide la coherencia entre lo que la documentación afirma y lo que el código dice. El
+repositorio ya demostró que la solución es medible: `coherencia-deuda-tecnica.spec.ts` vigila que el
+registro de deuda no mienta, y `plantillas-sin-js-inline.spec.ts` vigila la CSP. Falta el
+equivalente para las versiones y rutas citadas.
+
+### Confianza
+
+- Root Cause Confidence: **100%** — las tres afirmaciones están contrastadas contra su fuente.
+- Architecture Confidence: **95%**.
+- Solution Confidence: **90%** — el patrón de prueba existe en el repositorio y se copia. El 10% es
+  cuántos casos más aparecerán al barrer los cinco documentos.
