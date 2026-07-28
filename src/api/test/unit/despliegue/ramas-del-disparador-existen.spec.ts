@@ -114,6 +114,26 @@ function existeEnElRemoto(rama: string): boolean | null {
   return salida.trim().length > 0;
 }
 
+/**
+ * La resolucion completa: primero el clon, y si ahi no esta, el remoto.
+ *
+ * Existe porque **esta guarda se acuso a si misma en la primera corrida de CI**. El caso de
+ * control C2 comprobaba `conocidas.includes('master')` directamente, y en CI eso es falso: el
+ * checkout de una rama trae solo su propia referencia, asi que `conocidas` era
+ * `["fix/PT-136-ci-que-se-ejecuta"]`.
+ *
+ * El chequeo de verdad **paso** —resolvio `master` por la via del remoto, que es justo para lo que
+ * estaba puesta—, y lo que fallo fue el control, escrito contra el estado de mi maquina en vez de
+ * contra el contrato. Un caso de control que solo pasa en un sitio no controla nada.
+ *
+ * Ahora los dos usan esta funcion, que es la unica forma de que el control compruebe lo mismo que
+ * el chequeo.
+ */
+export function existe(rama: string, conocidas: string[]): boolean {
+  if (conocidas.includes(rama)) return true;
+  return existeEnElRemoto(rama) === true;
+}
+
 const ficheros = existsSync(WORKFLOWS)
   ? readdirSync(WORKFLOWS).filter((f) => f.endsWith('.yml') || f.endsWith('.yaml'))
   : [];
@@ -144,12 +164,9 @@ describe('Las ramas del disparador de cada workflow existen (PT-136)', () => {
     });
 
     it('cada rama nombrada existe', () => {
-      const inexistentes = ramas
-        .filter((r) => !esPatron(r))
-        .filter((r) => !conocidas.includes(r))
-        // Solo para las que no aparecen localmente: se pregunta al remoto. `null` (sin red) NO
-        // absuelve — se acusa igual, diciendo que no se pudo confirmar.
-        .filter((r) => existeEnElRemoto(r) !== true);
+      // `existe()` mira primero el clon y solo pregunta al remoto por lo que no encuentra. Un
+      // fallo de red NO absuelve: se acusa igual, porque no haber podido mirar no es un aprobado.
+      const inexistentes = ramas.filter((r) => !esPatron(r)).filter((r) => !existe(r, conocidas));
 
       expect(inexistentes).toEqual([]);
     });
@@ -160,14 +177,18 @@ describe('Las ramas del disparador de cada workflow existen (PT-136)', () => {
       const falso = 'on:\n  push:\n    branches: [rama-que-no-existe-jamas]\n';
 
       expect(ramasDelDisparador(falso)).toEqual(['rama-que-no-existe-jamas']);
-      expect(conocidas).not.toContain('rama-que-no-existe-jamas');
+      // Por la MISMA via que el chequeo real, no mirando solo el clon: es el fallo que este
+      // fichero cometio y que CI caso en su primera corrida.
+      expect(existe('rama-que-no-existe-jamas', conocidas)).toBe(false);
     });
 
     it('C2: acepta una rama que si existe', () => {
       const bueno = 'on:\n  push:\n    branches: [master]\n';
 
       expect(ramasDelDisparador(bueno)).toEqual(['master']);
-      expect(conocidas).toContain('master');
+      // `master` no esta en `conocidas` cuando CI hace checkout de otra rama. Que esto pase en el
+      // host **y** en CI es exactamente lo que se compra al resolver igual en los dos sitios.
+      expect(existe('master', conocidas)).toBe(true);
     });
 
     it('C3: un `on:` sin `branches:` no revienta ni inventa ramas', () => {
