@@ -140,6 +140,53 @@ describe('La documentacion coincide con el codigo que cita (PT-130)', () => {
     });
   });
 
+  /**
+   * PT-135 — Las citas de la PROSA, que la tabla dejaba fuera.
+   *
+   * PT-130 corrigio las cinco filas de la tabla de stack y las dejo vigiladas. La prosa del mismo
+   * documento se quedo sin cubrir, y se podrio: al tocar `src/api/package.json` en PT-135 aparecieron
+   * **tres citas que llevaban tiempo apuntando a otro sitio**, y ninguna por desplazamiento de una
+   * linea:
+   *
+   *     «Socket.io v4 (package.json:65)»  ->  la 65 dice `"handlebars": "^4.7.8",`  (socket.io: 78)
+   *     «BullMQ v5 (package.json:38)»     ->  la 38 dice `},`                        (bullmq: 62)
+   *     «Source: package.json:42»         ->  la 42 dice `"dependencies": {`
+   *
+   * Es H-016 otra vez: una cita precisa se lee con confianza, y por eso una cita falsa es peor que
+   * ninguna. Y es la demostracion del corolario del propio repositorio: **lo que no se cita, no se
+   * protege** — aqui, lo que la guarda no cubria.
+   *
+   * QUE COMPRUEBA Y QUE NO, declarado: no puede saber a que paquete se refiere una frase en prosa.
+   * Si comprueba el modo de fallo dominante —el que produjo H-016 y estos tres—: que la linea citada
+   * sea una **entrada real** `"clave": "valor"` y no una llave estructural ni una cabecera de
+   * seccion. Una cita que aterriza en `},` esta rota por definicion, diga lo que diga la frase.
+   */
+  describe('las citas de la prosa del TRD', () => {
+    const CITA_A_PACKAGE_JSON = /`([^`:]*package\.json):(\d+)`/g;
+    /** Lineas que no pueden ser el destino legitimo de una cita: no declaran nada. */
+    const ES_ESTRUCTURAL = /^\s*[{}[\],]*\s*$|^\s*"[\w-]+"\s*:\s*[{[]\s*$/;
+
+    const citas = existsSync(TRD)
+      ? [...readFileSync(TRD, 'utf8').matchAll(CITA_A_PACKAGE_JSON)].map((m) => ({
+          fichero: m[1],
+          linea: Number(m[2]),
+        }))
+      : [];
+
+    it('hay citas que mirar — si no, esta guarda no vigila nada', () => {
+      expect(citas.length).toBeGreaterThan(0);
+    });
+
+    it('ninguna aterriza en una llave o en una cabecera de seccion', () => {
+      const rotas = citas
+        .map((c) => ({ ...c, contenido: lineaDe(join(RAIZ, c.fichero), c.linea) }))
+        .filter((c) => c.contenido === null || ES_ESTRUCTURAL.test(c.contenido))
+        .map((c) => `${c.fichero}:${c.linea} -> ${c.contenido?.trim() ?? '(fuera de rango)'}`);
+
+      expect(rotas).toEqual([]);
+    });
+  });
+
   describe('las rutas de salud documentadas', () => {
     const claude = existsSync(CLAUDE) ? readFileSync(CLAUDE, 'utf8') : '';
 
@@ -176,6 +223,23 @@ describe('La documentacion coincide con el codigo que cita (PT-130)', () => {
     it('C4: no acusa a la prosa', () => {
       const prosa = 'El sistema usa NestJS 11 y esta muy bien documentado.';
       expect(filasCitadas(prosa)).toEqual([]);
+    });
+
+    it('C5: una cita que aterriza en una llave se detecta — el estado real de PT-135', () => {
+      // Las tres citas de prosa del TRD apuntaban a `},`, a `"dependencies": {` y a `"handlebars"`.
+      // Las dos primeras son el modo de fallo que esta guarda existe para cazar.
+      const estructural = /^\s*[{}[\],]*\s*$|^\s*"[\w-]+"\s*:\s*[{[]\s*$/;
+
+      expect(estructural.test('    },')).toBe(true);
+      expect(estructural.test('  "dependencies": {')).toBe(true);
+      expect(estructural.test('  }')).toBe(true);
+    });
+
+    it('C6: una entrada real NO se acusa — un falso positivo tambien mata un control', () => {
+      const estructural = /^\s*[{}[\],]*\s*$|^\s*"[\w-]+"\s*:\s*[{[]\s*$/;
+
+      expect(estructural.test('    "@nestjs/core": "^11.0.0",')).toBe(false);
+      expect(estructural.test('    "node": ">=20.0.0",')).toBe(false);
     });
   });
 });

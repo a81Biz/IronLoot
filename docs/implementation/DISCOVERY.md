@@ -4336,3 +4336,80 @@ Al desaparecer el prebuild del lock, `msgpackr-extract` cayó a **compilar desde
 `node-gyp`, posible porque `Dockerfile.dev:8-15` instala `python3`, `make` y `g++`. El acelerador
 está y carga. Nadie eligió ese camino, y sólo existe mientras esas tres herramientas sigan en la
 imagen — con el lock arreglado vuelve el prebuild y la compilación deja de ser la vía.
+
+### Revisión U-002 — dos hallazgos que destapó la verificación, ajenos al alcance de PT-135 (2026-07-28)
+
+Ninguno de los dos es deuda diferida de PT-135: son **defectos preexistentes** que aparecieron al
+ejercer el camino completo, y se registran para que cada uno tenga su PT. Corregirlos dentro de un PT
+de locks sería el tipo de mezcla que este repositorio persigue.
+
+---
+
+#### F-135-A — `REDIS_URL` parece la palanca y no lo es: dos de los tres clientes leen otra cosa
+
+**Medido** al arrancar la imagen de producción del API:
+
+```
+[ioredis] Unhandled error event: AggregateError [ECONNREFUSED]
+GET /api/v1/health -> 500  «Reached the max retries per request limit (which is 20)»
+```
+
+La aplicación **arrancó bien** («Nest application successfully started») y el healthcheck la marcaba
+`unhealthy`. La causa:
+
+| Cliente | Qué lee |
+|---|---|
+| `app.module.ts:61-62` (colas Bull) | **`REDIS_HOST` / `REDIS_PORT`**, con reserva `localhost` |
+| `common/redis/throttler-redis.module.ts:31-32` | **`REDIS_HOST` / `REDIS_PORT`**, con reserva `localhost` |
+| `common/redis/distributed-lock.service.ts:12` | `REDIS_URL` |
+
+**Y por qué en desarrollo no se nota**: `docker-compose.yml:90` declara **sólo** `REDIS_URL`. Lo que
+hace funcionar el contenedor de desarrollo es `REDIS_HOST=redis` dentro de `src/api/.env` — un fichero
+**que no está en git**. La imagen de producción no lo tiene, así que cualquier despliegue que pase lo
+que el compose y el `CLAUDE.md` sugieren (`REDIS_URL`) deja dos de los tres clientes apuntando a
+`localhost`.
+
+El síntoma no menciona Redis ni configuración: dice `maxRetriesPerRequest`, que manda a mirar
+reintentos. Es la familia de PT-111/F-39 —ADMIN apuntando a `localhost:6379` sin que nadie lo notara—
+y la de H-016: **lo que hace funcionar el sistema no es lo que está declarado.**
+
+**Impacto**: sobre desarrollo, ninguno hoy. Sobre un despliegue real, colas y rate limiting caídos con
+un mensaje que no señala la causa.
+
+**Fuera del alcance de PT-135 por dos razones**: la corrección buena toca `src/api/src/` (que este PT
+declara intocable) o `docker-compose.yml` (declarado sin cambios de comportamiento). Necesita su
+propio PT y una decisión: unificar en `REDIS_URL`, o declarar `REDIS_HOST`/`REDIS_PORT` como el
+contrato y añadirlos al compose y al `.env.example`.
+
+---
+
+#### F-135-B — Ocho guardas no pueden ejecutarse dentro del contenedor de desarrollo
+
+**Medido**: la guarda de PT-129 dentro del contenedor del API:
+
+```
+$ docker exec ironloot-api npx jest --testPathPattern="healthcheck-apunta-a-ruta-real"
+    readFileSync(join(RAIZ, 'src/api/src/main.ts'))
+    ENOENT   ->  Test Suites: 1 failed | Tests: 0 total
+```
+
+`RAIZ = join(__dirname, '..' x5)` resuelve a `/` dentro del contenedor, porque `docker-compose` monta
+`/app/src`, `/app/test`, `/app/prisma` y `/packages/core`, **pero no el árbol del monorepo**. Son ocho
+ficheros los que leen la raíz: `job-de-integracion`, `rutas-que-el-client-invoca`,
+`coherencia-documentacion-codigo`, `capturas-en-su-sitio`, `endpoints-legados-retirados`,
+`coherencia-deuda-tecnica`, `healthcheck-apunta-a-ruta-real` y el `lock-declara-plataformas` de este PT.
+
+**Por qué importa**: pasan en CI (donde el checkout completo existe) y en el host. Pero la invariante
+de PT-135 dice que npm se ejecuta en el contenedor — y en **ese** contenedor esta familia de guardas no
+puede correr. La invariante y la forma de ejecutar las pruebas no encajan del todo.
+
+**Vía usada en este PT**, que funciona y queda registrada como referencia:
+
+```
+docker run --rm -v <raiz>:/repo -v <volumen_node_modules>:/repo/src/api/node_modules \
+  -w /repo/src/api node:20-slim npx jest --testPathPattern=... --no-coverage
+```
+
+**Fuera del alcance de PT-135**: la salida limpia es montar la raíz en el servicio `api` (toca
+`docker-compose.yml`, declarado sin cambios) o dar un comando `test:*` que envuelva el contenedor
+desechable. Es una decisión de entorno de desarrollo y merece su PT.

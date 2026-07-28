@@ -6,13 +6,13 @@
 
 | Requirement | Value | Source |
 |---|---|---|
-| Node.js | ≥ 20.0.0 | `src/api/package.json:152` |
-| npm | ≥ 10.0.0 | `src/api/package.json:153` |
+| Node.js | ≥ 20.0.0 | `src/api/package.json:153` |
+| npm | ≥ 10.0.0 | `src/api/package.json:154` |
 | PostgreSQL | 16 (alpine) | `docker-compose.yml:133` |
 | Redis | 7 (alpine) | `docker-compose.yml:162` |
-| NestJS | ^11.0.0 | `src/api/package.json:47` |
-| Prisma | ^5.8.0 | `src/api/package.json:58` |
-| TypeScript | ^5.3.3 | `src/api/package.json:110` |
+| NestJS | ^11.0.0 | `src/api/package.json:48` |
+| Prisma | ^5.8.0 | `src/api/package.json:59` |
+| TypeScript | ^5.3.3 | `src/api/package.json:111` |
 
 ## 2. API Server NFRs
 
@@ -88,11 +88,11 @@ Source: `src/api/prisma/schema.prisma`
 
 ## 5. Real-Time NFRs
 
-- WebSocket: Socket.io v4 (`src/api/package.json:65`)
+- WebSocket: Socket.io v4 (`src/api/package.json:78`)
 - Used for: bid broadcasts, auction state changes
 - SSR frontends connect via vanilla JS socket.io client
 
-Source: `CLAUDE.md:178`, `src/api/package.json:65`
+Source: `CLAUDE.md:178`, `src/api/package.json:78`
 
 ## 6. Background Jobs NFRs
 
@@ -106,7 +106,7 @@ Source: `src/api/src/modules/scheduler/auction-scheduler.service.ts:26-76`
 
 ## 7. Queue NFRs (PT-038)
 
-- BullMQ v5 backed by Redis shared connection (`src/api/package.json:38`)
+- BullMQ v5 backed by Redis shared connection (`src/api/package.json:62`)
 - Configured via `BullModule.forRootAsync` using `REDIS_HOST`, `REDIS_PORT`, `REDIS_PASSWORD`
 
 Source: `src/api/src/app.module.ts:55-65`
@@ -117,7 +117,7 @@ Source: `src/api/src/app.module.ts:55-65`
 - Dev: Mailhog at `mailhog:1025` (SMTP), UI at `:8025`
 - Env vars: `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_FROM`
 
-Source: `docker-compose.yml:88-96`, `src/api/package.json:42`
+Source: `docker-compose.yml:88-96`, `src/api/package.json:44`
 
 ## 9. File Upload NFRs
 
