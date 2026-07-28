@@ -68,6 +68,59 @@ jobs:
         run: npm --prefix ./src/api run audit:check
 
   # ===========================================
+  # PT-127 (PTSA H-014) — Deriva del esquema
+  # ===========================================
+  # Las 23 migraciones no se habian ejecutado NUNCA: el esquema lo aplicaba `db push`, que no
+  # escribe `_prisma_migrations`. Producian otro esquema — el cliente Prisma fallaba en 3 de 4
+  # sondas y `payments.reference` perdia la unicidad que impide acreditar un deposito dos veces.
+  #
+  # PT-037 ya lo arreglo una vez, el 23-jul, y el drift volvio en CUATRO DIAS porque la prevencion
+  # se quedo en una nota documental. Este job es la diferencia.
+  #
+  # SIN `needs`, a proposito, igual que security-audit: un job roto no debe poder ocultarlo. Es
+  # exactamente lo que le paso a `build` y `docker` con H-015.
+  #
+  # Veredicto binario, sin linea base: el estado esperado es CERO diferencias. Admitir una
+  # diferencia «conocida» seria admitir justo lo que este control cierra.
+  schema-drift:
+    name: Deriva del esquema (D2)
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ironloot
+          POSTGRES_PASSWORD: ironloot_test
+          POSTGRES_DB: ironloot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      # La base sombra la crea y la destruye Prisma; solo necesita poder conectarse.
+      - name: Comprobar que las migraciones reproducen schema.prisma
+        run: npm --prefix ./src/api run audit:schema
+        env:
+          DATABASE_URL: postgresql://ironloot:ironloot_test@localhost:5432/ironloot_test
+
+  # ===========================================
   # Unit Tests
   # ===========================================
   test-unit:
