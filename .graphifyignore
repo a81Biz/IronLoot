@@ -1,0 +1,23 @@
+# Qué NO es corpus de conocimiento de este repositorio.
+#
+# El grafo existe para responder preguntas sobre la plataforma. Estas carpetas son SALIDA
+# —artefactos de una ejecución— y no conocimiento: incluirlas infla el corpus, cuesta tokens de
+# extraccion semantica, y mete ruido que compite con las comunidades reales.
+#
+# Se detecto midiendo: una corrida de la suite QA genero 976 capturas nuevas y dejo 1351
+# obsoletas. Eran el 62 % de los ficheros «cambiados» de un delta que en realidad tocaba 312
+# ficheros de codigo y 114 de documentacion.
+
+# Salida de la suite QA por navegador: capturas y JSON por corrida, con marca de tiempo.
+qa-out/
+
+# Salida del propio grafo — incluirla seria auto-referencia.
+graphify-out/
+
+# Dependencias y compilados
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Respaldos y volcados de base de datos (pueden llevar datos reales)
+*.sql
