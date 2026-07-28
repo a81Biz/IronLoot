@@ -1,10 +1,22 @@
 name: CI
 
+# PT-136 — El disparador se declara contra la realidad, no contra una aspiracion.
+#
+# Esto decia `[dev, qa, prep, prod]`. Ninguna de las cuatro ha existido nunca: la unica rama de
+# este repositorio es `master`. El YAML era valido, GitHub listaba el workflow como `active`, y
+# los ocho jobs **no se ejecutaron ni una sola vez** en toda la historia del proyecto.
+#
+# Conservarlas "por si algun dia" reproduce la causa exacta. Si se quiere un flujo por entornos,
+# entra con su ADR y con las ramas creadas.
+#
+# `workflow_dispatch` no es un extra: permite lanzar la corrida a mano y mirarla. Un workflow que
+# solo corre cuando alguien empuja es un workflow que no se puede interrogar.
 on:
   push:
-    branches: [dev, qa, prep, prod]
+    branches: [master]
   pull_request:
-    branches: [dev, qa, prep, prod]
+    branches: [master]
+  workflow_dispatch:
 
 env:
   NODE_VERSION: '20'
@@ -29,6 +41,13 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      # PT-136 — `@ironloot/core` se resuelve por `dist/`, y `dist/` esta en .gitignore:73.
+      # Sin este paso, `tsc` no encuentra el modulo y ocho ficheros del API no compilan. Nadie lo
+      # habia visto porque en el host el `dist/` sobrevive de una compilacion anterior, y CI no
+      # habia corrido nunca.
+      - name: Build @ironloot/core
+        run: npm run build:core
 
       - name: Run linter
         run: npm run lint:check
@@ -114,7 +133,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # La base sombra la crea y la destruye Prisma; solo necesita poder conectarse.
+      # PT-136 — Este comentario decia: «La base sombra la crea y la destruye Prisma; solo necesita
+      # poder conectarse.» **Es falso.** `prisma migrate diff --from-migrations` exige que la base
+      # sombra YA EXISTA: si no, sale con P1003 y el checkpoint falla sin llegar a comparar nada.
+      #
+      # Es la clase de afirmacion que solo se puede desmentir ejecutando, y este job no se habia
+      # ejecutado nunca. El checkpoint D2 de esquema —declarado en CI desde PT-127— no habia
+      # llegado a comparar un esquema ni una vez.
+      - name: Crear la base sombra
+        run: |
+          PGPASSWORD=ironloot_test psql -h localhost -U ironloot -d ironloot_test \
+            -c 'CREATE DATABASE ironloot_test_shadow_check;'
+
       - name: Comprobar que las migraciones reproducen schema.prisma
         run: npm --prefix ./src/api run audit:schema
         env:
@@ -140,6 +170,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Build @ironloot/core
+        run: npm run build:core
 
       - name: Run unit tests
         run: npm run test -- --coverage --passWithNoTests
@@ -197,6 +230,9 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Build @ironloot/core
+        run: npm run build:core
+
       # PT-128 (PTSA H-015) — Los dos pasos que faltaban.
       #
       # El job levantaba Postgres y corria la suite e2e contra el SIN crear el esquema: ni
@@ -217,6 +253,16 @@ jobs:
         env:
           DATABASE_URL: postgresql://ironloot:ironloot_test@localhost:5432/ironloot_test
 
+      # PT-136 — La suite e2e pasaba en el host y NO podia pasar aqui, por la misma razon que
+      # F-135-A: lo que la hacia funcionar era `src/api/.env`, **un fichero que no esta en git**.
+      # Sin el, `MercadoPagoProvider` lanza en su constructor —`payments.module.ts:46` lo construye
+      # con avidez— y con el modulo de pagos caido no arranca NINGUN test: 17 ficheros e2e fallando
+      # con `Cannot read properties of undefined (reading 'close')`, un sintoma que no menciona ni
+      # pagos ni configuracion.
+      #
+      # Un entorno de pruebas declara su configuracion; no la hereda de la maquina de alguien.
+      # Valores de prueba evidentes a proposito: si un test llegara a usarlos de verdad contra una
+      # pasarela, tiene que fallar de forma ruidosa, no cobrar.
       - name: Run E2E tests
         run: npm run test:e2e -- --passWithNoTests
         env:
@@ -225,6 +271,13 @@ jobs:
           REDIS_HOST: localhost
           REDIS_PORT: 6379
           NODE_ENV: test
+          JWT_SECRET: test-jwt-secret-solo-para-ci-no-usar-jamas-en-produccion
+          SESSION_SECRET: test-session-secret-solo-para-ci-no-usar-jamas-en-produccion
+          MERCADO_PAGO_ACCESS_TOKEN: TEST-ci-no-es-un-token-real
+          MERCADO_PAGO_WEBHOOK_SECRET: TEST-ci-no-es-un-secreto-real
+          PAYPAL_CLIENT_ID: TEST-ci-no-es-un-client-id-real
+          PAYPAL_CLIENT_SECRET: TEST-ci-no-es-un-secreto-real
+          PAYPAL_WEBHOOK_ID: TEST-ci-no-es-un-webhook-id-real
 
   # ===========================================
   # PT-128 — Checkpoint D3: observabilidad

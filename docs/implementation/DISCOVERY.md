@@ -4413,3 +4413,541 @@ docker run --rm -v <raiz>:/repo -v <volumen_node_modules>:/repo/src/api/node_mod
 **Fuera del alcance de PT-135**: la salida limpia es montar la raíz en el servicio `api` (toca
 `docker-compose.yml`, declarado sin cambios) o dar un comando `test:*` que envuelva el contenedor
 desechable. Es una decisión de entorno de desarrollo y merece su PT.
+
+---
+
+## PT-136 — BUG (MAJOR): el pipeline de CI no se ha ejecutado nunca — dispara en cuatro ramas que no existen
+
+Date: 2026-07-28
+Type: BUG
+Complexity: **MAJOR**
+Origen: revisión de coherencia de registros de pendientes solicitada por el humano
+(«se han realizado ya varias fases y al parecer siempre quedan cosas por hacer y nunca se cierran
+completo»). Salió al intentar verificar el criterio 10 de PT-135.
+
+Original Request:
+«revisa docs\implementation\DISCOVERY.md, docs\implementation\PENDING_TASKS.md y PTSA\PENDIENTES.md
+revisa las fuentes y que lo que esté ya esté hecho. […] Necesitamos ver que todo esté ya hecho y
+decidir sobre la documentación»
+
+### What — qué pasa
+
+**Los ocho jobs de `.github/workflows/ci.yml` nunca se han ejecutado. Cero veces, en toda la vida del
+repositorio.**
+
+```
+.github/workflows/ci.yml:3-7
+  on:
+    push:
+      branches: [dev, qa, prep, prod]
+    pull_request:
+      branches: [dev, qa, prep, prod]
+
+$ git branch -r
+  origin/HEAD -> origin/master
+  origin/master                      <- la unica rama remota que existe
+
+$ gh api repos/a81Biz/IronLoot/actions/runs --jq '.total_count'
+0
+```
+
+Las cuatro ramas del disparador **no existen** ni en local ni en remoto. No hay `workflow_dispatch`,
+así que tampoco puede lanzarse a mano. El fichero está bien escrito y es sintácticamente válido —
+GitHub lo lista como workflow activo (`gh workflow list` → `CI  active  217843014`) — y por eso no
+protesta nadie.
+
+Y la cuenta de jobs también está mal en los registros: son **ocho**, no siete.
+
+```
+16: lint  ·  50: security-audit  ·  85: schema-drift  ·  126: test-unit
+157: test-integration  ·  243: observabilidad  ·  266: build  ·  297: docker
+```
+
+`HANDOFF.md:50` y `PENDING_TASKS.md:32` dicen «los siete jobs».
+
+### Where — dónde
+
+- **El defecto**: `.github/workflows/ci.yml:4-7` — las dos listas de `branches`.
+- **Lo que queda sin cubrir**: los tres checkpoints de auditoría que `CLAUDE.md` declara vigilados
+  en CI y **sin `needs` a propósito** — `schema-drift` (D2), `security-audit` (D2) y
+  `observabilidad` (D3). El razonamiento de por qué van sin `needs` es correcto y está escrito; lo
+  que nunca se comprobó es si el workflow llega a arrancar.
+- **Lo que queda contaminado**: toda afirmación de la forma «lo vigila X en CI» en `CLAUDE.md`,
+  `10-Technical-Debt.md`, `ESTADO_ACTUAL.md` y las evidencias de PT-127, PT-128 y PT-130.
+
+### When — desde cuándo
+
+Desde que existe el fichero. `git log --diff-filter=A -- .github/workflows/ci.yml` lo sitúa antes de
+la reestructuración a `src/`. Los nombres `dev / qa / prep / prod` son de una convención de ramas que
+este repositorio **nunca adoptó**: el historial entero tiene un solo autor y una sola rama de
+integración, `master` (verificado en la decisión del Gate de PT-127).
+
+PT-128 «puso el job de integración en verde» y PT-127 «metió `audit:schema` en CI» — ambos correctos
+como cambio de fichero, ambos **verificados ejecutando los comandos a mano**, nunca viendo el job
+correr. La evidencia de los dos PT es real y sigue valiendo; lo que no existe es la ejecución en CI.
+
+### How — cómo reproducir
+
+1. `gh api repos/a81Biz/IronLoot/actions/runs --jq '.total_count'` → `0`.
+2. `git branch -r` → sólo `origin/master`.
+3. `sed -n '3,7p' .github/workflows/ci.yml` → las cuatro ramas inexistentes.
+
+### Why — por qué importa
+
+Es el patrón que este repositorio ya nombró tres veces y esta vez toca al vigilante mismo:
+**un mecanismo que no se ejecuta no avisa de nada** (H-014 con `db push`, H-015 con el job colgado,
+H-017 con el healthcheck de la imagen). La diferencia es de grado: aquí no falla un control, **falla
+la plataforma donde viven todos los controles**.
+
+Consecuencias medidas:
+
+| | |
+|---|---|
+| `audit:schema` (D2) | Declarado en CI desde PT-127. **Ejecuciones reales: 0** |
+| `audit:check` (D2) | Declarado desde PT-118. **Ejecuciones reales: 0** |
+| `audit:observability` (D3) | Declarado desde PT-121. **Ejecuciones reales: 0** |
+| Criterio 10 de PT-135 | **Inalcanzable**: empujar `master` no dispara nada. Y `master` ya está empujado (`master == origin/master == 0731161`, `rev-list --left-right --count` → `0 0`) |
+
+El criterio 10 es lo único que `HANDOFF.md` y `PENDING_TASKS.md` declaran pendiente de PT-135, y pide
+dos cosas que no encajan: empujar algo ya empujado, para ver correr algo que no puede correr.
+
+### Impacto
+
+- **Usuarios afectados**: ninguno en producción hoy. El daño es sobre la capacidad de detectar
+  regresiones antes de que lleguen ahí.
+- **Impacto de negocio**: la garantía declarada del repositorio —«tres checkpoints que un job roto no
+  puede ocultar»— no existe. La confianza que sostiene el Health de PTSA (D2 = 100, D3 = 100) se
+  apoya en parte en controles que nunca han corrido solos.
+
+### Confianza
+
+- Root Cause Confidence: **100%** — el disparador, las ramas existentes y el contador de ejecuciones
+  a cero se leen los tres directamente; no hay inferencia.
+- Architecture Confidence: **95%** — el arreglo toca `ci.yml` y nada más. El 5% es qué política de
+  ramas se quiere declarar (ver más abajo).
+- Solution Confidence: **60%**. Cambiar el disparador es de una línea; **lo que no se sabe es qué
+  pasa cuando los ocho jobs corran por primera vez de verdad**. PT-128 ya vivió esto: al ejecutar los
+  17 ficheros e2e por primera vez, 42 de 80 tests fallaron. Aquí el estreno es de los ocho jobs a la
+  vez, con `npm ci` gobernado por los locks de PT-135 por primera vez. **Hay que contar con que salga
+  rojo, y eso es el éxito, no el fracaso**: rojo y visible es lo que se está comprando.
+
+### Decisión que necesita el Gate
+
+Dos vías, y no son equivalentes:
+
+- **[A] Añadir `master` (y `workflow_dispatch`) al disparador actual.** Mínimo cambio, refleja la
+  realidad del repositorio: una rama de integración. Deja `dev/qa/prep/prod` dentro por si algún día
+  se adoptan, lo cual es exactamente la clase de declaración muerta que produjo este defecto.
+- **[B] Declarar el disparador contra la realidad**: `push` a `master`, `pull_request` a `master`,
+  más `workflow_dispatch`. Se retiran las cuatro ramas que nadie ha creado nunca. Si mañana se quiere
+  un flujo de entornos, se añade con su ADR.
+
+**Recomendación: [B]**, y con una guarda: *toda rama nombrada en el disparador de un workflow tiene
+que existir en el remoto*. Es barata, se prueba en los dos sentidos, y es la única pieza que impide
+la cuarta vez — la lección literal de PT-135 sobre parchear el síntoma.
+
+---
+
+## PT-137 — BUG (STANDARD): `REDIS_URL` parece el contrato y no lo es (F-135-A)
+
+Date: 2026-07-28
+Type: BUG
+Complexity: **STANDARD**
+Origen: **F-135-A**, registrado en `DISCOVERY.md` § Revisión U-002 al verificar PT-135. Defecto
+preexistente, no deuda diferida de aquel PT. Confirmado hoy contra el código y el compose.
+
+### What — qué pasa
+
+De los tres clientes de Redis del API, **dos leen variables que `docker-compose.yml` no declara**, y
+caen a `localhost` en silencio.
+
+| Cliente | Qué lee | Reserva |
+|---|---|---|
+| `src/api/src/app.module.ts:61-62` (colas Bull) | `REDIS_HOST` / `REDIS_PORT` | `localhost` |
+| `src/api/src/common/redis/throttler-redis.module.ts:31-32` | `REDIS_HOST` / `REDIS_PORT` | `localhost` |
+| `src/api/src/common/redis/distributed-lock.service.ts:12` | `REDIS_URL` | — |
+
+Y `docker-compose.yml:43` y `:90` declaran **sólo** `REDIS_URL=redis://redis:6379`.
+
+Lo que hace funcionar el contenedor de desarrollo es `REDIS_HOST=redis` dentro de `src/api/.env`,
+**un fichero que no está en git**. `.env.example:34` sí lo trae, y `:39` deja `REDIS_URL` comentado —
+o sea que el ejemplo y el compose declaran contratos distintos.
+
+### Where — dónde
+
+`src/api/src/app.module.ts:61-62` · `src/api/src/common/redis/throttler-redis.module.ts:31-32` ·
+`src/api/src/common/config/configuration.ts:33` · `docker-compose.yml:43,90` · `.env.example:34,39` ·
+`CLAUDE.md` (§ Environment Variables no menciona ninguna de las tres).
+
+### When — desde cuándo
+
+Latente desde que se introdujo `distributed-lock.service.ts` con `REDIS_URL` sin unificar el resto.
+Se manifestó al arrancar la imagen de producción durante la verificación de PT-135.
+
+### How — cómo reproducir
+
+Arrancar la imagen de producción del API con lo que sugieren el compose y el `CLAUDE.md`:
+
+```
+[ioredis] Unhandled error event: AggregateError [ECONNREFUSED]
+GET /api/v1/health -> 500  «Reached the max retries per request limit (which is 20)»
+```
+
+La aplicación **arranca bien** («Nest application successfully started») y el healthcheck la marca
+`unhealthy`.
+
+### Why — por qué importa
+
+**El síntoma no menciona Redis ni configuración.** Dice `maxRetriesPerRequest`, que manda a mirar
+reintentos. Es la familia de PT-111/F-39 —ADMIN apuntando a `localhost:6379` sin que nadie lo
+notara— y la de H-016: *lo que hace funcionar el sistema no es lo que está declarado*.
+
+Impacto sobre desarrollo: ninguno hoy. Sobre un despliegue real: **colas y rate limiting caídos**,
+con un mensaje que no señala la causa. El rate limiting es la defensa declarada de los endpoints de
+autenticación (5–30 req/min).
+
+### Confianza
+
+- Root Cause Confidence: **100%** — las tres lecturas y las dos declaraciones se leen en el código.
+- Architecture Confidence: **90%**.
+- Solution Confidence: **75%** — falta la decisión de contrato (abajo), y hay que barrer si ADMIN,
+  BASE o CLIENT tienen la misma mezcla.
+
+### Decisión que necesita el Gate
+
+- **[A] Unificar en `REDIS_URL`**: los tres clientes lo leen; `.env.example` lo descomenta y retira
+  `REDIS_HOST`/`REDIS_PORT`. Una sola palanca, coherente con la lección de PT-088 (*una sola fuente*).
+- **[B] Declarar `REDIS_HOST`/`REDIS_PORT` como el contrato** y llevarlos al compose y al
+  `.env.example`, adaptando `distributed-lock.service.ts`.
+
+**Recomendación: [A]**, por consistencia con ADR-045/PT-088 y porque una URL lleva credenciales y
+TLS, que host+puerto no. En cualquiera de las dos, la barra es la misma: **una guarda que compruebe
+que toda variable de entorno leída por el API está declarada en `.env.example`**, probada en los dos
+sentidos. Sin ella esto vuelve.
+
+---
+
+## PT-138 — BUG (STANDARD): ocho guardas no pueden ejecutarse donde la invariante dice que se ejecuta npm (F-135-B)
+
+Date: 2026-07-28
+Type: BUG
+Complexity: **STANDARD**
+Origen: **F-135-B**, registrado en § Revisión U-002 de PT-135. Reproducido y **ampliado** hoy: son
+tres síntomas de la misma causa, no uno.
+
+### What — qué pasa
+
+`docker-compose` monta `/app/src`, `/app/test`, `/app/prisma` y `/packages/core`, **pero no el árbol
+del monorepo**. Ocho ficheros de prueba resuelven `RAIZ = join(__dirname, '..' ×5)` y dentro del
+contenedor eso es `/`.
+
+```
+$ docker exec ironloot-api npx jest --testPathPattern="healthcheck-apunta-a-ruta-real"
+    readFileSync(join(RAIZ, 'src/api/src/main.ts'))
+    ENOENT   ->  Test Suites: 1 failed | Tests: 0 total
+```
+
+Los ocho: `job-de-integracion` · `rutas-que-el-client-invoca` · `coherencia-documentacion-codigo` ·
+`capturas-en-su-sitio` · `endpoints-legados-retirados` · `coherencia-deuda-tecnica` ·
+`healthcheck-apunta-a-ruta-real` · `lock-declara-plataformas`.
+
+**Dos síntomas más, medidos hoy, de la misma familia** — y ninguno estaba registrado:
+
+```
+$ docker exec ironloot-api npm run audit:check
+[audit:check] FALLA — No hay linea base (`security-baseline.json`).
+        ^ el fichero existe y esta en git; no viaja al contenedor
+
+$ docker exec ironloot-api npm run audit:observability
+/bin/sh: 1: docker: not found
+  trace_completeness = SIN_DATOS
+        ^ el checkpoint D3 consulta la BD via `docker exec`, y dentro del contenedor no hay CLI de docker
+```
+
+`audit:observability` **no falla**: devuelve `SIN_DATOS` y luego dice `OK — sin silencios nuevos`.
+Eso es precisamente lo que PT-122 aprendió a no tolerar (*«`SIN_DATOS` que alguien acabaría leyendo
+como verde»*), aplicado ahora a la métrica de al lado.
+
+### Where — dónde
+
+`docker-compose.yml` § servicio `api` (volúmenes) · los ocho `*.spec.ts` que resuelven `RAIZ` ·
+`src/api/scripts/audit-check.ts` (busca `security-baseline.json`) ·
+`src/api/scripts/observability-check.ts` (invoca `docker exec`).
+
+### When — desde cuándo
+
+Desde que se escribió la primera guarda que lee la raíz. Nunca importó porque las pruebas se corrían
+en el host. **PT-135 lo convirtió en contradicción**: `scripts/solo-en-contenedor.js` impide `npm
+install` fuera del contenedor, sin puerta de escape.
+
+### Why — por qué importa
+
+**La invariante de PT-135 y la forma de correr las pruebas no encajan.** Hoy conviven porque
+`node_modules` del host ya existe de antes; en una máquina limpia, quien siga RULE-15 al pie de la
+letra no puede ejecutar ocho guardas ni dos checkpoints. Y con PT-136 pendiente, tampoco los ejecuta
+CI. **Ese es el hueco completo: hoy esos controles no se ejecutan en ningún sitio salvo a mano, por
+un humano que sepa la vía del contenedor desechable.**
+
+Vía que funciona y quedó registrada en PT-135:
+
+```
+docker run --rm -v <raiz>:/repo -v <volumen_node_modules>:/repo/src/api/node_modules \
+  -w /repo/src/api node:20-slim npx jest --testPathPattern=... --no-coverage
+```
+
+### Confianza
+
+- Root Cause Confidence: **100%** — reproducidos los tres síntomas hoy.
+- Architecture Confidence: **85%** — toca `docker-compose.yml`, declarado sin cambios en PT-135.
+- Solution Confidence: **70%** — montar la raíz en `api` es simple pero cambia lo que el contenedor
+  ve; hay que comprobar que no altera el arranque ni el watch.
+
+### Decisión que necesita el Gate
+
+- **[A] Montar la raíz del monorepo en el servicio `api`** (sólo lectura para lo que no sea código).
+  Los ocho pasan dentro; `security-baseline.json` viaja solo.
+- **[B] Dar comandos `test:guardas` / `audit:*` que envuelvan el contenedor desechable** y dejar el
+  servicio `api` como está.
+
+**Recomendación: [A] para el árbol + arreglar `observability-check.ts` para que no dependa del CLI de
+docker** (que hable con la BD por `DATABASE_URL`, como el resto). Y en cualquier caso, **`SIN_DATOS`
+debe salir con código distinto de cero**: la lección de PT-122, aplicada donde falta.
+
+---
+
+## PT-139 — BUG (STANDARD): dos pantallas de ADMIN con controles muertos, y la guarda que las caza a las dos
+
+Date: 2026-07-28
+Type: BUG
+Complexity: **STANDARD**
+Origen: `PTSA/PENDIENTES.md` § S-002-G, filas 9 y 10 — las señaló la reconstrucción del grafo de
+conocimiento. **Verificadas otra vez hoy en el código: siguen presentes.**
+
+### What — qué pasa
+
+**1. «Conciliación» no tiene JavaScript.**
+
+```
+src/admin/views/pages/reconciliation.html:1-3
+  {% extends "layouts/admin.html" %}
+  {% block title %}Conciliación — IronLoot Admin<script src="/js/pages/pages-reconciliation.js"></script>
+  {% endblock %}
+```
+
+`layouts/admin.html` declara `head`, `content` y `scripts` — **no declara `title`**. Nunjucks
+descarta en silencio el contenido de un bloque que el padre no declara. El fichero
+`pages-reconciliation.js` existe (extraído en PT-096) y **nunca se carga**. El botón «Conciliar» no
+hace nada. Es la única plantilla del repositorio con este patrón.
+
+**2. El modal «+ Crear reembolso» no abre.**
+
+```
+src/admin/views/pages/refunds.html:8   data-bs-toggle="modal" data-bs-target="#createRefundModal"
+src/admin/views/pages/refunds.html:73  data-bs-dismiss="modal"
+```
+
+Son atributos de Bootstrap y **no hay Bootstrap en ADMIN**: `grep -ril bootstrap src/admin/` fuera de
+`node_modules` devuelve sólo este fichero. El layout carga `ui-behaviours.js` y `admin.js`, y ninguno
+maneja modales. `refunds.html` tampoco declara `{% block scripts %}`.
+
+### Where — dónde
+
+`src/admin/views/pages/reconciliation.html:1-3` · `src/admin/views/layouts/admin.html:13,162,171` ·
+`src/admin/views/pages/refunds.html:8,73` · `src/admin/public/js/pages/pages-reconciliation.js`.
+
+### When — desde cuándo
+
+El de conciliación, **desde PT-096** — el PT que sacó el JS inline de las plantillas y colocó el
+`<script>` en el bloque equivocado. El de reembolsos es anterior: la plantilla se escribió asumiendo
+un Bootstrap que ADMIN nunca ha tenido.
+
+### Why — por qué importa
+
+Los dos **fallan en silencio**: sin error en consola, sin fallo de suite, sin nada visible salvo que
+el botón no responde. Es la firma exacta de F-34 (la puja en vivo apagada días con la suite en verde)
+y de la regla de CSP sin `'unsafe-inline'`. PT-096 apagó una cosa y PT-102 la encontró; **esta es la
+otra mitad que PT-102 no barrió**.
+
+Impacto funcional: dos operaciones del backoffice —conciliar pagos y crear un reembolso— no se pueden
+ejecutar desde la interfaz. Reembolsos toca dinero.
+
+### Confianza
+
+- Root Cause Confidence: **100%** — leída la plantilla, leído el layout, contado el Bootstrap.
+- Architecture Confidence: **95%**.
+- Solution Confidence: **85%** — el de conciliación es mover una línea. El de reembolsos exige
+  decidir cómo se hace un modal en ADMIN, que hoy no tiene mecanismo.
+
+### La guarda, que es lo que de verdad se compra
+
+**Todo `{% block X %}` de una plantilla tiene que existir en su layout.** Es barata, determinista,
+caza los dos de raíz y cualquier tercero futuro. Se prueba en los dos sentidos con casos de control,
+como RULE-14 exige.
+
+Segunda guarda, menor y también barata: **ninguna plantilla usa atributos `data-bs-*` mientras
+Bootstrap no esté cargado en ese sitio**.
+
+### Decisión que necesita el Gate
+
+Cómo se resuelve el modal de reembolsos:
+
+- **[A] Escribir el comportamiento en `public/js/`** con `classList` (nunca `style.display`), igual
+  que el resto de ADMIN. Sin dependencias nuevas. Coherente con la CSP sin `'unsafe-inline'`.
+- **[B] Incorporar Bootstrap a ADMIN.** Dependencia nueva, CSS que revisar y riesgo de chocar con la
+  CSP.
+
+**Recomendación: [A].**
+
+---
+
+## PT-142 — BUG: `SystemConfigService.seed()` es comprobar-y-actuar; dos instancias que arranquen a la vez chocan
+
+Date: 2026-07-28
+Type: BUG
+Complexity: **STANDARD**
+Origen: **triaje de PT-136.5**, tercera corrida de CI (run 30408275255). Clasificado como *defecto del
+repositorio* según la regla escrita en `changes/PT-136-ci-que-se-ejecuta/design.md` § D3, y por eso
+**no se corrige dentro de PT-136**.
+
+### What — qué pasa
+
+```
+src/api/src/modules/system-config/system-config.service.ts:189-205
+
+  async seed(): Promise<void> {
+    for (const entry of SEEDED_KEYS) {
+      const existing = await this.prisma.systemConfig.findUnique({ where: { key: entry.key } });
+      if (!existing) {                                    // <-- comprobar
+        await (this.prisma.systemConfig as any).create({  // <-- ...y actuar, sin atomicidad
+```
+
+Entre el `findUnique` y el `create` no hay nada que impida que otro proceso cree la misma clave.
+Cuando pasa:
+
+```
+prisma:error  Invalid `any).create()` invocation in system-config.service.ts:194:49
+              Unique constraint failed on the fields: (`key`)
+```
+
+Y `seed()` se llama desde **`onModuleInit()`**: ocurre en **cada arranque de la aplicación**.
+
+### Where — dónde
+
+`src/api/src/modules/system-config/system-config.service.ts:185-205`.
+
+### When — desde cuándo
+
+Desde que existe el `seed()`. **Nunca se había visto** porque hacían falta dos condiciones a la vez:
+varias instancias arrancando en paralelo **y** una base sin las claves ya sembradas.
+
+En desarrollo no se dan: hay una sola instancia, y la base tiene historia —las claves ya existen, así
+que `existing` nunca es nulo y el `create` no llega a ejecutarse—.
+
+**CI da las dos.** Jest arranca varios workers, cada uno levanta su aplicación, y la base nace vacía.
+
+Es la lección de PT-122 dada la vuelta: allí el problema era que una base vacía devolvía `SIN_DATOS`
+donde una con historia daba números. Aquí es que **una base con historia tapa un defecto que una
+vacía destapa**. En los dos casos, lo que se mide depende del estado previo.
+
+### How — cómo reproducir
+
+`npm run test:e2e` contra una base **vacía**, con Jest en paralelo (su comportamiento por defecto).
+
+### Why — por qué importa, y no es un problema de tests
+
+**El riesgo real es de producción.** Un despliegue progresivo, un evento de escalado o una tormenta
+de reinicios levanta dos instancias del API a la vez contra la misma base. La segunda **falla al
+arrancar** — no degradada: caída, en `onModuleInit`.
+
+Es la misma familia que H-014: algo que sólo se manifiesta cuando el esquema o los datos están en un
+estado que en desarrollo nunca se da.
+
+### Impacto
+
+- **Usuarios**: ninguno hoy (una sola instancia). En un despliegue con réplicas, arranques fallidos.
+- **Hoy, medible**: 3 suites e2e y 11 tests en rojo en CI, y con `test-integration` rojo los jobs
+  `build` y `docker` **no se ejecutan** — el mismo bloqueo que H-015 describió.
+
+### La corrección, que es de una línea y aun así merece su PT
+
+`upsert` en vez de `findUnique` + `create`: la base resuelve la carrera, que es donde se resuelve.
+
+Merece PT propio porque toca **código de producción** en el arranque de la aplicación, y porque
+mezclarlo con PT-136 haría imposible saber cuál de los dos cambios arregló qué. Es exactamente lo que
+PT-128 decidió al encontrarse 42 tests rojos: abrió PT-131 en vez de arreglarlos dentro.
+
+### Confianza
+
+- Root Cause Confidence: **100%** — el patrón se lee en el código y el error de Prisma lo nombra.
+- Architecture Confidence: **95%**.
+- Solution Confidence: **90%** — `upsert` es directo. El 10% es si hay más sitios con el mismo patrón:
+  **hay que barrer `findUnique` + `create` en todo `src/api/src/`** antes de dar el PT por cerrado.
+
+---
+
+## PT-143 — BUG: la suite e2e no aísla sus datos entre workers y su limpieza viola una clave ajena
+
+Date: 2026-07-28
+Type: BUG
+Complexity: **STANDARD**
+Origen: **triaje de PT-136.5**, misma corrida. Clasificado como *defecto del repositorio* (test), y por
+eso **no se corrige dentro de PT-136**.
+
+### What — qué pasa
+
+```
+src/api/test/core/auth-helper.ts:105-108
+
+  // Be careful not to delete real users if running on dev db
+  // Ideally we run on test db
+  try {
+    await this.prisma.user.deleteMany(
+        Foreign key constraint violated: `auctions_seller_id_fkey (index)`
+```
+
+La limpieza borra usuarios que **todavía tienen subastas**. La clave ajena lo impide y el `deleteMany`
+lanza.
+
+El propio comentario del fichero declara la duda —*«Ideally we run on test db»*— y lleva ahí desde que
+se escribió. Es una nota donde debía haber un mecanismo, la misma forma que PT-037 con H-014.
+
+### Where — dónde
+
+`src/api/test/core/auth-helper.ts:105-115`, y por extensión el diseño de aislamiento de las 16 suites.
+
+### When — desde cuándo
+
+Igual que PT-142: **invisible mientras la base tuviera historia y las suites no compitieran**. En
+local pasaban 77/77 porque los datos previos hacían que los caminos de limpieza no se cruzaran.
+
+### Why — por qué importa
+
+Dos suites que comparten base y corren a la vez **no son independientes**: el resultado depende del
+orden, y un test que depende del orden miente en las dos direcciones —puede pasar estando roto, y
+fallar estando bien—.
+
+Y hay un riesgo peor escrito en el propio comentario: **la limpieza borra por patrón sobre la base a
+la que apunte `DATABASE_URL`**. Si alguien la ejecuta apuntando a la base de desarrollo, se lleva
+datos reales por delante. `run-all.sh` ya trunca la base y está advertido en `CLAUDE.md`; esto no lo
+está.
+
+### Impacto
+
+- 3 suites y parte de los 11 tests en rojo.
+- Riesgo latente de borrado sobre una base equivocada.
+
+### Vías, y hay que decidir
+
+- **[A] Serializar** (`--runInBand`). Una línea; hace la suite más lenta y **no arregla el
+  aislamiento**: sólo esconde que no existe.
+- **[B] Una base por worker** (`JEST_WORKER_ID` en el nombre). Aislamiento real, coste de arranque.
+- **[C] Datos únicos por suite** (prefijos) y limpieza acotada a lo propio, en orden de dependencias.
+
+**Recomendación: [C], y [B] si [C] no basta.** [A] queda descartada como solución: hace verde una
+suite que sigue sin poder correr en paralelo, y este PT existe porque algo verde tapaba un defecto.
+
+### Confianza
+
+- Root Cause Confidence: **90%** — la violación de clave ajena es clara; falta medir **cuántas** de
+  las 16 suites dependen del orden.
+- Solution Confidence: **65%** — depende de esa medición y de la decisión entre [B] y [C].

@@ -37,7 +37,7 @@ defecto; las dos anteriores se cerraron con un parche en un Dockerfile.
 | **G1** `lock-declara-plataformas.spec.ts` | El lock debe declarar `linux-x64-gnu` y `linux-x64-musl` |
 | **G2** `scripts/solo-en-contenedor.js` | `preinstall` que **impide** instalar fuera del contenedor. **Sin puerta de escape** |
 | Alternativa **C** resuelta | `.gitignore:40` retirado · los tres locks seguidos · `src/admin` por primera vez · **ADR-048** |
-| **`npm ci`** | Imágenes de api y admin, los siete jobs, y el `postinstall` de la raíz |
+| **`npm ci`** | Imágenes de api y admin, los **ocho** jobs, y el `postinstall` de la raíz |
 | **RULE-15** · **TD-017** cerrada | La segunda escritura, hecha |
 
 **G1 caza el síntoma en CI. G2 impide producirlo** — y es la única pieza que actúa sobre la cuarta vez.
@@ -46,11 +46,18 @@ defecto; las dos anteriores se cerraron con un parche en un Dockerfile.
 
 ## Lo que falta para cerrar PT-135
 
-1. **Empujar `master`.** Está fusionado en local y `origin/master` sigue en 7f091c3.
-2. **Ver los siete jobs en verde en un push real** (criterio 10). No es verificable sin empujar, y es
-   la primera vez que el lock gobierna de verdad en CI (`npm ci`). Ensayado en contenedor: `npm ci` en
-   la raíz, exit 0, con el `postinstall` instalando api y admin — **eso no lo sustituye**.
+1. ~~**Empujar `master`.**~~ **Hecho.** `master == origin/master == 0731161`;
+   `git rev-list --left-right --count master...origin/master` → `0 0`. Este documento pedía empujar
+   algo que ya estaba empujado.
+2. **Ver los ocho jobs en verde en un push real** (criterio 10). **Era inalcanzable, y no por falta de
+   push**: `ci.yml` disparaba en `dev/qa/prep/prod` y la única rama que existe es `master`, así que el
+   pipeline no se había ejecutado **ni una sola vez** en toda la historia del repositorio
+   (`actions/runs → total_count: 0`). Lo desbloquea **PT-136**.
 3. **El VoBo humano** sobre lo demás. Es un BUG: el agente no cierra bugs.
+
+> Y son **ocho** jobs, no siete: `lint` · `security-audit` · `schema-drift` · `test-unit` ·
+> `test-integration` · `observabilidad` · `build` · `docker`. La cifra se copió mal de documento en
+> documento sin que nadie la contara — la familia de H-016.
 
 ## Los scores PTSA están desfasados y NO se han tocado
 
@@ -131,8 +138,9 @@ ejecutado dentro falla con «No hay línea base» aunque el fichero exista y est
 
 ## Próximas acciones recomendadas
 
-1. **Empujar `fix/PT-135-locks-en-contenedor` y ver los siete jobs con `npm ci`.** Es lo único que
-   falta del criterio 10, y la primera vez que el lock gobierna de verdad en CI.
+1. **Ver los ocho jobs con `npm ci` en un push real** — lo único que falta del criterio 10, y la
+   primera vez que el lock gobierna de verdad en CI. Ya no depende de empujar (`master` lo está):
+   dependía de que el disparador nombrara una rama que existe, y eso lo arregla **PT-136**.
 2. **Decidir F-135-A**: es un defecto de despliegue con un síntoma que engaña, y hoy sólo funciona por
    un fichero que no está en git.
 3. **Decidir H-005.** Sigue siendo lo único que separa al sistema de cero hallazgos abiertos.

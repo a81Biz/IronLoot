@@ -1,313 +1,268 @@
 # PLAN_ACTUAL — STATE 2: Clasificación y Estrategia
 
-**Fecha**: 2026-07-28 · **Revisión 2** (rehecha tras el ACK humano)
-**Origen**: reporte humano — «el contenedor de api no levanta». Sin hallazgo PTSA propio todavía.
-**PT en el plan**: PT-135
-**Estado**: **CERRADO** — implementado y fusionado en `master` (443f757, 2026-07-28). Las doce tareas
-hechas; PT-135 queda `VALIDATION_PENDING` porque es un BUG y lo cierra el humano.
+**Fecha**: 2026-07-28
+**PT en el plan**: **PT-136 · PT-137 · PT-138 · PT-139 · PT-140 · PT-141**
+**Origen**: revisión de coherencia de registros pedida por el humano — *«se han realizado ya varias
+fases y al parecer siempre quedan cosas por hacer y nunca se cierran completo»*.
+**ACK de STATE 1**: recibido el 2026-07-28.
+**Estado**: esperando ACK de STATE 2. Ninguna rama abierta, cero líneas de `src/` tocadas.
 
-> **Las cifras de abajo son las del momento de planificar, y se conservan a propósito** (919 unitarias
-> / 136 por navegador). Hoy son **944** y **176**: el inventario vivo está en
-> `docs-v2/5-qa/Master-Test-Plan.md`, y lo que realmente se midió en
-> `docs/implementation/evidence/PT-135/regresion.txt`.
->
-> **Diez desviaciones respecto a este plan**, con su motivo, en
-> `changes/PT-135-locks-en-contenedor/tasks.md` § Cierre. Dos merecen leerse aquí porque el plan
-> estaba **equivocado**, no incompleto: el mecanismo de regeneración del lock que propone no funciona
-> tal como está escrito, y `docker compose down -v` **habría borrado la base de datos**.
+> El plan anterior (**PT-135**, cerrado y fusionado) se conserva en `archive/PLAN_ACTUAL-PT-135.md`.
 
-> El plan anterior (PT-127…PT-130) está cerrado en `HISTORY.log`. `PLAN_ACTUAL.md` es sobrescribible:
-> sólo puede haber un plan activo.
+## Supuesto declarado — corregible
 
----
+El ACK llegó sin responder las tres decisiones que dejé planteadas. **Sigo mis propias
+recomendaciones y las escribo aquí para que se vean y se puedan revocar en el ACK de este estado**:
 
-## Las dos correcciones del ACK, y lo que cambian
-
-| # | Corrección vinculante | Qué cambia |
+| Decisión | Lo que asumo | Dónde se aplica |
 |---|---|---|
-| **1** | **No debe existir ningún `npm install` en la máquina local.** Se desarrolla en Docker: toda operación de npm va **en el contenedor** | Mata el mecanismo M2 (regenerar en el host). Y **reformula el riesgo principal**: no es que el desarrollador *pueda* romper el lock — es que **ese comando no debería poder ejecutarse allí y hoy nada lo impide** |
-| **2** | **No se puede dejar deuda. La alternativa C es obligatorio trabajarla** | PT-135 deja de ser «arreglar un lock» y pasa a **decidir la política de reproducibilidad de dependencias de la plataforma**. Reclasificado a **MAJOR** |
+| Disparador de CI | **[B]** — `push`/`pull_request` a `master` + `workflow_dispatch`; se retiran `dev/qa/prep/prod` | PT-136 |
+| Contrato de Redis | **[A]** — unificar en `REDIS_URL` | PT-137 |
+| Modal de ADMIN | **[A]** — JavaScript propio en `public/js/`, sin traer Bootstrap | PT-139 |
 
-La corrección 1 explica el defecto entero: **el lock de HEAD sólo pudo salir de un `npm install` en
-Windows** (PT-126). La invariante ya se violó una vez y nadie se enteró hasta que un contenedor
-murió, un día después, en otra máquina. Una invariante sin mecanismo no es una invariante: es una
-costumbre.
-
----
-
-## Lo que las mediciones dejaron cerrado antes de diseñar
-
-**H5 — un solo fichero afectado, confirmado desde dos ángulos.** `base`, `client` y `core` no tienen
-lock propio porque son **workspaces** de la raíz (`package.json:5-8`); su árbol vive en el lock de la
-raíz, y ahí hay **0 paquetes de plataforma antes y después de PT-126**. Igual `src/admin`: 0.
-`src/api` es el único proyecto con dependencias nativas divididas por plataforma, y el único dañado.
-
-**R3 — no hay degradación.** `msgpackr-extract` **carga**: al perder el prebuild cayó a compilar
-desde fuente con `node-gyp`, que funciona porque `Dockerfile.dev:8-15` trae `python3`, `make` y `g++`.
-
-**Y apareció el inventario completo, que es el centro de la alternativa C:**
-
-```
-package-lock.json                 disco=True  git=True     <- raiz (workspaces)
-src/api/package-lock.json         disco=True  git=True     <- el danado
-src/admin/package-lock.json       disco=True  git=False     <- existe y nadie lo comparte
-.gitignore:40                     package-lock.json         <- los ignora a los tres
-```
-
-**No es «el lock del API es la excepción».** Es que la convención declarada y la práctica llevan
-meses en desacuerdo: dos locks seguidos contra la regla, uno no seguido, y ninguna decisión
-registrada en ADR ni en `HISTORY.log`. `src/admin` es el caso peor: **su árbol no es reproducible por
-nadie más**, porque el fichero que lo fija no sale de la máquina donde nació.
+Un dato que refuerza la segunda y no tenía cuando la recomendé: **ADMIN ya lee `REDIS_URL`**
+(`src/admin/src/main.ts:81`), igual que `distributed-lock.service.ts`. Los únicos dos clientes fuera
+del contrato son las colas Bull y el throttler. Unificar es alinear dos, no cuatro.
 
 ---
 
-## Clasificación
+# Clasificación
 
-| PT | Origen | Tipo | Complejidad | Justificación |
-|---|---|---|---|---|
-| **PT-135** | reporte humano | **BUG** | **MAJOR** | Cambia la política de reproducibilidad de dependencias de toda la plataforma: tres locks, `.gitignore`, `npm ci` en CI y en las imágenes, y una guarda que impide instalar fuera del contenedor. Exige análisis de riesgo y de regresión obligatorios y Proposal Package |
-
-Era STANDARD en la revisión 1. Lo mueve a MAJOR la corrección 2: resolver C **es** un cambio de
-política, y esa es exactamente la razón por la que la revisión 1 lo quería fuera. Ya no lo está.
-
----
-
-## Objetivo
-
-1. Que el contenedor del API arranque, desde imagen reconstruida y volumen limpio.
-2. Que el lock del API declare el árbol de las tres plataformas que este repositorio usa de verdad.
-3. Que **generar un lock fuera del contenedor sea imposible**, no inadvisable.
-4. Que la política de locks quede **decidida y declarada**, sin contradicción entre `.gitignore` y la
-   práctica, y sin ningún lock que exista en una máquina y en ninguna otra.
-5. **Cero deuda diferida al terminar.**
-
----
-
-## Decisión sobre la alternativa C (obligatoria, y aquí se toma)
-
-**Los tres locks se conservan y se siguen por git. Se retira `.gitignore:40`.**
-
-Razones, en orden de peso:
-
-1. **El lock no es el defecto.** El defecto es *dónde se generó*. Dejar de seguirlo (C2) haría
-   desaparecer el síntoma renunciando a la reproducibilidad — en un repositorio que acaba de gastar
-   PT-127…PT-130 precisamente en poder reproducir lo que construye. Sería tratar la fiebre quitando
-   el termómetro.
-2. **C2 rompe el caché de CI.** Los siete `actions/setup-node` usan `cache: 'npm'` sin
-   `cache-dependency-path`, y esa acción resuelve el lock de la raíz como clave. Sin lock, los siete
-   jobs pierden caché (o fallan). Medido: `ci.yml:28, 62, 112, 139, 195, 255, 279`.
-3. **`src/admin` demuestra qué pasa cuando un lock no se sigue**: existe en disco, no viaja, y nadie
-   fuera de esta máquina puede reproducir su árbol. C2 extendería esa situación a los tres.
-
-Y la contradicción se elimina de raíz en vez de declararse como excepción: **`.gitignore:40` se
-retira**, porque una regla que dice lo contrario de lo que el repositorio hace es peor que no tener
-regla — es una trampa para el siguiente que la lea y la respete.
-
-**`src/admin/package-lock.json` se regenera en su contenedor y se empieza a seguir.** Es la mitad del
-inventario que faltaba.
-
----
-
-## Solución propuesta — seis piezas, en este orden
-
-El orden importa y no es cosmético: **las piezas 1 y 2 devuelven el entorno a la vida**; las 3 a 6
-son el mecanismo. Y la 6 va al final por la lección de PT-118: un control que nace rojo muere.
-
-### 1. Regenerar el lock del API **dentro del contenedor** — M1, y ya no hay M2
-
-```
-docker compose run --rm --no-deps --entrypoint sh api -c "npm install --package-lock-only"
-```
-
-`--entrypoint` no es opcional: el servicio `api` declara
-`ENTRYPOINT ["./scripts/entrypoint.dev.sh"]`, y sin sustituirlo el comando llegaría como argumento
-del entrypoint. Lo mismo para `src/admin`.
-
-Criterio: el lock contiene `css-inline-linux-x64-gnu`, `css-inline-linux-x64-musl`,
-`msgpackr-extract-linux-x64` **y conserva las de win32 y darwin**. La simetría es el punto:
-regenerar en Linux no puede dejar cojo a quien mire el repositorio desde otro sistema. **Es
-exactamente el error de PT-126 con los signos cambiados.**
-
-### 2. Verificar arrancando, con volumen limpio y sin caché
-
-`docker compose down -v` → `build --no-cache api` → `up -d`. El volumen anónimo viejo **tapa** el
-defecto, y por tanto taparía igual un arreglo falso. La evidencia declara con qué volumen se hizo.
-
-### 3. El comando de regeneración, como comando y no como recuerdo
-
-Scripts en el `package.json` de la raíz — `lock:api`, `lock:admin`, `lock:root` — que envuelven la
-invocación de Docker con sus banderas. Nadie tiene que acordarse de `--entrypoint`, y el camino
-correcto pasa a ser el más corto. **Un procedimiento que exige memoria ya falló una vez** (PT-126).
-
-Estos scripts se ejecutan en el host pero **no ejecutan npm en el host**: invocan Docker. La
-invariante se respeta.
-
-### 4. La guarda que impide instalar fuera del contenedor
-
-`preinstall` en los tres puntos de instalación (raíz, `src/api`, `src/admin`): un script que **aborta
-si no está dentro de un contenedor Linux**, con el mensaje que dice qué ejecutar en su lugar.
-
-- En el contenedor y en CI (`ubuntu-latest`): pasa, es Linux.
-- En Windows o macOS: **falla y no instala nada**.
-- **Con caso de control** (RULE-14): forzando la plataforma, la guarda debe fallar. Sin ese caso no
-  es una guarda.
-
-Esta pieza es la que convierte «no debe existir ningún `npm install` en mi máquina» de instrucción en
-mecanismo. **Es la corrección real del PT.** Detalle a resolver en STATE 3: `src/api` ya tiene
-`prepare: cd ../.. && husky install` (`package.json:25`), y hay que comprobar que las dos etapas del
-ciclo de vida conviven.
-
-### 5. La guarda que vigila el contenido del lock
-
-Prueba unitaria, patrón de `coherencia-documentacion-codigo.spec.ts`:
-
-> Para cada paquete del lock que declare `optionalDependencies` con variantes por plataforma, el
-> árbol instalado debe contener **`linux-x64-gnu`** (imagen de desarrollo, Debian glibc) y
-> **`linux-x64-musl`** (imagen de producción, alpine).
-
-Las dos plataformas son las dos que este repositorio construye, y las dos que PT-126 borró. Se lee el
-lock **como JSON** y se comprueba **presencia de claves, nunca versiones** — o la prueba se vuelve
-frágil y alguien la apagará. Con caso de control.
-
-### 6. Hacer el lock autoritativo: `npm ci`
-
-Mientras CI y las imágenes usen `npm install`, el lock es una sugerencia: cada build vuelve a
-resolver y el fichero no gobierna nada. Con los tres locks correctos y seguidos, pasan a `npm ci`:
-
-- los siete jobs de `ci.yml`,
-- `src/api/Dockerfile.dev` y `src/api/Dockerfile`,
-- los `Dockerfile.dev` de `admin`, `base` y `client` — que hoy copian sólo `package.json`.
-
-**Al final, y con la puerta de salida escrita**: si `npm ci` destapa desajustes entre `package.json`
-y el lock, cada uno se corrige **dentro de este PT** (no se difiere: corrección 2). Si aparece un
-desajuste que exceda el PT, se vuelve a `npm install` en ese punto concreto y **se dice**, en vez de
-dejar CI rojo y que alguien lo desactive en una semana.
-
-### 7. Las dos escrituras
-
-- `CLAUDE.md` § Key Technical Decisions — **`npm install` no se ejecuta en el host: se ejecuta en el
-  contenedor.** Con el comando y con lo que pasa si se ignora (murió el arranque un día después).
-- `docs/enterprise-documentation/11-Conventions.md` — `RULE-NN` con ejemplo correcto/incorrecto.
-- **ADR nuevo** en `docs-v2/transversal/Registro-Maestro-de-ADR.md`: los locks se siguen por git,
-  se generan en contenedor, `.gitignore:40` retirado. La decisión que no existía.
-- `10-Technical-Debt.md` — **cierre** de lo que este PT resuelve. No entradas nuevas.
-- Corregir el comentario de `src/api/Dockerfile:53-62`, que hoy afirma que la variante «existe en
-  `package-lock.json`» cuando PT-126 la había borrado el día antes. El parche se **conserva** (un
-  cinturón sobre una causa que ya reincidió dos veces no se cambia por una promesa), con una razón
-  verdadera escrita.
-
----
-
-## Los cuatro puntos que la revisión 1 dejaba abiertos: dónde muere cada uno
-
-Exigencia de la corrección 2. **Ninguno queda como nota.**
-
-| # | Punto abierto en la revisión 1 | Dónde se cierra |
-|---|---|---|
-| 1 | El lock seguido contra `.gitignore:40`, sin decisión | **Pieza C + pieza 7**: se retira la línea, se sigue el de `admin`, y se escribe el ADR que no existía |
-| 2 | `msgpackr-extract` compilando desde fuente | **Se cierra como consecuencia de la pieza 1**: con el prebuild de vuelta en el lock, `node-gyp` deja de ser la vía. Verificable: el directorio del prebuild poblado y sin `build/Release/extract.node` |
-| 3 | `npm ci` en CI | **Pieza 6**, dentro de este PT |
-| 4 | `5c16af4` es un commit sucio | **No es deuda, y por eso no se trabaja**: la historia es append-only y no se reescribe (regla FDGE). Es un hecho registrado y el ejemplo de por qué existe la regla de commits atómicos. Se cita en el ADR y se cierra |
-
----
-
-## Alternativas rechazadas
-
-| # | Alternativa | Por qué no |
-|---|---|---|
-| **B** | Parchear `Dockerfile.dev` con `--no-save ...-gnu` | Rechazada en el ACK anterior. Es lo que hizo PT-129 y es la razón de que hoy estemos aquí |
-| **C2** | Dejar de seguir los locks, alineándose con `.gitignore:40` | **Decidida en contra arriba**: renuncia a la reproducibilidad, rompe el caché de los siete jobs, y extiende a los tres el problema que ya tiene `admin` |
-| **M2** | Regenerar el lock en el host con `--package-lock-only` | **Prohibida por la corrección 1.** No es la peor opción: es inválida por construcción |
-| **D** | Volumen nombrado en vez de anónimo para `node_modules` | Fuera de alcance. No corrige nada: mejora el control de la caché que **tapaba** el defecto |
-| **E** | Un `.npmrc` que fije la plataforma objetivo | Descartada frente a la pieza 4: fija el resultado pero **no impide** ejecutar npm donde no se debe, que es la invariante que hay que sostener |
-| **F** | Retirar `@nestjs-modules/mailer` | Descartada. Es funcionalidad viva. El defecto no es del mailer |
-
----
-
-## Dependencias
-
-- **Docker operativo**, con permiso para reconstruir imágenes y borrar el volumen anónimo del API.
-- Red hacia el registro de npm.
-- **Ninguna sobre otro PT.** H-005 (lo único abierto en PTSA) no toca esto.
-- La pieza 6 depende de que las piezas 1 y C estén hechas: `npm ci` sobre un lock roto o ausente
-  falla, y falla con razón.
-
----
-
-## Riesgos
-
-| # | Riesgo | Impacto | Mitigación |
+| PT | Tipo | Complejidad | Por qué |
 |---|---|---|---|
-| **R1** | **La invariante «npm sólo en el contenedor» no tiene mecanismo hoy, y ya se violó una vez** | **Alto** — es la causa raíz | **Pieza 4.** Es la única pieza que actúa sobre la cuarta vez; las demás arreglan hoy |
-| **R2** | Regenerar los locks mueve versiones además de las entradas de plataforma | Medio | Diffear y revisar entrada por entrada. Lo que se mueva y no sea plataforma **se corrige o se justifica dentro del PT** — no se arrastra |
-| **R3** | Verificar sobre el volumen viejo y concluir en falso, en cualquiera de los dos sentidos | **Alto** — es cómo se cierran PT afirmando cosas falsas (PT-127 estuvo a punto) | La evidencia declara: volumen eliminado, `--no-cache`, y el `ls node_modules/@css-inline` de la imagen nueva |
-| **R4** | **`npm ci` destapa desajustes lock↔package.json y deja CI rojo** | **Alto** — así muere un control (PT-118) | Pieza 6 **al final**, con puerta de salida escrita: cada desajuste se corrige en el PT; si uno lo excede, ese punto vuelve a `npm install` **y se dice** |
-| **R5** | La guarda `preinstall` bloquea algo legítimo — un job de CI, una herramienta, un hook de husky | Medio | Comprobar los siete jobs y `husky`. Se prueba en los dos sentidos, y CI es Linux: debe pasar |
-| **R6** | Reconstruir destapa bloqueos apilados debajo, como en PT-129 | Medio | Plausible: el lock lleva un día podado y **sólo se ha ejercido el primer `require` que falla**. Lo que aparezca se corrige en este PT |
-| **R7** | `@ironloot/core` (`file:../packages/core`) se resuelve distinto al regenerar y contamina el lock | Medio | Regenerar con el árbol del monorepo presente y **revisar su entrada en el diff** antes de aceptarlo |
-| **R8** | **El PT crece más que el defecto que lo motivó** | Medio, y consciente | Se declara: el entorno vuelve a estar vivo al terminar la pieza 2. Las piezas 3-7 son el mecanismo, y se pueden ver como fase 2 del mismo PT. **Recortarlo es decisión humana, no mía** |
+| **PT-136** | BUG | **MAJOR** | Cambia la capa de verificación entera. Su primera ejecución real es un estreno de 8 jobs y de `npm ci` gobernado por los locks de PT-135. Exige análisis de riesgo y de regresión |
+| **PT-137** | BUG | STANDARD | Configuración de conexión en 2 ficheros + compose + `.env.example`, con una guarda |
+| **PT-138** | BUG | STANDARD | Volúmenes de compose + 2 scripts de auditoría |
+| **PT-139** | BUG | STANDARD | 2 plantillas + JS de sitio + 2 guardas |
+| **PT-140** | REFACTOR | STANDARD | Sólo registros. Ni una línea de `src/` |
+| **PT-141** | REFACTOR | **MAJOR** | Cambia la autoridad documental que `CLAUDE.md` impone a todo agente futuro |
 
 ---
 
-## Análisis de regresión (obligatorio — MAJOR)
+# Objetivo
 
-| Superficie | ¿Se toca? | Riesgo de regresión |
+**Que los mecanismos de este repositorio se ejecuten solos y que cerrar algo sea una escritura, no
+doce.**
+
+Los seis PT atacan un único defecto en dos planos:
+
+```
+plano 1 — verificacion:  se escribe un control -> se ejecuta a mano una vez -> se declara «vigilado en CI»
+                                                                                    y CI no corre nunca
+plano 2 — registro:      se cierra un trabajo  -> se escribe en 1 de 12 sitios -> los otros 11 dicen PENDING
+```
+
+En los dos, **el momento en que algo se declara verdadero y el momento en que alguien lo comprueba
+están separados, y nada cierra la distancia**. Es la propiedad que hizo invisibles a H-014, H-015,
+H-017, F-33 y F-34. Este plan no añade controles nuevos al catálogo: **pone a correr los que ya hay**
+y cierra las dos brechas que impiden comprobarlo.
+
+---
+
+# Solución propuesta — seis piezas, en este orden
+
+## PT-136 — El CI que nunca ha corrido (primero, y bloquea a los demás)
+
+1. **Disparador contra la realidad**: `push` y `pull_request` a `master`, más `workflow_dispatch`.
+   Se retiran `dev/qa/prep/prod`.
+2. **Ensayo controlado antes del estreno**: con `workflow_dispatch` ya presente, lanzar la corrida a
+   mano (`gh workflow run`) **antes** de que un push la dispare sola. Es la diferencia entre estrenar
+   los 8 jobs mirando y estrenarlos de espaldas.
+3. **Triaje de lo que salga rojo.** R1 dice que saldrá. Cada fallo se clasifica en el acto:
+   *defecto real del repositorio* → PT propio, registrado, **no parcheado dentro de PT-136**;
+   *defecto del job* → se corrige aquí, porque es el alcance de este PT.
+4. **Corregir la cuenta**: son **ocho** jobs, no siete. `HANDOFF.md:50` y `PENDING_TASKS.md:32`.
+5. **La guarda**: `ramas-del-disparador-existen.spec.ts` — toda rama nombrada en el `on:` de un
+   workflow tiene que existir en el remoto. Con casos de control en los dos sentidos.
+6. **Cerrar el criterio 10 de PT-135** con la evidencia de la corrida real.
+
+**Por qué la guarda y no sólo el arreglo**: PT-129 tapó su síntoma con un parche en un `Dockerfile` y
+volvió dos veces. La lección literal de PT-135 es que un parche no impide la cuarta vez.
+
+## PT-137 — Un solo contrato para Redis
+
+1. Los tres clientes leen **`REDIS_URL`**: `app.module.ts:61-62` y `throttler-redis.module.ts:31-32`
+   se alinean con `distributed-lock.service.ts:12` y con ADMIN.
+2. `.env.example` descomenta `REDIS_URL` y retira `REDIS_HOST`/`REDIS_PORT`;
+   `configuration.ts:33` acompaña.
+3. **Sin reserva silenciosa a `localhost`**: si falta la variable, se falla al arrancar con un
+   mensaje que nombre la variable. Es la disciplina de `JWT_SECRET` en PT-126 — una función que lanza
+   en vez de un valor por defecto que engaña.
+4. `CLAUDE.md` § Environment Variables declara la variable, que hoy no menciona ninguna de las tres.
+5. **La guarda**: `variables-de-entorno-declaradas.spec.ts` — toda variable leída por el API existe
+   en `.env.example`. Medición preliminar: **49 leídas frente a 37 declaradas** (barrido crudo, a
+   afinar en la tarea; el número exacto sale al implementar, y la brecha es real).
+
+## PT-138 — Que las guardas puedan correr donde se ejecuta npm
+
+1. **Montar la raíz del monorepo** en el servicio `api` del compose. Los 8 `*.spec.ts` que resuelven
+   `RAIZ` pasan dentro, y `security-baseline.json` viaja solo.
+2. **`observability-check.ts` deja de depender del CLI de docker**: habla con la BD por
+   `DATABASE_URL`, como el resto del repositorio.
+3. **`SIN_DATOS` sale con código distinto de cero.** Hoy `audit:observability` devuelve
+   `trace_completeness = SIN_DATOS` y a continuación imprime `OK — sin silencios nuevos`. Es
+   exactamente lo que PT-122 aprendió a no tolerar, en la métrica de al lado.
+4. Documentar en `CLAUDE.md` la vía del contenedor desechable como alternativa, no como norma.
+
+## PT-139 — Los dos controles muertos de ADMIN
+
+1. `reconciliation.html`: el `<script>` sale de `{% block title %}` y va a `{% block scripts %}`.
+2. `refunds.html`: el modal se implementa en `public/js/pages/`, con `classList` —**nunca**
+   `style.display = ''`, que devolvería el elemento a lo que diga el CSS— y los `data-bs-*` se
+   retiran.
+3. **La guarda principal**: `bloques-de-plantilla-existen-en-su-layout.spec.ts`. Resuelve la cadena
+   de `{% extends %}` y comprueba que todo `{% block X %}` de una plantilla esté declarado en su
+   layout. **Caza los dos de raíz y cualquier tercero futuro.**
+4. **La guarda menor**: ninguna plantilla usa `data-bs-*` si Bootstrap no está cargado en ese sitio.
+5. Verificación en navegador real: el botón «Conciliar» hace algo, y el modal abre y cierra.
+
+## PT-140 — Un solo registro vivo
+
+1. **Regla de precedencia en `CLAUDE.md`**: qué registro manda para qué clase de pendiente y cuál es
+   derivado. Sin esto, lo demás se vuelve a desincronizar en un mes.
+2. **`PENDING_TASKS.md` reconstruido contra el código**, cada fila con cita `fichero:línea`.
+3. **`PTSA/PENDIENTES.md` podado** a un bloque vivo; los seis anteriores a `PTSA/archive/`, enlazados.
+   No se borra nada (`[A6]`).
+4. **`HISTORY.log`: las entradas de PT-129 y PT-130**, reconstruidas desde sus evidencias y commits,
+   **añadidas al final** con su fecha real anotada. No se reordena.
+5. **`ROADMAP.md`**: corrida FPGE real sobre el estado de hoy, o retirada con su razón escrita.
+6. **La guarda**: `coherencia-de-registros.spec.ts`, sólo sobre lo determinista —
+   - `PENDING`/`BLOCKED` en `PENDING_TASKS.md` ⇒ no `DONE`/`VALIDATION_PENDING` en `HISTORY.log`;
+   - carpeta en `evidence/` ⇒ entrada en `HISTORY.log` (**esto solo habría cazado PT-129 y PT-130**);
+   - `TD-XXX` cerrada en `10-Technical-Debt.md` ⇒ no pendiente en `PENDING_TASKS.md`.
+
+## PT-141 — Una sola documentación oficial
+
+**PT-141.A, ahora**: ADR-049 (`docs-v2/` es la fuente de verdad); las 10 citas de `CLAUDE.md`
+reapuntadas; `docs/enterprise-documentation/` acotado al contrato de agente (`11-Conventions.md`,
+`10-Technical-Debt.md`, `inventory/`); corregida la contradicción de `10-Technical-Debt.md:103-105`;
+resueltas las citas a `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md` — se escriben o se retiran.
+
+**PT-141.B, después de PT-136…139**: `[START FOUNDATION]` sobre un sistema cuyos defectos conocidos
+están cerrados.
+
+---
+
+# Alternativas consideradas
+
+| # | Alternativa | Veredicto |
 |---|---|---|
-| `src/api/src/` y el resto del producto | **No** | Ninguno. Ni un fichero |
-| `schema.prisma`, migraciones | **No** | Ninguno. La migración se aplica bien hoy: **no es la causa** aunque el log invite a mirarla |
-| **Versiones instaladas** (los tres locks) | **Sí, indirecto** | **El riesgo real.** Lo cubren R2, las 919 unitarias, las 77 e2e y `npm audit --omit=dev` |
-| `.gitignore` | **Sí** — se retira la línea 40 | Ninguno funcional. Efecto: tres ficheros pasan a estar seguidos |
-| `src/admin/package-lock.json` | **Sí** — se regenera y se sigue | Primer lock compartido de ADMIN: su árbol pasa a ser reproducible. Riesgo de que su regeneración mueva versiones → mismas 13 unitarias de ADMIN |
-| **`ci.yml` — los siete jobs** | **Sí** — `npm install` → `npm ci` | **El mayor riesgo de regresión del PT.** Cubierto por R4 y por el orden |
-| **Los cinco Dockerfile** (`.dev` y producción) | **Sí** — a `npm ci`, y `COPY package*.json` donde falte | Los tres SSR hoy construyen **sin lock**: pasan a construir con él. Cambia lo que instalan. **Exige arrancar los cuatro y verlos `healthy`**, como exigió la aceptación de PT-129 |
-| `docker-compose.yml` | **No** | Ninguno |
-| `package.json` (raíz, api, admin) | **Sí** — `preinstall` y scripts `lock:*` | Un `preinstall` mal escrito **bloquea toda instalación, en todas partes**, CI incluido. R5 |
-
-**Flujos que hay que ver funcionar, no deducir:**
-
-1. Los ocho contenedores `healthy`, con volumen limpio e imágenes `--no-cache`.
-2. **Notificaciones por correo**: es el módulo que arrastra `@css-inline`. El binario puede cargar y
-   el adaptador de Handlebars no rendir el HTML, y el arranque no lo delataría. **Un correo real,
-   visto en Mailhog.**
-3. 919 unitarias + 77 e2e + 136 por navegador.
-4. **Las cuatro imágenes de producción**, construidas y arrancadas hasta `healthy`.
-5. `npm audit --omit=dev` = 0 en los cinco proyectos.
-6. **Un `npm install` en el host debe fallar** — y con el mensaje útil.
-7. Un push real: que los siete jobs pasen con `npm ci`.
+| A1 | **Un solo PT que lo arregle todo** | **Rechazada.** Mezcla CI, infraestructura, frontend y documentación en un diff. Imposible saber qué rompió qué, y viola `[No Dirty Commits]` |
+| A2 | **Arreglar los registros primero (PT-140) y el CI después** | **Rechazada.** La guarda de PT-140 nacería sin ejecutarse sola: sería el defecto que corrige, cometido dentro del PT que lo corrige |
+| A3 | **CI: añadir `master` conservando `dev/qa/prep/prod`** | **Rechazada.** Declarar ramas que nadie ha creado nunca es exactamente lo que produjo PT-136. Si algún día hay flujo de entornos, entra con su ADR |
+| A4 | **Redis: adoptar `REDIS_HOST`/`REDIS_PORT` como contrato** | **Rechazada.** ADMIN y `distributed-lock` ya usan `REDIS_URL`; una URL lleva credenciales y TLS, host+puerto no. Coherente con PT-088 (*una sola fuente*) |
+| A5 | **PT-138: comandos que envuelvan un contenedor desechable, sin tocar el compose** | **Rechazada como solución principal**, conservada como vía documentada. Deja la contradicción de RULE-15 en pie y exige que cada persona conozca una invocación de tres volúmenes |
+| A6 | **ADMIN: incorporar Bootstrap** | **Rechazada.** Dependencia nueva, CSS que revisar y riesgo con una CSP sin `'unsafe-inline'`, para resolver un modal |
+| A7 | **Regenerar Foundation ya** | **Rechazada como orden.** Documentaría el CI que no corre y las pantallas muertas como si fueran diseño. Va en PT-141.B |
+| A8 | **Retirar `docs/enterprise-documentation/` entero** | **Rechazada.** `11-Conventions.md` es el contrato operativo de todo agente y `10-Technical-Debt.md` tiene guarda (PT-103). Se acota, no se retira |
+| A9 | **PT-140: guarda que compruebe también la prosa** | **Rechazada.** Una guarda que obliga a redactar para pasar es peor que ninguna. Sólo lo determinista |
 
 ---
 
-## Criterios de éxito
+# Dependencias
 
-| # | Criterio | Comprobación |
+```
+PT-136 (CI corre)  ──┬──> PT-140  (su guarda necesita CI)   ──┐
+                     ├──> PT-139  (su guarda necesita CI)     ├──> PT-141.B (regenerar Foundation)
+                     ├──> PT-137, PT-138  (idem)              │
+                     └──> cierra el criterio 10 de PT-135     │
+PT-141.A (decision documental) ───────────────────────────────┘
+```
+
+- **PT-136 primero**, sin excepción. Los otros cinco entregan **cuatro guardas nuevas** entre todos;
+  sin CI todas nacen con el defecto que este plan corrige.
+- **PT-141.A puede ir en paralelo a PT-136**: no comparte ficheros y detiene la doble escritura
+  documental que hoy paga cada PT.
+- **PT-137, PT-138 y PT-139 son independientes entre sí.**
+- **Externo, no se intenta**: H-005 (quién emite la factura) sigue siendo decisión de negocio y
+  fiscal; TD-001/TD-002 siguen bloqueadas por PAC y credenciales.
+
+---
+
+# Riesgos
+
+| # | Riesgo | Prob. | Impacto | Mitigación |
+|---|---|:--:|:--:|---|
+| **R1** | **La primera corrida real de CI sale roja.** Precedente literal: PT-128 ejecutó los 17 ficheros e2e por primera vez y **42 de 80 tests fallaron** | **Alta** | Medio | **Es el resultado esperado, no el fracaso.** Ensayo con `workflow_dispatch` antes del primer push. Cada fallo se triará: defecto real → PT propio; defecto del job → se corrige aquí |
+| **R2** | `npm ci` gobernado por los locks de PT-135 **estrena en CI** | Media | Alto | Ya ensayado en contenedor (exit 0, `postinstall` instalando api y admin). No lo sustituye: es criterio explícito |
+| **R3** | PT-140 marca hecho algo que no lo está — el defecto que corrige, cometido otra vez | Media | Alto | Cita `fichero:línea` verificada por cada cambio de estado (disciplina de PT-090) **más** la guarda, que es lo que PT-090 no tuvo |
+| **R4** | Montar la raíz en `api` altera el arranque o el watch | Media | Medio | Ciclo completo levantar → `healthy` → recarga en caliente, antes de darlo por bueno |
+| **R5** | Unificar Redis rompe el rate limiting **sin que se note** | Baja | **Alto** | El throttler defiende los endpoints de auth (5–30 req/min). Se ejerce con peticiones reales hasta ver el 429, no sólo con la suite. Es la forma de F-34 y se trata como tal |
+| **R6** | Regenerar Foundation rompe las citas que vigila la guarda de PT-130 | Media | Alto | Las dos guardas documentales se ejecutan antes y después. H-016 volvería **con aval** si no |
+| **R7** | El modal reescrito a mano se comporta distinto del de Bootstrap (foco, `Esc`, fondo) | Media | Bajo | Verificación en navegador real, no sólo «el botón responde» |
+| **R8** | Cuatro guardas nuevas ralentizan la suite | Baja | Bajo | Las 93 suites actuales tardan **13 s**. Hay margen |
+| **R9** | Se abren cinco PT a la vez y ninguno se cierra — el defecto original, a mayor escala | Media | Alto | Se ejecutan **en el orden del grafo**, uno cerrado antes del siguiente salvo los tres independientes. PT-140 es el que impide que esto sea invisible |
+
+---
+
+# Análisis de regresión (obligatorio)
+
+## Qué puede romperse
+
+| Área | Qué podría romperse | Cómo se comprueba |
 |---|---|---|
-| 1 | El lock del API declara las tres plataformas | Contiene `-gnu`, `-musl` **y** `win32-x64-msvc` |
-| 2 | La imagen nueva lleva el binario | `docker run --rm --entrypoint sh ironloot-api:latest -c 'ls node_modules/@css-inline'` → ≥2 directorios |
-| 3 | **Los ocho contenedores `healthy`** desde volumen limpio | `down -v` → `build --no-cache` → `up -d` → `docker ps` |
-| 4 | El correo se rinde de verdad | Correo real visible en Mailhog (`:8026`) |
-| 5 | `msgpackr` usa prebuild, no compilación | Prebuild presente y **sin** `msgpackr-extract/build/Release/extract.node` |
-| 6 | **Un `npm install` en el host falla** | Ejecutarlo y ver el error. **Y el caso de control de la guarda** |
-| 7 | **La guarda del lock se ha visto fallar** | Lock de prueba sin `-gnu` → la prueba falla; con el real → pasa |
-| 8 | Sin regresión | 919 unitarias + 77 e2e + 136 navegador · `lint` 0 · `npm audit --omit=dev` = 0 ×5 |
-| 9 | Las cuatro imágenes de producción arrancan | `build` + `run` hasta `healthy` |
-| 10 | `npm ci` en los siete jobs, en verde, **en un push real** | Los jobs, vistos. No inferidos |
-| 11 | `.gitignore:40` retirado y los tres locks seguidos | `git ls-files` los muestra |
-| 12 | **Cero deuda nueva y cuatro entradas cerradas** | `10-Technical-Debt.md` + el ADR nuevo |
+| **Colas Bull** (PT-137) | Notificaciones y trabajos programados dejan de encolarse si la URL no se resuelve | Encolar un trabajo real y verlo consumido; log del API sin `ECONNREFUSED` |
+| **Rate limiting** (PT-137) | Los límites de auth caen a un cliente en `localhost` que no existe → **sin protección, en silencio** | Peticiones reales contra un endpoint de auth hasta ver **429** |
+| **Cerrojo distribuido** (PT-137) | Ya usa `REDIS_URL`; el riesgo es la validación nueva de arranque | Arranque del API con y sin la variable: uno vive, el otro **falla con mensaje que la nombra** |
+| **Arranque del API** (PT-138) | Montar la raíz cambia lo que el contenedor ve; podría chocar con los montajes de `/app/src` | `docker compose up` → `healthy` + recarga en caliente tras editar un fichero |
+| **Los 8 jobs** (PT-136) | Cualquiera puede fallar por primera vez | Corrida completa con `workflow_dispatch` y triaje job a job |
+| **ADMIN** (PT-139) | Retirar `data-bs-*` podría afectar al estilo si algún CSS cuelga de esos atributos | `grep` de `data-bs` en el CSS de ADMIN antes de tocar; revisión visual de las dos pantallas |
+| **CSP de ADMIN** (PT-139) | JS nuevo que use `style=` u `onclick=` **no funcionaría y el navegador no diría nada** | `plantillas-sin-js-inline.spec.ts` y `estilos-fuera-de-plantillas.spec.ts` deben seguir verdes |
+| **Orden de `<script>`** (PT-139) | Mover un `<script>` de bloque puede alterar el orden — **es la avería exacta de F-34** | `orden-de-scripts.spec.ts` |
+| **Guardas documentales** (PT-140, PT-141) | Mover documentos rompe las citas `fichero:línea` que vigilan | `coherencia-documentacion-codigo.spec.ts` y `coherencia-deuda-tecnica.spec.ts` antes y después |
+| **Suite completa** | Regresión general | **944 unitarias · 77 e2e · 176 por navegador**, más las 4 guardas nuevas |
 
-**Los criterios 6 y 7 son los que deciden si este PT vale algo.** Los otros diez arreglan hoy; esos
-dos son los únicos que actúan sobre la próxima vez.
+## Lo que NO debe cambiar de comportamiento
+
+- **Nada del dominio**: subastas, pujas, monedero, pagos, retiros, disputas. Ningún endpoint cambia
+  de contrato. PT-137 es lo único que toca `src/api/src/`, y sólo configuración de conexión.
+- **Ningún dato.** Ninguno de los seis genera migración.
+- **`HISTORY.log` no se reescribe**: sólo se le añade al final.
+- **Los hallazgos PTSA no se cierran**: `[R44]` sigue vigente. H-005 es del humano.
+- **`docs-v2/` no se reescribe** en PT-141: se decide su estatus, no su contenido.
 
 ---
 
-## Restricciones
+# Restricciones
 
-- **Prohibido `npm install` en el host.** Cualquier paso que lo requiera es inválido por construcción.
-- **Cero deuda diferida.** «Registrado para más adelante» no está disponible.
-- **El producto no se toca.** Ni un fichero de `src/api/src/`.
-- **`docker-compose` no cambia de comportamiento**: es el entorno de todos los días.
-- **`src/api/scripts/` no está montado como volumen** (HANDOFF, trampa nº 2): tocar el Dockerfile
-  exige `docker-compose build api`. Inevitable aquí.
-- **RULE-10 no aplica**: no se toca `schema.prisma`. Se dice porque la migración es lo primero que uno
-  mira al ver este log, y es el camino equivocado.
-- **RULE-14**: las dos guardas se prueban en los dos sentidos, o no se escriben.
-- **La historia no se reescribe**: `5c16af4` se queda como está.
+1. **RULE-14** — las cuatro guardas nuevas se prueban en los dos sentidos, con casos de control.
+2. **RULE-15** — npm se ejecuta en el contenedor. PT-138 existe porque esa regla y la forma de correr
+   ocho guardas no encajan todavía.
+3. **Cerrar son dos escrituras** — código y registro. PT-140 convierte esa regla en mecanismo.
+4. **Tests primero (RED)** en los cuatro PT que entregan guarda.
+5. **Commits atómicos**, uno por cambio lógico, trazables a su PT.
+6. **`run-all.sh` trunca la base de datos** — copia con `pg_dump` antes de cualquier corrida QA.
+7. **`docker compose down -v` borra la base.** Para recrear sólo el `node_modules` de un servicio:
+   `docker compose rm -fsv api`.
+8. **Cero deuda diferida**: lo que estos PT destapen se resuelve dentro o se abre como PT propio con
+   su registro. *«Registrado para más adelante»* no es una salida disponible.
+
+---
+
+# Criterios de éxito
+
+| # | Criterio | Medible por |
+|---|---|---|
+| 1 | **Los 8 jobs de CI se ejecutan en un push real a `master`** | `gh run list` deja de estar vacío |
+| 2 | Lo que salga rojo está **triado y registrado**, no silenciado | Un PT por cada defecto real encontrado |
+| 3 | `audit:schema`, `audit:check` y `audit:observability` tienen **ejecución real en CI** | Log de los tres jobs |
+| 4 | El API arranca con `REDIS_URL` y **falla nombrando la variable** si falta | Arranque en los dos sentidos |
+| 5 | Un **429 real** demuestra que el rate limiting sigue vivo | Peticiones contra un endpoint de auth |
+| 6 | Las 8 guardas que leen la raíz **corren dentro del contenedor** | `docker exec ... npx jest` |
+| 7 | `audit:observability` con `SIN_DATOS` **sale distinto de cero** | Código de salida |
+| 8 | El botón «Conciliar» hace algo y el modal de reembolsos abre y cierra | Navegador real |
+| 9 | Las **4 guardas nuevas** en verde con sus casos de control | Suite |
+| 10 | **Cero contradicciones** entre `PENDING_TASKS.md`, `HISTORY.log` y `10-Technical-Debt.md` | `coherencia-de-registros.spec.ts`, no lectura humana |
+| 11 | `HISTORY.log` tiene una entrada por cada carpeta de `evidence/` | La misma guarda |
+| 12 | Un lector nuevo sabe **dónde apunta un pendiente** y **qué árbol documental consultar** | `CLAUDE.md` |
+| 13 | Ninguna ruta citada en `CLAUDE.md` apunta a un fichero inexistente | Hoy fallan dos |
+| 14 | **Criterio 10 de PT-135 cerrado**, con evidencia de corrida real | PT-135 pasa a poder validarse entero |
+| 15 | Regresión completa sin pérdidas: **944 · 77 · 176** | Informe de pruebas |
+
+---
+
+**STOP. Esperando ACK de STATE 2.**
+Siguiente paso tras el ACK: **STATE 3** — Proposal Package en `changes/` para los seis PT
+(`design.md`, `tasks.md`, `spec-changes.md`, `test-scenarios.md`, `out-of-scope.md`), y **ahí está el
+Proposal Gate**: hasta ese segundo ACK no se abre ninguna rama ni se toca una línea de código.
+`[No Proposal Gate Skip]`

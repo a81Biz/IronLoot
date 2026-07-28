@@ -29,7 +29,9 @@ Aquí solo el índice.
 > **PT-135 (2026-07-28) — implementado y FUSIONADO en `master`** (443f757, 11 commits). MAJOR.
 > Bloqueaba **el entorno de desarrollo completo**: con el API `unhealthy`, nginx, admin, base y client
 > no arrancaban. Las doce tareas hechas. Pasa a §2: es un BUG y **lo cierra el humano**.
-> Falta **empujar `master`** y ver los siete jobs con `npm ci` en un push real (criterio 10).
+> `master` **ya está empujado** (`0 0` ahead/behind). Falta ver los **ocho** jobs con `npm ci` en un
+> push real (criterio 10), que **era inalcanzable**: el disparador de `ci.yml` nombraba cuatro ramas
+> inexistentes y el pipeline no se había ejecutado nunca. Lo desbloquea **PT-136**.
 > Los dos hallazgos de arriba salieron al verificarlo: **no son deuda diferida de PT-135**, son
 > defectos preexistentes que aparecieron al recorrer el camino entero.
 
@@ -55,8 +57,8 @@ Y los quince de la matriz, con su guia en `VALIDACION-PT-090-101.md`:
 
 **`PT-135`** — fusionado en `master` el 2026-07-28. Guía de validación:
 `docs/implementation/evidence/PT-135/self-review.md` y `regresion.txt`. Lo que **no** se declara
-pasado y conviene mirar antes de dar el VoBo: los siete jobs en verde en un push real (criterio 10) y
-la fase `71-paypal-guaranteed.js`, que falla en el DOM de PayPal.
+pasado y conviene mirar antes de dar el VoBo: los **ocho** jobs en verde en un push real (criterio 10,
+desbloqueado por PT-136) y la fase `71-paypal-guaranteed.js`, que falla en el DOM de PayPal.
 
 > **PT-090** y **PT-096** estuvieron bloqueados por F-33 y F-34; PT-103 y PT-102 los desbloquean.
 > **PT-098** vuelve a ser demostrable en cuanto se valide PT-102.
