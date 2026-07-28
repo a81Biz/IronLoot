@@ -17,9 +17,9 @@ servicios (API, BASE, CLIENT, ADMIN).
 
 | PT | Qué era | Estado |
 |---|---|---|
-| **PT-124** | **H-013** — la subida dejaba al cliente elegir la extensión de guardado | VALIDATION_PENDING |
-| **PT-125** | `bcrypt` 5→6 (saca `tar`, el único CRÍTICO) y fuera la dependencia `uuid` | VALIDATION_PENDING |
-| **PT-126** | NestJS 10→11 + Express 4→5 en los cuatro servicios | VALIDATION_PENDING |
+| **PT-124** | **H-013** — la subida dejaba al cliente elegir la extensión de guardado | **CLOSED** |
+| **PT-125** | `bcrypt` 5→6 (saca `tar`, el único CRÍTICO) y fuera la dependencia `uuid` | **CLOSED** |
+| **PT-126** | NestJS 10→11 + Express 4→5 en los cuatro servicios | **CLOSED** |
 
 ### H-013 vale más que los 12 avisos juntos
 
@@ -89,11 +89,11 @@ F-34, y se vio porque se ejecutó el lint después, no porque el override avisar
 
 ## Pendiente de validación humana
 
-**Tres PT**: `PT-124`, `PT-125`, `PT-126`. Los nueve anteriores (PT-114…PT-122) están **CLOSED**
-con tu VoBo del 27-jul; PT-123 es investigación y cerró sola.
+**Nada.** Todo lo que estaba en `VALIDATION_PENDING` quedó **CLOSED** con tu VoBo del 27-jul:
+PT-114…PT-122 primero, PT-124…PT-126 después. PT-123 es investigación y cerró sola.
 
-**Un hallazgo PTSA**: `H-013` (CORREGIDA). **No lo cierro yo**: es un BUG y la regla es explícita.
-`H-008`…`H-012` quedan **CERRADAS**. La única `ABIERTA` es `H-005`, y no depende de código.
+**Hallazgos**: once CERRADAS (`H-001`…`H-004`, `H-006`…`H-013`). La única `ABIERTA` es **`H-005`**,
+y no espera código ni evidencia — espera una decisión fiscal (ver abajo).
 
 ## Estado PTSA (DS-008)
 

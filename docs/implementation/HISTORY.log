@@ -1622,3 +1622,34 @@ handshake de socket.io, y las 5 pruebas de subida de PT-124 identicas.
 Delta (real vs planeado): el alcance preveia bajar de 10 avisos a «3 o menos». Quedaron 0. Y preveia
 un solo punto de rotura; aparecieron cuatro mas, ninguno del framework y todos latentes.
 PTSA reference: H-008 (CERRADA) · TD-015 (CERRADA)
+
+## PT-124 … PT-126 — VALIDACION
+Date: 2026-07-27
+Status: CLOSED (validados por humano)
+Alcance: los tres PT que cerraron TD-015 y el hallazgo que aparecio al cerrarla.
+
+| PT | Que era |
+|---|---|
+| PT-124 | H-013 — la subida dejaba al cliente elegir la extension de guardado; ademas F-41 (un 4xx se registraba como INTERNAL_ERROR) |
+| PT-125 | `bcrypt` 5->6 (saca `tar`, el unico CRITICO) y fuera la dependencia `uuid` |
+| PT-126 | NestJS 10->11 + Express 4->5 en los cuatro servicios; ademas F-42 (contexto de construccion de Docker sin acotar) |
+
+VoBo del humano recibido el 2026-07-27: «dalos a todos por validados con mi VoBo».
+Los tres pasan de VALIDATION_PENDING a CLOSED.
+
+Transicion de hallazgo PTSA en el mismo acto:
+- **H-013 CORREGIDA -> CERRADA.** Es un BUG: el agente lo dejo en CORREGIDA con la evidencia
+  puesta y **el cierre lo hace el humano**, que es exactamente lo que ha ocurrido aqui. La regla no
+  se ha saltado; se ha ejecutado.
+
+Estado de los hallazgos tras esta validacion:
+- CERRADAS: H-001 … H-004, H-006 … H-013 (once).
+- ABIERTA: **H-005** unicamente. No entra en esta validacion y no puede: no espera codigo ni
+  evidencia, espera una decision fiscal del negocio —quien emite la factura, la plataforma o el
+  vendedor— con las tres opciones en F-1 §U-005.
+
+Estado de la deuda tecnica: **ninguna abierta** salvo la bloqueada por terceros (TD-001 CFDI,
+TD-002 Stripe/HeyBanco, F-27 dispersion a tarjeta, TD-009 riesgo aceptado).
+
+Evidence: PTSA/Evidencias/E-016.md · docs/implementation/ANALISIS-TD-015.md ·
+`npm audit --omit=dev` = 0 en los cinco proyectos · 856 pruebas unitarias.
