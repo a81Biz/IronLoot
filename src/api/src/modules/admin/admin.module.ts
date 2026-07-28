@@ -17,6 +17,7 @@ import { CmsModule } from '../cms/cms.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { PaymentsModule } from '../payments/payments.module';
 import { WalletModule } from '../wallet/wallet.module';
+import { jwtSecret } from '../../common/config/jwt-secret';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { WalletModule } from '../wallet/wallet.module';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        secret: config.get<string>('JWT_SECRET'),
+        secret: jwtSecret(config),
         signOptions: { expiresIn: '8h' },
       }),
     }),

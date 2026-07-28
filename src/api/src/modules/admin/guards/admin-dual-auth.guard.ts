@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
+import { jwtSecret } from '../../../common/config/jwt-secret';
 
 /**
  * Accepts either:
@@ -35,7 +36,7 @@ export class AdminDualAuthGuard implements CanActivate {
         role: string;
         type: string;
         username: string;
-      }>(token, { secret: this.config.get<string>('JWT_SECRET') });
+      }>(token, { secret: jwtSecret(this.config) });
 
       if (payload.role !== 'admin' || payload.type !== 'admin-session') {
         throw new UnauthorizedException('Admin role required');
