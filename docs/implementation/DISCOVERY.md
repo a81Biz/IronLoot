@@ -4797,3 +4797,157 @@ Cómo se resuelve el modal de reembolsos:
   CSP.
 
 **Recomendación: [A].**
+
+---
+
+## PT-142 — BUG: `SystemConfigService.seed()` es comprobar-y-actuar; dos instancias que arranquen a la vez chocan
+
+Date: 2026-07-28
+Type: BUG
+Complexity: **STANDARD**
+Origen: **triaje de PT-136.5**, tercera corrida de CI (run 30408275255). Clasificado como *defecto del
+repositorio* según la regla escrita en `changes/PT-136-ci-que-se-ejecuta/design.md` § D3, y por eso
+**no se corrige dentro de PT-136**.
+
+### What — qué pasa
+
+```
+src/api/src/modules/system-config/system-config.service.ts:189-205
+
+  async seed(): Promise<void> {
+    for (const entry of SEEDED_KEYS) {
+      const existing = await this.prisma.systemConfig.findUnique({ where: { key: entry.key } });
+      if (!existing) {                                    // <-- comprobar
+        await (this.prisma.systemConfig as any).create({  // <-- ...y actuar, sin atomicidad
+```
+
+Entre el `findUnique` y el `create` no hay nada que impida que otro proceso cree la misma clave.
+Cuando pasa:
+
+```
+prisma:error  Invalid `any).create()` invocation in system-config.service.ts:194:49
+              Unique constraint failed on the fields: (`key`)
+```
+
+Y `seed()` se llama desde **`onModuleInit()`**: ocurre en **cada arranque de la aplicación**.
+
+### Where — dónde
+
+`src/api/src/modules/system-config/system-config.service.ts:185-205`.
+
+### When — desde cuándo
+
+Desde que existe el `seed()`. **Nunca se había visto** porque hacían falta dos condiciones a la vez:
+varias instancias arrancando en paralelo **y** una base sin las claves ya sembradas.
+
+En desarrollo no se dan: hay una sola instancia, y la base tiene historia —las claves ya existen, así
+que `existing` nunca es nulo y el `create` no llega a ejecutarse—.
+
+**CI da las dos.** Jest arranca varios workers, cada uno levanta su aplicación, y la base nace vacía.
+
+Es la lección de PT-122 dada la vuelta: allí el problema era que una base vacía devolvía `SIN_DATOS`
+donde una con historia daba números. Aquí es que **una base con historia tapa un defecto que una
+vacía destapa**. En los dos casos, lo que se mide depende del estado previo.
+
+### How — cómo reproducir
+
+`npm run test:e2e` contra una base **vacía**, con Jest en paralelo (su comportamiento por defecto).
+
+### Why — por qué importa, y no es un problema de tests
+
+**El riesgo real es de producción.** Un despliegue progresivo, un evento de escalado o una tormenta
+de reinicios levanta dos instancias del API a la vez contra la misma base. La segunda **falla al
+arrancar** — no degradada: caída, en `onModuleInit`.
+
+Es la misma familia que H-014: algo que sólo se manifiesta cuando el esquema o los datos están en un
+estado que en desarrollo nunca se da.
+
+### Impacto
+
+- **Usuarios**: ninguno hoy (una sola instancia). En un despliegue con réplicas, arranques fallidos.
+- **Hoy, medible**: 3 suites e2e y 11 tests en rojo en CI, y con `test-integration` rojo los jobs
+  `build` y `docker` **no se ejecutan** — el mismo bloqueo que H-015 describió.
+
+### La corrección, que es de una línea y aun así merece su PT
+
+`upsert` en vez de `findUnique` + `create`: la base resuelve la carrera, que es donde se resuelve.
+
+Merece PT propio porque toca **código de producción** en el arranque de la aplicación, y porque
+mezclarlo con PT-136 haría imposible saber cuál de los dos cambios arregló qué. Es exactamente lo que
+PT-128 decidió al encontrarse 42 tests rojos: abrió PT-131 en vez de arreglarlos dentro.
+
+### Confianza
+
+- Root Cause Confidence: **100%** — el patrón se lee en el código y el error de Prisma lo nombra.
+- Architecture Confidence: **95%**.
+- Solution Confidence: **90%** — `upsert` es directo. El 10% es si hay más sitios con el mismo patrón:
+  **hay que barrer `findUnique` + `create` en todo `src/api/src/`** antes de dar el PT por cerrado.
+
+---
+
+## PT-143 — BUG: la suite e2e no aísla sus datos entre workers y su limpieza viola una clave ajena
+
+Date: 2026-07-28
+Type: BUG
+Complexity: **STANDARD**
+Origen: **triaje de PT-136.5**, misma corrida. Clasificado como *defecto del repositorio* (test), y por
+eso **no se corrige dentro de PT-136**.
+
+### What — qué pasa
+
+```
+src/api/test/core/auth-helper.ts:105-108
+
+  // Be careful not to delete real users if running on dev db
+  // Ideally we run on test db
+  try {
+    await this.prisma.user.deleteMany(
+        Foreign key constraint violated: `auctions_seller_id_fkey (index)`
+```
+
+La limpieza borra usuarios que **todavía tienen subastas**. La clave ajena lo impide y el `deleteMany`
+lanza.
+
+El propio comentario del fichero declara la duda —*«Ideally we run on test db»*— y lleva ahí desde que
+se escribió. Es una nota donde debía haber un mecanismo, la misma forma que PT-037 con H-014.
+
+### Where — dónde
+
+`src/api/test/core/auth-helper.ts:105-115`, y por extensión el diseño de aislamiento de las 16 suites.
+
+### When — desde cuándo
+
+Igual que PT-142: **invisible mientras la base tuviera historia y las suites no compitieran**. En
+local pasaban 77/77 porque los datos previos hacían que los caminos de limpieza no se cruzaran.
+
+### Why — por qué importa
+
+Dos suites que comparten base y corren a la vez **no son independientes**: el resultado depende del
+orden, y un test que depende del orden miente en las dos direcciones —puede pasar estando roto, y
+fallar estando bien—.
+
+Y hay un riesgo peor escrito en el propio comentario: **la limpieza borra por patrón sobre la base a
+la que apunte `DATABASE_URL`**. Si alguien la ejecuta apuntando a la base de desarrollo, se lleva
+datos reales por delante. `run-all.sh` ya trunca la base y está advertido en `CLAUDE.md`; esto no lo
+está.
+
+### Impacto
+
+- 3 suites y parte de los 11 tests en rojo.
+- Riesgo latente de borrado sobre una base equivocada.
+
+### Vías, y hay que decidir
+
+- **[A] Serializar** (`--runInBand`). Una línea; hace la suite más lenta y **no arregla el
+  aislamiento**: sólo esconde que no existe.
+- **[B] Una base por worker** (`JEST_WORKER_ID` en el nombre). Aislamiento real, coste de arranque.
+- **[C] Datos únicos por suite** (prefijos) y limpieza acotada a lo propio, en orden de dependencias.
+
+**Recomendación: [C], y [B] si [C] no basta.** [A] queda descartada como solución: hace verde una
+suite que sigue sin poder correr en paralelo, y este PT existe porque algo verde tapaba un defecto.
+
+### Confianza
+
+- Root Cause Confidence: **90%** — la violación de clave ajena es clara; falta medir **cuántas** de
+  las 16 suites dependen del orden.
+- Solution Confidence: **65%** — depende de esa medición y de la decisión entre [B] y [C].
