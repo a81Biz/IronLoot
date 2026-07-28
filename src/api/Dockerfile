@@ -97,6 +97,20 @@ RUN npm run build
 # Stage 2: Production
 FROM node:20-alpine AS production
 
+# `openssl` en la imagen FINAL, no solo en el builder.
+#
+# El sexto y ultimo bloqueo de PT-129, y el mas sutil de todos. El cliente Prisma se genera para el
+# motor que detecta EN EL BUILD (`linux-musl-openssl-3.0.x`, porque alli si estaba openssl), pero
+# vuelve a detectar EN ARRANQUE. Sin el binario `openssl` en la imagen final, la deteccion fallaba
+# y pedia `linux-musl` — el motor de OpenSSL 1.1, que no existe aqui:
+#
+#     Prisma Client was generated for "linux-musl-openssl-3.0.x",
+#     but the actual deployment required "linux-musl".
+#
+# `libssl.so.3` ya estaba (viene con node:20-alpine). Lo que faltaba era el binario con el que
+# Prisma pregunta la version.
+RUN apk add --no-cache openssl
+
 # Create non-root user for security
 RUN addgroup -g 1001 -S ironloot && \
     adduser -S ironloot -u 1001
@@ -120,6 +134,14 @@ COPY --from=builder --chown=ironloot:ironloot /repo/src/packages/core /repo/src/
 COPY --from=builder --chown=ironloot:ironloot /repo/src/api/dist ./dist
 COPY --from=builder --chown=ironloot:ironloot /repo/src/api/node_modules ./node_modules
 COPY --from=builder --chown=ironloot:ironloot /repo/src/api/package*.json ./
+
+# El esquema, que NO es solo del build.
+#
+# Quinto bloqueo de PT-129, y el mas escondido: el motor de consultas estaba en la imagen, con
+# permisos correctos, y Prisma seguia sin cargarlo — listando entre las rutas buscadas justo la que
+# lo contenia. La causa era otra: **`schema.prisma` no viajaba a la imagen**. El cliente lo lee en
+# ARRANQUE para resolver que motor le toca; sin el, no resuelve ninguno.
+COPY --from=builder --chown=ironloot:ironloot /repo/src/api/prisma ./prisma
 
 # Set environment
 ENV NODE_ENV=production

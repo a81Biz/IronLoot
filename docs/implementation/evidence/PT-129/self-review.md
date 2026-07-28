@@ -153,3 +153,58 @@ resueltas y verificadas arrancando; la del API sigue abierta con un bloqueo nuev
 
 **Marcarlo como corregido sería exactamente el defecto que esta auditoría persigue**: declarar
 verde algo que nadie ha visto funcionar.
+
+---
+
+# Continuación — bloqueos 5 y 6 resueltos (2026-07-27)
+
+**Las cuatro imágenes de producción arrancan y llegan a `healthy`.**
+
+```
+pt129-api      Up (healthy)
+pt129-admin    Up (healthy)
+pt129-client   Up (healthy)
+pt129-base     Up (healthy)
+```
+
+## El bloqueo 5: `schema.prisma` no viajaba a la imagen
+
+El motor estaba, con permisos correctos (`-rwxr-xr-x ironloot ironloot`), y Prisma seguía sin
+cargarlo listando entre las rutas buscadas justo la que lo contenía.
+
+**La causa era otra**: el stage de producción copiaba `dist`, `node_modules` y `package*.json`, y
+**no `prisma/`**. El cliente lee `schema.prisma` en arranque para resolver qué motor le toca; sin
+él, no resuelve ninguno.
+
+## El bloqueo 6: `openssl` faltaba en la imagen FINAL
+
+Con el esquema ya dentro, el error se volvió explícito:
+
+```
+Prisma Client was generated for "linux-musl-openssl-3.0.x",
+but the actual deployment required "linux-musl".
+```
+
+El cliente se genera para el motor que detecta **en el build** —donde sí instalé `openssl`— pero
+**vuelve a detectar en arranque**. `libssl.so.3` ya venía con `node:20-alpine`; lo que faltaba era
+el binario `openssl` con el que Prisma pregunta la versión. Sin él caía al motor de OpenSSL 1.1,
+que no existe en alpine moderno.
+
+## Los seis bloqueos, en orden de aparición
+
+| # | Qué | Cómo se vio |
+|---|---|---|
+| 1 | `@ironloot/core` fuera del contexto → no compilaba | 8 errores `TS2307` |
+| 2 | El enlace simbólico a core roto al aplanar a `/app` | `Cannot find module '@ironloot/core'` |
+| 3 | `npm prune --production` se llevaba el binario musl de `@css-inline` | `Cannot find module ...linux-x64-musl` |
+| 4 | `openssl` faltaba en el **builder** → motor mal generado | `libssl.so.1.1: No such file` |
+| 5 | **`schema.prisma` no estaba en la imagen** | motor presente y no resuelto |
+| 6 | **`openssl` faltaba en la imagen final** → detección en arranque fallaba | «generated for X, required Y» |
+
+**Ninguno era el healthcheck que motivó H-017.** Ese era el séptimo por orden: nunca se llegaba a
+él porque la imagen no pasaba de la primera línea.
+
+## Estado
+
+**PT-129: `VALIDATION_PENDING`.** H-017 → **`CORREGIDA`**, ya no parcial. `[R44]`: lo cierra el
+humano.
