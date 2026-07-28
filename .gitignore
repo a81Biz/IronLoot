@@ -78,6 +78,13 @@ tsconfig.build.tsbuildinfo
 # excepcion, un script de front no llega al repositorio: existe en la maquina de quien lo
 # escribio y en ninguna otra.
 !src/apps/*/public/js/**/*.js
+
+# PT-135 — La misma historia, tercera vez. El utillaje del monorepo tiene que ser JavaScript llano
+# porque lo invoca `preinstall`, ANTES de que exista `node_modules` y por tanto antes de que exista
+# ts-node. Son codigo fuente, no salida compilada. Y sin esta excepcion la guarda que impide
+# instalar en el host se habria quedado en la maquina de quien la escribio — que es exactamente el
+# defecto que la guarda existe para impedir.
+!scripts/*.js
 !src/admin/public/js/**/*.js
 
 # =====================================================

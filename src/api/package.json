@@ -22,6 +22,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "lint:check": "eslint \"{src,test}/**/*.ts\"",
+    "preinstall": "node -e \"process.exit(process.platform==='linux'?0:1)\" || node ../../scripts/solo-en-contenedor.js",
     "prepare": "cd ../.. && husky install",
     "setup": "cp -n .env.example .env || true && npm install && npx prisma generate",
     "start": "nest start",

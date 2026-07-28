@@ -7,7 +7,11 @@
     "src/packages/*"
   ],
   "scripts": {
+    "preinstall": "node scripts/solo-en-contenedor.js",
     "postinstall": "npm --prefix ./src/api install --no-audit --no-fund && npm --prefix ./src/admin install --no-audit --no-fund",
+    "lock:root": "node scripts/regenerar-lock.js .",
+    "lock:api": "node scripts/regenerar-lock.js src/api",
+    "lock:admin": "node scripts/regenerar-lock.js src/admin",
     "test": "npm run test:api && npm run test:client && npm run test:core && npm run test:admin && npm run test:base",
     "test:api": "npm --prefix ./src/api run test",
     "test:client": "npm --prefix ./src/apps/client run test",
