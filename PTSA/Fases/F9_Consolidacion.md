@@ -132,3 +132,138 @@ PERO: freshness = UNKNOWN → cap a Clase C
 1. **H-001**: 1 cambio en BidsService — leer config en lugar de constante literal. Recupera D1 hacia 85.
 2. **H-003**: 1 línea en PaymentsService — cambiar import de Logger a StructuredLogger. Elimina finding D2.
 3. **H-007**: 1 línea en PRD — corregir AC-3.2. Elimina finding D4.
+
+---
+
+## Update U-006 — S-002 (2026-07-27): consolidación de la corrida completa
+
+### Hallazgos, estado tras S-002
+
+| ID | Dim | Tipo | Sev | Estado | Pen. | Riesgo |
+|---|:--|:--|:--|---|--:|--:|
+| **H-014** | D2 | BUG | **CRITICA** | **ABIERTA** (nuevo) | 30 | 4×2 = **8** ALTO |
+| **H-015** | D2 | BUG | ALTA | **ABIERTA** (nuevo) | 15 | 3×4 = **12** CRÍTICO |
+| **H-016** | D4 | PROCESS | MEDIA | **ABIERTA** (nuevo) | 5 | 2×3 = **6** MEDIO |
+| H-005 | D1 | DOMAIN_RULE | ALTA | ABIERTA | 15 | 2×3 = **6** MEDIO |
+| H-008 | D2 | TECHNICAL | ALTA | CERRADA | — | — |
+| H-009 | D4 | PROCESS | MEDIA | CERRADA | — | — |
+| H-010 · H-011 · H-012 | D1 | DOMAIN_RULE | — | CERRADA | — | — |
+| H-013 | D2 | BUG | ALTA | CERRADA | — | — |
+
+**Ninguno se cerró en esta sesión.** Los tres nuevos son BUG/PROCESS abiertos; los cerrados lo
+estaban ya con validación humana previa (HISTORY.log, «PT-114 … PT-122 — VALIDACION»).
+
+### Criterio de «activo» aplicado — declarado, porque la especificación no lo fija
+
+La especificación define «activo» para riesgo (§14, línea sobre riesgo residual) pero no para el
+score dimensional. Se aplica el criterio que las sesiones anteriores de este repositorio ya venían
+usando, y se deja escrito:
+
+* `ABIERTA` → penaliza el score completo.
+* `CORREGIDA_PARCIAL` → penaliza una fracción, declarada caso a caso.
+* `CORREGIDA` / `VERIFICADA` → **no** penaliza el score; sí suma riesgo residual hasta
+  `VERIFICADA`/`CERRADA` (§14, riesgo residual).
+* `CERRADA` → no penaliza nada.
+
+### Scores por dimensión
+
+```
+D1 = 100 − 15                = 85     (H-005)
+D2 = 100 − 30 − 15           = 55     (H-014, H-015)
+D3 = 100                     = 100    (sin hallazgos)
+D4 = 100 − 5                 = 95     (H-016)
+```
+
+### Health
+
+```
+Health = (85 × 0.30) + (55 × 0.30) + (100 × 0.30) + (95 × 0.10)
+       = 25.5 + 16.5 + 30.0 + 9.5
+       = 81.5
+```
+
+**Regla del Agua Potable: NO activada.** D1 = 85 ≥ 60. Se dice explícitamente porque `[A4]` lo
+exige: el dominio no está capando nada aquí. Lo que baja el Health es D2.
+
+### Risk
+
+```
+Risk_bruto = 8 (H-014) + 12 (H-015) + 6 (H-016) + 6 (H-005) = 32
+Risk_Score = min(100, 32 × 4) = 100
+```
+
+**Léase con cuidado.** §14.4 satura a los 25 puntos brutos, así que 32 y 80 dan el mismo 100. Aquí
+«CRÍTICO» significa «por encima del umbral de saturación», no «lo peor imaginable». Los dos
+contribuyentes grandes son H-015 (12, ocurre en cada push) y H-014 (8).
+
+### Confidence
+
+```
+Confidence = 80×0.40 + 100×0.25 + 90×0.20 + 100×0.15 = 90.0
+```
+
+| Factor | Valor | Por qué |
+|---|--:|---|
+| `coverage` | 80 | 10 de 12 productos con salida real; esquema y superficie completos; F7 sólo parcial |
+| `freshness` | 100 | verificado hoy, 0 commits desde la verificación |
+| `evidence_validity` | 90 | evidencias nuevas de primera mano; E-015 sigue válida como captura pero no es reproducible (base reconstruida) |
+| `autonomy` | 100 | shell, BD, logs y API en vivo; todo lo ejecutó el auditor |
+
+### Clasificación
+
+Health 81.5 → **Clase B** (75–89). Confidence 90 ≥ 90: no aplica la degradación de §15.6.
+`health_unstable = false`. `freshness = FRESH`. **Sin cap adicional.**
+
+### Corrección de esta misma consolidación — H-017
+
+Al comprobar la salud del sistema al cierre de la sesión apareció un cuarto hallazgo: **H-017**
+(D2, ALTA, penalización 15) — el healthcheck de la imagen de producción apunta a un 404, tres de
+los cuatro servicios no tienen imagen de producción, y el job `docker` construye un fichero que no
+existe. Evidencia E-021.
+
+Los scores de arriba quedan sustituidos por estos:
+
+```
+D1 = 100 − 15                     = 85
+D2 = 100 − 30 − 15 − 15           = 40      (H-014, H-015, H-017)
+D3 = 100                          = 100
+D4 = 100 − 5                      = 95
+
+Health = (85×0.30)+(40×0.30)+(100×0.30)+(95×0.10)
+       = 25.5 + 12.0 + 30.0 + 9.5
+       = 77.0                     → Clase B (75–89), por poco
+
+Risk_bruto = 6 (H-005) + 8 (H-014) + 12 (H-015) + 6 (H-016) + 6 (H-017) = 38
+Risk_Score = min(100, 38 × 4) = 100
+```
+
+Regla del Agua Potable: sigue **NO** activada (D1 = 85). Confidence: **90.0**, sin cambio — el
+hallazgo se encontró con las mismas fuentes y no altera cobertura, frescura, validez ni autonomía.
+
+Se deja el cálculo anterior visible en vez de sobrescribirlo: `[A6]`, las revisiones se añaden.
+
+### Segunda corrección — revisión S-002-R2 (H-016 de MEDIA a ALTA)
+
+Una objeción humana llevó a verificar las cinco filas de la tabla de stack de `03-TRD.md`, no sólo
+la de NestJS. **5 de 5 citas apuntan a la línea equivocada; 3 de 5 versiones son falsas.** El
+mecanismo de verificabilidad del documento está muerto.
+
+`H-016: MEDIA (5) → ALTA (15)`. Impacto 2→3. Riesgo 6 MEDIO → 9 ALTO.
+
+Los cálculos anteriores quedan sustituidos por estos (se dejan visibles, `[A6]`):
+
+```
+D1 = 85 · D2 = 40 · D3 = 100 · D4 = 100 − 15 = 85
+
+Health = (85×0.30)+(40×0.30)+(100×0.30)+(85×0.10)
+       = 25.5 + 12.0 + 30.0 + 8.5 = 76.0          → Clase B
+
+Risk_bruto = 6 (H-005) + 8 (H-014) + 12 (H-015) + 9 (H-016) + 6 (H-017) = 41
+Risk_Score = min(100, 41 × 4) = 100               (saturado)
+
+Confidence = 90.0                                  (sin cambio)
+```
+
+Y una corrección de redacción, no de medición: **la migración a NestJS 11 sí está documentada** en
+`docs/implementation/` (PT-126). H-016 es sobre `docs/enterprise-documentation/`, corpus distinto.
+E-020 estaba escrita de forma que podía leerse al revés.

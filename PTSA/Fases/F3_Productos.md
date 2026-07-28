@@ -94,3 +94,42 @@ Los archivos `PTSA/Productos/P-XXX.md` han sido creados con estado BORRADOR para
 - [x] Cada uno con `dimension_primaria` y `clase`
 
 **Estado: COMPLETADA** | Confidence: 92%
+
+---
+
+## Update U-006 — S-002 (2026-07-27): sin transiciones, con una salvedad
+
+Los 12 productos mantienen el estado que fijó DS-008: **11 `VALIDADO`**, P-012 `IDENTIFICADO`.
+
+Ningún hallazgo de esta sesión degrada un producto. H-014, H-015 y H-016 son **sistémicos**
+(`producto_id: null`, §13.7): penalizan su dimensión y no se imputan a ningún producto. Es la
+lectura honesta — H-014 no dice que P-004 esté mal, dice que el artefacto que reconstruiría su base
+en otro entorno está roto. La salida real de P-004 sigue siendo correcta (E-019).
+
+### Salvedad sobre P-006 — Dispute
+
+Llegó a `VALIDADO` en DS-008 con la evidencia E-015, observada sobre disputas reales en la base.
+**Esa base se reconstruyó después**: hoy `disputes` tiene 0 filas y `_prisma_migrations` no existe
+(H-014). E-015 sigue siendo una captura válida de lo que se observó; **no es reproducible hoy**.
+
+No se degrada el estado: `[R68]` exige evidencia post-fix observada en la fuente real para *llegar*
+a VALIDADO, y esa evidencia se capturó. Pero queda anotado, porque una validación que no puede
+repetirse en el entorno actual no es lo mismo que una que sí. La próxima corrida completa de QA
+debería volver a generar una disputa real.
+
+### Salida real disponible hoy, por producto
+
+| Producto | Filas | |
+|---|--:|---|
+| P-001 Bid | 3 | ✅ |
+| P-002 AuctionClose | 1 subasta CLOSED | ✅ |
+| P-003 Order | 1 | ✅ |
+| P-004 Payment | 1 pago · 4 ciclos · 49 eventos de traza | ✅ |
+| P-005 WalletTransaction | 4 monederos | ✅ |
+| P-006 Dispute | **0** | ⚠️ base reconstruida |
+| P-007 Notification | 4 (incluye `AUCTION_SOLD`) | ✅ |
+| P-008 JwtToken | 25 sesiones | ✅ |
+| P-009 LedgerEntry | 15 asientos, 9 tipos | ✅ |
+| P-010 CommissionRecord | 1 | ✅ |
+| P-011 KycSubmission | 1 APPROVED | ✅ |
+| P-012 CfdiRecord | **0** | ⚠️ H-005 |

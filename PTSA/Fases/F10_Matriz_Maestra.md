@@ -135,3 +135,94 @@
 - Se escala a más de 1 instancia API
 
 **Objetivo próxima auditoría**: Resolver fresshness=UNKNOWN → clasificación objetivo B (75-89).
+
+---
+
+## Update U-006 — S-002 (2026-07-27): matriz ejecutiva
+
+```
+Sistema:        IronLoot Auction Platform v1.0.0
+Health:         81.5 / 100      Clase B
+Risk:           100 / 100       CRÍTICO (saturado desde 32 brutos)
+Confidence:     90.0 / 100      ALTA
+Freshness:      FRESH
+Productos:      11 VALIDADO · 1 IDENTIFICADO
+Agua Potable:   NO activada (D1 = 85)
+```
+
+### Matriz por producto
+
+| ID | Producto | Criticidad | Estado | D1 | D2 | Hallazgos | Impacto de negocio |
+|---|---|:--|---|:--|:--|---|---|
+| P-001 | Bid | CRÍTICA | VALIDADO | ✅ | ✅ | — | Puja correcta con retención de fondos |
+| P-002 | AuctionClose | CRÍTICA | VALIDADO | ✅ | ✅ | — | Cierre, ganador, pedido y avisos |
+| P-003 | Order | ALTA | VALIDADO | ✅ | ✅ | — | Registro comercial de la venta |
+| P-004 | Payment | CRÍTICA | VALIDADO | ✅ | ✅ | — | Depósito acreditado, traza completa |
+| P-005 | WalletTransaction | CRÍTICA | VALIDADO | ✅ | ✅ | — | Balance y fondos retenidos |
+| P-006 | Dispute | ALTA | VALIDADO ⚠️ | ✅ | ✅ | — | Validado en DS-008; sin instancias hoy |
+| P-007 | Notification | MEDIA | VALIDADO | ✅ | ✅ | — | Aviso al destinatario correcto |
+| P-008 | JwtToken | ALTA | VALIDADO | ✅ | ✅ | — | Sesión emitida y verificada |
+| P-009 | LedgerEntry | CRÍTICA | VALIDADO | ✅ | ✅ | — | Asiento inmutable que cuadra |
+| P-010 | CommissionRecord | MEDIA | VALIDADO | ✅ | ✅ | — | Comisión calculada y registrada |
+| P-011 | KycSubmission | ALTA | VALIDADO | ✅ | ✅ | — | Vendedor habilitado sólo con KYC |
+| P-012 | CfdiRecord | BAJA | IDENTIFICADO | ⛔ | — | **H-005** | Sin facturación fiscal |
+
+Los tres hallazgos nuevos son **sistémicos**: no se imputan a ningún producto (§13.7). Por eso la
+columna de hallazgos está vacía salvo en P-012, y aun así D2 cae a 55.
+
+### Prioridad de actuación (`[R41]`)
+
+| # | Qué | Por qué primero |
+|---|---|---|
+| **1** | **H-015** — el job de CI | Riesgo 12, el más alto. Ocurre en cada push. Y es la red que dejaría ver lo demás |
+| **2** | **H-014** — las migraciones | Riesgo 8, severidad CRITICA. Arreglarlo da además el paso de esquema que H-015 necesita |
+| **3** | **H-005** — quién emite la factura | Riesgo 6. Bloquea P-012 y tapa D1 en 85. **Decisión de negocio, no técnica** |
+| **4** | **H-016** — la documentación | Riesgo 6, corrección de minutos |
+
+H-015 y H-014 se resuelven bien juntos: el paso de esquema que le falta al job es exactamente la
+prueba de que las migraciones funcionan. Arreglar uno sin el otro deja el agujero abierto.
+
+### Corrección — H-017 (mismo día)
+
+```
+Health:     77.0 / 100      Clase B
+Risk:       100 / 100       CRÍTICO (saturado desde 38 brutos)
+Confidence: 90.0 / 100      ALTA
+D1 85 · D2 40 · D3 100 · D4 95
+```
+
+Prioridad de actuación, revisada:
+
+| # | Qué | Por qué |
+|---|---|---|
+| **1** | **H-015** — el job de CI | Riesgo 12, el más alto. En cada push. Y es la red que dejaría ver los otros dos |
+| **2** | **H-014** — las migraciones | CRITICA. El paso de esquema que H-015 necesita es su propia corrección |
+| **3** | **H-017** — la imagen de producción | Se cierra sola en cuanto el pipeline construya y arranque la imagen una vez |
+| **4** | **H-005** — quién emite la factura | Decisión de negocio. Bloquea P-012 y tapa D1 en 85 |
+| **5** | **H-016** — la documentación | Minutos. Dos casos ya encontrados sin buscarlos |
+
+**Los tres primeros son un solo trabajo.** Esquema, pipeline e imagen son las tres piezas del mismo
+camino, y ese camino no se ha recorrido nunca. Recorrerlo una vez, de principio a fin, cierra los
+tres y deja el mecanismo que impide que vuelvan.
+
+### Segunda corrección — S-002-R2
+
+```
+Health:     76.0 / 100      Clase B
+Risk:       100 / 100       CRÍTICO (saturado desde 41 brutos)
+Confidence: 90.0 / 100      ALTA
+D1 85 · D2 40 · D3 100 · D4 85
+```
+
+H-016 sube a ALTA (riesgo 9) y adelanta a H-005 y H-017 en el orden. Prioridad revisada:
+
+| # | Qué | Riesgo |
+|---|---|---|
+| 1 | **H-015** — el job de CI | 12 CRÍTICO |
+| 2 | **H-016** — la tabla de stack del TRD: 5/5 citas rotas, 3/5 versiones falsas | **9 ALTO** |
+| 3 | **H-014** — las migraciones | 8 ALTO |
+| 4 | **H-005** — quién emite la factura | 6 MEDIO |
+| 5 | **H-017** — la imagen de producción | 6 MEDIO |
+
+H-016 sube al segundo puesto **por riesgo**, no por esfuerzo: sigue siendo el más barato de los
+cinco. Es un buen primer paso mientras se decide el resto.

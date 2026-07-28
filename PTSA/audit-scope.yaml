@@ -30,6 +30,15 @@ auditable_patterns:
   - "docker-compose.yml"
   - ".env.example"
   - "src/nginx/nginx.conf"
+  # S-002 — Dos huecos que costaron H-014 y H-015.
+  # El pipeline no estaba en el alcance: por eso un job de CI que no puede terminar en verde
+  # sobrevivio nueve sesiones. Y el script que aplica el esquema de la BD en cada arranque
+  # tampoco: es la causa directa de que las 23 migraciones no se hayan ejecutado nunca.
+  - ".github/workflows/**"
+  - "src/api/scripts/**"
+  # Y las imagenes: el healthcheck de la de produccion apunta a un 404 desde que existe (H-017).
+  - "**/Dockerfile"
+  - "**/Dockerfile.dev"
   # Documentación crítica
   - "CLAUDE.md"
   - "docs/enterprise-documentation/02-PRD.md"
@@ -49,13 +58,16 @@ ignore_patterns:
   - "**/*.js.map"
   - "**/*.d.ts"
 
+# Cifras recontadas en S-002 (2026-07-27). Las anteriores eran del 23-jun y estaban viejas:
+# declaraban 27 modelos, 12 migraciones y ~84 endpoints. Los objetivos siguen siendo `all`;
+# lo que cambia es contra que se mide ese `all`.
 coverage_targets:
   products: all        # 12 productos identificados
-  endpoints: all       # ~84 endpoints REST
-  services: all        # 26 feature services + 7 infrastructure
-  tables: all          # 27 modelos Prisma
+  endpoints: all       # 159 rutas REST (80 GET · 42 POST · 26 PATCH · 9 PUT · 2 DELETE)
+  services: all        # 39 ficheros *.service.ts en el API
+  tables: all          # 33 modelos Prisma = 33 tablas en la BD real
   prompts: "N/A"       # Sistema determinístico, sin prompts LLM
-  migrations: all      # 12 migraciones
+  migrations: all      # 23 migraciones — OJO: ninguna se ha ejecutado nunca (H-014)
   docs:
     - CLAUDE.md
     - docs/enterprise-documentation/02-PRD.md

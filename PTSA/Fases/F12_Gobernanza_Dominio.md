@@ -96,3 +96,40 @@ Con F12 completada, el loop completo F-1 → F0 → F1 → F2 → F3 → F3.5 �
 La auditoría **S-001** de IronLoot está completa. El sistema está en **Clase C** (cap por freshness), Health 86.1, con 7 hallazgos abiertos.
 
 **Próxima acción recomendada**: Revisar RESUMEN.md y aprobar hallazgos → promover via `[START FPGE]` para priorización.
+
+---
+
+## Update U-006 — S-002 (2026-07-27): las reglas de dominio, como código, siguen vivas
+
+### Domain Rules as Code
+
+`npm run audit:domain` ejecuta hoy **14 reglas** derivadas de F-1 §4 y §5, con pesos, contra la
+salida real. Todas cumplen: `rubric_compliance_score = 100`. Más el Nivel 3 en bloque aparte: 5
+parejas upstream→downstream, 0 desviaciones.
+
+Fuera del ejecutable, declarado y no escondido: **CR-007 y CR-008 no entran**, porque su entrada es
+la petición y no el producto (`[R57]`). CR-009, CR-011, CR-012, CR-013 y CR-014 tampoco tienen
+regla ejecutable: se verifican por prueba unitaria, no por consulta a la salida.
+
+### Evolución del catálogo
+
+Sin cambios en las reglas de dominio esta sesión. Las tres que PT-087 añadió (cuadre del ledger,
+todo pago cobrado acreditado, ningún depósito duplicado) siguen en el catálogo y siguen pasando.
+
+### Lo que la gobernanza todavía no cubre
+
+**Los checkpoints D1.N1 y D3 no tienen job en `ci.yml`.** `audit-scope.yaml` los declara desde
+PT-120 y PT-121, y existen como scripts que funcionan — pero se ejecutan porque el auditor los
+ejecuta en cada sesión, no porque el pipeline los ejecute.
+
+Es un escalón por debajo del problema que PT-118 resolvió: allí el mecanismo no existía; aquí existe
+y nadie lo dispara solo. Con H-015 abierto ni siquiera podría añadirse de forma útil, porque el
+pipeline no llega a verde. **Por eso no se registra como hallazgo aparte: vive dentro de H-015.**
+
+### La decisión de dominio que sigue pendiente
+
+H-005, desde S-001. No es el PAC: es **quién emite la factura**. Las tres opciones están escritas en
+F-1 § U-005 con lo que exige cada una. Sin esa decisión P-012 no tiene instancias, no puede pasar de
+`IDENTIFICADO`, y D1 no pasa de 85.
+
+Es la única pieza de la auditoría que **no** puede resolver ni el auditor ni un PT.

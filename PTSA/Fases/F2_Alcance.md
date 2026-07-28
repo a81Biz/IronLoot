@@ -83,3 +83,35 @@ Estas limitaciones reducen el factor `autonomy` del Confidence Score pero no blo
 - [x] Limitaciones de esta ejecución declaradas (LIM-001 a LIM-003)
 
 **Estado: COMPLETADA** | Confidence: 95%
+
+---
+
+## Update U-006 — S-002 (2026-07-27): dos huecos del alcance, uno de ellos caro
+
+### 1. `.github/workflows/**` no estaba en el alcance
+
+`auditable_patterns` cubre el código, el esquema, las migraciones, la infraestructura de
+`docker-compose` y cinco documentos. **No cubre el pipeline.** Por eso H-015 —un job de CI que no
+puede terminar en verde y que bloquea `build` y `docker`— no lo encontró ninguna de las nueve
+sesiones anteriores.
+
+Es exactamente lo que PT-118 dejó escrito sobre H-008: un área que nadie mira acaba dando por
+cubierto lo que no lo está. Allí el mecanismo estaba declarado y no existía; aquí ni siquiera
+estaba declarado.
+
+**Se añade `.github/workflows/**` a `auditable_patterns`.**
+
+### 2. `src/api/scripts/*.sh` tampoco
+
+El fichero que aplica el esquema de la base en cada arranque —`entrypoint.dev.sh`— estaba fuera del
+alcance. Es la causa directa de H-014. **Se añade `src/api/scripts/**`.**
+
+### 3. Las cifras de `coverage_targets` estaban viejas
+
+Declaraban 27 modelos, 12 migraciones y ~84 endpoints. El recuento real (F0, U-006) da 33, 23 y
+159. Se corrigen. Los objetivos siguen siendo `all`; lo que cambia es contra qué se mide ese `all`.
+
+### Lo que sigue fuera, a propósito
+
+`node_modules`, `dist`, ficheros de prueba, `graphify-out`, `docs/methodology`,
+`docs/implementation`, `PTSA/**` y `changes/**`. Sin cambios.

@@ -324,3 +324,211 @@ Sin cambios: Health **94.0** · Risk **40** · Confidence **94.2** · Clase **A*
 
 Los números no se mueven porque no había nada roto. Lo que cambia es que **la próxima vulnerabilidad
 se verá el día que llegue**.
+
+---
+
+## S-002 — Corrida completa desde F-1 (2026-07-27)
+
+**Disparador**: `[START PTSA]`. No un delta sync: el loop entero, contra un entorno vivo —BD, API,
+ADMIN, BASE, CLIENT y nginx en marcha—.
+
+### Lo que encontró que nueve sesiones no vieron
+
+Dos hallazgos, y los dos por la misma razón: **estaban fuera del alcance**.
+
+`auditable_patterns` cubría el código, el esquema, las migraciones, `docker-compose` y cinco
+documentos. No cubría `.github/workflows/**` ni `src/api/scripts/**`. Ahí vivían los dos.
+
+#### H-014 (CRITICA) — el esquema es correcto, el artefacto que lo construye no
+
+`entrypoint.dev.sh:52` aplica el esquema con `prisma db push --accept-data-loss` en cada arranque.
+`db push` no escribe `_prisma_migrations`, y esa tabla no existe en la base real. **Las 23
+migraciones no se han ejecutado nunca.**
+
+Aplicadas a una base sombra limpia producen otro esquema. El cliente Prisma contra esa base: 3 de 4
+sondas fallan, una de ellas `payment_cycles`. Y `payments.reference` pierde la unicidad — la que
+CLAUDE.md declara como garantía contra el asiento duplicado.
+
+El `Dockerfile` de producción no aplica esquema alguno y `ci.yml` no tiene job de despliegue: **las
+migraciones son el único camino que existe, y no funciona.**
+
+#### H-015 (ALTA) — el job llamado «Integration Tests» no integra nada
+
+Levanta Postgres y corre la suite e2e sin crear el esquema. Y la suite no cierra sus manejadores:
+con esquema completo, `auth` pasa en 22 s pero sólo termina con `--forceExit`, que el script no
+lleva. `build` y `docker` cuelgan de él y no se ejecutan.
+
+Es el patrón de PT-118 repetido. Allí el mecanismo estaba declarado y no existía; aquí ni siquiera
+estaba declarado.
+
+#### H-016 (MEDIA) — la documentación se quedó en NestJS 10
+
+`03-TRD.md:13` declara `^10.3.0` **citando `src/api/package.json:36`**. Los cuatro servicios están
+en `^11.0.0` desde PT-126. La cita es lo que lo agrava: dato falso con referencia concreta.
+
+### Lo que comprobó sano, ejecutándolo
+
+`rubric_compliance_score = 100` sobre las 14 reglas contra salida real · coherencia inter-producto
+5/5 · **0 avisos** de dependencias (TD-015 cerrado por PT-126) · typecheck limpio · 603 tests del
+API y 134 de CORE en verde · 33 tablas con 17 columnas de dinero todas `numeric` y 0 float · traza
+de 49 eventos con **0 credenciales** y 4 redacciones que nombran qué ocultaron · logs en vivo con
+`traceId` extremo a extremo · D5 en verde por triplicado · 401 en los endpoints sensibles · los 5
+`emit` de WebSocket a salas públicas de subasta.
+
+**H-008 y H-009 quedan comprobados corregidos en la fuente real.**
+
+### Correcciones al propio alcance
+
+Añadidos `.github/workflows/**` y `src/api/scripts/**`. Cifras de `coverage_targets` recontadas:
+declaraban 27 modelos, 12 migraciones y ~84 endpoints; son **33, 23 y 159**. Llevaban un mes sin
+recontarse.
+
+### Una salvedad sobre P-006
+
+Llegó a VALIDADO en DS-008 con E-015, observada sobre disputas reales. La base se reconstruyó
+después: hoy `disputes` tiene 0 filas. La evidencia sigue siendo válida como captura; **no es
+reproducible hoy**. No se degrada el estado, pero no es lo mismo y queda dicho.
+
+### Scores
+
+| | DS-009 | **S-002** |
+|---|--:|--:|
+| Health | 94.0 | **81.5** |
+| Risk | 40 | **100** (saturado desde 32 brutos) |
+| Confidence | 94.2 | **90.0** |
+| Clase | A | **B** |
+
+D1 = 85 · **D2 = 55** · D3 = 100 · D4 = 95. Agua Potable **no** activada.
+
+**Lo que saca al sistema de la Clase A no es el dominio: es el camino al despliegue.** Cerrar H-014
+y H-015 devuelve el Health a 95.0 y la A, con H-005 todavía abierto.
+
+### Evidencias y hallazgos nuevos
+
+E-017 · E-018 · E-019 · E-020 · H-014 · H-015 · H-016.
+
+### Entorno
+
+Se crearon tres bases de prueba (`ptsa_shadow`, `ptsa_ci`, `ptsa_e2e`) y **se eliminaron al cerrar**.
+`ironloot_db` no se tocó: ninguna escritura, sólo consultas.
+
+### Corrección de la propia sesión — H-017, encontrado al cierre
+
+Comprobando la salud del sistema al terminar apareció un cuarto hallazgo, en el mismo hueco de
+alcance que los otros dos:
+
+**H-017 (D2, ALTA)** — el healthcheck de `src/api/Dockerfile:60` pide `/health`, que devuelve
+**404** (el prefijo global es `/api`; la ruta real es `/api/v1/health`). Un contenedor de producción
+quedaría `unhealthy` para siempre con la aplicación funcionando. El healthcheck de `docker-compose`
+sí está corregido: se arregló ahí y no en la imagen. Además, ADMIN, BASE y CLIENT no tienen
+`Dockerfile` de producción, y el job `docker` de CI construye `./Dockerfile`, que no existe.
+Evidencia **E-021**.
+
+Y un segundo caso de H-016, encontrado sin buscarlo: `CLAUDE.md:138` documenta `/health` y
+`/health/detailed`. Ninguna existe. No sube la severidad; sí convierte un descuido en un patrón.
+
+Se añadieron también `**/Dockerfile` y `**/Dockerfile.dev` al alcance.
+
+**Scores finales de S-002** (los de arriba quedan sustituidos; se dejan visibles por `[A6]`):
+
+| | DS-009 | **S-002** |
+|---|--:|--:|
+| Health | 94.0 | **77.0** |
+| Risk | 40 | **100** (saturado desde 38 brutos) |
+| Confidence | 94.2 | **90.0** |
+| Clase | A | **B** |
+
+D1 = 85 · **D2 = 40** · D3 = 100 · D4 = 95. Agua Potable **no** activada.
+
+**Los tres hallazgos D2 son el mismo camino visto desde tres sitios**: esquema (H-014), pipeline
+(H-015) e imagen (H-017). Recorrer ese camino una vez, de principio a fin, los cierra los tres.
+Health proyectado con los tres cerrados: **95.0**, Clase A, con H-005 todavía abierto.
+
+### Revisión S-002-R2 — una objeción humana, una corrección mía y un hallazgo mayor
+
+**Disparador**: *«sólo se ha trabajado en esta máquina, revisa los commits y las ramas… no puede ser
+que la migración no esté documentada. Se migró NestJS 11.1.28 / Express 5.2.1 y debería estar
+documentado»*.
+
+#### 1. La objeción era correcta. Corrección de redacción en E-020 y H-016
+
+**La migración a NestJS 11 está documentada, y bien.** PT-126 dejó `REFACTOR_SCOPE.md` (STATE 1-R
+completo, con la autorización humana citada literalmente), `CONTEXT_ANALYSIS.md`, entrada detallada
+en `HISTORY.log` —incluidos los cuatro defectos latentes que la migración destapó— y `HANDOFF.md`.
+
+E-020 se redactó de forma que podía leerse como «la migración no se documentó». No es lo que se
+midió. Son **dos corpus distintos**:
+
+```
+docs/implementation/            FDGE — el registro del trabajo        ACTUALIZADO por PT-126
+docs/enterprise-documentation/  Foundation Protocol — la referencia   NO actualizado
+```
+
+Versiones exactas incorporadas: **NestJS 11.1.28 · Express 5.2.1**, leídas del contenedor. E-020
+citaba `^11.0.0`, que es el rango declarado, no la versión resuelta.
+
+#### 2. Verificando las migraciones sobre TODO el historial
+
+`git log --all --diff-filter=A -- 'src/api/prisma/migrations/*'` sobre las **57 ramas** del
+repositorio: 23 migraciones, la última `20260726100000_pt086_payment_trace`.
+
+```
+git grep -l "AUCTION_SOLD"          $(git rev-list --all) -- 'src/api/prisma/migrations/*'  -> vacio
+git grep -l "account_verifications" $(git rev-list --all) -- 'src/api/prisma/migrations/*'  -> vacio
+```
+
+**Ningún commit de ninguna rama** tiene esas migraciones. H-014 se confirma sobre el historial
+completo, no sólo sobre `master`.
+
+#### 3. La pregunta del Proposal Gate queda resuelta
+
+```
+git log --all --format="%an <%ae>" | sort -u   ->  Alberto Martinez <alberto@a81.biz>   (unico)
+git rev-parse master origin/master             ->  328b421  ==  328b421
+```
+
+Un solo autor, una sola máquina, `master` local idéntico a `origin/master`. **No existe ningún
+entorno donde las 23 migraciones se hayan aplicado.** PT-127 puede ir por la **vía B** (colapsar en
+una migración inicial), que era la recomendada.
+
+#### 4. Y al comprobar la cita del TRD apareció el hallazgo mayor
+
+Se verificaron las **cinco** filas de la tabla de stack de `03-TRD.md`, no sólo la de NestJS:
+
+```
+5 de 5 citas       ->  apuntan a la linea EQUIVOCADA
+3 de 5 versiones   ->  son FALSAS
+    NestJS      declarado ^10.3.0   real 11.1.28
+    Prisma      declarado ^5.8.0    real 5.22.0
+    TypeScript  declarado ^5.3.3    real 5.9.3
+```
+
+`package.json:36` —la línea que el TRD cita para NestJS— contiene `},`. Las líneas se desplazaron
+según crecía el fichero y nadie las siguió.
+
+No es «una fila vieja». Es que **el mecanismo de verificabilidad del documento está muerto**: la
+columna de fuente existe para poder comprobar cada afirmación y no permite comprobar ninguna. Un
+documento sin citas se lee con desconfianza; uno con citas rotas se lee con confianza y es falso.
+
+**H-016: MEDIA (5) → ALTA (15).** Impacto 2→3. Riesgo 6 MEDIO → **9 ALTO**.
+
+Detalle que conviene no perder: ocho líneas más abajo, el **mismo** `03-TRD.md` dice
+`Health check path: GET /api/v1/health` y acierta — contradiciendo a `CLAUDE.md:138`. El dato bueno
+ya está en el repositorio, en el mismo fichero que el malo.
+
+#### Scores tras la revisión
+
+```
+D4 = 100 − 15 = 85                                  (era 95)
+Health = (85×0.30)+(40×0.30)+(100×0.30)+(85×0.10) = 76.0    (era 77.0)  ->  Clase B
+Risk_bruto = 6+8+12+9+6 = 41  ->  Risk = 100        (saturado, sin cambio)
+Confidence = 90.0                                    (sin cambio)
+```
+
+Cerrar los tres hallazgos D2 devuelve el Health a **94.0**; cerrando además H-016, **95.5**. Clase A
+en ambos casos.
+
+#### Lo que sigue sin medirse
+
+`02-PRD.md`, `09-Security-Architecture.md` y el resto de `03-TRD.md` y `06-Backend-Architecture.md`
+**siguen sin barrer**. La severidad se sube por lo comprobado, no por lo sospechado.

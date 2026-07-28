@@ -455,6 +455,64 @@
         "cerrados": []
       },
       "nota": "Los scores no se mueven: no habia nada roto. Lo que cambia es que la proxima vulnerabilidad se vera el dia que llegue, no 34 dias despues."
+    },
+    {
+      "session": "S-002",
+      "date": "2026-07-27",
+      "type": "full_audit",
+      "scores": {
+        "D1": 85,
+        "D2": 40,
+        "D3": 100,
+        "D4": 85,
+        "health": 76.0,
+        "risk": 100,
+        "confidence": 90.0
+      },
+      "classification": "B",
+      "classification_without_cap": "B",
+      "cap_reason": null,
+      "score_freshness": {
+        "last_verified": "2026-07-27",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "risk_detail": {
+        "risk_bruto": 41,
+        "saturacion": "min(100, 41x4) — el factor 4 satura a los 25 brutos"
+      },
+      "trigger": "[START PTSA] — loop completo desde F-1 contra entorno vivo (BD, API, ADMIN, BASE, CLIENT, nginx)",
+      "findings_changes": {
+        "nuevos": [
+          "H-014 (D2, CRITICA) — las 23 migraciones no reproducen el esquema; _prisma_migrations no existe; el cliente Prisma falla en 3 de 4 sondas contra la BD que producen",
+          "H-015 (D2, ALTA) — el job test-integration provisiona Postgres sin esquema y corre una suite que no termina sin --forceExit; bloquea build y docker",
+          "H-017 (D2, ALTA) — el healthcheck de la imagen de produccion apunta a /health, que devuelve 404; ADMIN/BASE/CLIENT no tienen Dockerfile de produccion; el job docker construye ./Dockerfile, inexistente",
+          "H-016 (D4, ALTA tras revision S-002-R2) — las 5 citas de la tabla de stack del TRD apuntan a la linea equivocada y 3 de 5 versiones son falsas (NestJS 11.1.28 declarado ^10.3.0; Prisma 5.22.0 declarado ^5.8.0; TypeScript 5.9.3 declarado ^5.3.3). El mecanismo de verificabilidad del documento esta muerto"
+        ],
+        "revisados": [
+          "H-008 — comprobado en la fuente real: 0 avisos, linea base vacia (TD-015 cerrado por PT-126)",
+          "H-009 — comprobado: los cinco documentos del alcance estan seguidos por git",
+          "audit-scope.yaml — anadidos .github/workflows/** y src/api/scripts/**; cifras recontadas 27->33 modelos, 12->23 migraciones, ~84->159 rutas",
+          "audit-scope.yaml — anadidos tambien **/Dockerfile y **/Dockerfile.dev tras H-017",
+          "H-016 MEDIA->ALTA (S-002-R2), a peticion de una objecion humana. Correccion de redaccion: la migracion a NestJS 11 SI esta documentada en docs/implementation/ (PT-126: REFACTOR_SCOPE, CONTEXT_ANALYSIS, HISTORY.log, HANDOFF). El hallazgo es sobre docs/enterprise-documentation/, corpus distinto"
+        ],
+        "cerrados": []
+      },
+      "evidencias_nuevas": [
+        "E-017",
+        "E-018",
+        "E-019",
+        "E-020",
+        "E-021"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "IDENTIFICADO": 1,
+        "nota": "Sin transiciones. Los tres hallazgos nuevos son sistemicos (producto_id: null). Salvedad en P-006: validado en DS-008 con E-015 sobre disputas reales, pero la base se reconstruyo despues y hoy disputes=0 — la evidencia sigue siendo valida como captura, no es reproducible hoy."
+      },
+      "nota": "Bajada de A a B. No es el dominio: D1 sigue en 85 y las 14 reglas cumplen sobre salida real. Es D2=40 — los tres hallazgos nuevos de D2 son el mismo camino visto desde tres sitios (esquema, pipeline, imagen), y ese camino no se ha recorrido nunca. Nueve sesiones no lo vieron porque nada de eso estaba en auditable_patterns. Cerrar H-014, H-015 y H-017 devuelve el Health a 95.0 y la Clase A."
     }
   ]
 }

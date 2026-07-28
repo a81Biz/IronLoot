@@ -117,3 +117,76 @@ Esquema **real** verificado por shell (no por migraciones): 33 tablas en BD = 33
 `npm audit --omit=dev`: **71 vulnerabilidades** (3 críticas, 53 altas, 15 moderadas). Alcanzabilidad
 resuelta paquete a paquete con `npm ls` y localizada en el código. Evidencia **E-011**, hallazgo
 **H-008**.
+
+---
+
+## Update U-006 — S-002 (2026-07-27): el esquema es correcto, el artefacto que lo construye no
+
+### Esquema real, por shell (`[R70]`)
+
+33 tablas = 33 modelos. 17 columnas de dinero, **todas** `numeric(10,2)` o `numeric(12,2)`; **0**
+columnas `double precision` o `real`. Los seis índices únicos que sostienen invariantes financieras
+están presentes y verificados uno a uno (E-019), incluido `payments_reference_key`.
+
+`prisma migrate diff --from-schema-datamodel … --to-schema-datasource …` → **No difference
+detected**. El esquema real y `schema.prisma` coinciden.
+
+### Y sin embargo — H-014
+
+`_prisma_migrations` **no existe**. Las 23 migraciones no se han ejecutado nunca: el esquema lo
+construye `prisma db push --accept-data-loss` en `entrypoint.dev.sh:52`.
+
+Aplicadas a una base limpia, las 23 producen un esquema **distinto**, sobre el que la aplicación no
+funciona: 3 de 4 sondas del cliente Prisma fallan, una de ellas sobre `payment_cycles`. Y
+`payments.reference` deja de ser único — la unicidad que CLAUDE.md declara como garantía contra el
+asiento duplicado.
+
+Evidencia **E-017**, hallazgo **H-014** (CRITICA, D2, penalización 30).
+
+### CI — H-015
+
+`test-integration` levanta Postgres y corre la suite e2e **sin crear el esquema**, con una suite que
+además no cierra sus manejadores. `build` y `docker` cuelgan de él y no se ejecutan.
+
+Evidencia **E-018**, hallazgo **H-015** (ALTA, D2, penalización 15).
+
+### Lo que está sano
+
+| | |
+|---|---|
+| `npm run audit:check` | **0 avisos** en producción, línea base vacía — TD-015 cerrado por PT-126 |
+| `npm run typecheck` | limpio, exit 0 |
+| Pruebas API | 83 suites / **603 tests**, todas verdes |
+| Pruebas CORE | 8 suites / **134 tests**, todas verdes |
+| Endpoints sensibles sin token | 401 en los tres probados |
+| `emit` de WebSocket | los cinco a salas `auction:<id>`, datos públicos; ningún dato por usuario |
+
+**H-008 queda comprobado en la fuente real.** Los 71 avisos de DS-004 son hoy 0.
+
+### Score D2 — S-002
+
+```
+100 − 30 (H-014, CRITICA) − 15 (H-015, ALTA) = 55
+```
+
+Ningún hallazgo D2 anterior penaliza: H-008 y H-013 están CERRADA.
+
+### H-017 — el camino a producción, encontrado al comprobar la salud al cierre
+
+`src/api/Dockerfile:60` pide `http://localhost:3000/health` para su healthcheck. En vivo esa ruta
+devuelve **404**: el prefijo global es `/api`, la ruta real es `/api/v1/health`. El healthcheck de
+`docker-compose` sí está corregido — se arregló ahí y no en la imagen de producción.
+
+Además: ADMIN, BASE y CLIENT **no tienen `Dockerfile` de producción**, sólo `.dev`. Y el job
+`docker` de CI construye `./Dockerfile`, que no existe en la raíz.
+
+Evidencia **E-021**, hallazgo **H-017** (ALTA, D2, penalización 15).
+
+### Score D2 — S-002 (corregido tras H-017)
+
+```
+100 − 30 (H-014) − 15 (H-015) − 15 (H-017) = 40
+```
+
+Los tres describen lo mismo desde tres ángulos: **el camino de este entorno a cualquier otro no se
+ha recorrido nunca.** Esquema, pipeline e imagen.

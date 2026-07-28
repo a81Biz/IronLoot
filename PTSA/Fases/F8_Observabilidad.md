@@ -122,3 +122,59 @@ Logs **leídos**, no supuestos. Traza de pagos de la última corrida: 9 pasos di
   (`headers.x-signature`, `response.authorization_code`).
 
 Redacción marcada, no borrado silencioso — que es lo que CLAUDE.md exige. D3 se mantiene en 100.
+
+---
+
+## Update U-006 — S-002 (2026-07-27): leído, no supuesto
+
+`[R51]` prohíbe asumir que el logging funciona. Se leyeron los logs del contenedor en marcha.
+
+### Logs en vivo
+
+`docker logs ironloot-api` — JSON estructurado con `timestamp`, `level`, `service`, `env`,
+`traceId` y `duration` en cada entrada. El cron de subastas corre cada minuto, toma y suelta su
+cerrojo (`lock:auction-close`, TTL 60 s) y deja constancia de ambas cosas. Cada petición HTTP
+escribe su `request_log` (960 filas acumuladas). Peticiones con `traceId` propagado extremo a
+extremo; las del cron, marcadas `no-context`.
+
+**Ninguna excepción no manejada en la ventana observada.**
+
+### Checkpoint D3
+
+`npm run audit:observability`
+
+```
+  silent_failure_count = 25   (linea base: 25)   — sin silencios nuevos
+  trace_completeness   = 100%    1 de 1 ciclos liquidados con la cadena completa
+  prompt_provenance    = NO_APLICA
+  fallback_quality     = evaluacion documentada ([R57])
+```
+
+### Traza de pagos, sobre datos reales
+
+49 eventos en `payment_cycle_events`, 8 pasos distintos:
+
+```
+ PROVIDER_CONFIRM 17 · POLL_ATTEMPT 15 · DEPOSIT_REQUESTED 5 · PROVIDER_CREATE 4
+ CYCLE_DECISION 3 · SIGNATURE_OK 2 · NOTIFICATION_RECEIVED 2 · WALLET_CREDITED 1
+```
+
+Credenciales: **0 visibles**. 4 eventos redactados, y cada uno **nombra qué ocultó**
+(`headers.x-signature`, `response.authorization_code`). Redacción marcada, no borrado silencioso.
+
+### D5 — fiabilidad operacional
+
+```
+  Success Rate 100% VERDE · Retry Rate 0% VERDE · Failure Rate 0% VERDE
+  health_unstable = false
+```
+
+3 ciclos abiertos en sondeo — la vía garantizada haciendo su trabajo, no un fallo.
+
+### Score D3 — S-002
+
+```
+100 − 0 = 100
+```
+
+Sin hallazgos activos en D3.

@@ -143,3 +143,82 @@ indeterminable. Registrado como **H-009**.
 
 `ci_checkpoints` declara `D2` con «tests + schema + vulnerabilidades». **No hay registro de una
 sola ejecución.** Las 71 vulnerabilidades de H-008 son la consecuencia directa.
+
+---
+
+## Update U-006 — S-002 (2026-07-27): la certificación cae a B
+
+### Estado de la certificación
+
+```
+score_freshness:
+  last_verified: 2026-07-27
+  commits_since_audit: 0
+  status: FRESH
+```
+
+**Clase B.** El sistema deja de estar certificado en A. No por el dominio —D1 sigue en 85 y las 14
+reglas cumplen sobre salida real— sino por D2 = 55: dos hallazgos abiertos sobre los mecanismos que
+llevan el sistema de este entorno a cualquier otro.
+
+### Los checkpoints declarados, y si corren
+
+| Checkpoint | Dónde | Estado real |
+|---|---|---|
+| **D2** dependencias | `ci.yml: security-audit` → `npm run audit:check` | ✅ **corre** — sin `needs`, independiente. 0 avisos |
+| **D2** tests | `ci.yml: test-unit` | ✅ corre |
+| **D2** esquema | `npm run typecheck` + prisma | ✅ limpio |
+| **D2** integración | `ci.yml: test-integration` | ⛔ **no puede terminar en verde** — H-015 |
+| **D3** observabilidad | `npm run audit:observability` | ✅ manual, verde |
+| **D1.N1** reglas de dominio | `npm run audit:domain` | ✅ manual, `rubric = 100` |
+| **D5** fiabilidad | `npm run audit:reliability` — delta sync, no CI | ✅ manual, verde |
+
+Cuatro de los siete se ejecutan a mano en cada delta sync. Sólo D2-dependencias y D2-tests corren
+solos. **D1.N1 y D3 están declarados como checkpoints en `audit-scope.yaml` pero no tienen job en
+`ci.yml`**: se ejecutan porque el auditor los ejecuta. Es exactamente la situación que PT-118
+arregló para las dependencias, un escalón más abajo. No se registra como hallazgo aparte —cae
+dentro de H-015, que es donde vive el pipeline— pero queda dicho.
+
+### `audit_due` por producto
+
+Política vigente: CRÍTICA 30 d · ALTA 60 d · MEDIA 90 d · BAJA 180 d.
+Verificados hoy → los cinco CRÍTICOS (P-001, P-002, P-004, P-005, P-009) vencen el **2026-08-26**.
+
+### Qué haría falta para volver a A
+
+Cerrar H-014 y H-015 devuelve D2 a 100:
+
+```
+Health = (85 × 0.30) + (100 × 0.30) + (100 × 0.30) + (95 × 0.10) = 95.0   → Clase A
+```
+
+Y cerrando además H-016 (D4 = 100): **95.5**. H-005 por sí solo no impide la A: con D2 en 100, el
+Health pasa de 90 aun con el CFDI sin resolver. **Lo que saca al sistema de la A hoy no es el
+dominio: es el camino al despliegue.**
+
+### Corrección — H-017
+
+Con H-017 (D2, ALTA), D2 baja a **40** y el Health a **77.0**. Sigue siendo Clase B, ahora por poco.
+
+Cerrar H-014, H-015 y H-017 devuelve D2 a 100:
+
+```
+Health = (85×0.30)+(100×0.30)+(100×0.30)+(95×0.10) = 95.0   → Clase A
+```
+
+Y con H-016 también cerrado (D4 = 100): **95.5**. Se mantiene la conclusión, ahora con tres piezas
+en vez de dos: **lo que saca al sistema de la Clase A no es el dominio, es el camino al despliegue.**
+
+### Segunda corrección — S-002-R2
+
+Con H-016 en ALTA, `D4 = 85` y el Health baja a **76.0**. Clase **B**, sin cambio de clase.
+
+Proyección revisada:
+
+```
+cerrando los tres D2:            (85×.30)+(100×.30)+(100×.30)+(85×.10) = 94.0   → Clase A
+cerrando ademas H-016 (D4=100):                                        = 95.5   → Clase A
+```
+
+Sigue en pie la conclusión, y con más razón: **lo que saca al sistema de la Clase A no es el
+dominio.** Es el camino al despliegue y la referencia que lo describe.

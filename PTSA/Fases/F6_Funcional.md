@@ -262,3 +262,53 @@ upstream —la subasta sí se cerró y sí se vendió— sino que **etiqueta mal
 
 > **No se aplica la transición.** `[R39]` permite al auditor moverlos con esta evidencia, pero el
 > humano pidió ver el proceso antes de dar el visto bueno. Los diez quedan **aptos y a la espera**.
+
+---
+
+## Update U-006 — S-002 (2026-07-27): el Acid Test, otra vez sobre salida real
+
+`npm run audit:domain`, contra `ironloot_db` en marcha.
+
+### Nivel 1 y 2 — 14 reglas, 14 cumplen
+
+`rubric_compliance_score = **100**`. Ninguna violación. Incluye las tres que PT-087 introdujo
+después de encontrar lo contrario: el cuadre del último `balance_after` del ledger contra el balance
+del monedero, que todo pago `COMPLETED` tenga asiento, y que ningún depósito se acredite dos veces.
+
+### Nivel 3 — coherencia inter-producto
+
+5 parejas upstream→downstream, **0 desviaciones**. `cross_coherence_verified = true`.
+
+La corrección de H-012 se ve ahora en **datos**, no sólo en el catálogo: hay un `AUCTION_SOLD` real
+en `notifications`.
+
+### Nivel 4 — `NO_APLICA`
+
+Sistema determinista, sin LLM. Sin cambios respecto a F-1.
+
+### Cobertura de esta ejecución — dicho sin adornos
+
+10 de 12 productos tienen salida real en la base hoy:
+
+```
+ bids 3 · auctions 1 (CLOSED) · orders 1 · payments 1 · payment_cycles 4 · wallets 4
+ ledger 15 (9 tipos) · notifications 4 · commission_records 1 · kyc 1 (APPROVED)
+ withdrawal_requests 2 · sessions 25
+ disputes 0 · cfdi_records 0
+```
+
+**P-012** sigue sin instancias por H-005. **P-006 (Dispute) tampoco tiene ninguna**: la base se
+reconstruyó después de DS-008 y las disputas que E-015 observó ya no están. E-015 sigue siendo una
+captura válida de lo que hubo, pero **hoy no es reproducible**. P-006 conserva `VALIDADO` por esa
+evidencia, con la salvedad anotada en F3 (U-006).
+
+La muestra sigue siendo pequeña — 4 monederos, 3 pujas, 1 pago liquidado. Demuestra que los
+invariantes no se violan en el camino observado; **no** que sean inviolables bajo concurrencia.
+
+### Score D1 — S-002
+
+```
+100 − 15 (H-005, ALTA, ABIERTA) = 85
+```
+
+Sin cambio respecto a DS-008. H-010, H-011 y H-012 están CERRADA y no penalizan.

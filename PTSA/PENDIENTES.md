@@ -75,3 +75,38 @@
 | 4 | **Definir las rúbricas en F-1.** Sin ellas ningún producto puede llegar a `VALIDADO` (`[R38]`) | F12 |
 | 5 | ⚠️ **D1 = 65, a 5 puntos del cap.** Un hallazgo ALTA más en D1 lleva el sistema a Clase F | Vigilar |
 | 6 | Reconstruir los `CommissionRecord` históricos desde el ledger, si se quiere que el informe cuadre hacia atrás | Humano (es contabilidad con fecha pasada) |
+
+---
+
+## S-002 (2026-07-27) — corrida completa
+
+### Bloqueantes de sesiones anteriores: RESUELTOS
+
+**BLQ-001** (BD en ejecución no disponible) y **BLQ-002** (logs en vivo no disponibles) quedan
+**cerrados**. Esta sesión corrió contra el entorno completo en marcha: `psql` directo sobre
+`ironloot_db`, `docker logs ironloot-api`, y peticiones HTTP reales contra el API. El factor
+`autonomy` de Confidence sube a 100.
+
+**PQ-003** sigue abierta como pregunta menor (mecanismo de auth del JS de navegador del CLIENT); no
+bloquea nada y H-006 está CERRADA.
+
+### Pendientes
+
+| # | Pendiente | Responsable |
+|---|---|---|
+| 1 | **H-015 + H-014, juntos.** El paso de esquema que le falta al job de CI *es* la prueba de que las migraciones funcionan | Próximo PT |
+| 2 | **H-014 — decidir la vía**: rebasar el historial (migración de reconciliación + `migrate resolve --applied`) o colapsar las 23 en una inicial | Humano (plataforma) |
+| 3 | **H-016** — actualizar TRD y Backend-Architecture; y, si se quiere que no vuelva, una prueba que compare versiones citadas contra `package.json` | Próximo PT |
+| 4 | **H-005** — quién emite la factura. Tres opciones en F-1 § U-005. Bloquea P-012 y tapa D1 en 85 | Humano (negocio + fiscal) |
+| 5 | **D1.N1 y D3 no tienen job en CI.** Declarados como checkpoints, se ejecutan porque el auditor los ejecuta. Cae dentro de H-015 | Próximo PT |
+| 6 | **Generar una disputa real** en la próxima corrida de QA: P-006 está VALIDADO con evidencia no reproducible hoy | Próxima sesión |
+| 7 | **Revisión documental exhaustiva** de los cinco documentos del alcance. F7 sólo verificó la versión del framework y tres afirmaciones de CLAUDE.md | Próxima sesión |
+| 8 | `CLAUDE.md` cita `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`; **ninguno existe** — pendiente desde DS-004 | Humano |
+
+### Añadido al cierre de S-002 — H-017
+
+| # | Pendiente | Responsable |
+|---|---|---|
+| 9 | **H-017** — `src/api/Dockerfile`: `/health` → `/api/v1/health` y alinear el criterio con el de desarrollo (`< 500` + manejador de error). Definir `Dockerfile` de producción para ADMIN, BASE y CLIENT. Corregir la ruta del job `docker` | Próximo PT |
+| 10 | **Lo que de verdad cierra 1+2+9**: que el pipeline recorra el camino entero una vez — migraciones aplicadas, tests en verde, imagen construida y arrancada con su healthcheck en verde | Próximo PT |
+| 11 | **Segunda pasada al área de despliegue.** `.github/workflows/**`, `src/api/scripts/**` y los `Dockerfile` entraron en el alcance en S-002 y sólo llevan una pasada | Próxima sesión |

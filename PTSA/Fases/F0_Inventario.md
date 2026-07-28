@@ -197,3 +197,30 @@ Fuente: `src/api/package.json` (dependencias del servicio principal)
 **Nota:** Conteo de tablas basado en `schema.prisma` (segunda mano). Verificación contra BD real pendiente en F5 (BLQ-001).
 
 **Estado: COMPLETADA** | Confidence: 90% (limitación: sin acceso a BD real para verificar esquema vivo)
+
+---
+
+## Update U-006 — S-002 (2026-07-27): el inventario, recontado
+
+Recuento directo sobre el repositorio y la base en marcha. Entre paréntesis, lo que declaraba
+`audit-scope.yaml` desde el 23-jun.
+
+| | Real S-002 | Declarado |
+|---|--:|--:|
+| Modelos Prisma | **33** | 27 |
+| Tablas en la BD real | **33** | — |
+| Enums Prisma | **23** | — |
+| Migraciones | **23** | 12 |
+| Módulos del API | **27** | 27 ✅ |
+| Controladores del API | 18 | — |
+| Servicios `*.service.ts` (API) | **39** | 33 |
+| Rutas REST (decoradores) | **159** | ~84 |
+| Controladores ADMIN | 19 | — |
+| Controladores BASE + CLIENT | 10 | — |
+| Ficheros `*.spec.ts` | 127 | — |
+
+Desglose de rutas: 80 `@Get` · 42 `@Post` · 26 `@Patch` · 9 `@Put` · 2 `@Delete`.
+
+Las cifras del alcance llevaban un mes sin recontarse. Se corrigen en F2 (U-006). No generan
+hallazgo: `audit-scope.yaml` es artefacto del auditor y `PTSA/**` está fuera de los patrones
+auditables. Sí queda dicho, porque una cobertura declarada sobre cifras viejas debilita `[A8]`.
