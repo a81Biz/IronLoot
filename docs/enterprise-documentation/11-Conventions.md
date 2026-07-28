@@ -338,6 +338,84 @@ the inline style beats the class.
 
 ---
 
+### RULE-10: A schema change is a migration, never a `db push`
+**What:** Editing `schema.prisma` requires generating a migration (`npm run db:migrate`). The
+container applies the schema with `prisma migrate deploy`, and if it fails **the container does not
+start**.
+**Why:** H-014. `db push` does not write `_prisma_migrations`, so for months the 23 migrations
+**had never been executed**. Applied to a clean database they produced a *different* schema: the
+Prisma client failed on 3 of 4 probes, and `payments.reference` lost its UNIQUE index — the very
+guarantee that stops a retried credit from duplicating the ledger entry.
+PT-037 fixed this once, on 23-jul, and the drift came back **in four days** because the prevention
+was left as a documentation note. A rule that only lives in a document is not a control.
+**Correct:** edit `schema.prisma` → `npm run db:migrate` → commit the migration with the change.
+**Incorrect:** edit `schema.prisma` → restart the container and assume it applied.
+**Enforced by:** `npm run audit:schema` (`scripts/schema-drift-check.ts`), CI job `schema-drift`,
+**without `needs`** — a broken job must not be able to hide it.
+
+---
+
+### RULE-11: Every API route an SSR site calls must exist in the API
+**What:** Before pointing a site at `/api/v1/…`, check the route is declared. This covers the SSR
+controllers **and the browser JavaScript** — half the contract lives there.
+**Why:** H-020. The CLIENT asked for `/api/v1/users/settings`; the API exposes `me/settings`. The
+request fell through to the `@Get(':id')` wildcard, `ParseUUIDPipe` rejected the literal string and
+returned **400 "uuid is expected"**. The «Configuración» page — in the portal's main menu — did not
+load for any user, and the error pointed at the identifier, which was not the problem.
+A 404 would have told the truth. The wildcard turned an honest error into a misleading one.
+**Correct:** `apiGet(token, "/api/v1/users/me/settings")`
+**Incorrect:** `apiGet(token, "/api/v1/users/settings")`
+**Enforced by:** `src/api/test/unit/web-views/rutas-que-el-client-invoca.spec.ts`. A literal route
+requires a literal destination: matching only through a wildcard **is** the defect.
+
+---
+
+### RULE-12: "Not sent" is not "sent empty"
+**What:** When merging a DTO into stored JSON, skip keys whose value is `undefined` — **never** the
+falsy ones.
+**Why:** H-019. `main.ts` configures the `ValidationPipe` with `transform: true`, so a service does
+not receive a plain object but a **class instance carrying every declared property**, the absent
+ones as `undefined`. A `deepMerge` walking `Object.keys()` overwrites the branches the client never
+sent: `PATCH {"language":"en"}` wiped the user's notification preferences — silently, returning 200.
+`false` must still apply, or nobody could ever turn a notification off.
+**Correct:** `if (source[key] === undefined) return;`
+**Incorrect:** `if (!source[key]) return;`
+**Enforced by:** `src/api/test/unit/users/ajustes-parciales.spec.ts`, which exercises the merge with
+a real `plainToInstance` instance — the exact shape `transform: true` produces.
+
+---
+
+### RULE-13: An endpoint with no callers is retired, not polished
+**What:** Before fixing an endpoint, search for its callers across all of `src/` — **including the
+browser JavaScript**. If there are none, the question is not how to fix it but why it still exists.
+**Why:** H-018 / ADR-047. `POST /wallet/deposit` credited money from a `referenceId` chosen by the
+client, and **nobody called it**: it was orphaned when the payment cycle (PT-080/PT-087) replaced
+that flow. Fixing its error handling would have been repairing a door nobody uses, while leaving
+money-moving surface unmaintained and uncovered.
+**Correct:** retire the handler, remove the service methods left without callers, record the
+decision in an ADR, and mark the route in the API catalogue.
+**Incorrect:** improve the error mapping of a route no client reaches.
+**Enforced by:** `src/api/test/unit/payments/endpoints-legados-retirados.spec.ts`, which pins both
+the retirements **and the survivals** — `WalletService.deposit()` stays, because that is what
+`creditWallet` uses on the real path.
+
+---
+
+### RULE-14: A guard nobody has seen fail is not a guard
+**What:** Every guard ships with control cases and is proven in both directions: it must fail
+against the broken state and pass against the fixed one.
+**Why:** it is not zeal. During this very session the D3 checkpoint caught two silent `catch`
+blocks written minutes earlier, and **three guards accused themselves** by reading their own
+comments before they were any use. A guard with false positives gets deleted, and with it whatever
+it did protect (the lesson of PT-103).
+**Correct:** break the thing on purpose, watch the guard go red, revert, watch it go green, and keep
+that run as evidence.
+**Incorrect:** write the guard after the fix and ship it green, never having seen it fail.
+**Enforced by:** convention. Every `*.spec.ts` guard in this repository carries a `casos de control`
+block.
+
+---
+
 ## 5. Files Requiring Extra Care Before Modification
 
 | File | Risk | Why |
@@ -381,3 +459,8 @@ When adding a new required environment variable:
 | 2026-07-27 | RULE-07 — script dependency order + no silent catch (from F-34) | PT-102 |
 | 2026-07-27 | RULE-08 — closing a debt is two writes, with citation (from F-33) | PT-103 |
 | 2026-07-27 | RULE-09 — styles live in CSS; classList, not style.display (from TD-014) | PT-105 |
+| 2026-07-28 | RULE-10 — a schema change is a migration, never a `db push` (from H-014) | PT-127 |
+| 2026-07-28 | RULE-11 — every API route an SSR calls must exist (from H-020) | PT-132 |
+| 2026-07-28 | RULE-12 — "not sent" is not "sent empty" (from H-019) | PT-132 |
+| 2026-07-28 | RULE-13 — an endpoint with no callers is retired, not polished (from H-018) | PT-133 |
+| 2026-07-28 | RULE-14 — a guard nobody has seen fail is not a guard | PT-127…PT-133 |

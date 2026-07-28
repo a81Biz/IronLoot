@@ -396,3 +396,29 @@ demostrarla seria opinion.
 **Como se comprobaba entonces.** `cd src/api && npm audit --omit=dev`.
 
 </details>
+
+---
+
+### TD-016 — Nada comprueba las vulnerabilidades de la imagen base
+**Status: ABIERTA — registrada 2026-07-28 (S-002-V).**
+
+`npm run audit:check` (PT-118) vigila las dependencias **de npm** y hoy da cero avisos. **No mira la
+imagen base.** El IDE reporta que `node:20-alpine` arrastra **2 críticas y 23 altas**, y ese aviso
+no lo recoge ningún control del repositorio.
+
+Afecta a las cinco imágenes: `src/api/Dockerfile`, los tres `Dockerfile` de producción que creó
+PT-129 y los `.dev`.
+
+**Por qué aparece ahora.** Los `Dockerfile` no estaban en `auditable_patterns` de PTSA hasta S-002;
+se añadieron al descubrir H-017. Un área recién entrada en el alcance destapa lo que nadie miraba —
+es el mismo patrón que dejó H-008 con 34 días de retraso.
+
+**Qué haría falta.** Un escáner de imagen (Trivy, Grype, `docker scout`) en el pipeline, comparando
+contra una línea base como hace `audit:check` — **no contra un umbral**: un umbral pone el CI rojo
+desde el primer día por lo que ya está triado, y así es como muere un control.
+
+**Lo que NO se afirma.** No se ha medido la alcanzabilidad de ninguno de esos avisos, ni se ha
+comprobado el dato del IDE con un escáner propio. Registrar la ausencia del control es distinto de
+afirmar que hay riesgo explotable — eso habría que demostrarlo, como hizo PT-123 con TD-015.
+
+**Cómo se comprueba hoy:** no se comprueba. Ése es el punto.

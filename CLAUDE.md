@@ -35,6 +35,32 @@ npm run db:studio        # Open Prisma Studio UI
 npm run db:seed          # Seed the database
 ```
 
+**Checkpoints de auditoría** (PTSA). Los tres primeros corren solos en CI; los otros dos son
+métricas de delta sync porque necesitan una base **con historia** — en CI nace vacía y devolverían
+`SIN_DATOS` siempre, que alguien acabaría leyendo como verde (la lección de PT-122):
+
+```bash
+npm run audit:schema         # D2 — las migraciones reproducen schema.prisma. CI: job schema-drift
+npm run audit:check          # D2 — vulnerabilidades vs security-baseline.json. CI: security-audit
+npm run audit:observability  # D3 — catch mudos y traza completa.  CI: job observabilidad
+npm run audit:domain         # D1.N1 — 14 reglas de dominio sobre SALIDA REAL. Delta sync
+npm run audit:reliability    # D5 — Success/Retry/Failure de los ciclos de pago. Delta sync
+```
+
+Los tres de CI van **sin `needs`**: un job roto no debe poder ocultarlos. Es lo que le pasó a
+`build` y `docker`, que no se ejecutaron nunca porque colgaban de un job que no podía terminar
+(H-015).
+
+**QA por navegador** (Playwright, `tests/qa-browser-suite/`):
+
+```bash
+bash run-all.sh                    # suite completa: resetea la BD y ejerce los flujos reales
+node 90-validacion-hallazgos.js    # validación dirigida de hallazgos PTSA corregidos
+```
+
+`run-all.sh` **trunca la base de datos**. Hacer copia antes si contiene salida real que sostenga
+una validación PTSA.
+
 ### BASE — Sitio público (`cd src/apps/base`)
 
 ```bash
@@ -170,7 +196,7 @@ Each SSR site follows the same convention:
 - **Controllers** in `src/apps/<site>/src/` handle page routing, call the API, and render Nunjucks templates
 - **Templates** in `src/apps/<site>/views/` — `layouts/` holds the root layout
 - **Static assets** in `src/apps/<site>/public/` — plain CSS and vanilla JavaScript (no frontend framework)
-- Client JS in `src/apps/<site>/public/js/pages/` follows a per-page convention (e.g., `wallet/deposit.js`)
+- Client JS in `src/apps/<site>/public/js/pages/` follows a per-page convention (e.g., `pages-wallet-deposit.js`)
 
 ## Key Technical Decisions
 
@@ -192,7 +218,41 @@ Each SSR site follows the same convention:
 - **Cerrar una deuda técnica son dos escrituras**: el código y `10-Technical-Debt.md`, y el estado
   nuevo **cita qué leer** para comprobarlo. Sólo la primera la obliga el compilador; el registro
   llegó a mentir dos veces (PT-090, y otra vez tres PT después: F-33). Lo vigila
-  `coherencia-deuda-tecnica.spec.ts` — que **no corre en CI**, porque `docs/` está gitignored.
+  `coherencia-deuda-tecnica.spec.ts`.
+- **La documentación que cita fichero:línea es verificable, y por eso puede mentir con aval.** El
+  TRD declaraba `NestJS ^10.3.0` citando `package.json:36`; esa línea decía `},`. **Las cinco citas
+  de su tabla de stack apuntaban a la línea equivocada** — se desplazaron al crecer el fichero y
+  nadie las siguió (H-016). Un documento sin citas se lee con desconfianza; uno con citas rotas se
+  lee con confianza y es falso. Lo vigila `coherencia-documentacion-codigo.spec.ts`, que comprueba
+  **dos cosas por fila**: que la línea citada contenga el paquete que dice, y que la versión
+  coincida. Corolario: **lo que no se cita, no se protege.**
+- **El esquema se aplica por migración, y si falla el arranque falla.** `db push` no escribe
+  `_prisma_migrations`: durante meses las 23 migraciones **no se ejecutaron nunca** y producían un
+  esquema distinto —sin la unicidad de `payments.reference`, que es la garantía contra el asiento
+  duplicado— (H-014). PT-037 ya lo arregló una vez y volvió en cuatro días, porque la prevención se
+  quedó en una nota. Ahora lo vigila `npm run audit:schema` en CI, **sin `needs`**. Editar
+  `schema.prisma` exige generar migración; ese atajo es el que produjo el hallazgo.
+- **Toda ruta del API que un SSR invoca tiene que existir en el API.** El CLIENT pedía
+  `/api/v1/users/settings`, que no existe: caía en el comodín `@Get(':id')`, el `ParseUUIDPipe`
+  rechazaba la cadena y devolvía **400 «uuid inválido»**. La página «Configuración» no cargaba para
+  nadie, y el error mandaba a mirar el identificador (H-020). Lo vigila
+  `rutas-que-el-client-invoca.spec.ts`, que cubre el SSR **y el JavaScript de navegador** — ahí vive
+  la otra mitad del contrato.
+- **«No enviado» no es «enviado vacío».** Con `transform: true` en el `ValidationPipe`, a un
+  servicio no le llega un objeto plano sino una **instancia con todas las propiedades declaradas**,
+  las ausentes con `undefined`. Un `deepMerge` que recorra `Object.keys()` borra las ramas que el
+  cliente no mandó: un `PATCH {language}` se llevaba por delante las preferencias de notificación,
+  en silencio y con 200 (H-019). Se descartan los `undefined`, **nunca los falsy** — `false` tiene
+  que poder aplicarse.
+- **Un endpoint sin llamantes se retira, no se pule.** `POST /wallet/deposit` acreditaba dinero a
+  partir de un `referenceId` elegido por el cliente y **no lo invocaba nadie**: quedó huérfano
+  cuando el ciclo de pago (PT-080/PT-087) sustituyó ese flujo. Corregirle el manejo de errores
+  habría sido arreglar una puerta que sobra (ADR-047). Antes de tocar un endpoint, **buscar sus
+  llamantes en todo `src/`, incluido el JS de navegador**.
+- **Un control que nadie ha visto fallar no es un control.** Toda guarda de este repositorio se
+  prueba en los dos sentidos y lleva casos de control. No es celo: el checkpoint D3 delató dos
+  `catch` mudos recién escritos, y tres guardas se acusaron a sí mismas leyendo sus propios
+  comentarios antes de servir para nada.
 - **Rate limiting**: Global 100 req/min; stricter on auth endpoints (5–30 req/min) via `@nestjs/throttler`
 - **Currency**: Standardized to MXN globally
 - **Payments**: los webhooks validan firma **según el formato**. Mercado Pago emite Webhooks

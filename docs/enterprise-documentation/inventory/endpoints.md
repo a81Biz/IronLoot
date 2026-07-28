@@ -57,14 +57,14 @@ Auth column: `JWT` = Bearer token required; `Public` = no auth; `ApiKey` = ADMIN
 |---|---|---|---|---|
 | GET | `/wallet/balance` | JWT | — | — |
 | GET | `/wallet/history` | JWT | — | — |
-| POST | `/wallet/deposit` | JWT | 10/m | PAYMENT_CONFIRMED |
+| ~~POST~~ | ~~`/wallet/deposit`~~ | — | — | **RETIRADO (PT-133)** — ADR-047 |
 | POST | `/wallet/withdraw` | JWT | 5/m | PAYMENT_INITIATED |
 
 ## Payments (`/api/v1/payments`)
 
 | Method | Path | Auth | Rate Limit | Audit Event |
 |---|---|---|---|---|
-| POST | `/payments/checkout` | JWT | — | PAYMENT_INITIATED |
+| ~~POST~~ | ~~`/payments/checkout`~~ | — | — | **RETIRADO (PT-133)** — ADR-047 |
 | POST | `/payments/webhook/:provider` | Public (HMAC) | 20/m | PAYMENT_CONFIRMED / FAILED |
 | POST | `/payments/initiate` | JWT | — | — |
 | POST | `/payments/process` | JWT | — | — |

@@ -1759,3 +1759,113 @@ Delta (real vs planned): CUATRO desviaciones, todas en self-review.md.
   adaptador de PayPal lance sin captura -> 500. Un error del cliente como fallo del servidor, el
   mismo defecto que PT-124/F-41. Registrado como **PTSA H-018**; no se corrige aqui.
 PTSA reference: H-015 (ALTA, D2) -> CORREGIDA. No se cierra: `[R44]`.
+
+## PT-131 — BUG: 42 de 80 tests e2e probaban un contrato que ya no existia
+Date: 2026-07-27 / 2026-07-28
+Status: DONE
+Branch: fix/PT-131-e2e-contra-el-contrato-real
+Objective: que la suite e2e pruebe el contrato vigente y `test-integration` pueda pasar.
+Root cause: **sedimento**. El job de CI no podia terminar (H-015), asi que estos 17 ficheros
+  llevaban meses sin ejecutarse y el contrato del producto siguio cambiando debajo de ellos. ONCE
+  cambios, todos correctos en el producto, ninguno reflejado en los tests:
+    1-3  fecha de inicio futura obligatoria, duracion minima 1 h, no se puede crear ya en curso
+    4    PT-041 (AUD-009): incremento minimo de puja — 105 sobre 100 dejo de valer
+    5-6  pujar retiene fondos: hace falta monedero, y activo
+    7    GET /auctions paso a respuesta PAGINADA `{data,total,page,limit}`
+    8    **POST /orders ELIMINADO** — el pedido lo crea el cierre de la subasta
+    9    CreateCheckoutDto exige `amount`
+    10   el borrado de datos no contemplaba shipments/ratings/commissions/notifications
+    11   PT-071: el neto del vendedor va a `pendingBalance`, no a `balance`
+Solution: helpers que centralizan el contrato en un sitio — `subastaValida()`, `ponerEnCurso()`,
+  `cerrarYObtenerPedido()` (invoca el CIERRE REAL, con su transaccion, fondos y avisos), y
+  `auth-helper({saldo})`. Los tests de endpoints legados se reescribieron contra el flujo vigente.
+  El retiro paso a verificar **las tres puertas** de PT-069..072 y PT-092 (KYC, metodo valido,
+  cuenta verificada) en vez de comprobar que el saldo bajaba: mejor cobertura que la anterior.
+Modified files: 10 ficheros de test/e2e, test/core/auction-helper.ts (nuevo),
+  test/core/auth-helper.ts, test/unit/qa-suite/auction-helper.spec.ts (nuevo)
+Evidence: docs/implementation/evidence/PT-131/ — capas-encontradas.md con la medicion capa a capa
+  (42 -> 26 -> 8 -> 0), y las seis corridas intermedias.
+  **16 de 16 suites e2e, 77 tests.**
+Delta (real vs planned): el plan preveia «una causa dominante»; eran once. La solucion no cambio
+  —helper compartido, cero cambios en el producto— pero el tamano si. **Cero cambios en
+  `src/api/src/`** por contrato viejo, cero skips, cero aserciones relajadas.
+  Y aparecieron DOS defectos reales de producto que los tests llevaban meses delatando sin que
+  nadie los escuchara: H-019 y, siguiendo su rastro, H-020.
+PTSA reference: sin hallazgo propio (no es defecto de producto). Desbloqueo H-015.
+
+## PT-132 — BUG: dos defectos reales que los tests llevaban meses delatando
+Date: 2026-07-28
+Status: DONE
+Branch: fix/PT-132-defectos-reales
+Objective: corregir H-019 y H-020, y dejar el mecanismo que impide que vuelvan.
+Root cause:
+  **H-019** — `main.ts` configura el ValidationPipe con `transform: true`, asi que a `deepMerge` no
+  le llega un objeto plano sino una INSTANCIA de clase con todas las propiedades declaradas como
+  claves propias; las ausentes, con `undefined`. `Object.keys()` las incluye y la rama se
+  sobreescribe. `deepMerge` estaba bien escrito: lo que le llegaba venia contaminado.
+  **H-020** — el CLIENT pedia `/api/v1/users/settings`, que no existe. Caia en el comodin
+  `@Get(':id')`, el `ParseUUIDPipe` rechazaba la cadena y devolvia 400 «uuid invalido». La pagina
+  «Configuracion» del menu principal **no cargaba para ningun usuario**, y el error mandaba a mirar
+  el identificador, que no era el problema.
+Solution: en `deepMerge`, descartar las claves con valor `undefined` — NO los valores falsy, que
+  `false` tiene que poder aplicarse o nadie desactivaria una notificacion. Y la ruta corregida.
+  Mecanismos: `ajustes-parciales.spec.ts` (ejercita `deepMerge` con una instancia real de
+  `plainToInstance`) y `rutas-que-el-client-invoca.spec.ts`, que comprueba que toda ruta del API que
+  el CLIENT invoca existe — **cubriendo el SSR Y el JavaScript de navegador**, que es donde vive la
+  otra mitad del contrato.
+Modified files: src/api/src/modules/users/users.service.ts, src/apps/client/src/app.controller.ts,
+  test/unit/users/ajustes-parciales.spec.ts (nuevo),
+  test/unit/web-views/rutas-que-el-client-invoca.spec.ts (nuevo)
+Evidence: verificado contra el sistema en marcha, antes y despues. PTSA E-023 y E-024.
+Delta (real vs planned): la guarda de rutas se escribio tres veces antes de servir. (1) Aceptaba
+  `/users/settings` porque casaba con el comodin — hubo que exigir que **una ruta literal tenga
+  destino literal**, que es justo lo que hacia invisible el defecto. (2) Se acusaba a si misma
+  leyendo su propio comentario. (3) Daba falso positivo con las URL concatenadas del JS. Cada
+  correccion lleva su caso de control.
+PTSA reference: H-019, H-020 -> CORREGIDA (cerradas despues en S-002-V).
+
+## PT-133 — REFACTOR: retirados los dos endpoints de pago sin llamantes
+Date: 2026-07-28
+Status: DONE
+Branch: refactor/PT-133-retirar-endpoints-legados
+Objective: cerrar H-018 de raiz retirando la superficie en vez de pulirla.
+Root cause: `POST /wallet/deposit` y `POST /payments/checkout` no los invocaba ningun cliente — el
+  unico llamante en todo `src/` eran sus propios tests. El deposito real es
+  `POST /payments/initiate`, que el portal llama desde `pages-wallet-deposit.js` y que documenta
+  `docs-v2/4-ingenieria/Catalogo-de-API.md`. Son el ciclo de pago de PT-080 con las garantias de
+  PT-087; el flujo viejo quedo huerfano cuando se sustituyo y nadie lo retiro.
+Solution: retirados los dos manejadores y, con ellos, `PaymentsService.verifyPayment()` y
+  `createCheckoutSession()`, que quedaban sin uso. **`WalletService.deposit()` se conserva**: es lo
+  que usa `creditWallet` en la via real. La guarda `endpoints-legados-retirados.spec.ts` fija las
+  dos retiradas Y las cinco supervivencias, con AC-06 vigilando expresamente que el servicio siga.
+  Segunda escritura: `Catalogo-de-API.md` marcado y **ADR-047** con la decision.
+Modified files: wallet.controller.ts, payments.controller.ts, payments.service.ts, tres specs
+  unitarios, docs-v2/4-ingenieria/Catalogo-de-API.md, docs-v2/transversal/Registro-Maestro-de-ADR.md
+Evidence: 404 en los dos retirados, 401 en los cinco vigentes. Y la validacion de PT-134.
+Delta (real vs planned): ninguna. La decision de retirar en vez de corregir se tomo porque
+  `/wallet/deposit` **acreditaba dinero** a partir de un `referenceId` elegido por el cliente:
+  superficie que mueve saldo, sin uso, sin cobertura y sin mantenimiento. Pulirle el manejo de
+  errores habria sido arreglar una puerta que sobra.
+PTSA reference: H-018 -> CERRADA por retirada, no por correccion.
+
+## PT-134 — VALIDACION: por navegador, sobre el stack real
+Date: 2026-07-28
+Status: DONE
+Branch: (sobre refactor/PT-133)
+Objective: `[R39]`/`[R68]` exigen evidencia observada en la fuente real. Demostrar lo corregido
+  **como lo ve un usuario**, no solo por HTTP.
+Solution: la suite QA de navegador completa (`run-all.sh`, Playwright sobre Docker) mas un script
+  dirigido a los hallazgos (`90-validacion-hallazgos.js`).
+Evidence: PTSA **E-025**.
+  Suite completa: **127 comprobaciones, 0 fallos** — smoke 57, bootstrap 13, e2e 5, extras 19
+  (Firefox y WebKit incluidos), admin 4, retiro 13, pago y traza 16.
+  **La suite corrio DESPUES de retirar los endpoints**, y el cobro REAL por Mercado Pago paso
+  entero: orden aprobada en la pasarela, monedero acreditado por el importe exacto, traza de 7 pasos
+  en orden, cero credenciales persistidas, reentrega sin acreditar de nuevo. Es la prueba de que se
+  retiro la puerta que sobraba y no la que se usa.
+  Validacion dirigida: **9 comprobaciones, 0 fallos**.
+Delta: encontro de paso que 57 de 57 pantallas dan error de consola. Mirado uno a uno: 98 son la
+  advertencia de COOP sobre HTTP —los navegadores la ignoran sin TLS—, tres 404 y un 401 son casos
+  que la propia suite provoca a proposito, y queda uno real y cosmetico: ADMIN sin `favicon.ico`.
+  Anotado en PENDIENTES; no merece hallazgo.
+PTSA reference: H-014, H-015, H-016, H-017, H-018, H-019, H-020 -> **CERRADA** con VoBo humano.

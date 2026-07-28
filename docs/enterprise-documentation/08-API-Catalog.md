@@ -80,7 +80,7 @@ Source: `src/api/src/modules/wallet/wallet.controller.ts`
 |---|---|---|---|---|
 | GET | `/wallet/balance` | JWT required | — | Balance + held funds (`{available, held, currency, isActive}`) |
 | GET | `/wallet/history` | JWT required | — | Ledger history (limit param) |
-| POST | `/wallet/deposit` | JWT required | 10/min | Confirm wallet deposit |
+| ~~POST~~ | ~~`/wallet/deposit`~~ | — | — | **RETIRADO (PT-133)** — sin llamantes. El deposito real es `POST /payments/initiate` (ciclo de pago PT-080/PT-087). Ver ADR-047 |
 | POST | `/wallet/withdraw` | JWT required | 5/min | Withdraw funds |
 
 ---
@@ -91,7 +91,7 @@ Source: `src/api/src/modules/payments/payments.controller.ts`
 
 | Method | Path | Auth | Rate Limit | Description |
 |---|---|---|---|---|
-| POST | `/payments/checkout` | JWT required | — | Create checkout session for order |
+| ~~POST~~ | ~~`/payments/checkout`~~ | — | — | **RETIRADO (PT-133)** — sin llamantes. El deposito real es `POST /payments/initiate` (ciclo de pago PT-080/PT-087). Ver ADR-047 |
 | POST | `/payments/webhook/:provider` | Public (HMAC validated) | 20/min | Receive payment provider webhook |
 | POST | `/payments/initiate` | JWT required | — | Initiate payment flow (deposit) |
 | POST | `/payments/process` | JWT required | — | Process payment directly |

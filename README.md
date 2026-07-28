@@ -227,6 +227,17 @@ docker compose restart api
 
 > **IMPORTANTE para CLIENT**: el servicio CLIENT requiere un procedimiento especial de reinicio. No usar `docker compose restart client` porque falla al arrancar en frío. Usar siempre el procedimiento `stop → rm -f → up -d`.
 
+> **IMPORTANTE para la API cuando cambia `src/api/scripts/`**: esa carpeta **no está montada como
+> volumen** —lo están `src/`, `prisma/`, `test/` y cuatro ficheros sueltos—, así que viene de la
+> imagen. Un cambio en `entrypoint.dev.sh` **no surte efecto con `restart`**: hace falta
+> `docker compose build api && docker compose up -d api`. Durante PT-127 el contenedor siguió
+> ejecutando el arranque viejo después de cambiarlo, y sólo se vio leyendo el log.
+
+> **El esquema se aplica por migración.** Desde PT-127 el arranque ejecuta `prisma migrate deploy`,
+> y si falla **el contenedor no arranca** — antes caía a un `db push` que hacía que el arranque
+> pareciera exitoso pasara lo que pasara. Si editas `schema.prisma`, genera la migración
+> (`npm run db:migrate`); reiniciar ya no basta.
+
 ### Ver los logs en tiempo real
 
 ```bash

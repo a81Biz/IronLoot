@@ -117,15 +117,25 @@ reescribir el documento: lo de arriba conserva el diagnóstico, que sigue siendo
 
 | Proyecto | Suites | Casos | Nota |
 |---|--:|--:|---|
-| API | 66 | 467 | |
+| API | 91 | 666 | Incluye las guardas de S-002: esquema, CI, healthcheck, contrato SSR↔API, ajustes parciales, endpoints retirados |
 | CLIENT | 8 | 103 | Incluye las guardas estáticas de plantillas (PT-096, PT-102, PT-105) |
 | CORE | 8 | 134 | Sin NestJS ni BD |
 | ADMIN | 2 | 13 | **No existían** hasta PT-101 |
 | BASE | 1 | 3 | **No existían** hasta PT-101 |
-| **Total** | **85** | **720** | |
+| **Total** | **110** | **919** | |
 
-**Suite de navegador**: `bash run-all.sh` → **193 casos en diez fases**, incluidas dos pasarelas
-reales de punta a punta (Mercado Pago y PayPal).
+**Suite e2e** (`test/e2e`, contra Postgres con el esquema aplicado **por migración**): **16 de 16
+suites, 77 casos**. Hasta PT-131 no pasaba ninguna corrida completa — el job de CI no podía
+terminar (H-015) y los specs llevaban meses probando un contrato que ya no existía (**once capas**
+de cambios del producto que nunca llegaron a los tests).
+
+**Suite de navegador**: `bash run-all.sh` → **127 casos**, incluidas dos pasarelas reales de punta a
+punta (Mercado Pago y PayPal), el retiro real completo y recorridos en Firefox y WebKit.
+Más `node 90-validacion-hallazgos.js` → **9 casos** dirigidos a verificar hallazgos PTSA corregidos,
+como exigen `[R39]`/`[R68]`: evidencia observada en la fuente real, no inferida.
+
+> **`run-all.sh` trunca la base de datos.** Hacer copia antes si contiene salida real que sostenga
+> una validación PTSA.
 
 ### Lo que este plan no podía prever, y conviene que conste
 
@@ -137,6 +147,14 @@ reales de punta a punta (Mercado Pago y PayPal).
 - **Las guardas llevan casos de control.** Cada guarda estática incluye un caso que *debe*
   rechazar y otro que *debe* aceptar. Una guarda que solo ha visto verde no ha demostrado que sepa
   ver rojo.
+- **Y no es celo: en S-002 se cobró tres veces.** El checkpoint D3 delató dos `catch` mudos escritos
+  minutos antes; la guarda del job de CI y la del contrato SSR↔API **se acusaron a sí mismas**
+  leyendo sus propios comentarios; y la de rutas dio un falso positivo con las URL que el JavaScript
+  concatena. Ninguna servía para nada hasta que se la vio fallar por el motivo correcto.
+- **Los tests pueden llevar meses diciendo la verdad sin que nadie los escuche.** Los dos defectos
+  reales de S-002 —un `PATCH` que borraba ajustes en silencio y una página del menú que no cargaba—
+  los estaban delatando unos e2e que no se podían ejecutar. Arreglar el pipeline no fue trabajo de
+  fontanería: fue lo que dejó oír lo que ya se estaba diciendo.
 
 ### Lo que sigue sin cobertura, y este plan ya señalaba
 

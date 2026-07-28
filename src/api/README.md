@@ -365,15 +365,21 @@ Para activar la integración real con los proveedores:
    ```
 
 ### Verificación de Integración
-El endpoint `POST /payments/checkout` retorna un campo `isIntegrated` que indica si las credenciales están configuradas:
 
-```json
-{
-  "externalId": "...",
-  "redirectUrl": "...",
-  "isIntegrated": true
-}
+> **PT-133** — `POST /payments/checkout` fue **retirado**: no lo invocaba ningún cliente. Ver
+> ADR-047. Lo que sigue describe el flujo vigente.
+
+Qué pasarelas se ofrecen al usuario **se deriva de la configuración real** (ADR-026): un proveedor
+sin credenciales no aparece. Se consulta con:
+
 ```
+GET /api/v1/payments/providers   ->   {"providers":["MERCADO_PAGO","PAYPAL"]}
+```
+
+El depósito se inicia con `POST /api/v1/payments/initiate`, que abre el **ciclo de pago** (PT-080)
+con las garantías de PT-087: traza completa de cada paso, vía garantizada por consulta periódica si
+la notificación no llega, y expiración a las `PAYMENT_EXPIRATION_HOURS`. El detalle está en
+`docs-v2/4-ingenieria/Catalogo-de-API.md` y en los ADR-034 a ADR-040.
 
 - **Sistemas de Calificación**:
   - `RatingsModule`: Permite calificar transacciones una vez que el envío ha sido entregado (`DELIVERED`).
