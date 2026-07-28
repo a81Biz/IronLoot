@@ -20,9 +20,15 @@ Aquí solo el índice.
 
 | PT | Qué | Estado |
 |---|---|---|
+| **PT-135** | **El contenedor del API no arranca**: el lock perdió los binarios de plataforma de Linux al regenerarse en Windows (PT-126). Paquete: `changes/PT-135-locks-en-contenedor/` | **PENDING — Proposal Gate, esperando ACK** |
 | **PT-104** | `QA-PP-09` mide un delta de saldo que otra fase puede tocar (F-35) | PENDING |
 | **TD-014** | `style-src 'unsafe-inline'` sigue en los tres sitios | PENDING |
 | — | *Nada mas pendiente de implementar.* Lo demas espera validacion (§2) | — |
+
+> **PT-135 (2026-07-28)** — MAJOR. Bloquea **el entorno de desarrollo completo**: con el API
+> `unhealthy`, nginx, admin, base y client no arrancan. Doce tareas atómicas; **el entorno vuelve a
+> estar vivo al terminar la .3** y el resto es el mecanismo que impide la cuarta vez (es la tercera:
+> PT-129 lo vio en musl, hoy en gnu). Ninguna rama abierta, ningún fichero de código tocado.
 
 ### Bloqueado por algo externo — no se intenta
 

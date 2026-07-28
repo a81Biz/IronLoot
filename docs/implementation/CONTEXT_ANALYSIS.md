@@ -1227,3 +1227,152 @@ conviene revisar si la vieja también.
 - **`CLAUDE.md` es instrucción vinculante para todo agente futuro.** Un dato falso ahí cuesta más
   que en un documento de arquitectura.
 - Depende de PT-128 para el punto 4 (meter la prueba en CI de forma que sirva de algo).
+
+---
+
+## PT-135 — Análisis de contexto — El lock que perdió Linux (STATE 1-B)
+
+Date: 2026-07-28
+Fuentes consultadas: `docs/implementation/HANDOFF.md`, `HISTORY.log` (PT-126, PT-127, PT-129),
+`docs/implementation/evidence/PT-129/self-review.md`, `src/api/Dockerfile`, `src/api/Dockerfile.dev`,
+`src/api/scripts/entrypoint.dev.sh`, `docker-compose.yml`, `src/api/package-lock.json` (HEAD y
+`6d1b4ef^`), `CLAUDE.md` § Key Technical Decisions, y el estado real de Docker (contenedores,
+imágenes, volúmenes, log del API).
+
+### Components
+
+| Componente | Papel en este defecto |
+|---|---|
+| `src/api/package-lock.json` | **Origen**. Perdió 15 entradas de plataforma en PT-126 |
+| `src/api/Dockerfile.dev:24` | `RUN npm install` — reifica el lock podado. **Donde se manifiesta** |
+| `src/api/Dockerfile:62` | El parche `--no-save ...-musl` que tapa el gemelo en producción |
+| `docker-compose.yml:117` | `- /app/node_modules` — volumen anónimo. **El que lo tapaba hasta hoy** |
+| `docker-compose.yml:18,61,258,302` | `condition: service_healthy` — el multiplicador: 1 defecto → 5 contenedores |
+| `notifications.module` → mailer → `@css-inline` | La cadena de carga. Cuelga de `app.module`: sin ella no hay arranque |
+| `entrypoint.dev.sh` | **Descartado como causa**: sus cuatro pasos se completan y lo declaran |
+
+### Services
+
+Ninguno del dominio. No se toca `src/api/src/`. Es cadena de suministro y empaquetado.
+
+### Dependencies
+
+```
+package-lock.json (generado en Windows)
+        │
+        ├──> Dockerfile.dev  `npm install`  ──> node:20-slim (glibc) ──> pide -gnu  ──> ✗ MUERE
+        │                                                                   (no hay parche)
+        └──> Dockerfile      `npm install`  ──> node:20-alpine (musl) ──> pide -musl ──> ✓ vive
+                                                                            (Dockerfile:62 lo baja a mano)
+                                                                            ^
+                                              el parche es lo único que separa
+                                              a producción del mismo fallo
+```
+
+### Data Flow
+
+No hay flujo de datos. El flujo relevante es **de instalación**, y tiene un punto ciego:
+
+```
+alguien ejecuta `npm install` en Windows
+        └─> el lock queda con el árbol de SU plataforma
+                └─> se comparte por git como si fuera reproducible
+                        └─> el contenedor instala menos de lo que necesita
+                                └─> y no falla en `npm install`: falla en `require`, al arrancar
+```
+
+El volumen anónimo insertaba una caché en medio de esa cadena, así que el fallo **no aparecía cuando
+se causaba** (PT-126, ayer) sino cuando alguien reconstruía (hoy). Es exactamente la propiedad que
+hizo invisibles a H-014 y H-017: **el momento del daño y el momento del síntoma están separados**.
+
+### Files Involved
+
+- `src/api/package-lock.json` — y, según H5, los de `src/apps/base`, `src/apps/client`, `src/admin`,
+  `src/packages/core`
+- `src/api/Dockerfile.dev`
+- `src/api/Dockerfile` — al menos el comentario de la línea 53-62, que hoy afirma algo falso
+- `src/api/test/unit/documentacion/` o `.../infraestructura/` — **la guarda que falta**, si se decide
+
+### Risk Areas
+
+| # | Riesgo | Mitigación |
+|---|---|---|
+| R1 | **Parchear `Dockerfile.dev` con `--no-save ...-gnu` y llamarlo resuelto.** Es el camino de una línea, copia lo que ya hay en producción, y deja el lock roto para el siguiente | Es tratar el síntoma. El lock es el defecto; el parche es lo que ha permitido que durase un día sin que nadie lo viera |
+| R2 | Regenerar el lock en Linux y que se muevan **más** versiones de las previstas | Regenerarlo dentro del contenedor y **diffear sólo las entradas de plataforma**; si se mueve otra cosa, se registra y se decide, no se arrastra |
+| R3 | **`msgpackr` degradado en silencio.** No rompe: por eso nadie lo notará | Verificar explícitamente si el acelerador carga, y **medirlo**, no suponerlo |
+| R4 | La misma poda en los otros cuatro proyectos (H5), sin manifestarse todavía | Comprobar los cinco lock **antes** de diseñar. Un solo barrido |
+| R5 | Reconstruir la imagen sin limpiar el volumen anónimo y creer que se arregló — o al revés, que sigue roto | El volumen viejo **tapa** el defecto y el nuevo lo destapa. Cualquier verificación tiene que declarar con qué volumen se hizo. Es la trampa nº 2 del HANDOFF, en otra forma |
+| R6 | La imagen de producción **ya** depende de un parche cuyo comentario miente sobre por qué es necesario | Corregir el comentario forma parte de la corrección: `CLAUDE.md` lo dice — una cita falsa se lee con confianza |
+
+### Potential Intervention Points
+
+Dos caminos, y la elección es de STATE 2:
+
+**Camino A — arreglar el lock (trata la causa).** Regenerar `package-lock.json` en Linux, dentro del
+contenedor, para que vuelva a declarar las 17 entradas de plataforma. Ventaja: el lock vuelve a ser
+un contrato reproducible en las tres plataformas, y el parche de `Dockerfile:62` deja de ser
+necesario. Coste: el lock se mueve, y hay que revisar el diff.
+
+**Camino B — parchear `Dockerfile.dev` (trata el síntoma).** Añadir
+`npm install --no-save @css-inline/css-inline-linux-x64-gnu`, gemelo de la línea 62 de `Dockerfile`.
+Ventaja: una línea, arranca hoy. Coste: **el lock sigue roto**, y el siguiente paquete nativo que
+alguien añada repetirá el episodio. Y ya se sabe que repite: esta es la tercera vez.
+
+**Lo que hace falta en ambos casos**, y es la parte que este repositorio no suele dejarse:
+
+1. **Comprobar los otros cuatro lock** (H5) antes de decidir el tamaño del PT.
+2. **Verificar `msgpackr`**: si el acelerador nativo carga o si llevamos un día en JavaScript puro.
+3. **Una guarda.** Hoy nada comprueba que el lock declare las plataformas que las imágenes
+   necesitan. Es medible en una prueba: leer los `optionalDependencies` de cada paquete nativo y
+   exigir que las entradas del árbol cubran `linux-x64-gnu` y `linux-x64-musl`. Con caso de control,
+   como todas las guardas de este repositorio (RULE-14).
+4. **Corregir el comentario de `Dockerfile:53-62`**, que atribuye el fallo a npm-sobre-alpine cuando
+   la causa era el lock. Una explicación falsa con aval de comentario es peor que ninguna.
+
+### Existing Constraints
+
+- **`docker-compose` es el entorno de todos los días.** Cambiar el volumen anónimo por uno nombrado
+  o quitarlo tiene consecuencias que exceden este defecto: fuera de alcance salvo decisión explícita.
+- **`src/api/scripts/` no está montado como volumen** (HANDOFF, trampa nº 2): tocar el entrypoint o
+  el Dockerfile exige `docker-compose build api`. Aquí es inevitable de todas formas.
+- **Editar `schema.prisma` exige migración** (RULE-10): no aplica, no se toca el esquema — y conviene
+  decirlo porque la migración es lo que uno mira primero al ver este log.
+- **Un control que nadie ha visto fallar no es un control**: la guarda del punto 3 se prueba en los
+  dos sentidos o no se escribe.
+- **Toda cita a fichero:línea es verificable y por eso puede mentir con aval** (H-016). El
+  comentario de `Dockerfile:56` es un caso vivo de eso, encontrado por accidente al investigar esto.
+
+### Update U-001 — dos restricciones vinculantes del ACK humano (2026-07-28)
+
+El ACK de STATE 2 corrigió dos supuestos del análisis. **Las dos son restricciones, no preferencias**,
+y cambian el diseño:
+
+1. **No debe existir ningún `npm install` en la máquina local.** Se desarrolla en Docker; **toda**
+   operación de npm —incluida la generación del lock— se ejecuta **en el contenedor**.
+   - Consecuencia inmediata: el mecanismo M2 del plan (regenerar el lock en el host con
+     `--package-lock-only`) **queda descartado**, no como peor opción sino como prohibido.
+   - Consecuencia de fondo: el riesgo R1 estaba mal formulado. No es «el desarrollador podría
+     ejecutar `npm install` en Windows y romper el lock»: es que **ese comando no debería poder
+     ejecutarse allí**, y hoy nada lo impide. La invariante existe y no tiene mecanismo. Eso convierte
+     la guarda de plataforma en **dos** guardas: una que vigila el contenido del lock y otra que
+     impide generarlo donde no debe.
+   - Y explica el defecto entero: el lock de HEAD sólo pudo salir de un `npm install` en Windows
+     (PT-126). **La invariante ya se violó una vez, y nadie se enteró hasta que un contenedor murió.**
+
+2. **No se puede dejar deuda.** En particular, la alternativa C —el lock seguido por git contra
+   `.gitignore:40`— **no puede quedar abierta: es obligatorio trabajarla dentro de este PT.**
+   - Consecuencia: PT-135 deja de ser «arreglar un lock» y pasa a **decidir la política de
+     reproducibilidad de dependencias de la plataforma**. Eso lo reclasifica a **MAJOR**.
+   - Y arrastra a los otros tres puntos que el plan había declarado abiertos: `msgpackr` compilando
+     desde fuente, `npm ci` en CI, y el estado del lock de `src/admin`. Ninguno puede quedar como
+     nota.
+
+### Existing Constraints — añadidas por U-001
+
+- **Prohibido `npm install` en el host.** Cualquier paso del plan que lo requiera es inválido por
+  construcción, no discutible.
+- **Cero deuda diferida.** Todo lo que la investigación destape se resuelve dentro del PT o se
+  demuestra que no es deuda. «Registrado para más adelante» no es una salida disponible.
+- **`docker compose run` es el nuevo camino de cualquier operación npm**, y hay que resolver un
+  detalle: el servicio `api` tiene `ENTRYPOINT ["./scripts/entrypoint.dev.sh"]`, así que un
+  `docker compose run api npm ...` ejecutaría el entrypoint con argumentos. Exige `--entrypoint`.

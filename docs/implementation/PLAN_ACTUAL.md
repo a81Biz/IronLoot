@@ -1,440 +1,302 @@
 # PLAN_ACTUAL — STATE 2: Clasificación y Estrategia
 
-**Fecha**: 2026-07-27
-**Origen**: sesión PTSA **S-002** — hallazgos H-014, H-015, H-016, H-017
-**PT en el plan**: PT-127 · PT-128 · PT-129 · PT-130
+**Fecha**: 2026-07-28 · **Revisión 2** (rehecha tras el ACK humano)
+**Origen**: reporte humano — «el contenedor de api no levanta». Sin hallazgo PTSA propio todavía.
+**PT en el plan**: PT-135
 **Estado**: **PENDIENTE DE ACK HUMANO** (STATE 2). Ninguna rama abierta, ningún fichero de código tocado.
 
-> El plan anterior (PT-120, Domain Rules as Code) está cerrado y registrado en `HISTORY.log`.
-> `PLAN_ACTUAL.md` es sobrescribible por definición: sólo puede haber un plan activo.
+> El plan anterior (PT-127…PT-130) está cerrado en `HISTORY.log`. `PLAN_ACTUAL.md` es sobrescribible:
+> sólo puede haber un plan activo.
 
 ---
 
-## Por qué los cuatro van en un solo plan
+## Las dos correcciones del ACK, y lo que cambian
 
-No es agrupación por comodidad. Los tres hallazgos de D2 son **el mismo camino visto desde tres
-sitios**, y la auditoría lo dejó medido:
+| # | Corrección vinculante | Qué cambia |
+|---|---|---|
+| **1** | **No debe existir ningún `npm install` en la máquina local.** Se desarrolla en Docker: toda operación de npm va **en el contenedor** | Mata el mecanismo M2 (regenerar en el host). Y **reformula el riesgo principal**: no es que el desarrollador *pueda* romper el lock — es que **ese comando no debería poder ejecutarse allí y hoy nada lo impide** |
+| **2** | **No se puede dejar deuda. La alternativa C es obligatorio trabajarla** | PT-135 deja de ser «arreglar un lock» y pasa a **decidir la política de reproducibilidad de dependencias de la plataforma**. Reclasificado a **MAJOR** |
+
+La corrección 1 explica el defecto entero: **el lock de HEAD sólo pudo salir de un `npm install` en
+Windows** (PT-126). La invariante ya se violó una vez y nadie se enteró hasta que un contenedor
+murió, un día después, en otra máquina. Una invariante sin mecanismo no es una invariante: es una
+costumbre.
+
+---
+
+## Lo que las mediciones dejaron cerrado antes de diseñar
+
+**H5 — un solo fichero afectado, confirmado desde dos ángulos.** `base`, `client` y `core` no tienen
+lock propio porque son **workspaces** de la raíz (`package.json:5-8`); su árbol vive en el lock de la
+raíz, y ahí hay **0 paquetes de plataforma antes y después de PT-126**. Igual `src/admin`: 0.
+`src/api` es el único proyecto con dependencias nativas divididas por plataforma, y el único dañado.
+
+**R3 — no hay degradación.** `msgpackr-extract` **carga**: al perder el prebuild cayó a compilar
+desde fuente con `node-gyp`, que funciona porque `Dockerfile.dev:8-15` trae `python3`, `make` y `g++`.
+
+**Y apareció el inventario completo, que es el centro de la alternativa C:**
 
 ```
-Desarrollador  ──>  esquema (PT-127)  ──>  pipeline (PT-128)  ──>  imagen (PT-129)  ──>  produccion
-                        ROTO                    ROTO                   ROTO
+package-lock.json                 disco=True  git=True     <- raiz (workspaces)
+src/api/package-lock.json         disco=True  git=True     <- el danado
+src/admin/package-lock.json       disco=True  git=False     <- existe y nadie lo comparte
+.gitignore:40                     package-lock.json         <- los ignora a los tres
 ```
 
-Ese camino **no se ha recorrido nunca de principio a fin**. Arreglar una pieza sin las otras deja el
-mismo agujero: es exactamente lo que pasó con PT-037, que reconcilió las migraciones el 23-jul y las
-vio divergir otra vez en cuatro días porque nada las volvía a mirar.
-
-PT-130 (documentación) es independiente y puede ir en cualquier momento, pero comparte causa raíz
-con los otros tres: **una segunda escritura que nada obliga a hacer**.
+**No es «el lock del API es la excepción».** Es que la convención declarada y la práctica llevan
+meses en desacuerdo: dos locks seguidos contra la regla, uno no seguido, y ninguna decisión
+registrada en ADR ni en `HISTORY.log`. `src/admin` es el caso peor: **su árbol no es reproducible por
+nadie más**, porque el fichero que lo fija no sale de la máquina donde nació.
 
 ---
 
 ## Clasificación
 
-| PT | Hallazgo | Tipo | Complejidad | Justificación de la complejidad |
+| PT | Origen | Tipo | Complejidad | Justificación |
 |---|---|---|---|---|
-| **PT-127** | H-014 (CRITICA) | BUG | **MAJOR** | Cambia el mecanismo de evolución del esquema de toda la plataforma. Exige análisis de riesgo y de regresión obligatorios |
-| **PT-128** | H-015 (ALTA) | BUG | **STANDARD** | Cambio acotado a `ci.yml` + posible ajuste de teardown en la suite e2e |
-| **PT-129** | H-017 (ALTA) | BUG | **STANDARD** | Corrección de una línea + tres Dockerfiles nuevos siguiendo un patrón existente |
-| **PT-130** | H-016 (MEDIA) | BUG | **STANDARD** | La corrección es trivial; la prueba que impide la recurrencia no lo es |
+| **PT-135** | reporte humano | **BUG** | **MAJOR** | Cambia la política de reproducibilidad de dependencias de toda la plataforma: tres locks, `.gitignore`, `npm ci` en CI y en las imágenes, y una guarda que impide instalar fuera del contenedor. Exige análisis de riesgo y de regresión obligatorios y Proposal Package |
+
+Era STANDARD en la revisión 1. Lo mueve a MAJOR la corrección 2: resolver C **es** un cambio de
+política, y esa es exactamente la razón por la que la revisión 1 lo quería fuera. Ya no lo está.
 
 ---
 
-# PT-127 — Reconciliar las migraciones y cerrar la vía que las deja divergir
-
 ## Objetivo
 
-Que `prisma migrate deploy` sobre una base limpia produzca **exactamente** el esquema que
-`schema.prisma` declara, que la base de desarrollo tenga historial de migraciones, y que un cambio
-futuro de esquema sin migración **falle de forma visible** en vez de pasar desapercibido.
+1. Que el contenedor del API arranque, desde imagen reconstruida y volumen limpio.
+2. Que el lock del API declare el árbol de las tres plataformas que este repositorio usa de verdad.
+3. Que **generar un lock fuera del contenedor sea imposible**, no inadvisable.
+4. Que la política de locks quede **decidida y declarada**, sin contradicción entre `.gitignore` y la
+   práctica, y sin ningún lock que exista en una máquina y en ninguna otra.
+5. **Cero deuda diferida al terminar.**
 
-## Solución propuesta
+---
 
-Cuatro piezas, en orden:
+## Decisión sobre la alternativa C (obligatoria, y aquí se toma)
 
-**1. Generar la migración que falta — no escribirla.**
+**Los tres locks se conservan y se siguen por git. Se retira `.gitignore:40`.**
+
+Razones, en orden de peso:
+
+1. **El lock no es el defecto.** El defecto es *dónde se generó*. Dejar de seguirlo (C2) haría
+   desaparecer el síntoma renunciando a la reproducibilidad — en un repositorio que acaba de gastar
+   PT-127…PT-130 precisamente en poder reproducir lo que construye. Sería tratar la fiebre quitando
+   el termómetro.
+2. **C2 rompe el caché de CI.** Los siete `actions/setup-node` usan `cache: 'npm'` sin
+   `cache-dependency-path`, y esa acción resuelve el lock de la raíz como clave. Sin lock, los siete
+   jobs pierden caché (o fallan). Medido: `ci.yml:28, 62, 112, 139, 195, 255, 279`.
+3. **`src/admin` demuestra qué pasa cuando un lock no se sigue**: existe en disco, no viaja, y nadie
+   fuera de esta máquina puede reproducir su árbol. C2 extendería esa situación a los tres.
+
+Y la contradicción se elimina de raíz en vez de declararse como excepción: **`.gitignore:40` se
+retira**, porque una regla que dice lo contrario de lo que el repositorio hace es peor que no tener
+regla — es una trampa para el siguiente que la lea y la respete.
+
+**`src/admin/package-lock.json` se regenera en su contenedor y se empieza a seguir.** Es la mitad del
+inventario que faltaba.
+
+---
+
+## Solución propuesta — seis piezas, en este orden
+
+El orden importa y no es cosmético: **las piezas 1 y 2 devuelven el entorno a la vida**; las 3 a 6
+son el mecanismo. Y la 6 va al final por la lección de PT-118: un control que nace rojo muere.
+
+### 1. Regenerar el lock del API **dentro del contenedor** — M1, y ya no hay M2
 
 ```
-prisma migrate diff --from-migrations prisma/migrations \
-                    --to-schema-datamodel prisma/schema.prisma \
-                    --shadow-database-url <postgres temporal> --script
+docker compose run --rm --no-deps --entrypoint sh api -c "npm install --package-lock-only"
 ```
 
-Es la decisión D1 de PT-037 y funcionó. El SQL sale del esquema, que es la fuente de verdad.
+`--entrypoint` no es opcional: el servicio `api` declara
+`ENTRYPOINT ["./scripts/entrypoint.dev.sh"]`, y sin sustituirlo el comando llegaría como argumento
+del entrypoint. Lo mismo para `src/admin`.
 
-**2. Baselinear la base de desarrollo.** `migrate resolve --applied` sobre las 23 + la nueva, para
-crear `_prisma_migrations` sin ejecutar SQL sobre datos existentes. Es el paso que PT-037 dejó
-declarado como pendiente y nadie recogió.
+Criterio: el lock contiene `css-inline-linux-x64-gnu`, `css-inline-linux-x64-musl`,
+`msgpackr-extract-linux-x64` **y conserva las de win32 y darwin**. La simetría es el punto:
+regenerar en Linux no puede dejar cojo a quien mire el repositorio desde otro sistema. **Es
+exactamente el error de PT-126 con los signos cambiados.**
 
-**3. Cambiar el punto de aplicación.** `entrypoint.dev.sh:52`: `db push --accept-data-loss` pasa a
-`migrate deploy`. Con el respaldo invertido: si `migrate deploy` falla, **el arranque falla y se
-ve**, en vez de caer a un `db push` silencioso.
+### 2. Verificar arrancando, con volumen limpio y sin caché
 
-**4. El control que impide la recurrencia.** Una comprobación que corre en CI y falla si
-`schema.prisma` y las migraciones divergen:
+`docker compose down -v` → `build --no-cache api` → `up -d`. El volumen anónimo viejo **tapa** el
+defecto, y por tanto taparía igual un arreglo falso. La evidencia declara con qué volumen se hizo.
 
-```
-prisma migrate diff --from-migrations … --to-schema-datamodel … --exit-code
-```
+### 3. El comando de regeneración, como comando y no como recuerdo
 
-Devuelve 2 si hay diferencias. Es el equivalente para el esquema de lo que `audit:check` (PT-118)
-es para las dependencias.
+Scripts en el `package.json` de la raíz — `lock:api`, `lock:admin`, `lock:root` — que envuelven la
+invocación de Docker con sus banderas. Nadie tiene que acordarse de `--entrypoint`, y el camino
+correcto pasa a ser el más corto. **Un procedimiento que exige memoria ya falló una vez** (PT-126).
 
-**Sin la pieza 4 este PT no está terminado.** Las piezas 1-3 son lo que ya hizo PT-037.
+Estos scripts se ejecutan en el host pero **no ejecutan npm en el host**: invocan Docker. La
+invariante se respeta.
 
-## Alternativas consideradas
+### 4. La guarda que impide instalar fuera del contenedor
 
-**A — Reconciliar conservando el historial (la propuesta).** Migración nueva de reconciliación +
-baseline de las 24. Conserva las 23 carpetas.
+`preinstall` en los tres puntos de instalación (raíz, `src/api`, `src/admin`): un script que **aborta
+si no está dentro de un contenedor Linux**, con el mensaje que dice qué ejecutar en su lugar.
 
-**B — Colapsar las 23 en una migración inicial.** Borrar la carpeta, generar una sola migración
-desde `schema.prisma`, baselinear. Más limpio y verificable en un paso: `deploy` sobre base vacía →
-`diff` = 0.
+- En el contenedor y en CI (`ubuntu-latest`): pasa, es Linux.
+- En Windows o macOS: **falla y no instala nada**.
+- **Con caso de control** (RULE-14): forzando la plataforma, la guarda debe fallar. Sin ese caso no
+  es una guarda.
 
-**C — Sólo baselinear, sin migración de reconciliación.** Marcar las 23 como aplicadas y seguir.
+Esta pieza es la que convierte «no debe existir ningún `npm install` en mi máquina» de instrucción en
+mecanismo. **Es la corrección real del PT.** Detalle a resolver en STATE 3: `src/api` ya tiene
+`prepare: cd ../.. && husky install` (`package.json:25`), y hay que comprobar que las dos etapas del
+ciclo de vida conviven.
+
+### 5. La guarda que vigila el contenido del lock
+
+Prueba unitaria, patrón de `coherencia-documentacion-codigo.spec.ts`:
+
+> Para cada paquete del lock que declare `optionalDependencies` con variantes por plataforma, el
+> árbol instalado debe contener **`linux-x64-gnu`** (imagen de desarrollo, Debian glibc) y
+> **`linux-x64-musl`** (imagen de producción, alpine).
+
+Las dos plataformas son las dos que este repositorio construye, y las dos que PT-126 borró. Se lee el
+lock **como JSON** y se comprueba **presencia de claves, nunca versiones** — o la prueba se vuelve
+frágil y alguien la apagará. Con caso de control.
+
+### 6. Hacer el lock autoritativo: `npm ci`
+
+Mientras CI y las imágenes usen `npm install`, el lock es una sugerencia: cada build vuelve a
+resolver y el fichero no gobierna nada. Con los tres locks correctos y seguidos, pasan a `npm ci`:
+
+- los siete jobs de `ci.yml`,
+- `src/api/Dockerfile.dev` y `src/api/Dockerfile`,
+- los `Dockerfile.dev` de `admin`, `base` y `client` — que hoy copian sólo `package.json`.
+
+**Al final, y con la puerta de salida escrita**: si `npm ci` destapa desajustes entre `package.json`
+y el lock, cada uno se corrige **dentro de este PT** (no se difiere: corrección 2). Si aparece un
+desajuste que exceda el PT, se vuelve a `npm install` en ese punto concreto y **se dice**, en vez de
+dejar CI rojo y que alguien lo desactive en una semana.
+
+### 7. Las dos escrituras
+
+- `CLAUDE.md` § Key Technical Decisions — **`npm install` no se ejecuta en el host: se ejecuta en el
+  contenedor.** Con el comando y con lo que pasa si se ignora (murió el arranque un día después).
+- `docs/enterprise-documentation/11-Conventions.md` — `RULE-NN` con ejemplo correcto/incorrecto.
+- **ADR nuevo** en `docs-v2/transversal/Registro-Maestro-de-ADR.md`: los locks se siguen por git,
+  se generan en contenedor, `.gitignore:40` retirado. La decisión que no existía.
+- `10-Technical-Debt.md` — **cierre** de lo que este PT resuelve. No entradas nuevas.
+- Corregir el comentario de `src/api/Dockerfile:53-62`, que hoy afirma que la variante «existe en
+  `package-lock.json`» cuando PT-126 la había borrado el día antes. El parche se **conserva** (un
+  cinturón sobre una causa que ya reincidió dos veces no se cambia por una promesa), con una razón
+  verdadera escrita.
+
+---
+
+## Los cuatro puntos que la revisión 1 dejaba abiertos: dónde muere cada uno
+
+Exigencia de la corrección 2. **Ninguno queda como nota.**
+
+| # | Punto abierto en la revisión 1 | Dónde se cierra |
+|---|---|---|
+| 1 | El lock seguido contra `.gitignore:40`, sin decisión | **Pieza C + pieza 7**: se retira la línea, se sigue el de `admin`, y se escribe el ADR que no existía |
+| 2 | `msgpackr-extract` compilando desde fuente | **Se cierra como consecuencia de la pieza 1**: con el prebuild de vuelta en el lock, `node-gyp` deja de ser la vía. Verificable: el directorio del prebuild poblado y sin `build/Release/extract.node` |
+| 3 | `npm ci` en CI | **Pieza 6**, dentro de este PT |
+| 4 | `5c16af4` es un commit sucio | **No es deuda, y por eso no se trabaja**: la historia es append-only y no se reescribe (regla FDGE). Es un hecho registrado y el ejemplo de por qué existe la regla de commits atómicos. Se cita en el ADR y se cierra |
+
+---
 
 ## Alternativas rechazadas
 
-**C, rechazada.** Deja las migraciones divergiendo del esquema para siempre: la base de desarrollo
-quedaría con historial, y un entorno limpio seguiría recibiendo un esquema roto. Arregla el
-síntoma visible (`migrate status`) y no el defecto.
+| # | Alternativa | Por qué no |
+|---|---|---|
+| **B** | Parchear `Dockerfile.dev` con `--no-save ...-gnu` | Rechazada en el ACK anterior. Es lo que hizo PT-129 y es la razón de que hoy estemos aquí |
+| **C2** | Dejar de seguir los locks, alineándose con `.gitignore:40` | **Decidida en contra arriba**: renuncia a la reproducibilidad, rompe el caché de los siete jobs, y extiende a los tres el problema que ya tiene `admin` |
+| **M2** | Regenerar el lock en el host con `--package-lock-only` | **Prohibida por la corrección 1.** No es la peor opción: es inválida por construcción |
+| **D** | Volumen nombrado en vez de anónimo para `node_modules` | Fuera de alcance. No corrige nada: mejora el control de la caché que **tapaba** el defecto |
+| **E** | Un `.npmrc` que fije la plataforma objetivo | Descartada frente a la pieza 4: fija el resultado pero **no impide** ejecutar npm donde no se debe, que es la invariante que hay que sostener |
+| **F** | Retirar `@nestjs-modules/mailer` | Descartada. Es funcionalidad viva. El defecto no es del mailer |
 
-**B, no rechazada — es la alternativa real, y hay un argumento fuerte a su favor.**
-**Ningún entorno ha aplicado nunca esas 23 migraciones.** El historial que encoden no se ha
-ejecutado en ningún sitio, y está demostrado que no produce el esquema actual. Conservarlo conserva
-una ficción. Además, git ya guarda la historia; la carpeta `migrations/` no es el registro
-histórico, es el artefacto de despliegue.
-
-**Se propone A y se señala B como decisión abierta.** El argumento decisivo es una información que
-el auditor no tiene: **si existe algún entorno (staging, el portátil de alguien, una copia) donde
-esas migraciones sí se hayan aplicado.** Si existe, A es obligatoria. Si no existe —y todo lo
-observado apunta a que no— **B es mejor**.
-
-> **Decisión requerida del humano en el Proposal Gate.** Ver `changes/PT-127-*/design.md` § D1.
+---
 
 ## Dependencias
 
-- PostgreSQL 16 disponible para base sombra — **cumplida** (`ironloot-db` en marcha).
-- Ninguna dependencia de otro PT. **PT-127 va primero.**
+- **Docker operativo**, con permiso para reconstruir imágenes y borrar el volumen anónimo del API.
+- Red hacia el registro de npm.
+- **Ninguna sobre otro PT.** H-005 (lo único abierto en PTSA) no toca esto.
+- La pieza 6 depende de que las piezas 1 y C estén hechas: `npm ci` sobre un lock roto o ausente
+  falla, y falla con razón.
+
+---
 
 ## Riesgos
 
-| # | Riesgo | Severidad | Mitigación |
-|---|---|:--:|---|
-| R1 | SQL escrito a mano que no refleja el esquema | ALTA | Generarlo con `migrate diff`. Nunca a mano |
-| R2 | **Pérdida de los datos reales que sostienen la auditoría** | **CRÍTICA** | `ironloot_db` guarda la salida real que valida 11 productos PTSA. Copia (`pg_dump`) **antes** de tocar nada. `migrate resolve` no ejecuta SQL: es la operación segura |
-| R3 | El drift vuelve, como tras PT-037 | ALTA | Es la pieza 4. Sin ella, el PT se rechaza a sí mismo |
-| R4 | `migrate deploy` en el arranque de dev falla y nadie puede levantar el entorno | MEDIA | Se prueba en base sombra antes. Y que falle ruidosamente es el objetivo, no el riesgo |
-| R5 | Colapsar (vía B) rompe un entorno desconocido que sí aplicó las migraciones | MEDIA | Es exactamente la pregunta que el humano debe responder en el Gate |
+| # | Riesgo | Impacto | Mitigación |
+|---|---|---|---|
+| **R1** | **La invariante «npm sólo en el contenedor» no tiene mecanismo hoy, y ya se violó una vez** | **Alto** — es la causa raíz | **Pieza 4.** Es la única pieza que actúa sobre la cuarta vez; las demás arreglan hoy |
+| **R2** | Regenerar los locks mueve versiones además de las entradas de plataforma | Medio | Diffear y revisar entrada por entrada. Lo que se mueva y no sea plataforma **se corrige o se justifica dentro del PT** — no se arrastra |
+| **R3** | Verificar sobre el volumen viejo y concluir en falso, en cualquiera de los dos sentidos | **Alto** — es cómo se cierran PT afirmando cosas falsas (PT-127 estuvo a punto) | La evidencia declara: volumen eliminado, `--no-cache`, y el `ls node_modules/@css-inline` de la imagen nueva |
+| **R4** | **`npm ci` destapa desajustes lock↔package.json y deja CI rojo** | **Alto** — así muere un control (PT-118) | Pieza 6 **al final**, con puerta de salida escrita: cada desajuste se corrige en el PT; si uno lo excede, ese punto vuelve a `npm install` **y se dice** |
+| **R5** | La guarda `preinstall` bloquea algo legítimo — un job de CI, una herramienta, un hook de husky | Medio | Comprobar los siete jobs y `husky`. Se prueba en los dos sentidos, y CI es Linux: debe pasar |
+| **R6** | Reconstruir destapa bloqueos apilados debajo, como en PT-129 | Medio | Plausible: el lock lleva un día podado y **sólo se ha ejercido el primer `require` que falla**. Lo que aparezca se corrige en este PT |
+| **R7** | `@ironloot/core` (`file:../packages/core`) se resuelve distinto al regenerar y contamina el lock | Medio | Regenerar con el árbol del monorepo presente y **revisar su entrada en el diff** antes de aceptarlo |
+| **R8** | **El PT crece más que el defecto que lo motivó** | Medio, y consciente | Se declara: el entorno vuelve a estar vivo al terminar la pieza 2. Las piezas 3-7 son el mecanismo, y se pueden ver como fase 2 del mismo PT. **Recortarlo es decisión humana, no mía** |
 
-## Restricciones
-
-- `schema.prisma` **no se modifica**: es el objetivo, no la variable.
-- `ironloot_db` es dato de auditoría. Ninguna operación destructiva sin copia previa.
-- `db push` se **sustituye**, no se prohíbe por documentación. PT-037 intentó lo segundo y falló.
+---
 
 ## Análisis de regresión (obligatorio — MAJOR)
 
-**Qué puede romperse:**
-
-| Área | Riesgo de regresión | Cómo se comprueba |
+| Superficie | ¿Se toca? | Riesgo de regresión |
 |---|---|---|
-| Arranque del contenedor de API | `migrate deploy` falla donde `db push` funcionaba | Reiniciar `ironloot-api` y ver el log de arranque |
-| Los 33 modelos / 603 tests | Un DDL generado que difiera del esquema | `npx jest` completo + `prisma migrate diff` = 0 |
-| Datos de la auditoría PTSA | `migrate resolve` no ejecuta SQL; `deploy` sí | Recuento antes/después: wallets 4, ledger 15, payments 1, bids 3 |
-| Los cuatro checkpoints | `audit:domain`, `audit:check`, `audit:observability`, `audit:reliability` | Los cuatro deben seguir verdes |
-| Flujos de negocio | Ninguno toca lógica | Regresión sólo por esquema |
-| Entornos de terceros | **Desconocido** — es la pregunta del Gate | — |
+| `src/api/src/` y el resto del producto | **No** | Ninguno. Ni un fichero |
+| `schema.prisma`, migraciones | **No** | Ninguno. La migración se aplica bien hoy: **no es la causa** aunque el log invite a mirarla |
+| **Versiones instaladas** (los tres locks) | **Sí, indirecto** | **El riesgo real.** Lo cubren R2, las 919 unitarias, las 77 e2e y `npm audit --omit=dev` |
+| `.gitignore` | **Sí** — se retira la línea 40 | Ninguno funcional. Efecto: tres ficheros pasan a estar seguidos |
+| `src/admin/package-lock.json` | **Sí** — se regenera y se sigue | Primer lock compartido de ADMIN: su árbol pasa a ser reproducible. Riesgo de que su regeneración mueva versiones → mismas 13 unitarias de ADMIN |
+| **`ci.yml` — los siete jobs** | **Sí** — `npm install` → `npm ci` | **El mayor riesgo de regresión del PT.** Cubierto por R4 y por el orden |
+| **Los cinco Dockerfile** (`.dev` y producción) | **Sí** — a `npm ci`, y `COPY package*.json` donde falte | Los tres SSR hoy construyen **sin lock**: pasan a construir con él. Cambia lo que instalan. **Exige arrancar los cuatro y verlos `healthy`**, como exigió la aceptación de PT-129 |
+| `docker-compose.yml` | **No** | Ninguno |
+| `package.json` (raíz, api, admin) | **Sí** — `preinstall` y scripts `lock:*` | Un `preinstall` mal escrito **bloquea toda instalación, en todas partes**, CI incluido. R5 |
 
-**Integridad de datos**: el riesgo real está en aplicar SQL a una base con datos. La vía elegida
-(baseline con `resolve`) evita ese SQL por completo en la base existente. Un entorno limpio recibe
-todo el SQL, que es donde se prueba.
+**Flujos que hay que ver funcionar, no deducir:**
 
-## Criterios de éxito
-
-1. `prisma migrate deploy` sobre base vacía → esquema idéntico a `schema.prisma`.
-2. `prisma migrate diff --from-migrations --to-schema-datamodel --exit-code` → **0 diferencias**.
-3. Las cuatro sondas del cliente Prisma que hoy fallan 3 de 4 → **4 de 4 OK**.
-4. `payments.reference` es **UNIQUE** en la base construida desde migraciones.
-5. `prisma migrate status` sobre `ironloot_db` → sin migraciones pendientes.
-6. Los datos de la auditoría intactos: wallets 4 · ledger 15 · payments 1 · bids 3.
-7. 603 tests del API y 134 de CORE en verde. `typecheck` limpio.
-8. La comprobación de drift **falla** al introducir un cambio de esquema sin migración, y **pasa**
-   al generarla. Probado en los dos sentidos, como PT-118.
+1. Los ocho contenedores `healthy`, con volumen limpio e imágenes `--no-cache`.
+2. **Notificaciones por correo**: es el módulo que arrastra `@css-inline`. El binario puede cargar y
+   el adaptador de Handlebars no rendir el HTML, y el arranque no lo delataría. **Un correo real,
+   visto en Mailhog.**
+3. 919 unitarias + 77 e2e + 136 por navegador.
+4. **Las cuatro imágenes de producción**, construidas y arrancadas hasta `healthy`.
+5. `npm audit --omit=dev` = 0 en los cinco proyectos.
+6. **Un `npm install` en el host debe fallar** — y con el mensaje útil.
+7. Un push real: que los siete jobs pasen con `npm ci`.
 
 ---
 
-# PT-128 — Que el job de integración pueda pasar, y que verifique algo
+## Criterios de éxito
 
-## Objetivo
+| # | Criterio | Comprobación |
+|---|---|---|
+| 1 | El lock del API declara las tres plataformas | Contiene `-gnu`, `-musl` **y** `win32-x64-msvc` |
+| 2 | La imagen nueva lleva el binario | `docker run --rm --entrypoint sh ironloot-api:latest -c 'ls node_modules/@css-inline'` → ≥2 directorios |
+| 3 | **Los ocho contenedores `healthy`** desde volumen limpio | `down -v` → `build --no-cache` → `up -d` → `docker ps` |
+| 4 | El correo se rinde de verdad | Correo real visible en Mailhog (`:8026`) |
+| 5 | `msgpackr` usa prebuild, no compilación | Prebuild presente y **sin** `msgpackr-extract/build/Release/extract.node` |
+| 6 | **Un `npm install` en el host falla** | Ejecutarlo y ver el error. **Y el caso de control de la guarda** |
+| 7 | **La guarda del lock se ha visto fallar** | Lock de prueba sin `-gnu` → la prueba falla; con el real → pasa |
+| 8 | Sin regresión | 919 unitarias + 77 e2e + 136 navegador · `lint` 0 · `npm audit --omit=dev` = 0 ×5 |
+| 9 | Las cuatro imágenes de producción arrancan | `build` + `run` hasta `healthy` |
+| 10 | `npm ci` en los siete jobs, en verde, **en un push real** | Los jobs, vistos. No inferidos |
+| 11 | `.gitignore:40` retirado y los tres locks seguidos | `git ls-files` los muestra |
+| 12 | **Cero deuda nueva y cuatro entradas cerradas** | `10-Technical-Debt.md` + el ADR nuevo |
 
-Que `test-integration` aplique el esquema, ejecute los 17 ficheros e2e, termine, y desbloquee
-`build` y `docker`. Y que al hacerlo **sea la prueba de que las migraciones de PT-127 funcionan**.
+**Los criterios 6 y 7 son los que deciden si este PT vale algo.** Los otros diez arreglan hoy; esos
+dos son los únicos que actúan sobre la próxima vez.
 
-## Solución propuesta
-
-1. **Añadir al job**, antes de los tests: `prisma generate` y **`prisma migrate deploy`** — no
-   `db push`. Así el job verifica PT-127 en cada push, gratis.
-2. **Diagnosticar los manejadores abiertos** con `--detectOpenHandles` y cerrarlos donde estén
-   (candidatos: cliente Prisma sin `$disconnect`, Redis del throttler, servidor Socket.io).
-3. **`--forceExit` sólo si el diagnóstico demuestra que la fuga es de una dependencia ajena**, y
-   dicho en el fichero con el porqué.
-4. Añadir al pipeline los checkpoints que hoy sólo corre el auditor a mano: `audit:domain` (D1.N1)
-   y `audit:observability` (D3), declarados en `audit-scope.yaml` desde PT-120 y PT-121.
-
-## Alternativas consideradas
-
-**A — `db push` en el job.** Un paso, siempre funciona.
-**B — `migrate deploy` (la propuesta).**
-**C — Poner `--forceExit` y no diagnosticar.**
-
-## Alternativas rechazadas
-
-**A, rechazada.** Haría verde un pipeline que sigue sin probar las migraciones. Es la trampa exacta
-que causó H-014: el camino cómodo que no deja rastro.
-
-**C, rechazada como solución.** Tapa el síntoma. Si la fuga es real —una conexión que la aplicación
-no cierra— vuelve en producción como conexiones colgadas. Se admite **sólo** con diagnóstico previo
-que demuestre que es ajena, y documentado.
-
-## Dependencias
-
-- **PT-127 debe estar terminado.** Si `migrate deploy` no produce un esquema correcto, este job no
-  puede pasar. **Orden obligado.**
-
-## Riesgos
-
-| # | Riesgo | Severidad | Mitigación |
-|---|---|:--:|---|
-| R1 | Los 17 ficheros e2e fallan por razones ajenas | **ALTA** | Sólo se probó `auth` (9 tests). **El resto no se ha ejecutado nunca con éxito.** Puede aparecer trabajo real y no previsto |
-| R2 | `--forceExit` esconde una fuga que llega a producción | ALTA | Diagnóstico obligatorio antes de decidir |
-| R3 | El job tarda demasiado | BAJA | Medido: `auth` en 22 s |
-| R4 | El pipeline queda rojo y estorba | MEDIA | **Es el objetivo.** Un job que no puede fallar no verifica nada |
-
-> **R1 es el riesgo que puede cambiar el tamaño de este PT.** Si al ejecutar los 17 ficheros
-> aparecen fallos legítimos, se registran como hallazgos nuevos y **no se arrastran a este PT**.
+---
 
 ## Restricciones
 
-- **`security-audit` no se toca.** Es lo único del pipeline que funciona (PT-118).
-- El job debe fallar de verdad cuando algo va mal.
-
-## Análisis de regresión
-
-| Área | Riesgo | Comprobación |
-|---|---|---|
-| Los otros jobs de CI | Ninguno: cambios acotados a `test-integration` | Los cinco jobs con su resultado |
-| Suite unitaria (603 tests) | Si se toca el teardown de e2e, no debería afectar | `npx jest` completo |
-| Código de aplicación | Sólo se toca si el diagnóstico encuentra una fuga real | Revisión del diff |
-
-## Criterios de éxito
-
-1. `test-integration` **termina** y en verde, con los 17 ficheros ejecutados.
-2. `build` y `docker` se ejecutan (hoy no lo hacen nunca).
-3. El job aplica el esquema con `migrate deploy` — verifica PT-127 en cada push.
-4. Si se usa `--forceExit`, hay diagnóstico escrito que lo justifica.
-5. `audit:domain` y `audit:observability` corren en CI.
-6. El job **falla** si se rompe algo a propósito. Probado en los dos sentidos.
-
----
-
-# PT-129 — Una imagen de producción que arranca y se ve sana
-
-## Objetivo
-
-Que exista imagen desplegable de los cuatro servicios, que arranquen, y que su healthcheck pase a
-verde — comprobado, no declarado.
-
-## Solución propuesta
-
-1. `src/api/Dockerfile`: `/health` → **`/api/v1/health`**, y alinear el criterio con el de
-   desarrollo: `< 500` más el manejador de error de conexión.
-2. Tres `Dockerfile` de producción nuevos (ADMIN, BASE, CLIENT) siguiendo el patrón del de API:
-   multi-stage, `npm prune --production`, usuario no-root, healthcheck correcto. **Con
-   `@ironloot/core` resuelto en el build** — en desarrollo lo enlaza el entrypoint a mano y en
-   producción no hay equivalente.
-3. `ci.yml`: corregir la ruta del job `docker`.
-4. **Que el pipeline construya y arranque cada imagen una vez**, y compruebe healthcheck en verde y
-   una página real servida.
-
-## Alternativas consideradas
-
-**A — Sólo arreglar el healthcheck del API.** Mínimo, cierra un tercio del hallazgo.
-**B — Las cuatro imágenes y la verificación en el pipeline (la propuesta).**
-
-## Alternativas rechazadas
-
-**A, rechazada.** Dejaría tres servicios sin artefacto de despliegue y el job `docker` apuntando a
-un fichero inexistente. Cerraría el hallazgo en el papel y no en la realidad. Y sobre todo: sin el
-punto 4, **nadie habría visto nunca el healthcheck pasar**, que es la causa raíz.
-
-## Dependencias
-
-- **PT-128** para el punto 4: sin pipeline en verde no hay dónde arrancar la imagen.
-- **PT-127** indirectamente: una imagen que arranca contra una base necesita el esquema.
-
-## Riesgos
-
-| # | Riesgo | Severidad | Mitigación |
-|---|---|:--:|---|
-| R1 | `@ironloot/core` no resuelve en el build de producción | **ALTA** | Es el riesgo real y no estaba en el hallazgo. Se resuelve en el build; se verifica arrancando |
-| R2 | Los SSR necesitan `views/` y `public/` en la imagen | ALTA | Verificación obligatoria: pedir una **página real**, no sólo el healthcheck |
-| R3 | Dos definiciones de healthcheck vuelven a divergir | MEDIA | Una sola definición; `docker-compose` la hereda |
-| R4 | Escribir tres Dockerfiles sin precedente introduce fallos nuevos | MEDIA | El del API es el patrón; se copia y se prueba |
-
-## Restricciones
-
-- **`docker-compose` no cambia de comportamiento.** Es el entorno de trabajo diario.
-- Decidir el criterio del healthcheck **con argumento**: `< 500` distingue «degradado» de «muerto»,
-  que es la distinción útil cuando `/health/detailed` reporta una dependencia caída.
-
-## Análisis de regresión
-
-| Área | Riesgo | Comprobación |
-|---|---|---|
-| Entorno de desarrollo diario | Si se toca `docker-compose` o los `.dev` | `docker-compose up -d` y los cuatro servicios `healthy` |
-| Los cuatro servicios en marcha | Ninguno: las imágenes de producción son artefactos nuevos | Nada en ejecución cambia |
-| Tamaño de imagen / tiempo de build | Aumenta el tiempo del pipeline | Medir y anotar |
-
-## Criterios de éxito
-
-1. `docker build` de los cuatro servicios: **construye**.
-2. Cada imagen arranca y su healthcheck llega a **`healthy`** — observado con `docker ps`.
-3. Cada SSR sirve una **página real** desde su imagen de producción, no sólo el healthcheck.
-4. El job `docker` de CI apunta a ficheros que existen y construye.
-5. `docker-compose up -d` sigue dejando los cuatro servicios `healthy` como hoy.
-
----
-
-# PT-130 — Que la documentación no pueda mentir en silencio
-
-## Objetivo
-
-Corregir las afirmaciones falsas conocidas, barrer los cinco documentos del alcance en busca de
-más, y dejar una prueba que falle cuando el código y la documentación se separen.
-
-## Solución propuesta
-
-1. Corregir `03-TRD.md:13`, `06-Backend-Architecture.md:9-13` y `CLAUDE.md:138`.
-2. Barrer los cinco documentos de `coverage_targets.docs` buscando más afirmaciones contrastables.
-3. Escribir `test/unit/documentacion/coherencia-documentacion-codigo.spec.ts`: compara **versiones
-   citadas** contra los `package.json` y **rutas citadas** contra el prefijo global. Con caso de
-   control, como el resto de pruebas de este tipo en el repositorio.
-4. Revisar si `coherencia-deuda-tecnica.spec.ts` ya puede entrar en CI: no lo hacía porque `docs/`
-   estaba gitignored, y **eso ya no es cierto** (H-009 corregido).
-
-## Alternativas consideradas
-
-**A — Corregir los tres casos y ya.** Diez minutos.
-**B — Corregir + prueba que lo vigile (la propuesta).**
-
-## Alternativas rechazadas
-
-**A, rechazada.** Es la tercera vez que este repositorio se encuentra con documentación que miente
-(PT-090, PT-103/F-33, y ahora H-016). Las dos veces anteriores se corrigió a mano y volvió. El
-propio CLAUDE.md lo tiene escrito: *«Sólo la primera la obliga el compilador»*.
-
-## Dependencias
-
-- **PT-128** para el punto 4 (meter la prueba en CI y que sirva de algo).
-- Las correcciones documentales no dependen de nada: pueden ir primero.
-
-## Riesgos
-
-| # | Riesgo | Severidad | Mitigación |
-|---|---|:--:|---|
-| R1 | La prueba es frágil y alguien la desactiva | ALTA | Comprobar **sólo afirmaciones citadas con fichero:línea o versión explícita**, nunca prosa |
-| R2 | El barrido saca más casos y el PT crece | MEDIA | Este PT corrige lo encontrado y deja el mecanismo. Lo que aparezca de más se registra, no se arrastra |
-| R3 | `CLAUDE.md` es instrucción vinculante: un error al editarlo afecta a todo agente futuro | MEDIA | Cambio mínimo y acotado a la fila del `health` |
-
-## Restricciones
-
-- El patrón de prueba **ya existe** en el repositorio y se copia, no se inventa.
-- Toda prueba de este tipo en este repositorio lleva **caso de control**. Esta también.
-
-## Análisis de regresión
-
-| Área | Riesgo | Comprobación |
-|---|---|---|
-| Código de aplicación | **Ninguno**: sólo documentación y una prueba nueva | — |
-| Suite de tests | Un test nuevo que falle en verde por error | `npx jest` completo |
-| CLAUDE.md como instrucción | Un cambio que altere una regla vinculante | Diff revisado línea a línea |
-
-## Criterios de éxito
-
-1. Las tres afirmaciones conocidas coinciden con su fuente citada.
-2. Barrido de los cinco documentos hecho; lo encontrado, corregido o registrado.
-3. La prueba nueva **falla** con la documentación de hoy sin corregir, y **pasa** después. Probada
-   en los dos sentidos.
-4. Decidido —y escrito— si `coherencia-deuda-tecnica.spec.ts` entra en CI.
-
----
-
-# Orden de ejecución propuesto
-
-```
-PT-127  (esquema)   ──>  PT-128  (pipeline)   ──>  PT-129  (imagen)
-                                                        │
-PT-130  (documentacion) ────────────────────────────────┘  (independiente; el punto 4 espera a PT-128)
-```
-
-**PT-127 primero, y sin discusión**: es el único CRITICA, y su corrección es el paso que PT-128
-necesita. PT-129 va al final porque su verificación real —arrancar la imagen— vive en el pipeline
-que arregla PT-128.
-
-PT-130 puede ir en paralelo en su parte documental.
-
----
-
-# Lo que este plan NO resuelve
-
-- **H-005** (CFDI, D1, ALTA) — no es técnico: nadie ha decidido quién emite la factura. Las tres
-  opciones están en `PTSA/Fases/F-1_Declaracion_Valor.md` § U-005. **Sin decisión de negocio no hay
-  PT posible.**
-- La segunda pasada al área de despliegue: `.github/workflows/**`, `src/api/scripts/**` y los
-  `Dockerfile` entraron en el alcance de auditoría en S-002 y **sólo llevan una pasada**.
-
----
-
-# PARADA — STATE 2
-
-**Se requiere ACK humano antes de abrir rama y tocar código (STATE 4).**
-
-Los cuatro Proposal Packages (STATE 3) ya están generados en `changes/`.
-
-## Decisión del Gate — **RESUELTA (2026-07-27)**
-
-> **¿Existe algún entorno donde las 23 migraciones sí se hayan aplicado?** → **No.**
-
-El humano confirmó que sólo se ha trabajado en esta máquina, y se verificó:
-
-```
-git log --all --format="%an <%ae>" | sort -u   ->  un unico autor
-git rev-parse master origin/master             ->  328b421 == 328b421
-```
-
-**PT-127 va por la vía B: colapsar las 23 en una migración inicial.** El riesgo R5 desaparece.
-
-Y sobre **todo** el historial —57 ramas— se confirmó que las migraciones que faltan no existen en
-ninguna rama sin fusionar:
-
-```
-git grep -l "AUCTION_SOLD"          $(git rev-list --all) -- 'src/api/prisma/migrations/*'  -> vacio
-git grep -l "account_verifications" $(git rev-list --all) -- 'src/api/prisma/migrations/*'  -> vacio
-```
-
-## Revisión S-002-R2 — PT-130 crece
-
-Al verificar una objeción humana sobre la documentación de la migración a NestJS 11, apareció que
-el defecto de H-016 es mayor de lo registrado: **las cinco citas de la tabla de stack de
-`03-TRD.md` apuntan a la línea equivocada, y tres de las cinco versiones son falsas** (NestJS
-11.1.28 declarado `^10.3.0`; Prisma 5.22.0 declarado `^5.8.0`; TypeScript 5.9.3 declarado
-`^5.3.3`).
-
-**H-016 sube de MEDIA a ALTA.** El orden de prioridad cambia: PT-130 pasa del cuarto puesto al
-**segundo por riesgo** (9 ALTO), y sigue siendo el más barato de los cuatro. Es buen primer paso
-mientras se decide el resto.
-
-Y una corrección de redacción, no de medición: **la migración a NestJS 11 sí está documentada** —
-PT-126 dejó `REFACTOR_SCOPE.md`, `CONTEXT_ANALYSIS.md`, `HISTORY.log` y `HANDOFF.md`. H-016 es sobre
-`docs/enterprise-documentation/`, que es otro corpus.
+- **Prohibido `npm install` en el host.** Cualquier paso que lo requiera es inválido por construcción.
+- **Cero deuda diferida.** «Registrado para más adelante» no está disponible.
+- **El producto no se toca.** Ni un fichero de `src/api/src/`.
+- **`docker-compose` no cambia de comportamiento**: es el entorno de todos los días.
+- **`src/api/scripts/` no está montado como volumen** (HANDOFF, trampa nº 2): tocar el Dockerfile
+  exige `docker-compose build api`. Inevitable aquí.
+- **RULE-10 no aplica**: no se toca `schema.prisma`. Se dice porque la migración es lo primero que uno
+  mira al ver este log, y es el camino equivocado.
+- **RULE-14**: las dos guardas se prueban en los dos sentidos, o no se escriben.
+- **La historia no se reescribe**: `5c16af4` se queda como está.
