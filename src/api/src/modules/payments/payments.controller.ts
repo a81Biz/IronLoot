@@ -16,11 +16,9 @@ import { JwtAuthGuard } from '../auth/guards';
 import { CurrentUser, AuthenticatedUser, Public } from '../auth/decorators';
 import { PaymentsService } from './payments.service';
 import { PaymentCycleService } from './payment-cycle.service';
-import { CreateCheckoutDto, ProcessPaymentDto } from './dto';
+import { ProcessPaymentDto } from './dto';
 import { InitiatePaymentDto } from './dto/initiate-payment.dto';
-import { CreatePaymentResult } from './interfaces';
-import { Log, AuditedAction } from '../../common/observability/decorators';
-import { AuditEventType, EntityType } from '../../common/observability/constants';
+import { Log } from '../../common/observability/decorators';
 
 @ApiTags('payments')
 @Controller('payments')
@@ -30,21 +28,15 @@ export class PaymentsController {
     private readonly paymentCycle: PaymentCycleService,
   ) {}
 
-  @Post('checkout')
-  @ApiBearerAuth('access-token')
-  @UseGuards(JwtAuthGuard)
-  @ApiOperation({
-    summary: 'Initiate checkout',
-    description: 'Create a payment session for an order',
-  })
-  @ApiResponse({ status: 201, description: 'Redirect URL generated' })
-  @AuditedAction(AuditEventType.PAYMENT_INITIATED, EntityType.ORDER, (args) => args[1].orderId)
-  async createCheckout(
-    @CurrentUser() user: AuthenticatedUser,
-    @Body() dto: CreateCheckoutDto,
-  ): Promise<CreatePaymentResult> {
-    return this.paymentsService.createCheckoutSession(user.id, user.email, dto);
-  }
+  /**
+   * PT-133 — `POST /payments/checkout` RETIRADO.
+   *
+   * Mismo caso que `/wallet/deposit`: ningun cliente lo invocaba. Los pedidos se pagan con el
+   * saldo del monedero, que ya esta retenido desde la puja; crear una sesion de pasarela para un
+   * pedido era un camino que el producto dejo de recorrer.
+   *
+   * El flujo vigente esta abajo: `initiate` (deposito), `webhook/:provider` y `process`.
+   */
 
   @Post('webhook/:provider')
   @Public() // Los webhooks de pasarela no envían JWT; deben saltar el guard global (firma HMAC valida)
