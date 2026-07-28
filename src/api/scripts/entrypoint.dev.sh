@@ -48,11 +48,22 @@ echo "✅ Prisma client generated!"
 echo ""
 
 # Apply database schema
-echo "🔄 Applying database schema..."
-npx prisma db push --accept-data-loss 2>&1 || {
-  echo "⚠️ db push failed, trying migrate deploy..."
-  npx prisma migrate deploy 2>&1 || echo "⚠️ migrate also failed"
-}
+#
+# PT-127 (PTSA H-014) — Por migracion, y si falla el arranque falla.
+#
+# Antes esto era `prisma db push --accept-data-loss`, con `migrate deploy` de respaldo y un `echo`
+# tragandose el error del respaldo. Tres consecuencias, todas medidas:
+#
+#   1. `db push` no escribe `_prisma_migrations`, asi que las 23 migraciones NUNCA se ejecutaron.
+#      Aplicadas a una base limpia producian otro esquema: el cliente Prisma fallaba en 3 de 4
+#      sondas y `payments.reference` perdia la unicidad que impide acreditar un deposito dos veces.
+#   2. El segundo `||` convertia cualquier fallo en un mensaje. El arranque SIEMPRE parecia exitoso.
+#   3. `--accept-data-loss` se ejecutaba solo, en cada arranque.
+#
+# Coste consciente: quien edite `schema.prisma` ya no vera su cambio aplicado con reiniciar.
+# Tiene que generar migracion (`npm run db:migrate`). Ese atajo es justamente el que produjo H-014.
+echo "🔄 Applying database schema (migrations)..."
+npx prisma migrate deploy
 echo "✅ Database schema applied!"
 echo ""
 
