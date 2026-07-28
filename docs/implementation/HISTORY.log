@@ -1702,3 +1702,60 @@ Delta (real vs planned): TRES desviaciones, todas en self-review.md.
   eso arriesgaba el dato real que sostiene la validacion de 11 productos PTSA (riesgo R2, CRITICO).
   Queda como comprobacion pendiente, no como comprobacion aprobada.
 PTSA reference: H-014 (CRITICA, D2) -> CORREGIDA. No se cierra: `[R44]`, lo valida el humano.
+
+## PT-128 — BUG: el job de integracion no podia terminar en verde (PTSA H-015)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-128-integracion-que-verifica
+Objective: que `test-integration` aplique el esquema, que la suite termine, y que al hacerlo sea la
+  prueba continua de que las migraciones de PT-127 funcionan.
+Root cause: DOS fallos independientes.
+  (1) El job levantaba Postgres y corria los e2e SIN crear el esquema — ni `migrate deploy`, ni
+      `db push`, ni `prisma generate`. `npm install` en la raiz no genera el cliente Prisma porque
+      `src/api/package.json` no tiene `postinstall`.
+  (2) **Dos clientes Redis vivian FUERA del ciclo de vida de Nest**: `new Redis(...)` suelto en la
+      fabrica del ThrottlerModule (`app.module.ts:86`) y otro en el constructor de
+      `DistributedLockService`, sin `OnModuleDestroy`. Nest no los conocia, asi que `app.close()`
+      no los cerraba y el proceso no terminaba. **No era solo cosa de tests**: en un apagado
+      ordenado (SIGTERM a un contenedor) tampoco se cerraban.
+Solution: `db:generate` + `db:migrate:deploy` en el job, y NO `db push` — con `migrate deploy` este
+  job verifica PT-127 en cada push, gratis. `ThrottlerRedisModule` nuevo, que envuelve el cliente en
+  un servicio inyectable con `onModuleDestroy`; `DistributedLockService` implementa `OnModuleDestroy`.
+  Checkpoint D3 (`audit:observability`) pasa a correr en CI, sin `needs`. D1.N1 SALE de
+  `ci_checkpoints` por el mismo motivo que PT-122 saco D5: su entrada es la salida real y en CI la
+  base nace vacia; daria SIN_DATOS siempre y alguien lo leeria como verde.
+Modified files:
+  .github/workflows/ci.yml (pasos de esquema + job `observabilidad`)
+  src/api/src/app.module.ts
+  src/api/src/common/redis/throttler-redis.module.ts (nuevo)
+  src/api/src/common/redis/distributed-lock.service.ts
+  src/api/test/unit/ci/job-de-integracion.spec.ts (nuevo, 9 casos, 3 de control)
+  PTSA/audit-scope.yaml
+Evidence: docs/implementation/evidence/PT-128/ — diagnostico, suite completa desde el host,
+  corrida sin `--forceExit`, self-review.
+  Medido: la suite pasa de necesitar `--forceExit` a TERMINAR SOLA en 13.2 s.
+  Regresion: typecheck limpio, 619 tests API (610+9), 134 CORE, cuatro checkpoints en linea base,
+  ocho contenedores healthy, /api/v1/health 200.
+Delta (real vs planned): CUATRO desviaciones, todas en self-review.md.
+  1. `--detectOpenHandles` no se pudo ejecutar completo: agota el limite de 1 GB del contenedor
+     (OOM). El diagnostico se hizo leyendo el codigo y se CONFIRMO midiendo.
+  2. Los candidatos previstos (Prisma, Socket.io) no eran. `PrismaService` ya tenia su
+     `OnModuleDestroy`. Eran los dos Redis.
+  3. Se corrigio CODIGO DE PRODUCCION, no solo teardown. El plan lo contemplaba.
+  4. **EL JOB QUEDA ROJO.** El riesgo R1 se materializo: al correr los 17 ficheros e2e por primera
+     vez, 42 de 80 tests fallan. Causa dominante medida: los specs envian `startsAt` en el PASADO y
+     2 s de duracion, contra un DTO que exige fecha futura y minimo 1 HORA. Los specs se
+     escribieron contra un contrato anterior — el producto es correcto, los tests son viejos. Fuera
+     de alcance por decision escrita en out-of-scope.md. Se abre **PT-131**.
+  Lo que este PT consigue es que el job PUEDA estar verde y que lo que falla SE VEA. Ponerlo verde
+  exige PT-131. Rojo y honesto es mejor que colgado y oculto, que es lo que habia.
+  Y dos cosas que conviene no perder:
+  - **El checkpoint D3 cazo un error MIO dentro de este PT**: los dos `catch` de cierre eran mudos
+    y subieron `silent_failure_count` a 27 contra linea base 25. Corregido. Es la mejor prueba de
+    que el checkpoint sirve.
+  - **La guarda del job se acuso a si misma**: buscaba `db push` incluidos los comentarios, y el
+    comentario que explica por que NO se usa la hacia fallar. Caso de control AC-08.
+  Ademas se encontro un 500 real: `POST /wallet/deposit` con referencia desconocida hace que el
+  adaptador de PayPal lance sin captura -> 500. Un error del cliente como fallo del servidor, el
+  mismo defecto que PT-124/F-41. Registrado como **PTSA H-018**; no se corrige aqui.
+PTSA reference: H-015 (ALTA, D2) -> CORREGIDA. No se cierra: `[R44]`.

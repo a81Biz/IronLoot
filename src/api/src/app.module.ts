@@ -2,7 +2,6 @@ import { Module, MiddlewareConsumer, NestModule } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
-import Redis from 'ioredis';
 import { APP_GUARD } from '@nestjs/core';
 
 // Configuration
@@ -11,6 +10,7 @@ import { validateEnv } from './common/config/env.validation';
 
 // Observability (logging, errors, metrics)
 import { ObservabilityModule, ContextMiddleware } from './common/observability';
+import { ThrottlerRedisModule, ThrottlerRedisService } from './common/redis/throttler-redis.module';
 
 // Core modules
 import { DatabaseModule } from './database/database.module';
@@ -74,22 +74,21 @@ import { BullModule } from '@nestjs/bullmq';
     }),
 
     // Rate limiting (global) — Redis storage for shared counters across instances (PT-030)
+    //
+    // PT-128 (H-015): el cliente Redis lo provee `ThrottlerRedisModule`, no se crea aqui suelto.
+    // Creado suelto, Nest no lo conocia y `app.close()` no lo cerraba: el socket y su temporizador
+    // de reconexion sobrevivian al cierre y el proceso no terminaba.
     ThrottlerModule.forRootAsync({
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
+      imports: [ThrottlerRedisModule],
+      inject: [ConfigService, ThrottlerRedisService],
+      useFactory: (config: ConfigService, redis: ThrottlerRedisService) => ({
         throttlers: [
           {
             ttl: config.get<number>('RATE_LIMIT_TTL', 60) * 1000,
             limit: config.get<number>('RATE_LIMIT_MAX', 100),
           },
         ],
-        storage: new ThrottlerStorageRedisService(
-          new Redis({
-            host: config.get<string>('REDIS_HOST', 'localhost'),
-            port: config.get<number>('REDIS_PORT', 6379),
-            password: config.get<string>('REDIS_PASSWORD') || undefined,
-          }),
-        ),
+        storage: new ThrottlerStorageRedisService(redis.client),
       }),
     }),
 

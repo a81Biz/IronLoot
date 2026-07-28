@@ -197,12 +197,68 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      # PT-128 (PTSA H-015) — Los dos pasos que faltaban.
+      #
+      # El job levantaba Postgres y corria la suite e2e contra el SIN crear el esquema: ni
+      # `migrate deploy`, ni `db push`, ni `prisma generate`. Con 17 ficheros e2e presentes,
+      # `--passWithNoTests` no salvaba nada. `build` y `docker` cuelgan de este job y por eso NUNCA
+      # se ejecutaron.
+      #
+      # `npm install` en la raiz instala src/api y src/admin, pero NINGUNO genera el cliente Prisma:
+      # `src/api/package.json` no tiene `postinstall`. De ahi el paso explicito.
+      - name: Generar el cliente Prisma
+        run: npm --prefix ./src/api run db:generate
+
+      # Con `migrate deploy` —y NO `db push`— este job es ademas la prueba continua de que las
+      # migraciones de PT-127 siguen reproduciendo el esquema. En cada push, gratis.
+      # Un `db push` aqui seria la trampa que causo H-014: verde sobre un esquema no verificado.
+      - name: Aplicar el esquema con migraciones
+        run: npm --prefix ./src/api run db:migrate:deploy
+        env:
+          DATABASE_URL: postgresql://ironloot:ironloot_test@localhost:5432/ironloot_test
+
       - name: Run E2E tests
         run: npm run test:e2e -- --passWithNoTests
         env:
           DATABASE_URL: postgresql://ironloot:ironloot_test@localhost:5432/ironloot_test
           REDIS_URL: redis://localhost:6379
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
           NODE_ENV: test
+
+  # ===========================================
+  # PT-128 — Checkpoint D3: observabilidad
+  # ===========================================
+  # `audit-scope.yaml` lo declara desde PT-121 y no tenia job: se ejecutaba porque el auditor lo
+  # ejecutaba. Es el mismo patron que PT-118 arreglo para las dependencias, un escalon mas abajo.
+  #
+  # Su parte medible —`silent_failure_count`, los `catch` mudos por analisis estatico— no necesita
+  # datos, asi que aqui SI da una senal real.
+  #
+  # SIN `needs`, como security-audit y schema-drift: un job roto no debe poder ocultarlo.
+  #
+  # D1.N1 (`audit:domain`) NO entra: su entrada es la salida real y en CI la base nace vacia. El
+  # checkpoint devolveria SIN_DATOS siempre y alguien acabaria leyendolo como verde — es lo que
+  # PT-122 razono al sacar D5 de ci_checkpoints. Queda como metrica de delta sync.
+  observabilidad:
+    name: Observabilidad (D3)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Comprobar silencios nuevos contra la linea base
+        run: npm --prefix ./src/api run audit:observability
 
   # ===========================================
   # Build
