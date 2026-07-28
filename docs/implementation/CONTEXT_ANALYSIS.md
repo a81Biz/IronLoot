@@ -1376,3 +1376,129 @@ y cambian el diseño:
 - **`docker compose run` es el nuevo camino de cualquier operación npm**, y hay que resolver un
   detalle: el servicio `api` tiene `ENTRYPOINT ["./scripts/entrypoint.dev.sh"]`, así que un
   `docker compose run api npm ...` ejecutaría el entrypoint con argumentos. Exige `--entrypoint`.
+
+---
+
+## PT-136 · PT-137 · PT-138 · PT-139 · PT-140 · PT-141 — Análisis de contexto — La capa de verificación y sus registros
+
+Date: 2026-07-28
+Variantes: **STATE 1-B** para PT-136…PT-139 (BUG) · **STATE 1-R** para PT-140 y PT-141 (REFACTOR)
+
+Fuentes consultadas y **verificadas en la fuente real**, no en otro documento:
+`.github/workflows/ci.yml` · `gh api repos/a81Biz/IronLoot/actions/runs` · `git branch -r` ·
+`git rev-list --left-right --count master...origin/master` · `docs/implementation/PENDING_TASKS.md` ·
+`HANDOFF.md` · `HISTORY.log` · `ROADMAP.md` · `PTSA/PENDIENTES.md` · `PTSA/Hallazgos/H-*.md` ·
+`PTSA/ESTADO_ACTUAL.md` · `docs/enterprise-documentation/10-Technical-Debt.md` y su `README.md` ·
+`docs-v2/README.md` · `CLAUDE.md` · `src/api/src/app.module.ts` ·
+`src/api/src/common/redis/throttler-redis.module.ts` · `docker-compose.yml` · `.env.example` ·
+`src/admin/views/pages/{reconciliation,refunds}.html` · `src/admin/views/layouts/admin.html` ·
+`tests/qa-browser-suite/71-paypal-guaranteed.js` · ejecución real de la suite unitaria del API
+(**93 suites / 691 tests / 0 fallos / 13 s**) y de `audit:check`, `audit:schema` y
+`audit:observability` dentro del contenedor.
+
+### Components
+
+| Componente | Papel |
+|---|---|
+| `.github/workflows/ci.yml:4-7` | **La causa raíz de PT-136.** Dispara en `dev/qa/prep/prod`; la única rama que existe es `master` |
+| Los 8 jobs de CI | `lint` · `security-audit` · `schema-drift` · `test-unit` · `test-integration` · `observabilidad` · `build` · `docker`. Los registros dicen «siete» |
+| `security-audit`, `schema-drift`, `observabilidad` | Los tres **sin `needs`** a propósito (H-015). El razonamiento es correcto; nunca se comprobó que el workflow arrancara |
+| Los 11 mecanismos de `ESTADO_ACTUAL.md:63-71` | Todos escritos, todos probados a mano, **ninguno ejecutado por CI jamás** |
+| `src/api/src/app.module.ts:61`, `throttler-redis.module.ts:31` | PT-137: leen `REDIS_HOST`; el compose declara `REDIS_URL` |
+| Los 8 `*.spec.ts` que resuelven `RAIZ` | PT-138: no pueden correr donde RULE-15 dice que se ejecuta npm |
+| `src/admin/views/layouts/admin.html:13,162,171` | PT-139: declara `head`, `content`, `scripts`. **No declara `title`** |
+| Los 12 almacenes de pendientes | PT-140: ninguno declara precedencia sobre otro |
+| `docs/enterprise-documentation/` vs `docs-v2/` | PT-141: los dos se declaran oficiales |
+
+### Services
+
+**Ninguno del dominio queda tocado por PT-136, PT-138, PT-140 ni PT-141.** PT-137 toca configuración
+de infraestructura (`app.module`, throttler). PT-139 toca dos plantillas y su JavaScript de sitio.
+El producto —subastas, pujas, monedero, pagos— no entra en ninguno de los seis.
+
+### Dependencies
+
+```
+PT-136  (CI se ejecuta)
+   │
+   ├──> es requisito de PT-140: la guarda de coherencia de registros nacería
+   │    igual que las once anteriores — escrita y sin correr sola nunca
+   │
+   ├──> es requisito de la guarda de PT-139 (bloques de plantilla)
+   │
+   └──> cierra el criterio 10 de PT-135, hoy inalcanzable
+
+PT-141.A (decision documental)  ──> deja de pagarse la doble escritura en cada PT
+PT-141.B (regenerar Foundation) ──> depende de PT-136..139: un snapshot no debe
+                                    documentar defectos conocidos como diseño
+
+PT-137, PT-138, PT-139  ──  independientes entre si
+```
+
+### Data Flow
+
+El flujo relevante no es de datos: es **de verificación**, y tiene el mismo punto ciego tres veces.
+
+```
+se escribe un control  ──>  se ejecuta a mano una vez  ──>  se declara «vigilado en CI»
+                                                                    │
+                                                                    └──> y CI no se ejecuta nunca
+                                                                          (PT-136)
+
+se cierra un trabajo  ──>  se escribe en 1 de los 12 registros  ──>  los otros 11 siguen diciendo PENDING
+                                                                          (PT-140)
+```
+
+Es el mismo defecto en dos planos: **el momento en que algo se declara verdadero y el momento en que
+alguien lo comprueba están separados, y nada cierra la distancia**. Es la propiedad que hizo
+invisibles a H-014, H-015, H-017 y a F-33/F-34.
+
+### Files Involved
+
+- **PT-136**: `.github/workflows/ci.yml`; guarda nueva sobre las ramas del disparador.
+- **PT-137**: `src/api/src/app.module.ts`, `src/api/src/common/redis/throttler-redis.module.ts`,
+  `src/api/src/common/config/configuration.ts`, `src/api/src/common/redis/distributed-lock.service.ts`,
+  `docker-compose.yml`, `.env.example`, `CLAUDE.md`; guarda nueva sobre variables de entorno.
+- **PT-138**: `docker-compose.yml`, `src/api/scripts/observability-check.ts`,
+  `src/api/scripts/audit-check.ts`, los 8 `*.spec.ts` que leen la raíz.
+- **PT-139**: `src/admin/views/pages/reconciliation.html`, `src/admin/views/pages/refunds.html`,
+  `src/admin/public/js/pages/`; guarda nueva sobre bloques de plantilla.
+- **PT-140**: `PENDING_TASKS.md`, `HISTORY.log`, `PTSA/PENDIENTES.md`, `ROADMAP.md`, `CLAUDE.md`;
+  guarda nueva de coherencia de registros.
+- **PT-141**: `CLAUDE.md`, `docs-v2/transversal/Registro-Maestro-de-ADR.md`,
+  `docs/enterprise-documentation/`, `PTSA/` (las dos citas rotas).
+
+### Risks
+
+| # | Riesgo | Mitigación |
+|---|---|---|
+| R1 | **Al arrancar CI por primera vez, los 8 jobs salen rojos.** Precedente literal: PT-128 ejecutó los 17 ficheros e2e por primera vez y 42 de 80 tests fallaron | Es el resultado esperado, no el fracaso. Rojo y visible es lo que se compra. Se mide antes con `act` o con una rama de prueba, y lo que aparezca se registra como PT propio, no se parchea dentro de PT-136 |
+| R2 | `npm ci` gobernado por los locks de PT-135 **estrena en CI** | Ya ensayado en contenedor (exit 0). No lo sustituye, y por eso es criterio explícito |
+| R3 | Marcar hecho en PT-140 algo que no lo está | Cada cambio de estado lleva cita `fichero:línea` verificada. Es la disciplina de PT-090, ahora con guarda |
+| R4 | Montar la raíz del monorepo en `api` (PT-138) altera el arranque o el watch | Se comprueba el ciclo completo levantar → healthy → recargar antes de darlo por bueno |
+| R5 | Unificar Redis (PT-137) rompe el rate limiting sin que se note | El throttler es defensa de los endpoints de auth. Se ejerce con peticiones reales, no sólo con la suite |
+| R6 | Regenerar Foundation (PT-141.B) rompe las citas que vigila la guarda de PT-130 | Las dos guardas documentales se ejecutan antes y después. **H-016 volvería con aval si no** |
+| R7 | Retirar `dev/qa/prep/prod` cierra la puerta a un flujo de entornos futuro | Se añade con su ADR el día que exista. Declarar hoy ramas que nadie ha creado es exactamente lo que produjo PT-136 |
+
+### Constraints
+
+- **`HISTORY.log` es append-only.** Las entradas que faltan de PT-129 y PT-130 se añaden al final,
+  fechadas hoy y diciendo a qué fecha corresponden. No se reordena.
+- **`[R44]` de PTSA sigue vigente**: el agente no cierra hallazgos. H-005 sigue siendo del humano.
+- **RULE-14**: toda guarda nueva —y estos seis PT entregan cuatro— se prueba en los dos sentidos con
+  casos de control.
+- **RULE-15**: npm no se ejecuta en el host. PT-138 existe precisamente porque esa regla y la forma
+  de correr ocho guardas no encajan todavía.
+- **Cerrar es dos escrituras** (código + registro), y PT-140 es el PT que convierte esa regla en
+  mecanismo en vez de nota.
+- **Ninguno de los seis toca `src/api/src/` salvo PT-137**, y ahí sólo configuración de conexión.
+
+### Lo que ya se midió y no hace falta volver a medir
+
+| | |
+|---|---|
+| Suite unitaria del API | **93 suites / 691 tests / 0 fallos** (13 s). Confirma la cifra de `HANDOFF.md:7` |
+| `master` vs `origin/master` | `0731161` en ambos; `0 0` ahead/behind. **Ya está empujado** |
+| Ejecuciones de CI | **0** en toda la historia del repositorio |
+| Hallazgos PTSA activos | **1** (H-005). Los otros 19 cerrados, verificado leyendo los 20 ficheros |
+| Ramas sin fusionar | Ninguna |

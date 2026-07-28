@@ -1,127 +1,217 @@
-# REFACTOR_SCOPE — PT-126: NestJS 10->11 y Express 4->5
+# REFACTOR_SCOPE — PT-140 y PT-141
 
-**Fecha**: 2026-07-27 · **Complejidad**: **MAJOR** · **Variante**: STATE 1-R
-**Origen**: TD-015 / H-008. Es la tercera y ultima de las decisiones de plataforma que identifico
-PT-123 — la que cierra 7 de los 10 avisos restantes.
-**Autorizacion**: explicita del humano el 2026-07-27: *«si la migracion es lo que se necesita para
-mejorar la seguridad, trazabilidad o cualquiera que sea medible necesitamos hacerla aunque tome mas
-esfuerzo, mejor ahora que parchar»*. Y: *«no estamos en produccion»*.
+**Fecha**: 2026-07-28 · **Variante**: STATE 1-R · **Estado**: esperando ACK del Proposal Gate
+**Origen**: revisión de coherencia de registros solicitada por el humano — *«se han realizado ya
+varias fases y al parecer siempre quedan cosas por hacer y nunca se cierran completo»*.
 
-## Que cambia
-
-`@nestjs/*` 10 -> 11 en los **cuatro servicios NestJS** (API, BASE, CLIENT, ADMIN). Arrastra
-`@nestjs/platform-express` -> Express 5, y con el `path-to-regexp` 3 -> 8 y `body-parser` 1 -> 2.
-
-Avisos que cierra en el API: `@nestjs/core`, `path-to-regexp`, `body-parser`, `multer`, `js-yaml`
-(via swagger), `glob`/`minimatch`/`brace-expansion` (via la cadena que sube con el resto).
-
-Se incluyen BASE, CLIENT y ADMIN aunque TD-015 solo media el API: los tres tienen sus propios
-avisos (9, 9 y 8) y quedarse a medias significa mantener dos versiones del mismo framework en el
-mismo repositorio. Eso es la definicion del parche que el humano pidio dejar de hacer.
-
-## Que NO cambia
-
-- **Ninguna ruta.** Los `:id` no cambian de sintaxis entre path-to-regexp 3 y 8.
-- **Ningun dato.** No hay migracion de BD en este PT.
-- **El comportamiento observable de la API.** Mismo contrato, mismos estados, mismos cuerpos.
-- `@nestjs/schedule` (6.x) y `@nestjs/bullmq` (11.x) ya estan por delante; se ajustan si el pico
-  de dependencias lo exige, no por gusto.
-
-## EL riesgo, y es uno concreto
-
-`app.module.ts:167` -> `consumer.apply(ContextMiddleware).forRoutes('*')`.
-
-**`'*'` no es una ruta valida en path-to-regexp 8.** O lanza al arrancar, o —peor— deja de casar en
-silencio. `ContextMiddleware` es quien pone el `traceId`: sin el, cada peticion pierde el hilo que
-une su log, su fila en `error_events` y su apunte en la traza de pagos.
-
-Esto es exactamente F-34 otra vez: **algo que se apaga sin que nadie lo note y con la suite en
-verde**. La suite no lo cazaria porque ningun test unitario monta el middleware.
-
-Por eso la barra de calidad de este PT no es «compila y pasan los tests».
-
-## Quality bar — como se sabe que esta completo
-
-1. Los cuatro servicios **arrancan** y responden.
-2. `npm audit --omit=dev` en el API baja de 10 paquetes a **3 o menos**.
-3. Las 561 pruebas del API + las de CLIENT/CORE/ADMIN/BASE siguen pasando.
-4. **Una peticion real devuelve `traceId`** y deja fila en `request_logs`. Sin esto, el PT no esta
-   hecho aunque todo lo demas este verde.
-5. Un flujo de dinero de punta a punta: login -> ver saldo -> pedir deposito. Es lo que mas capas
-   atraviesa (guardas, validacion, BD, adaptador de pasarela).
-6. El WebSocket de puja sigue conectando (`platform-socket.io` sube con el resto).
-
-## Riesgo de regresion — que debe conservarse exacto
-
-| Riesgo | Por que importa | Como se comprueba |
-|---|---|---|
-| **`forRoutes('*')` deja de casar** | Muere la trazabilidad, en silencio | Peticion real: `traceId` en la respuesta + fila en `request_logs` |
-| Express 5 reenvia promesas rechazadas al filtro de errores | Cambia el cuerpo de algunos 500 | Suite + provocar un error real |
-| `body-parser` 2 cambia defaults (`extended`) | Un POST con formulario podria dejar de parsearse | Login real (envia JSON) + un `multipart` (la subida de PT-124) |
-| `req.query` pasa a solo lectura | Reventaria en ejecucion, no al compilar | Verificado: **nadie lo muta** en los 5 proyectos |
-| `multer` sube de mayor con platform-express | PT-124 acaba de tocar ese interceptor | Repetir las cinco pruebas de subida de PT-124 |
-| Swagger 7 -> 11 | Solo afecta fuera de produccion | `GET /docs` responde |
-
-## Estrategia de vuelta atras
-
-Rama propia. `package.json` + `package-lock.json` revertidos y `npm ci` devuelven el estado
-anterior: **no se toca ni un dato**. Es la razon de haber hecho PT-125 aparte — si algo se rompe
-aqui, se sabe que fue el framework y no bcrypt.
-
-## Fuera de alcance
-
-- Adoptar APIs nuevas de NestJS 11. Migrar y refactorizar a la vez hace imposible saber cual de las
-  dos cosas rompio algo.
-- Sustituir Express por Fastify.
-- Los 3 avisos que quedaran despues (`file-type`, `linkify-it`, y lo que sobreviva): se vuelven a
-  medir al terminar y se declaran en la linea base, no se esconden.
-
+> El alcance anterior de este fichero (**PT-126**, NestJS 10→11, cerrado y validado) se conserva en
+> `archive/REFACTOR_SCOPE-PT-126.md`. FDGE manda sobrescribir; archivar antes evita que sobrescribir
+> sea perder.
 
 ---
 
-## Delta: lo que aparecio y no estaba previsto
+# PT-140 — REFACTOR (STANDARD): doce almacenes de pendientes, ningún punto de cierre
 
-El alcance preveia **un** punto de rotura y bajar de 10 avisos a «3 o menos». Quedaron **0**, y
-aparecieron cinco defectos mas — **ninguno del framework**, todos latentes y destapados por la
-migracion:
+## El problema, medido
 
-1. **`JWT_SECRET` se leia en 6 sitios sin exigir que existiera.** Los tipos de `@nestjs/jwt` 11 lo
-   señalaron. La salida facil era un `!`. Ahora una funcion que lanza.
-2. **`JWT_ACCESS_EXPIRY` podia estar mal escrita sin protesta**: `ms('pronto')` devuelve `undefined`
-   en silencio.
-3. **El adaptador de Handlebars se importaba entrando en `dist/`** del paquete. Lo destapo la
-   reinstalacion limpia, no la version.
-4. **F-42 — ningun servicio tenia `.dockerignore`.** `tsconfig.tsbuildinfo` viajaba a la imagen de
-   ADMIN y `tsc` concluia que ya habia emitido todo. Sintoma identico al de F-36 y TD-013, **ya
-   «arreglado» dos veces en otro sitio**.
-5. **El patron de `lint:check` apuntaba a `apps/` y `libs/`**, que no existen — resto de la
-   plantilla de Nest.
+La pregunta del humano —«¿por qué nunca se cierra?»— tiene una respuesta estructural, no de
+disciplina. **Un pendiente puede vivir hoy en doce sitios distintos, y ninguno declara cuál manda.**
 
-## Y un error propio, que es el que mas vale anotar
+| # | Almacén | Qué guarda |
+|---|---|---|
+| 1 | `docs/implementation/PENDING_TASKS.md` | Índice FDGE |
+| 2 | `docs/implementation/MATRIZ-DEUDA-TECNICA.md` | «El documento que manda», según el #1 |
+| 3 | `docs/implementation/HANDOFF.md` | § Riesgos y deuda + § Próximas acciones |
+| 4 | `docs/implementation/DISCOVERY.md` | Los `F-XXX` dentro de las § Revisión U-00N |
+| 5 | `docs/implementation/HISTORY.log` | `Status: VALIDATION_PENDING` |
+| 6 | `docs/implementation/ROADMAP.md` | FPGE |
+| 7 | `docs/implementation/FDGE_HALLAZGOS_TRACKER.md` | Hallazgos FDGE |
+| 8 | `changes/PT-XXX/tasks.md` | Estado por tarea atómica |
+| 9 | `PTSA/PENDIENTES.md` | Bloqueantes y pendientes por sesión |
+| 10 | `PTSA/Hallazgos/H-XXX.md` + `ESTADO_ACTUAL.md` + `RESUMEN.md` | Hallazgos de auditoría |
+| 11 | `docs/enterprise-documentation/10-Technical-Debt.md` | `TD-XXX` |
+| 12 | `docs-v2/Informe-Remediacion.md` | Hallazgos de la remediación de julio |
 
-Para cerrar los ultimos cuatro avisos puse **overrides globales** de `minimatch` y
-`brace-expansion`. Cerraron los avisos... y **le rompieron los globs a ESLint**, que depende de
-`minimatch@3` y esperaba `brace-expansion@1`. `npm audit` daba 0 y `lint:check` respondia *«No files
-matching the pattern»* — es decir, **dejo de lintar y no fallo**. Otra vez la forma de F-34.
+### Lo que eso produce, verificado contra la fuente el 2026-07-28
 
-Se vio porque se ejecuto el lint despues, no porque el override lo avisara.
+| Registro | Dice | Realidad |
+|---|---|---|
+| `PENDING_TASKS.md:23` | `PT-104` PENDING | **Hecho**: `tests/qa-browser-suite/71-paypal-guaranteed.js:236-258` cuenta asientos del ledger, no deltas de saldo |
+| `PENDING_TASKS.md:24` | `TD-014` PENDING | **Cerrada por PT-105**: `10-Technical-Debt.md:289-292`; ningún `main.ts` lleva `unsafe-inline` |
+| `PENDING_TASKS.md:32` · `HANDOFF.md:49` | «Falta empujar `master`» | **Empujado**: `master == origin/master == 0731161`; `rev-list --left-right --count` → `0 0` |
+| `PENDING_TASKS.md:91-167` | PT-127…130 `BLOCKED`, «ninguna rama abierta, ningún fichero de código tocado» | **Los cuatro fusionados** (a8d5bf0, 90ce57b, 676831c, bd5eed4). **44 filas de tareas mienten** |
+| `PENDIENTES.md:152` | ADMIN sin favicon | **Hecho**: `favicon.svg` + `layouts/admin.html:7` |
+| `HANDOFF.md:50` · `PENDING_TASKS.md:32` | «los siete jobs» | Son **ocho** (`ci.yml`: lint, security-audit, schema-drift, test-unit, test-integration, observabilidad, build, docker) |
+| `HISTORY.log` | — | **PT-129 y PT-130 no tienen entrada**. Salta de PT-128 a PT-131, con evidencia y commits fusionados de ambos. Incumple FDGE STATE 7 sobre el fichero que el propio framework declara append-only y fuente de verdad |
+| `ROADMAP.md:3` | `Health 86.1 · Clase C · Risk 100` | Hoy `95.5 · Clase A · Risk 24`. Emitido el **2026-06-23**, sesión S-001. **FPGE no se ha vuelto a ejecutar nunca** |
+| `PTSA/PENDIENTES.md` | 7 bloques de sesión apilados (DS-004 … S-002-G) | Ninguno podado. El mismo pendiente (`PTSA/Motor-PTSA.md` no existe) aparece **cinco veces**, sin que nada diga qué bloque manda |
+| `10-Technical-Debt.md:103-105` | «**Queda `styleSrc`**, que sigue llevándolo… registrado aparte como TD-014» | Catorce líneas antes declara TD-005 «CERRADA DEL TODO», y TD-014 está cerrada en `:289`. Se contradice consigo mismo; `coherencia-deuda-tecnica.spec.ts` pasa porque no lee prosa |
 
-**Regla que queda escrita**: un override global sube ese paquete **para todo el arbol**, incluidas
-las herramientas. Cuando el aviso vive en una rama concreta, el override va acotado; y si hace falta
-uno global, se declara la excepcion de quien no debe moverse:
+**El patrón**: nada de esto es trabajo sin hacer. Es **trabajo hecho que ningún registro recogió**.
+La sensación de «nunca se cierra» es exacta y su causa es que cerrar exige hoy escribir en hasta
+doce sitios, y sólo dos tienen guarda automática.
 
-```json
-"overrides": {
-  "brace-expansion": ">=5.0.8",
-  "eslint": { "brace-expansion": "^1.1.11" }
-}
+## Qué cambia
+
+1. **Una regla de precedencia declarada en `CLAUDE.md`**: qué registro manda para qué clase de
+   pendiente, y cuál es derivado. Sin ella, todo lo demás se vuelve a desincronizar.
+2. **`PENDING_TASKS.md` reconstruido contra el código**, como ya hizo PT-090 y PT-103 — con la
+   diferencia de que esta vez queda mecanismo, no sólo corrección.
+3. **`PTSA/PENDIENTES.md` podado**: un solo bloque vivo, el resto a `PTSA/archive/`. Es un artefacto
+   de estado (`ESTADO_ACTUAL`-like), no un log; hoy se comporta como log sin serlo.
+4. **`HISTORY.log`: las dos entradas que faltan**, PT-129 y PT-130, reconstruidas desde sus
+   evidencias y commits. Append al final con su fecha real anotada, **nunca reescribiendo** el orden.
+5. **`ROADMAP.md` regenerado** con una corrida FPGE real sobre el estado de hoy, o retirado con su
+   razón escrita. Un roadmap de hace cinco semanas que declara Clase C es peor que ninguno.
+6. **Una guarda**: `coherencia-de-registros.spec.ts`, de la familia de `coherencia-deuda-tecnica`.
+   Comprueba lo que es determinista y sólo eso:
+   - todo `PT-XXX` marcado `PENDING`/`BLOCKED` en `PENDING_TASKS.md` **no** aparece con `Status: DONE`
+     ni `VALIDATION_PENDING` en `HISTORY.log`;
+   - todo `PT-XXX` con carpeta en `docs/implementation/evidence/` **tiene** entrada en `HISTORY.log`
+     (esto solo ya habría cazado PT-129 y PT-130);
+   - todo `TD-XXX` declarado cerrado en `10-Technical-Debt.md` no figura pendiente en
+     `PENDING_TASKS.md`.
+
+   Con casos de control en los dos sentidos, como exige RULE-14.
+
+## Qué NO cambia
+
+- **Ni una línea de `src/`.** Este PT no toca producto.
+- **`HISTORY.log` no se reescribe.** Es append-only y se respeta: las entradas que faltan se añaden
+  al final, fechadas hoy, diciendo a qué fecha corresponden.
+- **Los hallazgos PTSA no se cierran.** `[R44]` es de PTSA y sigue vigente: los cierra el humano.
+- **No se inventa estado.** Todo lo que se marque hecho lleva su cita `fichero:línea`, como en PT-090.
+- **No se fusionan los frameworks.** FDGE, PTSA y FPGE siguen con sus artefactos separados; lo que se
+  declara es la precedencia entre ellos, que hoy no existe.
+
+## Quality bar — cómo se sabe que está completo
+
+1. `coherencia-de-registros.spec.ts` en verde, con sus casos de control demostrando que sabe fallar.
+2. **Cero contradicciones** entre `PENDING_TASKS.md`, `HISTORY.log` y `10-Technical-Debt.md`, medido
+   por la guarda y no por lectura.
+3. `HISTORY.log` contiene una entrada por cada carpeta de `evidence/`.
+4. `PTSA/PENDIENTES.md` tiene **un** bloque vivo, y el pendiente de `PTSA/Motor-PTSA.md` aparece
+   **una** vez o está resuelto.
+5. La regla de precedencia está escrita en `CLAUDE.md` y un lector nuevo puede responder «¿dónde
+   apunto un pendiente?» sin preguntar.
+6. La guarda corre **en CI** — lo que depende de **PT-136**.
+
+## Riesgo de regresión — qué debe conservarse exacto
+
+| Riesgo | Por qué importa | Cómo se comprueba |
+|---|---|---|
+| Marcar hecho algo que no lo está | Es literalmente el defecto que este PT corrige, cometido otra vez | Cada fila que cambie de estado lleva cita `fichero:línea` verificada, como PT-090 |
+| Perder historia al podar `PENDIENTES.md` | `[A6]` de PTSA: inmutabilidad auditable | Se mueve a `PTSA/archive/`, no se borra; el bloque vivo enlaza al archivo |
+| La guarda se vuelve tan estricta que estorba | Una guarda que obliga a mentir para pasar es peor que ninguna | Sólo comprueba lo determinista; nada de prosa. Y se prueba en los dos sentidos |
+| Reescribir `HISTORY.log` | Prohibido por FDGE STATE 7 | El diff sólo añade al final |
+
+## Dependencia
+
+**PT-136 primero.** Sin CI que se ejecute, la guarda nueva nace en el mismo estado que las once
+anteriores: correcta, escrita, y sin correr sola nunca. Sería el defecto de este PT cometido dentro
+del PT que lo arregla.
+
+---
+
+# PT-141 — REFACTOR (MAJOR): una sola documentación oficial
+
+## La decisión, ya tomada
+
+**Decisión del humano, 2026-07-28: `docs-v2/` es la fuente de verdad.**
+
+## El problema, medido
+
+Dos árboles se declaran mutuamente sustitutos, y `CLAUDE.md` —el documento que gobierna a todo
+agente— obliga al contrario del que se declara oficial:
+
+| | `docs/enterprise-documentation/` | `docs-v2/` |
+|---|---|---|
+| Qué dice de sí mismo | *«un recorrido del 23-jun con correcciones encima, no una regeneración. **Toca regenerar. Decisión del humano**»* (`README.md:8-15`) | *«Esta carpeta es la **única fuente de verdad** del proyecto. **Sustituye funcionalmente** a `docs/enterprise-documentation/`»* (`README.md:5`) |
+| Generado | 2026-06-23 | 2026-07-23 |
+| Ficheros | 12 + `inventory/` | 31 |
+| Veces citado en `CLAUDE.md` | **10** (Foundation Protocol, fuentes obligatorias de FDGE, `11-Conventions`, `10-Technical-Debt`) | **1** (`transversal/Registro-Maestro-de-ADR.md`) |
+
+Y el coste es real y recurrente: los commits `6decb1a` y `4f40358` («la segunda escritura, en todos
+los documentos que la debían») **escriben en los dos árboles a la vez**. Cada PT paga doble, y la
+divergencia es cuestión de tiempo — H-016 ya demostró que una cita precisa que se desplaza se lee con
+confianza y es falsa.
+
+## Qué cambia
+
+1. **ADR-049** en `docs-v2/transversal/Registro-Maestro-de-ADR.md`: `docs-v2/` es la documentación
+   oficial; `docs/enterprise-documentation/` queda reducido al **contrato de agente** que FDGE y
+   Foundation Protocol necesitan.
+2. **`CLAUDE.md` reescrito** en sus 10 citas: las fuentes obligatorias de FDGE (Parte 3) y de PTSA
+   apuntan a `docs-v2/` para arquitectura, PRD, TRD y flujos.
+3. **`docs/enterprise-documentation/` se regenera con `[START FOUNDATION]`** y queda acotado a lo que
+   sólo él aporta y ningún documento de `docs-v2/` cubre:
+   - `11-Conventions.md` — las `RULE-NN`, que son el contrato operativo de todo agente;
+   - `10-Technical-Debt.md` — el registro `TD-XXX`, al que apunta la guarda de PT-103;
+   - `inventory/` — los seis inventarios derivables del código.
+   El resto (`01`…`09`) se archiva bajo `docs/enterprise-documentation/archive/` con una nota que
+   diga a qué documento de `docs-v2/` ha ido cada uno.
+4. **Corregida la contradicción interna de `10-Technical-Debt.md:103-105`** (TD-005 declarada
+   «cerrada del todo» y tres líneas después «queda `styleSrc`»).
+5. **`PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`**: `CLAUDE.md:735` y `:840` citan dos ficheros que **no
+   existen**, pendiente desde DS-004 — **cuatro sesiones PTSA**. O se escriben, o se retira la cita.
+   Es la misma clase de defecto que H-016 y toca resolverla aquí.
+
+## Qué NO cambia
+
+- **`docs-v2/` no se reescribe.** Este PT no audita su contenido; decide su estatus.
+- **`PTSA/`, `changes/` y `docs/implementation/` no se tocan.** Son evidencia e historia, no
+  documentación de producto.
+- **`docs/methodology/` sigue donde está**: es la autoridad de los cuatro frameworks y `CLAUDE.md`
+  depende de ella.
+- **Nada de `src/`.**
+
+## Quality bar
+
+1. Un lector nuevo abre `CLAUDE.md` y sabe, sin ambigüedad, qué árbol consultar para qué.
+2. Ninguna ruta citada en `CLAUDE.md` apunta a un fichero inexistente — comprobable con un barrido
+   automático (hoy fallan dos: `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`).
+3. `docs/enterprise-documentation/README.md` declara su alcance reducido y la fecha de regeneración.
+4. `coherencia-documentacion-codigo.spec.ts` (PT-130) sigue en verde tras el movimiento, **o** se
+   amplía a `docs-v2/` si es ahí donde viven ahora las citas que vigilaba.
+5. La guarda de deuda de PT-103 sigue apuntando a un `10-Technical-Debt.md` que existe.
+
+## Riesgo de regresión
+
+| Riesgo | Por qué importa | Cómo se comprueba |
+|---|---|---|
+| Romper las citas que vigila la guarda de PT-130 | H-016 volvería, y con aval | Ejecutar las dos guardas documentales antes y después |
+| `11-Conventions.md` cambia de sitio y las `RULE-NN` se pierden de vista | Es el contrato que impide romper el repositorio | No se mueve. Se queda donde `CLAUDE.md` ya lo cita |
+| Regenerar Foundation sobre un estado con bugs abiertos | El snapshot documentaría defectos como si fueran diseño | **La regeneración va después de PT-136…PT-139** |
+| Archivar un documento que alguien usa | — | `grep -rn` de cada nombre en todo el repositorio antes de mover |
+
+## Secuencia — importa
+
+**PT-141 se parte en dos momentos:**
+
+- **PT-141.A — la decisión, ahora**: ADR-049, reescritura de `CLAUDE.md`, resolución de las dos citas
+  rotas. Barato y desbloquea a los demás, que dejan de escribir dos veces.
+- **PT-141.B — la regeneración, después de PT-136…PT-139**: `[START FOUNDATION]` produce un snapshot
+  de un sistema cuyos defectos conocidos están cerrados. Regenerar antes documentaría el CI que no
+  corre y las dos pantallas muertas de ADMIN como si fueran el estado deseado.
+
+---
+
+# Orden propuesto de los seis PT
+
+```
+PT-136 (CI que nunca ha corrido)  ──┐
+                                    ├──> PT-140 (registros)  ──> PT-141.B (regenerar Foundation)
+PT-141.A (decision documental)  ────┘
+PT-137 (Redis)   ┐
+PT-138 (guardas) ├── independientes entre si; los tres pueden ir en paralelo tras PT-136
+PT-139 (ADMIN)   ┘
 ```
 
-## Resultado medido
+**PT-136 va primero** porque cada uno de los otros cinco entrega una guarda o un control, y sin CI
+que se ejecute todos nacen con el defecto que este repositorio ya ha pagado cuatro veces: un
+mecanismo escrito que nunca corre solo.
 
-| | Antes | Despues |
-|---|--:|--:|
-| Paquetes con aviso (API) | 10 | **0** |
-| Paquetes con aviso (los 5 proyectos) | 26+ | **0** |
-| Pruebas API | 561 | **603** |
-| Servicios en NestJS 11 | 0 | **4** |
+---
+
+**STOP. Esperando ACK del Proposal Gate.** Ninguna rama abierta, ningún fichero de código tocado.
+`[No Proposal Gate Skip]`
