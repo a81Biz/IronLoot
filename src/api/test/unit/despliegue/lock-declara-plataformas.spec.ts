@@ -53,6 +53,23 @@ const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
 const LOCKS = ['package-lock.json', 'src/api/package-lock.json', 'src/admin/package-lock.json'];
 
 /**
+ * El cuarto lock, y la unica excepcion — declarada, no accidental.
+ *
+ * `tests/qa-browser-suite/` instala **en el host** a proposito: Playwright conduce un navegador real
+ * en la maquina del desarrollador, y dentro del contenedor del API no hay navegador que conducir.
+ * `run-all.sh` invoca `node` directamente.
+ *
+ * No se le exige nada de Linux, y no es dejadez: seria **al reves de lo correcto**. Un arbol para el
+ * host necesita los binarios del host. Lo que si se le exige es que **siga sin dependencias nativas
+ * divididas por plataforma** — hoy son cero, medido. Mientras sea cero, la excepcion no puede
+ * reproducir el defecto de PT-135, y por eso es segura.
+ *
+ * Si algun dia deja de ser cero, esta prueba falla y obliga a decidir en vez de a suponer. Es la
+ * diferencia entre una excepcion vigilada y un agujero.
+ */
+const LOCK_DEL_HOST = 'tests/qa-browser-suite/package-lock.json';
+
+/**
  * Las dos plataformas que este repositorio construye. No son una eleccion: estan medidas.
  *
  *   linux-x64-gnu   `Dockerfile.dev`  -> node:20-slim, Debian bookworm, glibc 2.36
@@ -130,6 +147,14 @@ describe('El lock declara los binarios de las plataformas que construimos (PT-13
       // El mensaje nombra el paquete: quien lo lea en CI tiene que saber que regenerar y donde.
       expect(faltan.map((e) => `${e.padre} -> falta ${e.ausentes.join(', ')}`)).toEqual([]);
     });
+  });
+
+  it('la suite de navegador sigue sin dependencias nativas — su excepcion sigue siendo segura', () => {
+    const completa = join(RAIZ, LOCK_DEL_HOST);
+    expect(existsSync(completa)).toBe(true);
+
+    // Cero exigencias = cero binarios por plataforma = la excepcion no puede morder.
+    expect(exigenciasDePlataforma(readFileSync(completa, 'utf8'))).toEqual([]);
   });
 
   it('el lock del API declara al menos un paquete nativo — o esta guarda no vigila nada', () => {
