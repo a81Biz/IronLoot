@@ -11,6 +11,7 @@
     "audit:domain": "ts-node scripts/domain-rules.ts",
     "audit:observability": "ts-node scripts/observability-check.ts",
     "audit:reliability": "ts-node scripts/reliability-check.ts",
+    "audit:schema": "ts-node scripts/schema-drift-check.ts",
     "build": "nest build",
     "db:generate": "npx prisma generate",
     "db:migrate": "npx prisma migrate dev",

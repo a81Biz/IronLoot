@@ -13,7 +13,7 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
 - **Salida**: `pg_dump` fechado fuera del repositorio + recuento de control anotado.
 - **Validación**: el dump restaura en una base desechable y el recuento coincide:
   `wallets 4 · ledger 15 · payments 1 · bids 3 · payment_cycle_events 49`.
-- **Status**: PENDING
+- **Status**: DONE
 
 ## PT-127.1 — RED: la prueba del control de drift, antes que el control
 
@@ -24,7 +24,7 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
   `audit:schema` existe y devuelve 0 diferencias. **Con caso de control**, como el resto de pruebas
   de este tipo en el repositorio.
 - **Validación**: la prueba **falla** (RED) contra el estado actual.
-- **Status**: PENDING
+- **Status**: DONE
 
 ## PT-127.2 — Base sombra y captura del drift real
 
@@ -33,16 +33,16 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
 - **Salida**: base `ptsa_shadow` con las 23 aplicadas + salida de `migrate diff` guardada como
   evidencia.
 - **Validación**: la salida reproduce lo que E-017 registró (5 divergencias).
-- **Status**: PENDING
+- **Status**: DONE
 
-## PT-127.3 [A] — Generar la migración de reconciliación
+## PT-127.3 [A] — Generar la migración de reconciliación  ·  **DESCARTADA (vía B)**
 
 - **Objetivo**: el DDL que falta, **generado**, nunca escrito.
 - **Entrada**: `prisma/migrations` + `schema.prisma` + base sombra.
 - **Salida**: `prisma/migrations/<ts>_reconcile_schema_drift_s002/migration.sql`.
 - **Validación**: base limpia → `migrate deploy` → `migrate diff --from-schema-datamodel
   --to-schema-datasource --exit-code` = **0**.
-- **Status**: PENDING
+- **Status**: DESCARTADA — el Gate resolvió vía B
 
 ## PT-127.3 [B] — Colapsar en una migración inicial
 
@@ -51,7 +51,7 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
 - **Salida**: `prisma/migrations/<ts>_initial_schema/migration.sql` (generada con `--from-empty`);
   las 23 carpetas anteriores retiradas.
 - **Validación**: idéntica a la de [A] — base limpia, `deploy`, `diff` = 0.
-- **Status**: PENDING
+- **Status**: DONE
 
 ## PT-127.4 — Comprobar que la aplicación funciona contra ese esquema
 
@@ -59,7 +59,7 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
 - **Entrada**: base sombra reconstruida por PT-127.3.
 - **Salida**: salida de las cuatro sondas del cliente Prisma.
 - **Validación**: **4 de 4 OK** (hoy 1 de 4). Y `payments_reference_key` es **UNIQUE**.
-- **Status**: PENDING
+- **Status**: DONE
 
 ## PT-127.5 — Baseline de la base de desarrollo
 
@@ -67,7 +67,7 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
 - **Entrada**: `ironloot_db` + migraciones ya validadas.
 - **Salida**: `prisma migrate resolve --applied <cada migración>`.
 - **Validación**: `migrate status` sin pendientes **y** recuento de datos idéntico al de PT-127.0.
-- **Status**: PENDING
+- **Status**: DONE
 
 ## PT-127.6 — Cambiar el punto de aplicación en el arranque
 
@@ -76,7 +76,7 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
 - **Salida**: `migrate deploy` sin `--accept-data-loss` y sin el respaldo que traga el error.
 - **Validación**: `docker-compose restart api` → arranca; el log muestra la aplicación por
   migración; `/api/v1/health` responde 200.
-- **Status**: PENDING
+- **Status**: DONE
 
 ## PT-127.7 — GREEN: el control de drift
 
@@ -84,7 +84,7 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
 - **Entrada**: `design.md` § D4.
 - **Salida**: `src/api/scripts/schema-drift-check.ts` + script `audit:schema` en `package.json`.
 - **Validación**: la prueba de PT-127.1 pasa (GREEN). El script devuelve 0.
-- **Status**: PENDING
+- **Status**: DONE
 
 ## PT-127.8 — El control en CI
 
@@ -92,7 +92,7 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
 - **Entrada**: `.github/workflows/ci.yml`.
 - **Salida**: job `schema-drift`, **sin `needs`**, como `security-audit` (PT-118).
 - **Validación**: el job aparece en el fichero y su comando corre en local.
-- **Status**: PENDING
+- **Status**: DONE
 
 ## PT-127.9 — Probar el control en los dos sentidos
 
@@ -102,7 +102,7 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
 - **Salida**: evidencia de las dos corridas.
 - **Validación**: añadir un campo a `schema.prisma` sin migración → `audit:schema` **falla**;
   generar la migración → **pasa**; revertir ambos.
-- **Status**: PENDING
+- **Status**: DONE
 
 ## PT-127.10 — Regresión completa
 
@@ -112,7 +112,7 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
 - **Validación**: `typecheck` limpio · **603** tests del API · **134** de CORE ·
   `audit:check` · `audit:domain` (rubric 100) · `audit:observability` · `audit:reliability`,
   los cuatro verdes · recuento de datos intacto.
-- **Status**: PENDING
+- **Status**: DONE
 
 ## PT-127.11 — Evidencia y self-review (STATE 5)
 
@@ -120,7 +120,7 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
 - **Salida**: `docs/implementation/evidence/PT-127/` con salidas de PT-127.2, .4, .5, .9 y .10, más
   `self-review.md` con la lista de comprobación de STATE 5.
 - **Validación**: los 7 puntos de la lista respondidos.
-- **Status**: PENDING
+- **Status**: DONE
 
 ## PT-127.12 — Registro (STATE 7)
 
@@ -128,7 +128,7 @@ Marcadas `[A]` / `[B]` las que dependen de la vía elegida en `design.md` § D1.
 - **Salida**: entrada en `HISTORY.log` (con `PTSA reference: H-014` y el delta real vs planificado)
   + `HANDOFF.md` actualizado + `PTSA/Hallazgos/H-014.md` a `CORREGIDA` mediante `## Revisión`.
 - **Validación**: H-014 **no** pasa a CERRADA. `[R44]`: es BUG, lo cierra el humano.
-- **Status**: PENDING
+- **Status**: DONE
 
 ---
 
@@ -141,3 +141,18 @@ fix:      PT-127 el esquema se aplica por migracion, y un fallo se ve        (.6
 feat:     PT-127 audit:schema — el control que impide que el drift vuelva    (.7 .8)
 docs:     PT-127 evidencia, historia y H-014 a CORREGIDA                     (.11 .12)
 ```
+
+
+---
+
+## Estado final — 2026-07-27
+
+**Todas DONE**, salvo `PT-127.3 [A]`, descartada por la decisión del Gate (vía B).
+
+Una comprobación **no ejecutada** y registrada como tal: el escenario **C3** de
+`test-scenarios.md` —que un fallo de migración detenga el arranque— exigía corromper la única
+migración existente con la base de desarrollo ya baselineada contra ella. Riesgo R2 (CRÍTICO):
+el dato real que sostiene la validación de 11 productos PTSA. Queda pendiente, no aprobada.
+
+Estado del PT: **`VALIDATION_PENDING`**. H-014 pasa a `CORREGIDA`; `[R44]` reserva el cierre al
+humano.
