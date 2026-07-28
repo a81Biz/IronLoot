@@ -19,8 +19,9 @@
     "test:e2e": "npm --prefix ./src/api run test:e2e",
     "lint:check": "npm --prefix ./src/api run lint:check && npm --prefix ./src/admin run lint:check && npm --prefix ./src/apps/base run lint:check && npm --prefix ./src/apps/client run lint:check && npm --prefix ./src/packages/core run lint:check",
     "typecheck": "npm --prefix ./src/api run typecheck && npm --prefix ./src/admin run typecheck && npm --prefix ./src/apps/base run typecheck && npm --prefix ./src/apps/client run typecheck",
-    "build": "npm --prefix ./src/api run build && npm --prefix ./src/admin run build && npm --prefix ./src/apps/base run build && npm --prefix ./src/apps/client run build && npm --prefix ./src/packages/core run build",
+    "build": "npm run build:core && npm --prefix ./src/api run build && npm --prefix ./src/admin run build && npm --prefix ./src/apps/base run build && npm --prefix ./src/apps/client run build",
     "test:admin": "npm --prefix ./src/admin run test",
-    "test:base": "npm --prefix ./src/apps/base run test"
+    "test:base": "npm --prefix ./src/apps/base run test",
+    "build:core": "npm --prefix ./src/packages/core run build"
   }
 }

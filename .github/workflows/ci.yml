@@ -42,6 +42,13 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # PT-136 — `@ironloot/core` se resuelve por `dist/`, y `dist/` esta en .gitignore:73.
+      # Sin este paso, `tsc` no encuentra el modulo y ocho ficheros del API no compilan. Nadie lo
+      # habia visto porque en el host el `dist/` sobrevive de una compilacion anterior, y CI no
+      # habia corrido nunca.
+      - name: Build @ironloot/core
+        run: npm run build:core
+
       - name: Run linter
         run: npm run lint:check
 
@@ -126,7 +133,18 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # La base sombra la crea y la destruye Prisma; solo necesita poder conectarse.
+      # PT-136 — Este comentario decia: «La base sombra la crea y la destruye Prisma; solo necesita
+      # poder conectarse.» **Es falso.** `prisma migrate diff --from-migrations` exige que la base
+      # sombra YA EXISTA: si no, sale con P1003 y el checkpoint falla sin llegar a comparar nada.
+      #
+      # Es la clase de afirmacion que solo se puede desmentir ejecutando, y este job no se habia
+      # ejecutado nunca. El checkpoint D2 de esquema —declarado en CI desde PT-127— no habia
+      # llegado a comparar un esquema ni una vez.
+      - name: Crear la base sombra
+        run: |
+          PGPASSWORD=ironloot_test psql -h localhost -U ironloot -d ironloot_test \
+            -c 'CREATE DATABASE ironloot_test_shadow_check;'
+
       - name: Comprobar que las migraciones reproducen schema.prisma
         run: npm --prefix ./src/api run audit:schema
         env:
@@ -152,6 +170,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Build @ironloot/core
+        run: npm run build:core
 
       - name: Run unit tests
         run: npm run test -- --coverage --passWithNoTests
@@ -208,6 +229,9 @@ jobs:
 
       - name: Install dependencies
         run: npm ci
+
+      - name: Build @ironloot/core
+        run: npm run build:core
 
       # PT-128 (PTSA H-015) — Los dos pasos que faltaban.
       #
