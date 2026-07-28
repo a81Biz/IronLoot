@@ -1,14 +1,67 @@
 # HANDOFF — estado actual
 
 **Fecha**: 2026-07-27
-**Rama**: `master` — `5fb4334` = `origin/master`, cero ramas sin fusionar.
+**Rama**: `master` — `71cc10a`, cero ramas sin fusionar.
 
-**Pruebas**: **770/770** unitarias (API 517 · CORE 134 · CLIENT 103 · ADMIN 13 · BASE 3) ·
-`lint` 0 errores en los cinco proyectos.
+**Pruebas**: **856/856** unitarias (API 603 · CORE 134 · CLIENT 103 · ADMIN 13 · BASE 3) ·
+`lint` 0 errores · **`npm audit --omit=dev` = 0 en los cinco proyectos**.
+
+**Plataforma**: NestJS **11.1.28** · Express **5.2.1** · path-to-regexp **8.4.2** en los cuatro
+servicios (API, BASE, CLIENT, ADMIN).
 
 ---
 
-## Lo último: los tres checkpoints que faltaban, y el análisis de TD-015
+## Lo último: TD-015 cerrada, y lo que aparecio al cerrarla
+
+`TD-015` llevaba abierta desde PT-110 con 63 avisos. **Cero**, en los cinco proyectos.
+
+| PT | Qué era | Estado |
+|---|---|---|
+| **PT-124** | **H-013** — la subida dejaba al cliente elegir la extensión de guardado | VALIDATION_PENDING |
+| **PT-125** | `bcrypt` 5→6 (saca `tar`, el único CRÍTICO) y fuera la dependencia `uuid` | VALIDATION_PENDING |
+| **PT-126** | NestJS 10→11 + Express 4→5 en los cuatro servicios | VALIDATION_PENDING |
+
+### H-013 vale más que los 12 avisos juntos
+
+`upload.service.ts` guardaba con `extname(file.originalname)` y el controlador validaba
+`file.mimetype`. **Los dos son campos del `multipart` que escribe quien sube.** Un fichero declarado
+`image/png` y llamado `x.html` se guardaba como `<uuid>.html`, y `ServeStaticModule` lo devolvía
+como `text/html` desde el origen del API — al que llegan las cookies porque `COOKIE_DOMAIN` empieza
+por punto.
+
+**`nosniff` estaba puesto, funcionaba, y no aplicaba**: sólo impide *adivinar* un tipo distinto del
+declarado, y aquí el declarado ya era `text/html`. Es la clase de mitigación que un checklist marca
+como presente.
+
+Ningún `npm audit` iba a señalarlo. Apareció midiendo la alcanzabilidad del aviso de `multer`,
+que era **el vecino** del problema.
+
+### Lo que la migración destapó, y ninguno era del framework
+
+- **`JWT_SECRET` se leía en 6 sitios sin exigir que existiera.** `validate-startup-config` lo pedía
+  sólo en producción. Los tipos de NestJS 11 lo señalaron; la salida fácil era un `!`, que calla al
+  compilador y deja el sistema igual de roto.
+- **`ms('pronto')` devuelve `undefined` en silencio**, y ese silencio llegaba hasta el `sign`.
+- **El adaptador de Handlebars se importaba entrando en `dist/`** del paquete.
+- **F-42 — ningún servicio tenía `.dockerignore`.** `tsconfig.tsbuildinfo` viajaba a la imagen de
+  ADMIN y `tsc` concluía que ya había emitido todo. **Mismo síntoma que F-36 y TD-013, ya
+  «arreglado» dos veces en otro sitio.**
+- **`lint:check` apuntaba a `apps/` y `libs/`**, que no existen.
+
+### Y un error propio, que es el que más conviene recordar
+
+Para cerrar los últimos avisos puse **overrides globales** de `minimatch` y `brace-expansion`.
+Cerraron los avisos y **le rompieron los globs a ESLint**. `npm audit` daba 0 y `lint:check`
+respondía *«No files matching the pattern»*: **dejó de lintar y no falló.** Otra vez la forma de
+F-34, y se vio porque se ejecutó el lint después, no porque el override avisara.
+
+> **Un override global sube ese paquete para TODO el árbol, herramientas incluidas.** Si el aviso
+> vive en una rama, el override va acotado; y si hace falta global, se declara la excepción:
+> `"brace-expansion": ">=5.0.8"` + `"eslint": { "brace-expansion": "^1.1.11" }`.
+
+---
+
+## Antes de eso: los tres checkpoints que faltaban, y el análisis de TD-015
 
 `audit-scope.yaml` declaraba desde el 23-jun cuatro checkpoints de CI. Sólo existía uno.
 
@@ -34,38 +87,13 @@
   `health_unstable = true` y capado la clase a **B** por una definición, no por un sistema inestable.
 - **PT-123 — de los 12 avisos, cero quedan sin mitigación.** Ver abajo.
 
-## TD-015: qué dice el análisis a fondo
-
-`docs/implementation/ANALISIS-TD-015.md` mide **alcanzabilidad**, no severidad copiada del aviso:
-cadena de entrada con `npm ls`, aviso concreto, y punto de uso localizado en el código.
-
-| Grupo | N | |
-|---|--:|---|
-| No llegan a producción | 6 | `tar` (instalación) · `js-yaml` (Swagger apagado, `main.ts:92`) · `linkify-it`, `brace-expansion`, `glob`, `minimatch` (patrones del código; el de `glob` es de su **CLI**) |
-| En el árbol, sin uso alcanzable | 3 | `uuid` (el aviso es de v3/v5/v6; sólo se usa v4) · `file-type` (parser ASF; sólo se suben imágenes) · `path-to-regexp` (ruta estática fija) |
-| En el camino, con mitigación | 3 | `multer` (tras `JwtAuthGuard` + throttler) · `@nestjs/core` · `body-parser` |
-| **Sin mitigación** | **0** | |
-
-Los 12 se reducen a **tres decisiones de plataforma**: NestJS 10→11 (cierra 7, arrastra Express
-4→5), `bcrypt` 5→6 (1), `uuid` 13→14 (1).
-
-**Recomendación emitida — la decisión es tuya, no mía**: no migrar Express ahora. Es el enrutado y
-el manejo de errores de un servidor que mueve dinero real, y ningún aviso es alcanzable sin
-autenticar. Sí hacer `bcrypt` y `uuid` por separado, cada uno con su PT.
-
-⚠️ **Hallazgo lateral de PT-123, y vale más que la tabla**: el `FileInterceptor` de
-[upload.controller.ts:49](src/api/src/modules/upload/upload.controller.ts#L49) **no declara límite de
-tamaño**. No es la CVE de `multer` — es su misma familia de riesgo y cuesta una línea. Candidato a
-PT propio. Segundo lateral: `file-type` sólo es inofensivo mientras la subida acepte únicamente
-imágenes.
-
 ## Pendiente de validación humana
 
-**Nueve PT**: `PT-114`…`PT-122` (PT-123 es investigación y cierra sola).
+**Tres PT**: `PT-124`, `PT-125`, `PT-126`. Los nueve anteriores (PT-114…PT-122) están **CLOSED**
+con tu VoBo del 27-jul; PT-123 es investigación y cerró sola.
 
-**Cinco hallazgos PTSA**: `H-008` (CORREGIDA_PARCIAL — el mecanismo está, los 12 paquetes no),
-`H-009`, `H-010`, `H-011`, `H-012` (CORREGIDA). **Ninguno lo cierro yo**: son BUG/DOMAIN y la regla
-es explícita.
+**Un hallazgo PTSA**: `H-013` (CORREGIDA). **No lo cierro yo**: es un BUG y la regla es explícita.
+`H-008`…`H-012` quedan **CERRADAS**. La única `ABIERTA` es `H-005`, y no depende de código.
 
 ## Estado PTSA (DS-008)
 
@@ -85,15 +113,16 @@ no expone *payout*) · `TD-009` (riesgo aceptado; lo que protege es la deduplica
 
 ## Pendiente de implementar
 
-Nada abierto salvo lo bloqueado por terceros y las tres decisiones de plataforma de TD-015.
+**Nada.** Ninguna deuda técnica queda abierta salvo la bloqueada por terceros.
 
 ---
 
 ## Riesgos vivos
 
-1. **TD-015 no está resuelta, está acotada.** El checkpoint D2 falla si aparece el paquete 13, y el
-   `security-baseline.json` se revisa antes del **2026-10-27**. Si esa fecha pasa sin revisión, la
-   línea base deja de ser una decisión y vuelve a ser una lista vieja.
+1. **`security-baseline.json` está vacío a propósito, y eso hay que saber leerlo.** Vacío no es
+   «no se ha mirado»: es «se miró y no quedaba nada». La diferencia la marca el campo `generado`
+   (**no** `revisado` — escribir la fecha en una clave que el script no lee dejaba «Línea base de
+   undefined» sin que nada fallara). Si aparece un aviso nuevo, el checkpoint D2 falla.
 2. **La guarda de coherencia documental no corre en CI**: `docs/` está gitignored y el test se salta
    si los ficheros no están. Protege a quien tiene los documentos.
 3. **`docs/enterprise-documentation/` es un recorrido del 23-jun con parches encima**, no una
@@ -191,5 +220,14 @@ URLs: llaman a `depositReturnUrl()`, con una ruta canónica para todas las pasar
   **para documentos largos, escribir el fichero con la herramienta, no por heredoc.**
 - **Comprobar un código de salida a través de una tubería devuelve el de la tubería.**
   `npm run audit:check | tail; echo $?` dio 0 con el checkpoint fallando.
+- **`docker-compose up -d --build` NO actualiza `node_modules`**: es un volumen anónimo
+  (`- /app/node_modules`) que sobrevive a la reconstrucción. Hace falta
+  `--force-recreate --renew-anon-volumes`. Un `npm install` nuevo puede quedar invisible durante
+  horas si no se comprueba la versión **dentro** del contenedor.
+- **`COPY . .` no lee `.gitignore`** (F-42). Los cuatro servicios ya tienen `.dockerignore` y hay
+  una guarda que lo exige.
+- **Un `override` de npm sin acotar sube el paquete para TODO el árbol**, herramientas incluidas.
+  Rompió los globs de ESLint sin que ninguna comprobación fallara. Si el aviso vive en una rama,
+  acotarlo; si hace falta global, declarar la excepción de quien no debe moverse.
 - **`bash run-all.sh` trunca 32 tablas de la BD.** Es destructivo por diseño; no lanzarlo sobre
   datos que importen.
