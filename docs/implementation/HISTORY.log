@@ -1869,3 +1869,95 @@ Delta: encontro de paso que 57 de 57 pantallas dan error de consola. Mirado uno 
   que la propia suite provoca a proposito, y queda uno real y cosmetico: ADMIN sin `favicon.ico`.
   Anotado en PENDIENTES; no merece hallazgo.
 PTSA reference: H-014, H-015, H-016, H-017, H-018, H-019, H-020 -> **CERRADA** con VoBo humano.
+
+## PT-135 — BUG: el contenedor del API no arrancaba, y el lock llevaba un dia roto en silencio
+Date: 2026-07-28
+Status: VALIDATION_PENDING
+Branch: fix/PT-135-locks-en-contenedor
+Objective: que el contenedor arranque, que el lock declare las plataformas que construimos, y que
+generar un lock fuera del contenedor sea **imposible** en vez de inadvisable.
+
+Root cause: **un `package-lock.json` generado en un sistema operativo y consumido en otro deja de ser
+un contrato reproducible, y no avisa al instalar: avisa al arrancar, dias despues, en otra maquina.**
+PT-126 regenero `src/api/package-lock.json` en Windows y el lock paso de **17 paquetes de plataforma a
+2**. `npm install` dentro del contenedor solo instala lo que el lock declara, asi que el proceso murio
+al hacer `require` de `@css-inline/css-inline-linux-x64-gnu` — que entra por el adaptador de Handlebars
+del mailer, y de ahi a `notifications.module` -> `scheduler.module` -> `app.module`: no hay arranque
+sin el. Con el API `unhealthy`, nginx, admin, base y client **no arrancaron nunca**: los cuatro
+dependen de su `service_healthy`. Un defecto, cinco contenedores caidos.
+
+Estuvo un dia invisible porque `/app/node_modules` es un **volumen anonimo** y Compose los conserva al
+recrear el contenedor: los reinicios reusaban un arbol instalado antes de PT-126. Trece volumenes
+abandonados con el binario dentro lo demuestran. **Reconstruir la imagen no causo el defecto: lo
+destapo.**
+
+Era la **tercera** vez: PT-129 lo vio en `musl` y lo tapo con un `npm install --no-save` en el
+Dockerfile de produccion, cuyo comentario llego a afirmar que la variante «existe en
+package-lock.json» cuando PT-126 la habia borrado el dia antes. Un parche que oculta su causa no es
+una correccion.
+
+Solution:
+- El lock regenerado **dentro del contenedor**, con las tres cosas que hubo que medir: borrarlo antes
+  (`--package-lock-only` a secas dice «up to date»), enmascarar `node_modules` (npm deriva el arbol del
+  real, y el del host es de Windows) y `--ignore-scripts` (husky sin git sale con 127 dejando el lock a
+  medio escribir). Encapsulado en `npm run lock:api`.
+- **G1** `lock-declara-plataformas.spec.ts` — el lock debe declarar `linux-x64-gnu` y `linux-x64-musl`,
+  las dos plataformas que este repositorio construye. 5 casos de control.
+- **G2** `scripts/solo-en-contenedor.js` como `preinstall` en los tres puntos de instalacion, **sin
+  puerta de escape**. Es la correccion real: G1 caza el sintoma, G2 impide producirlo.
+- **Alternativa C resuelta** (exigencia del ACK): `.gitignore:40` retirado, los tres locks seguidos por
+  git, `src/admin` regenerado y seguido por primera vez. **ADR-048** registra la decision que no
+  existia. Un cuarto lock aparecio al retirar la regla (`tests/qa-browser-suite/`): excepcion declarada
+  y vigilada — instala en el host porque Playwright conduce un navegador real, y es segura porque tiene
+  cero paquetes por plataforma.
+- **`npm ci`** en las imagenes de api y admin, en los siete jobs y en el `postinstall` de la raiz.
+  BASE y CLIENT se quedan en `npm install`, **declarado en sus Dockerfile**: son workspaces, su lock es
+  el de la raiz y esta fuera de su contexto de build.
+- El comentario falso de `Dockerfile:53` corregido; el parche **se conserva** como cinturon.
+- **RULE-15** en `11-Conventions.md`, entrada en `CLAUDE.md`, **TD-017** abierta y cerrada aqui.
+
+Modified files: src/api/package-lock.json · src/api/package.json · src/admin/package-lock.json ·
+src/admin/package.json · package.json · package-lock.json (raiz) · .gitignore ·
+scripts/solo-en-contenedor.js · scripts/regenerar-lock.js · src/api/Dockerfile ·
+src/api/Dockerfile.dev · src/admin/Dockerfile.dev · src/apps/base/Dockerfile.dev ·
+src/apps/client/Dockerfile.dev · .github/workflows/ci.yml · tests/qa-browser-suite/package-lock.json ·
+test/unit/despliegue/lock-declara-plataformas.spec.ts ·
+test/unit/despliegue/solo-en-contenedor.spec.ts ·
+test/unit/documentacion/coherencia-documentacion-codigo.spec.ts · CLAUDE.md · 11-Conventions.md ·
+10-Technical-Debt.md · 03-TRD.md · Registro-Maestro-de-ADR.md
+**Cero ficheros de `src/api/src/`.**
+
+Evidence: docs/implementation/evidence/PT-135/
+
+Delta (real vs planificado):
+1. **El mecanismo del plan no funcionaba.** Dos intentos fallidos antes de dar con la invocacion.
+2. **La exigencia de conservar win32 se cae** con la invariante en vigor: si nadie instala en Windows,
+   el lock no necesita su binario. La guarda exige las dos que construimos.
+3. **`down -v` habria borrado la base de datos.** Error del plan, corregido antes de ejecutar: se uso
+   `docker compose rm -fsv api`, que solo toca el volumen anonimo.
+4. **BASE y CLIENT no pasan a `npm ci`** — imposible sin deshacer el contexto acotado de PT-126, y sin
+   ganancia (cero paquetes por plataforma en el lock de la raiz).
+5. **El `postinstall` de la raiz tambien** pasa a `npm ci`: no estaba en el plan y hacia falta.
+6. **Un cuarto lock** que nadie sabia que existia.
+7. **La guarda documental de PT-130 se extiende a la prosa**: mi linea nueva desplazo sus cinco citas,
+   la guarda las cazo, y al corregirlas aparecieron **tres citas de prosa rotas desde antes**.
+8. **Una regresion de seguridad propia**: regenerar el lock trajo 2 avisos altos donde habia 0
+   (`minimatch` 9.0.3 pinchado por `@typescript-eslint/typescript-estree`, y `brace-expansion` 1.1.16).
+   Corregida dentro del PT como manda `audit:check`: override **acotado** y `audit fix` sin `--force`.
+
+Regresion: **944/944** unitarias · **77/77** e2e · `lint` 0 errores · `npm audit --omit=dev` **0** en
+los cinco · `audit:check` **OK** · las **cuatro imagenes de produccion** construidas con `npm ci` y
+arrancadas hasta `healthy` · los **ocho contenedores** `healthy` con volumen anonimo eliminado y
+`--no-cache`.
+
+Pendiente para cerrar: **ver los siete jobs en verde en un push real** (criterio 10, no verificable sin
+empujar) y el VoBo humano.
+
+Hallazgos ajenos registrados (DISCOVERY.md § U-002), **no son deuda de este PT**:
+- **F-135-A** — `REDIS_URL` parece la palanca y no lo es: dos de los tres clientes leen
+  `REDIS_HOST`/`REDIS_PORT` con reserva `localhost`. Lo que hace funcionar el contenedor de desarrollo
+  es `src/api/.env`, **un fichero que no esta en git**.
+- **F-135-B** — ocho guardas no pueden correr dentro del contenedor de desarrollo: leen el arbol del
+  monorepo y `docker-compose` no lo monta.
+
+PTSA reference: ninguno. El defecto no tenia hallazgo abierto; procede de reporte humano.
