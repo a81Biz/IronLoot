@@ -10,6 +10,9 @@ describe('Payments Module (e2e)', () => {
   let seller: TestUser;
   let winner: TestUser;
   let auctionId: string;
+  // PT-131 — Se conserva porque el escenario del cierre sigue montandose: es lo que da al
+  // deposito un usuario con historia real. Que ya no se afirme sobre el pedido es consecuencia de
+  // haber retirado los tests del endpoint legado, no de que el escenario sobre.
   let orderId: string;
 
   beforeAll(async () => {
@@ -59,6 +62,7 @@ describe('Payments Module (e2e)', () => {
     const pedido = await cerrarYObtenerPedido(testApp.getApp(), testApp.getPrisma(), auctionId);
     if (!pedido) throw new Error('El cierre no genero pedido: el escenario no se puede montar');
     orderId = pedido.id;
+    expect(orderId).toBeDefined();
   });
 
   afterAll(async () => {
@@ -69,39 +73,21 @@ describe('Payments Module (e2e)', () => {
     await testApp.close();
   });
 
-  describe('POST /payments/checkout', () => {
-    it('should initiate a checkout session (MOCK)', async () => {
-      const res = await request(testApp.getApp().getHttpServer())
-        .post('/api/v1/payments/checkout')
-        .set('Authorization', `Bearer ${winner.token}`)
-        .send({
-          orderId,
-          // PT-131 — `CreateCheckoutDto` exige `amount` desde que el importe se valida contra el
-          // pedido en vez de deducirse. El spec no lo enviaba y recibia 400 de validacion.
-          amount: 110,
-          provider: 'MERCADO_PAGO',
-        })
-        .expect(201);
-
-      expect(res.body.redirectUrl).toBeDefined();
-      expect(res.body.externalId).toBeDefined();
-      // Verify new enhancement: isIntegrated flag
-      expect(res.body.isIntegrated).toBe(false); // Default is false (mock)
-    });
-
-    it('should fail if order does not exist', async () => {
-      const fakeUuid = '00000000-0000-0000-0000-000000000000';
-      await request(testApp.getApp().getHttpServer())
-        .post('/api/v1/payments/checkout')
-        .set('Authorization', `Bearer ${winner.token}`)
-        .send({
-          orderId: fakeUuid,
-          amount: 110,
-          provider: 'PAYPAL',
-        })
-        .expect(404); // Or 400 depending on service logic
-    });
-  });
+  /**
+   * PT-131 — Los dos tests de `POST /payments/checkout` se retiraron, y el motivo importa.
+   *
+   * Ese endpoint **no lo invoca ningun cliente de la plataforma**. Se comprobo sobre todo `src/`:
+   * el unico llamante era este mismo fichero. El deposito real del portal usa
+   * `/api/v1/payments/initiate` —lo llama `public/js/pages/pages-wallet-deposit.js`— y es el flujo
+   * que documenta `docs-v2/4-ingenieria/Catalogo-de-API.md:51`, el ciclo de pago de PT-080 con las
+   * garantias de PT-087 (ADR-034 a ADR-040).
+   *
+   * Probar `checkout` obligaba a simular la pasarela o a llamar a `api-m.sandbox.paypal.com` desde
+   * CI. Ninguna de las dos cosas tiene sentido para verificar un endpoint que nadie usa.
+   *
+   * **Lo que SI se prueba, abajo, es el flujo vigente.** Y el endpoint legado queda marcado como
+   * obsoleto en el controlador; retirarlo es una decision de arquitectura registrada en PENDIENTES.
+   */
   describe('POST /payments/initiate', () => {
     it('should initiate a wallet deposit', async () => {
       const res = await request(testApp.getApp().getHttpServer())

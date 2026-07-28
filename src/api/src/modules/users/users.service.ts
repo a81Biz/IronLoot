@@ -528,6 +528,27 @@ export class UsersService {
       const targetValue = output[key];
       const sourceValue = source[key];
 
+      // PT-132 (PTSA H-019) — «no enviado» no es «enviado vacio».
+      //
+      // `main.ts` configura el `ValidationPipe` con `transform: true`, asi que aqui no llega un
+      // objeto plano sino una INSTANCIA de clase con **todas** las propiedades declaradas como
+      // claves propias — las ausentes, con valor `undefined`. `Object.keys()` las incluye.
+      //
+      // Sin esta guarda, un `PATCH {"language":"en"}` borraba `notifications` entero. Observado
+      // contra el sistema en marcha:
+      //
+      //     ANTES   {"language":"es","notifications":{"email":true,"inApp":true}}
+      //     DESPUES {"language":"en"}
+      //
+      // Perdida silenciosa: la peticion devuelve 200. Y `notifications` decide si el usuario se
+      // entera de que le han superado la puja.
+      //
+      // Se descarta `undefined`, NO los valores falsy: `false` tiene que poder aplicarse o nadie
+      // podria desactivar una notificacion.
+      if (sourceValue === undefined) {
+        return;
+      }
+
       if (Array.isArray(targetValue) && Array.isArray(sourceValue)) {
         output[key] = sourceValue; // Arrays overwrite
       } else if (isObject(targetValue) && isObject(sourceValue)) {

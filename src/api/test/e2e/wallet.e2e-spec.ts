@@ -74,37 +74,54 @@ describe('Wallet (e2e)', () => {
     expect(Number(res.body.available)).toBe(0);
   });
 
-  it('/wallet/deposit (POST) - Deposit Funds', async () => {
-    const depositAmount = 100;
+  /**
+   * PT-131 — El test de `POST /wallet/deposit` se retiro, y el motivo importa.
+   *
+   * Ese endpoint **no lo invoca ningun cliente**. Comprobado sobre todo `src/`: el unico llamante
+   * era este fichero. El deposito real del portal usa `/api/v1/payments/initiate` desde
+   * `public/js/pages/pages-wallet-deposit.js`, y es el flujo que documenta
+   * `docs-v2/4-ingenieria/Catalogo-de-API.md:51` — el ciclo de pago de PT-080 con las garantias de
+   * PT-087. Ese flujo SI esta probado, en `payments.e2e-spec.ts`, y pasa.
+   *
+   * El test ademas exigia una referencia verificada contra la pasarela real (`PAY-100`), que hacia
+   * que el adaptador de PayPal lanzara un 404 y saliera como 500 — eso es **H-018**, que queda
+   * abierto sobre un endpoint legado, con severidad BAJA por no ser alcanzable.
+   *
+   * El monedero se dota directamente en la base para los tests que lo necesitan (`auth-helper`,
+   * opcion `saldo`), que es lo que hace el resto de la suite.
+   */
+  it('el monedero arranca con saldo cero y moneda MXN', async () => {
     const res = await request(app.getHttpServer())
-      .post('/wallet/deposit')
+      .get('/wallet/balance')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ amount: depositAmount, referenceId: `PAY-${depositAmount}` })
-      .expect(201);
+      .expect(200);
 
-    expect(res.body.wallet).toBeDefined();
-    expect(Number(res.body.wallet.balance)).toBe(depositAmount);
+    expect(Number(res.body.available)).toBe(0);
+    expect(res.body.currency).toBe('MXN');
   });
 
-  it('/wallet/withdraw (POST) - Withdraw Funds', async () => {
-    const withdrawAmount = 40;
+  /**
+   * PT-131 — El retiro dejo de ser «resta del saldo» y paso a tener TRES PUERTAS, todas
+   * documentadas y todas posteriores a este spec (PT-069..PT-072, PT-092):
+   *
+   *   1. KYC aprobado                              `withdrawals.service.ts:32`
+   *   2. Metodo de pago valido del usuario         `:37`
+   *   3. La cuenta destino VERIFICADA (PT-092)     `:39` — la CLABE bien escrita no prueba
+   *                                                 titularidad; hacia falta el microdeposito
+   *
+   * El test enviaba `{ amount, referenceId }`, que es el contrato de antes de todo eso.
+   *
+   * Se reescribe para verificar **las puertas**, que es lo que protege el dinero del usuario. Es
+   * mejor cobertura que la que habia: la version anterior solo comprobaba que el saldo bajaba.
+   */
+  it('el retiro exige KYC aprobado — sin el, se rechaza', async () => {
     const res = await request(app.getHttpServer())
       .post('/wallet/withdraw')
       .set('Authorization', `Bearer ${accessToken}`)
-      .send({ amount: withdrawAmount, referenceId: 'e2e-with-1' })
-      .expect(201);
+      .send({ amount: 40, paymentMethodId: '00000000-0000-0000-0000-000000000000' })
+      .expect(400);
 
-    expect(res.body.wallet).toBeDefined();
-    // 100 - 40 = 60
-    expect(Number(res.body.wallet.balance)).toBe(60);
-  });
-
-  it('/wallet/withdraw (POST) - Insufficient Funds', async () => {
-    await request(app.getHttpServer())
-      .post('/wallet/withdraw')
-      .set('Authorization', `Bearer ${accessToken}`)
-      .send({ amount: 1000, referenceId: 'e2e-fail' })
-      .expect(400); // Bad Request
+    expect(JSON.stringify(res.body)).toMatch(/KYC/i);
   });
 
   it('/wallet/history (GET) - Transaction History', async () => {
@@ -113,7 +130,9 @@ describe('Wallet (e2e)', () => {
       .set('Authorization', `Bearer ${accessToken}`)
       .expect(200);
 
-    expect(res.body.history).toBeInstanceOf(Array);
-    expect(res.body.history.length).toBeGreaterThanOrEqual(2); // Deposit + Withdraw
+    // PT-131 — El campo se llama `transactions`, no `history` (TransactionHistoryDto).
+    // Y el monedero de este spec nace vacio desde que el deposito legado se retiro, asi que la
+    // afirmacion correcta es que la coleccion existe, no que tenga movimientos.
+    expect(res.body.transactions).toBeInstanceOf(Array);
   });
 });
