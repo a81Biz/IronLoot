@@ -1,5 +1,5 @@
 # ESTADO ACTUAL — PTSA V3
-**Última actualización**: 2026-07-27 | **Sesión**: S-002 — corrida completa desde F-1
+**Última actualización**: 2026-07-27 | **Sesión**: S-002 + PT-127..PT-131
 
 ---
 
@@ -7,75 +7,64 @@
 
 ```
 Sistema:        IronLoot Auction Platform v1.0.0
-Fase actual:    CERTIFICADO — Clase B   (bajada desde A)
-Health:         76.0 / 100
-Risk:           100 / 100   CRÍTICO — saturado desde 41 brutos
-Confidence:     90.0 / 100  ALTA
+Fase actual:    CERTIFICADO — Clase A   (recuperada desde B)
+Health:         92.5 / 100      (76.0 tras la auditoria -> 92.5 tras las correcciones)
+Risk:           72 / 100        CRITICO
+Confidence:     90.0 / 100      ALTA
 Freshness:      FRESH
 Productos:      11 VALIDADO · 1 IDENTIFICADO
 ```
 
-## Por qué baja de A a B
+## Qué cambió, y por qué
 
-**No es el dominio.** D1 sigue en 85, las 14 reglas cumplen sobre salida real, la coherencia
-inter-producto está limpia y la Regla del Agua Potable **no** está activada.
+La auditoría S-002 encontró que **el camino de este entorno a cualquier otro no se había recorrido
+nunca**: esquema, pipeline e imagen, los tres rotos. Cuatro PT lo han recorrido.
 
-Es **D2 = 40**. Tres hallazgos, y los tres son la misma cosa vista desde tres sitios:
+| | Antes | Ahora |
+|---|--:|--:|
+| D1 Dominio | 85 | **85** |
+| D2 Arquitectura | 40 | **90** |
+| D3 Observabilidad | 100 | **100** |
+| D4 Documental | 85 | **100** |
 
-| | |
-|---|---|
-| **Esquema** | Las 23 migraciones no se han ejecutado nunca y no reproducen la base (H-014) |
-| **Pipeline** | El job de integración no puede terminar en verde; bloquea `build` y `docker` (H-015) |
-| **Imagen** | El healthcheck de producción apunta a un 404; tres servicios sin imagen (H-017) |
+```
+Health = (85×0.30) + (90×0.30) + (100×0.30) + (100×0.10) = 92.5   → Clase A
+Risk   = min(100, 18 × 4) = 72                                     Risk_bruto = 6+6+6
+```
 
-**El camino de este entorno a cualquier otro no se ha recorrido nunca.** Ninguna de las nueve
-sesiones anteriores lo miró porque nada de eso estaba en `auditable_patterns`.
+## Hallazgos
 
-## Dimensiones
-
-| | Score | Hallazgos activos |
-|---|--:|---|
-| D1 Dominio | 85 | H-005 |
-| D2 Arquitectura | **40** | **H-014** · **H-015** · **H-017** |
-| D3 Observabilidad | 100 | — |
-| D4 Documental | 95 | H-016 |
-
-## Hallazgos activos
-
-| ID | Dim | Sev | Qué | Riesgo |
+| ID | Dim | Sev | Estado | Riesgo |
 |---|:--|:--|---|--:|
-| **H-014** | D2 | CRITICA | Las 23 migraciones no reproducen el esquema; `_prisma_migrations` no existe | 8 ALTO |
-| **H-015** | D2 | ALTA | El job «Integration Tests» no puede terminar en verde | 12 CRÍTICO |
-| **H-017** | D2 | ALTA | Healthcheck de producción a un 404; 3 de 4 servicios sin imagen | 6 MEDIO |
-| **H-016** | D4 | MEDIA | El TRD cita una línea que ya dice otra cosa; `/health` documentado no existe | 6 MEDIO |
-| H-005 | D1 | ALTA | Nadie ha decidido quién emite la factura | 6 MEDIO |
+| **H-005** | D1 | ALTA | **ABIERTA** — nadie ha decidido quién emite la factura | 6 |
+| **H-017** | D2 | ALTA | **CORREGIDA_PARCIAL** — 3 de 4 imágenes arrancan; la del API no | 6 |
+| **H-018** | D2 | MEDIA | **ABIERTA** (nuevo) — el depósito devuelve 500 con referencia desconocida | 6 |
+| H-014 | D2 | CRITICA | CORREGIDA (PT-127) — verificado: drift 0, sondas 4/4, `reference` UNIQUE | — |
+| H-015 | D2 | ALTA | CORREGIDA (PT-128) — verificado: la suite termina sola en 13,2 s | — |
+| H-016 | D4 | ALTA | CORREGIDA (PT-130) — verificado: guarda en verde y probada al revés | — |
+| H-001…H-013 | — | — | CERRADA con validación humana previa | — |
 
-Cerrados con validación humana previa: H-001 … H-004, H-006 … H-013.
-**Ninguno lo cerró el agente** (`[R44]`).
+**Ninguno lo cerró el agente** (`[R44]`). Tres esperan validación humana.
 
-## Lo que queda, por orden
+## Lo que queda
 
-1. **H-015 + H-014 + H-017 son un solo trabajo.** Recorrer el camino de despliegue una vez, de
-   principio a fin: esquema aplicado por migraciones → pipeline en verde → imagen construida y
-   arrancada con su healthcheck en verde. Los tres se cierran juntos, y el mecanismo que los cierra
-   es el que impide que vuelvan.
-2. **H-005** — decisión de negocio y fiscal, no técnica. Tres opciones en F-1 § U-005.
-3. **H-016** — subió a ALTA en la revisión S-002-R2. No son «dos filas viejas»: las **cinco** citas
-   de la tabla de stack del TRD apuntan a la línea equivocada y **tres de cinco versiones son
-   falsas**. La columna que existe para poder verificar el documento no permite verificar nada.
+1. **H-018** — el 500 del depósito. Necesita su propio Proposal Gate.
+2. **H-017** — el quinto bloqueo de la imagen del API: el motor de Prisma no carga pese a estar en
+   la imagen. Descartado que falte y que sea caché de capas.
+3. **PT-131** — 42 tests e2e prueban un contrato que ya no existe. Abierto en STATE 1-3, esperando
+   Gate. Hasta que se haga, `test-integration` queda **rojo**.
+4. **H-005** — decisión de negocio y fiscal. Tres opciones en F-1 § U-005.
 
-Cerrar los tres de D2 devuelve el Health a **94.0**; cerrando además H-016, **95.5**. Clase A en ambos casos, con H-005 todavía abierto.
+## Mecanismos nuevos, que es lo que impide que esto vuelva
 
-## Cambios en el alcance (S-002)
+| Control | Dónde |
+|---|---|
+| `audit:schema` — deriva del esquema | `ci.yml: schema-drift`, **sin `needs`** |
+| `audit:observability` — D3 | `ci.yml: observabilidad`, **sin `needs`** |
+| Esquema por migración en el arranque | `entrypoint.dev.sh` — y si falla, el arranque falla |
+| El job de integración aplica el esquema | `ci.yml: test-integration` — verifica PT-127 en cada push |
+| Guarda de coherencia documentación↔código | `coherencia-documentacion-codigo.spec.ts` |
+| Guarda del healthcheck de las imágenes | `healthcheck-apunta-a-ruta-real.spec.ts` |
 
-Añadidos a `auditable_patterns`: **`.github/workflows/**`**, **`src/api/scripts/**`** y los
-**`Dockerfile`**. Los tres huecos por los que se colaron H-015, H-014 y H-017.
-
-Cifras de `coverage_targets` recontadas: **33** modelos, **23** migraciones, **159** rutas
-(declaraban 27, 12 y ~84 desde el 23-jun).
-
-> El área de despliegue lleva **una sola pasada**. No está exhaustivamente auditada.
-
-## Deuda técnica
-
-**TD-015 cerrado** por PT-126. `npm run audit:check`: 0 avisos en producción, línea base vacía.
+**Los tres controles se probaron en los dos sentidos.** Y uno cazó un error del propio agente
+mientras se escribía: `silent_failure_count` subió a 27 y el checkpoint D3 lo cantó.

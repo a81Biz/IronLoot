@@ -6,13 +6,13 @@
 
 | Requirement | Value | Source |
 |---|---|---|
-| Node.js | ≥ 20.0.0 | `src/api/package.json:137` |
-| npm | ≥ 10.0.0 | `src/api/package.json:138` |
+| Node.js | ≥ 20.0.0 | `src/api/package.json:152` |
+| npm | ≥ 10.0.0 | `src/api/package.json:153` |
 | PostgreSQL | 16 (alpine) | `docker-compose.yml:133` |
 | Redis | 7 (alpine) | `docker-compose.yml:162` |
-| NestJS | ^10.3.0 | `src/api/package.json:36` |
-| Prisma | ^5.8.0 | `src/api/package.json:50` |
-| TypeScript | ^5.3.3 | `src/api/package.json:101` |
+| NestJS | ^11.0.0 | `src/api/package.json:47` |
+| Prisma | ^5.8.0 | `src/api/package.json:58` |
+| TypeScript | ^5.3.3 | `src/api/package.json:110` |
 
 ## 2. API Server NFRs
 

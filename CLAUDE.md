@@ -135,7 +135,7 @@ The API is organized in `src/api/src/modules/` with 27 feature modules:
 | `notifications` | In-app + email notifications |
 | `scheduler` | Cron jobs for auction state transitions |
 | `audit` | Immutable event log (AuditEvent, ErrorEvent, RequestLog) |
-| `health` | `/health` and `/health/detailed` endpoints |
+| `health` | `/api/v1/health` and `/api/v1/health/detailed` endpoints |
 | `diagnostics` | Dev-only dashboard: logs, metrics, errors |
 | `admin` | Admin-only operations and management |
 | `cfdi` | Mexican fiscal invoice integration (CFDI/PAC — stub) |
