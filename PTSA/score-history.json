@@ -562,6 +562,55 @@
         "IDENTIFICADO": 1
       },
       "nota": "Vuelta a Clase A por trabajo verificado, no por reclasificacion. D2 40->90 y D4 85->100. Lo que queda abierto se dice: el job de integracion esta ROJO hasta PT-131 (42 specs viejos), la imagen del API no arranca (quinto bloqueo), y H-018 espera Gate propio. Tres controles nuevos, los tres probados en los dos sentidos; uno de ellos cazo un error del propio agente durante PT-128."
+    },
+    {
+      "session": "S-002-F",
+      "date": "2026-07-28",
+      "type": "post_remediacion_completa",
+      "scores": {
+        "D1": 85,
+        "D2": 99,
+        "D3": 100,
+        "D4": 100,
+        "health": 94.7,
+        "risk": 32,
+        "confidence": 92.0
+      },
+      "classification": "A",
+      "classification_without_cap": "A",
+      "cap_reason": null,
+      "score_freshness": {
+        "last_verified": "2026-07-28",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "risk_detail": {
+        "risk_bruto": 8,
+        "detalle": "H-005 6 + H-018 2"
+      },
+      "trigger": "PT-127..PT-132 ejecutados; suite e2e completa en verde",
+      "findings_changes": {
+        "nuevos": [
+          "H-020 (D1, ALTA) — la pagina Configuracion del portal no cargaba: el CLIENT pedia /users/settings, que no existe. CORREGIDA en el mismo PT"
+        ],
+        "revisados": [
+          "H-018 MEDIA -> BAJA: describe un endpoint LEGADO sin llamantes. El deposito real usa /payments/initiate, documentado en docs-v2. El encuadre inicial era erroneo por no consultar la documentacion",
+          "H-019 -> CORREGIDA (PT-132): deepMerge descarta `undefined`, no los falsy. Verificado en vivo",
+          "H-020 -> CORREGIDA (PT-132): ruta corregida + guarda del contrato CLIENT-API que cubre SSR y JS de navegador"
+        ],
+        "cerrados": []
+      },
+      "evidencias_nuevas": [
+        "E-023",
+        "E-024"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "IDENTIFICADO": 1
+      },
+      "nota": "Suite e2e COMPLETA en verde: 16/16 suites, 77 tests. El camino al despliegue —esquema, pipeline, imagen— recorrido entero por primera vez. Lo unico abierto de peso es H-005, que es una decision de negocio que ningun PT puede tomar. Leccion de la sesion: diagnosticar sin consultar docs-v2 me hizo encuadrar mal H-018 como defecto critico de un producto CRITICO cuando era un endpoint legado sin llamantes."
     }
   ]
 }

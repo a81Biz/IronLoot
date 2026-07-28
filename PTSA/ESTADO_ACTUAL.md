@@ -1,5 +1,5 @@
 # ESTADO ACTUAL — PTSA V3
-**Última actualización**: 2026-07-27 | **Sesión**: S-002 + PT-127..PT-131
+**Última actualización**: 2026-07-28 | **Sesión**: S-002 + PT-127…PT-132
 
 ---
 
@@ -7,64 +7,74 @@
 
 ```
 Sistema:        IronLoot Auction Platform v1.0.0
-Fase actual:    CERTIFICADO — Clase A   (recuperada desde B)
-Health:         92.5 / 100      (76.0 tras la auditoria -> 92.5 tras las correcciones)
-Risk:           72 / 100        CRITICO
-Confidence:     90.0 / 100      ALTA
+Fase actual:    CERTIFICADO — Clase A
+Health:         94.7 / 100      (76.0 tras la auditoria -> 94.7 tras las correcciones)
+Risk:           32 / 100        CONTROLADO
+Confidence:     92.0 / 100      ALTA
 Freshness:      FRESH
 Productos:      11 VALIDADO · 1 IDENTIFICADO
 ```
 
-## Qué cambió, y por qué
-
-La auditoría S-002 encontró que **el camino de este entorno a cualquier otro no se había recorrido
-nunca**: esquema, pipeline e imagen, los tres rotos. Cuatro PT lo han recorrido.
-
-| | Antes | Ahora |
-|---|--:|--:|
-| D1 Dominio | 85 | **85** |
-| D2 Arquitectura | 40 | **90** |
-| D3 Observabilidad | 100 | **100** |
-| D4 Documental | 85 | **100** |
-
 ```
-Health = (85×0.30) + (90×0.30) + (100×0.30) + (100×0.10) = 92.5   → Clase A
-Risk   = min(100, 18 × 4) = 72                                     Risk_bruto = 6+6+6
+D1 = 100 − 15 (H-005)  =  85
+D2 = 100 −  1 (H-018)  =  99
+D3 = 100               = 100
+D4 = 100               = 100
+
+Health = (85×0.30)+(99×0.30)+(100×0.30)+(100×0.10) = 94.7
+Risk   = min(100, 8 × 4) = 32          Risk_bruto = 6 (H-005) + 2 (H-018)
 ```
+
+## El camino al despliegue, recorrido entero
+
+Lo que la auditoría encontró fue que **nadie había recorrido nunca el camino de este entorno a
+cualquier otro**. Ya está recorrido:
+
+| | Estado |
+|---|---|
+| **Esquema** | Las migraciones reproducen `schema.prisma`. `audit:schema` lo vigila en CI |
+| **Pipeline** | `test-integration` aplica el esquema y **la suite e2e pasa entera** |
+| **Imagen** | Las cuatro imágenes de producción arrancan y llegan a `healthy` |
+| **Suite e2e** | **16 de 16 suites · 77 tests** |
+| **Unitarias** | 660 (API) + 134 (CORE) |
 
 ## Hallazgos
 
-| ID | Dim | Sev | Estado | Riesgo |
-|---|:--|:--|---|--:|
-| **H-005** | D1 | ALTA | **ABIERTA** — nadie ha decidido quién emite la factura | 6 |
-| **H-017** | D2 | ALTA | **CORREGIDA_PARCIAL** — 3 de 4 imágenes arrancan; la del API no | 6 |
-| **H-018** | D2 | MEDIA | **ABIERTA** (nuevo) — el depósito devuelve 500 con referencia desconocida | 6 |
-| H-014 | D2 | CRITICA | CORREGIDA (PT-127) — verificado: drift 0, sondas 4/4, `reference` UNIQUE | — |
-| H-015 | D2 | ALTA | CORREGIDA (PT-128) — verificado: la suite termina sola en 13,2 s | — |
-| H-016 | D4 | ALTA | CORREGIDA (PT-130) — verificado: guarda en verde y probada al revés | — |
-| H-001…H-013 | — | — | CERRADA con validación humana previa | — |
+| ID | Dim | Sev | Estado |
+|---|:--|:--|---|
+| **H-005** | D1 | ALTA | **ABIERTA** — nadie ha decidido quién emite la factura |
+| **H-018** | D2 | BAJA | **ABIERTA** — endpoint legado sin llamantes; riesgo 2 |
+| H-014 | D2 | CRITICA | CORREGIDA (PT-127) |
+| H-015 | D2 | ALTA | CORREGIDA (PT-128) |
+| H-016 | D4 | ALTA | CORREGIDA (PT-130) |
+| H-017 | D2 | ALTA | CORREGIDA (PT-129) |
+| H-019 | D2 | ALTA | CORREGIDA (PT-132) |
+| H-020 | D1 | ALTA | CORREGIDA (PT-132) |
+| H-001…H-013 | — | — | CERRADA con validación humana |
 
-**Ninguno lo cerró el agente** (`[R44]`). Tres esperan validación humana.
+**Seis esperan tu validación.** `[R44]` prohíbe al agente cerrar hallazgos BUG/DOMAIN.
 
-## Lo que queda
+## Lo que queda abierto, y qué necesita cada cosa
 
-1. **H-018** — el 500 del depósito. Necesita su propio Proposal Gate.
-2. **H-017** — el quinto bloqueo de la imagen del API: el motor de Prisma no carga pese a estar en
-   la imagen. Descartado que falte y que sea caché de capas.
-3. **PT-131** — 42 tests e2e prueban un contrato que ya no existe. Abierto en STATE 1-3, esperando
-   Gate. Hasta que se haga, `test-integration` queda **rojo**.
-4. **H-005** — decisión de negocio y fiscal. Tres opciones en F-1 § U-005.
+1. **H-005** — decisión de negocio y fiscal: quién emite la factura. Tres opciones en F-1 § U-005.
+   Es lo único que mantiene D1 en 85, y **ningún PT puede resolverlo**.
+2. **H-018** — `/wallet/deposit` y `/payments/checkout` son endpoints **legados sin llamantes**,
+   superados por el ciclo de pago (PT-080/PT-087). La decisión no es corregirlos: es **retirarlos**.
+   Es una decisión de arquitectura y merece su ADR.
 
-## Mecanismos nuevos, que es lo que impide que esto vuelva
+## Los mecanismos que impiden que esto vuelva
 
-| Control | Dónde |
-|---|---|
-| `audit:schema` — deriva del esquema | `ci.yml: schema-drift`, **sin `needs`** |
-| `audit:observability` — D3 | `ci.yml: observabilidad`, **sin `needs`** |
-| Esquema por migración en el arranque | `entrypoint.dev.sh` — y si falla, el arranque falla |
-| El job de integración aplica el esquema | `ci.yml: test-integration` — verifica PT-127 en cada push |
-| Guarda de coherencia documentación↔código | `coherencia-documentacion-codigo.spec.ts` |
-| Guarda del healthcheck de las imágenes | `healthcheck-apunta-a-ruta-real.spec.ts` |
+| Control | Dónde | Probado al revés |
+|---|---|---|
+| `audit:schema` — deriva del esquema | `ci.yml: schema-drift`, sin `needs` | sí |
+| `audit:observability` — D3 | `ci.yml: observabilidad`, sin `needs` | sí |
+| Esquema por migración en el arranque | `entrypoint.dev.sh`; si falla, el arranque falla | sí |
+| El job de integración aplica el esquema | verifica PT-127 en cada push | sí |
+| Coherencia documentación↔código | `coherencia-documentacion-codigo.spec.ts` | sí |
+| Healthcheck de las imágenes | `healthcheck-apunta-a-ruta-real.spec.ts` | sí |
+| **Contrato CLIENT↔API** | `rutas-que-el-client-invoca.spec.ts` — SSR **y** JS de navegador | sí |
+| **`PATCH` parcial no borra** | `ajustes-parciales.spec.ts` | sí |
+| Subasta válida según el DTO de hoy | `auction-helper.spec.ts` | sí |
 
-**Los tres controles se probaron en los dos sentidos.** Y uno cazó un error del propio agente
-mientras se escribía: `silent_failure_count` subió a 27 y el checkpoint D3 lo cantó.
+Dos de ellos cazaron errores del propio agente mientras se escribían: el checkpoint D3 delató dos
+`catch` mudos, y dos guardas se acusaron a sí mismas leyendo sus propios comentarios.
