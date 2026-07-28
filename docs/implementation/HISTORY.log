@@ -1653,3 +1653,52 @@ TD-002 Stripe/HeyBanco, F-27 dispersion a tarjeta, TD-009 riesgo aceptado).
 
 Evidence: PTSA/Evidencias/E-016.md · docs/implementation/ANALISIS-TD-015.md ·
 `npm audit --omit=dev` = 0 en los cinco proyectos · 856 pruebas unitarias.
+
+## PT-127 — BUG (MAJOR): las 23 migraciones no reproducian el esquema (PTSA H-014)
+Date: 2026-07-27
+Status: VALIDATION_PENDING
+Branch: fix/PT-127-migraciones-reproducibles
+Objective: que `migrate deploy` sobre una base limpia produzca el esquema que `schema.prisma`
+  declara, que la base de desarrollo tenga historial, y que un cambio de esquema sin migracion falle
+  de forma visible.
+Root cause: **no existia mecanismo que obligara a que un cambio de `schema.prisma` produjera una
+  migracion.** El unico camino de aplicacion era `db push --accept-data-loss` en el arranque del
+  contenedor, que no escribe `_prisma_migrations`; y el que si la habria exigido —`migrate deploy`—
+  no se ejecutaba en ningun entorno. **PT-037 ya lo arreglo el 23-jul**: su HISTORY.log declara el
+  baseline `migrate resolve --applied` como *pendiente*, nunca se ejecuto, y su decision D5 dejo la
+  prevencion en una nota documental con el `db push` en su sitio. El drift volvio en CUATRO DIAS.
+Solution: via B (colapsar), decidida en el Proposal Gate con evidencia — un solo autor en todo el
+  historial, `master` == `origin/master`, y ninguna de las 57 ramas contenia las migraciones que
+  faltaban: no habia historial que conservar. Las 23 se sustituyen por una inicial GENERADA
+  (`migrate diff --from-empty --to-schema-datamodel --script`): 33 CREATE TABLE, 23 CREATE TYPE, 19
+  indices unicos. La base de desarrollo se baselineo con `migrate resolve --applied`, que no ejecuta
+  SQL. `entrypoint.dev.sh` pasa a `migrate deploy` sin respaldo silencioso ni `--accept-data-loss`.
+  Y el mecanismo que falta desde PT-037: `audit:schema` (`scripts/schema-drift-check.ts`), veredicto
+  binario, que FALLA si no puede comprobar, con job de CI propio SIN `needs`.
+Modified files:
+  src/api/prisma/migrations/20260727000000_initial_schema/migration.sql (nuevo; 23 carpetas retiradas)
+  src/api/scripts/entrypoint.dev.sh
+  src/api/scripts/schema-drift-check.ts (nuevo)
+  src/api/test/unit/esquema/coherencia-migraciones.spec.ts (nuevo, 7 casos)
+  src/api/package.json (script audit:schema)
+  .github/workflows/ci.yml (job schema-drift, sin needs)
+Evidence: docs/implementation/evidence/PT-127/ — respaldo previo, recuento antes/despues identico,
+  drift antes (5 divergencias) y despues (0), sondas del cliente Prisma 1/4 -> 4/4, baseline,
+  RED antes del control, control probado en los dos sentidos, self-review.
+  Regresion: typecheck limpio, 610 tests API (603+7), 134 CORE, los CINCO checkpoints verdes,
+  ocho contenedores healthy, /api/v1/health 200, datos intactos (wallets 4, ledger 15, payments 1,
+  bids 3).
+Delta (real vs planned): TRES desviaciones, todas en self-review.md.
+  1. La prueba RED y el control se comitearon juntos: el commit `test:` separado no compilaria
+     (import a un fichero inexistente) y romperia `git bisect`. El RED esta evidenciado aparte.
+  2. **No estaba previsto que hiciera falta reconstruir la imagen.** `src/api/scripts/` NO esta
+     montado como volumen: el cambio del entrypoint no surtia efecto al reiniciar. Se detecto
+     leyendo el log —decia «The database is already in sync», que es el mensaje de `db push`— y no
+     el fichero. Fiarse del fichero habria cerrado el PT afirmando algo falso, que es justo el
+     defecto que este PT cierra. Corregido con `docker-compose build api` y verificado despues.
+  3. Se ejecuto la via B, resuelta en el Gate con evidencia, no la A.
+  Ademas: el escenario C3 (un fallo de migracion detiene el arranque) **NO se ejecuto** — exigia
+  corromper la unica migracion existente con la base de desarrollo ya baselineada contra ella, y
+  eso arriesgaba el dato real que sostiene la validacion de 11 productos PTSA (riesgo R2, CRITICO).
+  Queda como comprobacion pendiente, no como comprobacion aprobada.
+PTSA reference: H-014 (CRITICA, D2) -> CORREGIDA. No se cierra: `[R44]`, lo valida el humano.
