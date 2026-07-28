@@ -4074,3 +4074,342 @@ mecanismo que no se ejecuta no avisa de nada — se pudre en silencio.
 - Architecture Confidence: **95%** — no se toca arquitectura.
 - Solution Confidence: **65%** — es el número honesto. Corregir las fechas es trivial; **cuántos
   fallos independientes aparecen detrás no se sabe hasta hacerlo**.
+
+---
+
+## PT-135 — BUG (STANDARD): el contenedor del API no arranca — `package-lock.json` perdió los binarios de plataforma de Linux
+
+Date: 2026-07-28
+Type: BUG
+Complexity: **STANDARD**
+Origen: reporte humano — «el contenedor de api no levanta».
+
+Original Request:
+«Hemos estado trabajando en el sitio, pero ahora veo que el contenedor de api no levanta. Revisa qué
+tiene. No necesito que modifiques el código.»
+
+### What — qué pasa
+
+**El contenedor sí arranca; el proceso de Node muere al cargar el árbol de módulos.** Esa distinción
+importa, porque el síntoma que se ve desde fuera engaña:
+
+```
+NAMES             STATUS
+ironloot-api      Up 3 minutes (unhealthy)   <- arranca, y se queda muerto por dentro
+ironloot-db       Up 3 minutes (healthy)
+ironloot-redis    Up 3 minutes (healthy)
+ironloot-nginx    Created                    <- nunca arrancó
+ironloot-admin    Created
+ironloot-client   Created
+ironloot-base     Created
+```
+
+Los cuatro en `Created` **no tienen ningún defecto**: los cuatro declaran
+`depends_on: api: condition: service_healthy` (`docker-compose.yml:18-19, 61-62, 258-259, 302-303`).
+El API nunca llega a `healthy`, así que Compose no los arranca nunca. **Un solo defecto, cinco
+contenedores caídos.**
+
+El entrypoint recorre sus cuatro pasos sin un error: espera a la base, enlaza `@ironloot/core`,
+genera el cliente Prisma y **aplica la migración correctamente** (`Applying migration
+20260727000000_initial_schema` → `All migrations have been successfully applied`). Compila con
+`Found 0 errors`. Y entonces:
+
+```
+/app/node_modules/@css-inline/css-inline/index.js:253
+      throw loadError;
+      ^
+Error: Cannot find module '@css-inline/css-inline-linux-x64-gnu'
+Require stack:
+- /app/node_modules/@css-inline/css-inline/index.js
+- /app/node_modules/@nestjs-modules/mailer/dist/adapters/handlebars.adapter.js
+- /app/dist/modules/notifications/notifications.module.js
+- /app/dist/modules/scheduler/scheduler.module.js
+- /app/dist/app.module.js
+- /app/dist/main.js
+  code: 'MODULE_NOT_FOUND'
+```
+
+`FailingStreak: 6`, `ExitCode: 1` en cada sonda del healthcheck. El proceso no llega a escuchar en
+el 3000.
+
+### Where — dónde
+
+- **Fichero que causa el fallo**: `src/api/package-lock.json` — el árbol instalado.
+- **Fichero donde se manifiesta**: `src/api/Dockerfile.dev:24` (`RUN npm install`).
+- **Cadena de carga**: `@nestjs-modules/mailer` → adaptador de Handlebars → `@css-inline/css-inline`
+  → binario nativo por plataforma. Entra en el árbol por `notifications.module`, que cuelga de
+  `scheduler.module` y por tanto de `app.module`: **no hay arranque sin él**.
+- **El producto no se toca.** Ni un fichero de `src/api/src/`.
+
+### When — desde cuándo
+
+Desde la reconstrucción de la imagen de desarrollo de hoy (`ImageCreated: 2026-07-28T20:05:44Z`).
+La causa se plantó **el 2026-07-27, en PT-126**; estuvo un día latente, invisible mientras el
+volumen anónimo de `node_modules` no se recreara.
+
+### How — cómo reproducir
+
+1. `docker-compose build api` (o cualquier cosa que recree el volumen anónimo `/app/node_modules`).
+2. `docker-compose up -d`.
+3. El API queda `unhealthy` para siempre; nginx, admin, base y client se quedan en `Created`.
+
+### Why — la causa, medida
+
+**PT-126 regeneró `package-lock.json` en Windows, y el lock pasó de 17 paquetes de plataforma a 2.**
+Medido comparando el lock antes y en el commit:
+
+```
+$ git show 6d1b4ef^:src/api/package-lock.json | grep '"node_modules/@css-inline/'
+  @css-inline/css-inline
+  @css-inline/css-inline-android-arm-eabi
+  @css-inline/css-inline-android-arm64
+  @css-inline/css-inline-darwin-arm64
+  @css-inline/css-inline-darwin-x64
+  @css-inline/css-inline-linux-arm-gnueabihf
+  @css-inline/css-inline-linux-arm64-gnu
+  @css-inline/css-inline-linux-arm64-musl
+  @css-inline/css-inline-linux-x64-gnu        <- el que pide el contenedor
+  @css-inline/css-inline-linux-x64-musl       <- el que pide la imagen de producción
+  @css-inline/css-inline-win32-arm64-msvc
+  @css-inline/css-inline-win32-x64-msvc
+
+$ git show 6d1b4ef:src/api/package-lock.json | grep '"node_modules/@css-inline/'
+  @css-inline/css-inline
+  @css-inline/css-inline-win32-x64-msvc       <- sólo queda la máquina de quien lo generó
+```
+
+`6d1b4ef` = `refactor: PT-126/F-42 los cuatro servicios a NestJS 11 y el contexto de Docker acotado`
+(2026-07-27). El bloque `optionalDependencies` de `@css-inline/css-inline` **sigue declarando las
+cuatro variantes**; lo que desapareció son las **entradas del árbol instalado**, y es el árbol lo
+que `npm install` reifica. Sin entrada en el lock, npm no baja el paquete — el fallo conocido de npm
+con dependencias opcionales por plataforma. Verificado en la imagen recién construida:
+
+```
+$ docker run --rm --entrypoint sh ironloot-api:latest -c 'ls node_modules/@css-inline'
+css-inline                                  <- y nada más
+```
+
+El daño no se limita a `@css-inline`. **Ocho paquetes de Linux desaparecieron del lock**:
+
+| Paquete | Consecuencia |
+|---|---|
+| `@css-inline/css-inline-linux-x64-gnu` | **Mata el arranque en desarrollo.** Es este defecto |
+| `@css-inline/css-inline-linux-x64-musl` | Lo mataría en producción — **lo tapa un parche explícito** |
+| `@css-inline/css-inline-linux-arm64-gnu`/`-musl`, `-arm-gnueabihf` | Sólo si algún día se construye para arm64 |
+| `@msgpackr-extract/msgpackr-extract-linux-x64`/`-arm`/`-arm64` | **No rompe nada, y eso es lo peor**: `msgpackr` degrada a JavaScript puro sin avisar. Se pierde rendimiento en silencio |
+
+### Why now — por qué hoy y no ayer
+
+Porque `/app/node_modules` es un **volumen anónimo** (`docker-compose.yml:117`), y Compose los
+conserva al recrear el contenedor. Los reinicios de los últimos días reusaban un árbol instalado
+**antes** de PT-126, que sí tenía el binario. Trece volúmenes abandonados lo confirman:
+
+```
+1b4b190d... => css-inline  css-inline-linux-x64-gnu  css-inline-linux-x64-musl
+73c5c8d1... => css-inline  css-inline-linux-x64-gnu  css-inline-linux-x64-musl
+92bc7610... => css-inline  css-inline-linux-x64-gnu  css-inline-linux-x64-musl
+   (...13 en total con los dos binarios de Linux dentro)
+```
+
+**El volumen viejo tapaba el defecto.** Reconstruir la imagen fue lo que lo destapó — no lo causó.
+
+### Expected Result
+
+`docker-compose up -d` deja los ocho contenedores `healthy`, con la imagen reconstruida desde cero.
+
+### Current Result
+
+El API `unhealthy` de forma permanente; nginx, admin, base y client nunca arrancan. **El entorno de
+desarrollo completo está caído.**
+
+### Impact
+
+**Bloqueante total en desarrollo**: no hay API, ni sitio público, ni portal, ni panel. Cero impacto
+en usuarios (no hay despliegue en producción).
+
+Impacto sobre la verificación, que es el que preocupa: **el mismo lock construye la imagen de
+producción**. Ahí no rompe hoy sólo porque `Dockerfile` lleva un parche explícito que
+`Dockerfile.dev` no tiene — un accidente afortunado, no un control.
+
+### Initial Evidence
+
+- Log completo del contenedor: `docker logs ironloot-api` (traza `MODULE_NOT_FOUND` arriba)
+- `docker inspect ironloot-api` → `Health.FailingStreak: 6`, seis sondas con `ExitCode: 1`
+- `docker run --rm --entrypoint sh ironloot-api:latest -c 'ls node_modules/@css-inline'` → un solo directorio
+- `git show 6d1b4ef^:src/api/package-lock.json` vs `git show 6d1b4ef:...` → 17 → 2 paquetes de plataforma
+- Trece volúmenes anónimos con `css-inline-linux-x64-gnu` dentro — el estado que funcionaba
+- `docker exec ironloot-api sh -lc 'ldd --version'` → `Debian GLIBC 2.36` — **glibc, luego `-gnu`**
+
+### Initial Hypotheses
+
+**H1 (CONFIRMADA, causa raíz)** — El lock regenerado en Windows perdió las entradas de Linux, y
+`npm install` dentro de `node:20-slim` sólo instala lo que el lock declara.
+
+**H2 (DESCARTADA)** — «Es la migración / el esquema.» El log dice lo contrario: la migración se
+aplica y lo declara. Es el paso donde H-014 mordió, y por eso es la hipótesis natural — y es falsa.
+
+**H3 (DESCARTADA)** — «Es el healthcheck, como en H-017.» PT-129 ya lo corrigió y la ruta es
+`/api/v1/health`, la buena. El healthcheck **está bien**: falla porque no hay nadie escuchando.
+
+**H4 (DESCARTADA)** — «Falta el binario en la imagen base.» El contenedor es Debian bookworm con
+glibc 2.36 y pide `-gnu` correctamente. La detección de plataforma funciona; lo que falta es el
+paquete.
+
+**H5 (NO MEDIDA — para STATE 2)** — Si los lock de BASE, CLIENT, ADMIN y CORE sufrieron la misma
+poda en PT-126. Los cuatro pasaron a NestJS 11 en el mismo commit. **Hay que mirarlo antes de
+diseñar**: si el patrón se repite, la corrección es una y no cuatro.
+
+### Root Cause
+
+**Un `package-lock.json` generado en un sistema operativo y consumido en otro deja de ser un
+contrato reproducible, y no avisa: avisa el arranque, días después, en otra máquina.**
+
+Es la tercera vez que este repositorio encuentra el mismo defecto y la primera en que se le ve la
+forma completa:
+
+- **PT-129, bloqueo 3** — `Cannot find module '@css-inline/css-inline-linux-x64-musl'`. Se atribuyó
+  a `npm prune --production` y se resolvió retirando la poda **más** un
+  `npm install --no-save @css-inline/css-inline-linux-x64-musl` explícito (`Dockerfile:62`).
+- **El comentario de esa línea afirma**: «La variante existe en `package-lock.json`, pero npm sobre
+  alpine no la resuelve sola.» **Hoy esa frase es falsa**: PT-126 —el día anterior— ya había
+  borrado la variante del lock. El parche funciona; su explicación apunta al culpable equivocado.
+- **`Dockerfile.dev` nunca recibió el equivalente `-gnu`.** No por descuido: PT-129 auditaba la
+  imagen de *producción*, y el camino de desarrollo estaba fuera de su alcance.
+
+Y el patrón de fondo es el de H-014, H-015 y H-017, otra vez: **un mecanismo que no se ejecuta no
+avisa de nada.** El volumen anónimo hacía de caché y llevaba un día tapando un lock roto. La
+diferencia con las veces anteriores es que ahora hay un parche en producción que **también** tapa
+el problema — y mientras tape, nadie mirará el lock.
+
+### Confianza
+
+- Root Cause Confidence: **100%** — cadena cerrada: el commit que poda el lock, la imagen sin el
+  binario, el proceso muerto pidiéndolo, y los volúmenes viejos que demuestran el estado anterior.
+- Architecture Confidence: **95%** — no se toca arquitectura; toca `Dockerfile.dev` y/o el lock.
+- Solution Confidence: **70%** — arreglarlo es fácil y hay **dos caminos con coste distinto**
+  (§ Intervention Points de `CONTEXT_ANALYSIS.md`). El 70% es H5: no se sabe si son uno o cinco
+  ficheros, y **no se sabe qué más se rompió al perder 15 paquetes de plataforma** — `msgpackr`
+  degrada callado, y lo callado es lo que este repositorio ha aprendido a no dar por bueno.
+
+### Revisión U-001 — H5 y R3 medidos (2026-07-28)
+
+**H5: CERRADA. Un solo fichero afectado, y confirmado desde dos ángulos.**
+
+El primer barrido (por proyecto) fue incompleto: `base`, `client` y `core` **no tienen lock propio
+porque son workspaces** de la raíz (`package.json:5-8`, `workspaces: ["src/apps/*",
+"src/packages/*"]`). Su árbol vive en el lock de la raíz, que sí está seguido por git. Medido ahí:
+
+```
+LOCK DE LA RAIZ — paquetes de plataforma
+  antes de PT-126: 0
+  HEAD:            0
+```
+
+**Cero antes y cero después**: ninguno de esos tres arrastra dependencia nativa dividida por
+plataforma, así que PT-126 no tenía nada que podarles. Igual el lock de `src/admin`: 0 entradas.
+
+`src/api` es el único proyecto con dependencias nativas por plataforma (`@css-inline`,
+`@msgpackr-extract`), y por eso el único dañado.
+
+**Inventario real de lock** — y aquí aparece la anomalía completa:
+
+```
+package-lock.json                 disco=True  git=True    <- raiz (workspaces)
+src/api/package-lock.json         disco=True  git=True    <- el danado
+src/admin/package-lock.json       disco=True  git=False   <- existe y nadie lo comparte
+```
+
+`.gitignore:40` ignora `package-lock.json` en todo el repositorio. **Dos de los tres están seguidos
+contra esa regla, y el tercero no.** No es «el lock del API es la excepción»: es que la convención
+declarada y la práctica llevan meses en desacuerdo, sin decisión registrada en ningún sitio.
+
+**R3: CERRADA sin trabajo. No hay degradación.**
+
+```
+$ docker exec ironloot-api node -e "require('msgpackr-extract')"
+msgpackr-extract: CARGA
+$ find node_modules/msgpackr-extract -name "*.node"
+node_modules/msgpackr-extract/build/Release/extract.node
+```
+
+Al desaparecer el prebuild del lock, `msgpackr-extract` cayó a **compilar desde fuente** con
+`node-gyp`, posible porque `Dockerfile.dev:8-15` instala `python3`, `make` y `g++`. El acelerador
+está y carga. Nadie eligió ese camino, y sólo existe mientras esas tres herramientas sigan en la
+imagen — con el lock arreglado vuelve el prebuild y la compilación deja de ser la vía.
+
+### Revisión U-002 — dos hallazgos que destapó la verificación, ajenos al alcance de PT-135 (2026-07-28)
+
+Ninguno de los dos es deuda diferida de PT-135: son **defectos preexistentes** que aparecieron al
+ejercer el camino completo, y se registran para que cada uno tenga su PT. Corregirlos dentro de un PT
+de locks sería el tipo de mezcla que este repositorio persigue.
+
+---
+
+#### F-135-A — `REDIS_URL` parece la palanca y no lo es: dos de los tres clientes leen otra cosa
+
+**Medido** al arrancar la imagen de producción del API:
+
+```
+[ioredis] Unhandled error event: AggregateError [ECONNREFUSED]
+GET /api/v1/health -> 500  «Reached the max retries per request limit (which is 20)»
+```
+
+La aplicación **arrancó bien** («Nest application successfully started») y el healthcheck la marcaba
+`unhealthy`. La causa:
+
+| Cliente | Qué lee |
+|---|---|
+| `app.module.ts:61-62` (colas Bull) | **`REDIS_HOST` / `REDIS_PORT`**, con reserva `localhost` |
+| `common/redis/throttler-redis.module.ts:31-32` | **`REDIS_HOST` / `REDIS_PORT`**, con reserva `localhost` |
+| `common/redis/distributed-lock.service.ts:12` | `REDIS_URL` |
+
+**Y por qué en desarrollo no se nota**: `docker-compose.yml:90` declara **sólo** `REDIS_URL`. Lo que
+hace funcionar el contenedor de desarrollo es `REDIS_HOST=redis` dentro de `src/api/.env` — un fichero
+**que no está en git**. La imagen de producción no lo tiene, así que cualquier despliegue que pase lo
+que el compose y el `CLAUDE.md` sugieren (`REDIS_URL`) deja dos de los tres clientes apuntando a
+`localhost`.
+
+El síntoma no menciona Redis ni configuración: dice `maxRetriesPerRequest`, que manda a mirar
+reintentos. Es la familia de PT-111/F-39 —ADMIN apuntando a `localhost:6379` sin que nadie lo notara—
+y la de H-016: **lo que hace funcionar el sistema no es lo que está declarado.**
+
+**Impacto**: sobre desarrollo, ninguno hoy. Sobre un despliegue real, colas y rate limiting caídos con
+un mensaje que no señala la causa.
+
+**Fuera del alcance de PT-135 por dos razones**: la corrección buena toca `src/api/src/` (que este PT
+declara intocable) o `docker-compose.yml` (declarado sin cambios de comportamiento). Necesita su
+propio PT y una decisión: unificar en `REDIS_URL`, o declarar `REDIS_HOST`/`REDIS_PORT` como el
+contrato y añadirlos al compose y al `.env.example`.
+
+---
+
+#### F-135-B — Ocho guardas no pueden ejecutarse dentro del contenedor de desarrollo
+
+**Medido**: la guarda de PT-129 dentro del contenedor del API:
+
+```
+$ docker exec ironloot-api npx jest --testPathPattern="healthcheck-apunta-a-ruta-real"
+    readFileSync(join(RAIZ, 'src/api/src/main.ts'))
+    ENOENT   ->  Test Suites: 1 failed | Tests: 0 total
+```
+
+`RAIZ = join(__dirname, '..' x5)` resuelve a `/` dentro del contenedor, porque `docker-compose` monta
+`/app/src`, `/app/test`, `/app/prisma` y `/packages/core`, **pero no el árbol del monorepo**. Son ocho
+ficheros los que leen la raíz: `job-de-integracion`, `rutas-que-el-client-invoca`,
+`coherencia-documentacion-codigo`, `capturas-en-su-sitio`, `endpoints-legados-retirados`,
+`coherencia-deuda-tecnica`, `healthcheck-apunta-a-ruta-real` y el `lock-declara-plataformas` de este PT.
+
+**Por qué importa**: pasan en CI (donde el checkout completo existe) y en el host. Pero la invariante
+de PT-135 dice que npm se ejecuta en el contenedor — y en **ese** contenedor esta familia de guardas no
+puede correr. La invariante y la forma de ejecutar las pruebas no encajan del todo.
+
+**Vía usada en este PT**, que funciona y queda registrada como referencia:
+
+```
+docker run --rm -v <raiz>:/repo -v <volumen_node_modules>:/repo/src/api/node_modules \
+  -w /repo/src/api node:20-slim npx jest --testPathPattern=... --no-coverage
+```
+
+**Fuera del alcance de PT-135**: la salida limpia es montar la raíz en el servicio `api` (toca
+`docker-compose.yml`, declarado sin cambios) o dar un comando `test:*` que envuelva el contenedor
+desechable. Es una decisión de entorno de desarrollo y merece su PT.

@@ -28,7 +28,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run linter
         run: npm run lint:check
@@ -62,7 +62,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Comprobar avisos nuevos contra la linea base
         run: npm --prefix ./src/api run audit:check
@@ -112,7 +112,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       # La base sombra la crea y la destruye Prisma; solo necesita poder conectarse.
       - name: Comprobar que las migraciones reproducen schema.prisma
@@ -139,7 +139,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Run unit tests
         run: npm run test -- --coverage --passWithNoTests
@@ -195,7 +195,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       # PT-128 (PTSA H-015) — Los dos pasos que faltaban.
       #
@@ -255,7 +255,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Comprobar silencios nuevos contra la linea base
         run: npm --prefix ./src/api run audit:observability
@@ -279,7 +279,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build application
         run: npm run build

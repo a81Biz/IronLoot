@@ -22,6 +22,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "lint:check": "eslint \"{src,test}/**/*.ts\"",
+    "preinstall": "node -e \"process.exit(process.platform==='linux'?0:1)\" || node ../../scripts/solo-en-contenedor.js",
     "prepare": "cd ../.. && husky install",
     "setup": "cp -n .env.example .env || true && npm install && npx prisma generate",
     "start": "nest start",
@@ -161,6 +162,9 @@
     "ws": ">=8.21.1",
     "nodemailer": "$nodemailer",
     "uuid": "^11.1.1",
+    "@typescript-eslint/typescript-estree": {
+      "minimatch": "9.0.9"
+    },
     "nestjs-throttler-storage-redis": {
       "@nestjs/common": "$@nestjs/common",
       "@nestjs/core": "$@nestjs/core"

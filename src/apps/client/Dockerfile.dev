@@ -5,7 +5,16 @@ WORKDIR /app
 # Copy package file
 COPY package.json ./
 
-# Install dependencies
+# PT-135 — Aqui se queda `npm install`, y es una decision declarada, no un olvido.
+#
+# CLIENT es un **workspace** de la raiz (`package.json:5-8`): no tiene lock propio, su arbol vive en
+# `package-lock.json` de la raiz, que esta **fuera de este contexto de build** — acotado a
+# `./src/apps/client` por PT-126. `npm ci` exigiria devolver el contexto a la raiz y deshacer esa
+# decision, por una ganancia que aqui no existe.
+#
+# Medido: el lock de la raiz tiene **cero paquetes divididos por plataforma**, asi que este servicio
+# no puede reproducir el defecto de PT-135. Si algun dia apareciera uno,
+# `lock-declara-plataformas.spec.ts` vigila ese lock y lo exigiria.
 RUN npm install
 
 # Copy source code

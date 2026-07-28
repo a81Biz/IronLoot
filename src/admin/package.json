@@ -2,6 +2,7 @@
   "name": "ironloot-admin",
   "version": "1.0.0",
   "scripts": {
+    "preinstall": "node -e \"process.exit(process.platform==='linux'?0:1)\" || node ../../scripts/solo-en-contenedor.js",
     "build": "nest build",
     "start": "node dist/main",
     "start:dev": "nest start --watch --config nest-cli.dev.json",

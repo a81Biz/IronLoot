@@ -1,7 +1,12 @@
 FROM node:20-alpine
 WORKDIR /app
-COPY package.json nest-cli.dev.json ./
-RUN npm install
+# PT-135 — El lock viaja a la imagen, y se instala con `npm ci`.
+#
+# Antes se copiaba solo `package.json` y se resolvia fresco en cada build: el lock no gobernaba nada.
+# Ahora ADMIN tiene lock seguido por git (antes existia solo en la maquina donde nacio) y esta imagen
+# lo respeta. `npm ci` instala EXACTAMENTE el arbol del lock, o falla.
+COPY package.json package-lock.json nest-cli.dev.json ./
+RUN npm ci
 COPY . .
 EXPOSE 3001
 CMD ["npm", "run", "start:dev"]

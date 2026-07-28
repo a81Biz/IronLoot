@@ -48,14 +48,33 @@ COPY src/api/package*.json ./src/api/
 WORKDIR /repo/src/api
 
 # Install all dependencies for build — ahora `file:../packages/core` resuelve
-RUN npm install
+#
+# PT-135 — `npm ci` en vez de `npm install`: instala EXACTAMENTE el arbol del lock, o falla. Con
+# `npm install` el lock era una sugerencia y cada build volvia a resolver.
+RUN npm ci
 
 # El binario musl de `@css-inline`, explicito.
 #
-# Lo arrastra el adaptador de Handlebars del mailer. La variante existe en `package-lock.json`,
-# pero npm sobre alpine no la resuelve sola, y el contenedor moria al arrancar con:
+# Lo arrastra el adaptador de Handlebars del mailer, y el contenedor moria al arrancar con:
 #
 #     Error: Cannot find module '@css-inline/css-inline-linux-x64-musl'
+#
+# PT-135 — LA EXPLICACION QUE HABIA AQUI ERA FALSA, y merece quedar escrito por que.
+#
+# Decia: «la variante existe en `package-lock.json`, pero npm sobre alpine no la resuelve sola».
+# La primera mitad no era cierta. PT-126 —el dia ANTES de que se escribiera esta linea— habia
+# regenerado el lock en Windows y borrado las once variantes de plataforma, dejando solo `win32`
+# (`git show 6d1b4ef`). La variante no estaba. El culpable no era npm-sobre-alpine: era el lock.
+#
+# El parche funcionaba, y por eso nadie volvio a mirar. Cuando el mismo defecto reaparecio en la
+# imagen de DESARROLLO —que no tiene este parche— se presento como nuevo y costo cinco contenedores
+# caidos. Un parche que oculta su causa no es una correccion: es un aplazamiento con aspecto de
+# arreglo. Es la razon de ser de PT-135.
+#
+# SE CONSERVA, y tambien es una decision. Con el lock arreglado esta linea es redundante, pero es un
+# cinturon sobre una causa que ya reincidio dos veces (PT-129 en musl, PT-135 en gnu). Se retirara
+# cuando `lock-declara-plataformas.spec.ts` y `scripts/solo-en-contenedor.js` lleven tiempo y se les
+# haya visto fallar — no antes: seria cambiar un control por una promesa.
 #
 # SUPOSICION DECLARADA: esta imagen es linux/amd64 sobre musl (alpine). Si algun dia se construye
 # para arm64, hay que cambiar esta linea — y fallara ruidosamente al arrancar, que es como debe ser.

@@ -414,6 +414,29 @@ that run as evidence.
 **Enforced by:** convention. Every `*.spec.ts` guard in this repository carries a `casos de control`
 block.
 
+### RULE-15: npm runs in the container, never on the host
+**What:** every npm operation — installing, and above all regenerating a `package-lock.json` — runs
+inside a Linux container. To refresh a lock: `npm run lock:api` (or `lock:admin` / `lock:root`).
+**Why:** `npm install` on Windows rewrites the lock with **that platform's** installed tree and drops
+the Linux native binaries. The container then installs less than it needs and **does not fail while
+installing: it fails while starting**, on another machine, days later — with the anonymous
+`node_modules` volume hiding it until something recreates it. It happened in PT-126 and surfaced in
+PT-135 as five containers down: with the API `unhealthy`, nginx, admin, base and client never start.
+It was the **third** time this repository met the same defect (PT-129 in `musl`, PT-135 in `gnu`); the
+first two were closed with a patch in a Dockerfile, and a patch does not prevent the fourth.
+**Correct:** `npm run lock:api` — it deletes the lock first (otherwise npm answers `up to date` and
+changes nothing), masks `node_modules` (npm derives the tree from the **real** one, and the host's is
+Windows'), and passes `--ignore-scripts` (`husky` without git exits 127 leaving the lock half
+written). All three were measured the hard way.
+**Incorrect:** `npm install` anywhere outside a container — including "just to add one dependency".
+**Enforced by:** `scripts/solo-en-contenedor.js` as `preinstall` in the three install roots, with no
+environment-variable escape hatch: an invariant with a `--force` is a habit again, and this rule
+exists because a habit was not enough. `lock-declara-plataformas.spec.ts` catches the symptom in CI;
+the `preinstall` prevents producing it.
+**Declared exception:** `tests/qa-browser-suite/` installs on the host on purpose — Playwright drives
+a real browser and there is none inside the API container. It is safe because its lock has **zero**
+platform-split packages, and a test keeps checking that it stays zero.
+
 ---
 
 ## 5. Files Requiring Extra Care Before Modification

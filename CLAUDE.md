@@ -232,6 +232,23 @@ Each SSR site follows the same convention:
   duplicado— (H-014). PT-037 ya lo arregló una vez y volvió en cuatro días, porque la prevención se
   quedó en una nota. Ahora lo vigila `npm run audit:schema` en CI, **sin `needs`**. Editar
   `schema.prisma` exige generar migración; ese atajo es el que produjo el hallazgo.
+- **`npm` no se ejecuta en el host: se ejecuta en el contenedor.** Un `npm install` en Windows
+  regenera `package-lock.json` con el árbol de **esa** plataforma y se lleva los binarios nativos de
+  Linux. El contenedor instala entonces menos de lo que necesita y **no falla al instalar: falla al
+  arrancar**, en otra máquina, días después — con el volumen anónimo de `node_modules` tapándolo
+  mientras nadie lo recree. Pasó entre PT-126 y PT-135, y costó **cinco contenedores caídos**: con el
+  API `unhealthy`, nginx, admin, base y client no arrancan nunca. Era la **tercera** vez (PT-129 en
+  `musl`, PT-135 en `gnu`); las dos anteriores se cerraron con un parche en un Dockerfile, y un parche
+  no impide la cuarta. Para regenerar un lock: **`npm run lock:api`** (o `lock:admin` / `lock:root`),
+  que envuelve `docker compose run` con las tres cosas que nadie adivina — borrar el lock antes (si
+  no, npm dice «up to date» y no toca nada), enmascarar `node_modules` (npm deriva el árbol del
+  **real**, y el del host es de Windows) y `--ignore-scripts` (husky sin git sale con 127 dejando el
+  lock a medio escribir). Lo impide `scripts/solo-en-contenedor.js` como `preinstall`, **sin puerta de
+  escape por variable de entorno**; lo caza `lock-declara-plataformas.spec.ts`. Los tres locks (raíz,
+  `src/api`, `src/admin`) **se siguen por git**: `.gitignore` ya no los ignora (ADR-048). Excepción
+  declarada: `tests/qa-browser-suite/` instala en el host porque Playwright conduce un navegador real,
+  y es segura porque su lock tiene **cero** paquetes divididos por plataforma — hay una prueba que
+  vigila que siga siendo cero.
 - **Toda ruta del API que un SSR invoca tiene que existir en el API.** El CLIENT pedía
   `/api/v1/users/settings`, que no existe: caía en el comodín `@Get(':id')`, el `ParseUUIDPipe`
   rechazaba la cadena y devolvía **400 «uuid inválido»**. La página «Configuración» no cargaba para
