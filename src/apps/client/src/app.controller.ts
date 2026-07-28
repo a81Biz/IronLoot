@@ -85,7 +85,13 @@ export class AppController {
   @Get("/settings")
   @Render("pages/settings.html")
   async settings(@Req() req: Request) {
-    const settings = await apiGet(getToken(req), "/api/v1/users/settings");
+    // PT-132 (H-020) — Era `/api/v1/users/settings`, que NO EXISTE. El API expone `me/settings`.
+    // La peticion caia en el comodin `@Get(':id')` de `UsersController`, el `ParseUUIDPipe`
+    // rechazaba la cadena `settings` como identificador, y devolvia 400 — «uuid invalido».
+    //
+    // La pagina «Configuracion» esta en el menu principal y NO CARGABA para ningun usuario. Y el
+    // error enga�aba: un 404 habria dicho «esa ruta no existe»; el 400 mandaba a mirar el id.
+    const settings = await apiGet(getToken(req), "/api/v1/users/me/settings");
     return { settings };
   }
 

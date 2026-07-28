@@ -110,3 +110,32 @@ bloquea nada y H-006 está CERRADA.
 | 9 | **H-017** — `src/api/Dockerfile`: `/health` → `/api/v1/health` y alinear el criterio con el de desarrollo (`< 500` + manejador de error). Definir `Dockerfile` de producción para ADMIN, BASE y CLIENT. Corregir la ruta del job `docker` | Próximo PT |
 | 10 | **Lo que de verdad cierra 1+2+9**: que el pipeline recorra el camino entero una vez — migraciones aplicadas, tests en verde, imagen construida y arrancada con su healthcheck en verde | Próximo PT |
 | 11 | **Segunda pasada al área de despliegue.** `.github/workflows/**`, `src/api/scripts/**` y los `Dockerfile` entraron en el alcance en S-002 y sólo llevan una pasada | Próxima sesión |
+
+---
+
+## S-002 final (2026-07-28) — tras PT-127…PT-132
+
+### Lo único abierto de peso
+
+| # | Pendiente | Responsable |
+|---|---|---|
+| 1 | **H-005 — quién emite la factura.** Tres opciones en F-1 § U-005. Mantiene D1 en 85 y bloquea P-012. **Ningún PT puede resolverlo** | Humano (negocio + fiscal) |
+| 2 | **Validar los seis hallazgos en `CORREGIDA`**: H-014, H-015, H-016, H-017, H-019, H-020. `[R44]` prohíbe al agente cerrarlos | Humano |
+
+### Decisiones de arquitectura que merecen ADR
+
+| # | Decisión | Por qué |
+|---|---|---|
+| 3 | **Retirar `/wallet/deposit` y `/payments/checkout`** | Sin llamantes en todo `src/`. Superados por el ciclo de pago (PT-080/PT-087). `/wallet/deposit` **acredita dinero** y nadie lo mantiene: es superficie de riesgo. Cierra H-018 de raíz |
+| 4 | **`payments.e2e` y la pasarela real** | Resuelto de facto al retirar los tests de endpoints legados. Si algún día se quiere cobertura del contrato de la pasarela, va en un job **nocturno**, no en cada push |
+
+### Lo que se sabe que falta medir
+
+| # | | |
+|---|---|---|
+| 5 | La guarda del contrato CLIENT↔API **no cubre ADMIN ni BASE** | Ampliarla es barato |
+| 6 | **Nada comprueba vulnerabilidades de la imagen base.** `audit:check` mira npm; el IDE avisa de 2 críticas y 23 altas en `node:20-alpine`. Ahora que los `Dockerfile` están en el alcance, es un hueco de D2 | Próximo PT |
+| 7 | ¿Hay más servicios que mezclen un DTO transformado contra un JSON almacenado? El patrón de H-019 podría repetirse | Barrido |
+| 8 | La imagen del API se lleva las dependencias de desarrollo (541 MB) | Afinarlo, si importa |
+| 9 | `/api/v1/users/:id/ratings` exige sesión. La reputación de un vendedor es lo que un comprador mira **antes** de registrarse — puede ser deliberado o efecto colateral del guard global | Humano decide |
+| 10 | `CLAUDE.md` cita `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`; ninguno existe — pendiente desde DS-004 | Humano |
