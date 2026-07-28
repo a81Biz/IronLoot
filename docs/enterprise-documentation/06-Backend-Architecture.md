@@ -6,11 +6,11 @@
 
 ```
 src/
-├── api/           — Main REST API + WebSocket server (NestJS 10, port 3000)
+├── api/           — Main REST API + WebSocket server (NestJS 11, port 3000)
 ├── apps/
-│   ├── base/      — Public SSR site (NestJS 10, port 5174)
-│   └── client/    — Private SSR portal (NestJS 10, port 5175)
-├── admin/         — Admin backoffice (NestJS 10, port 3001)
+│   ├── base/      — Public SSR site (NestJS 11, port 5174)
+│   └── client/    — Private SSR portal (NestJS 11, port 5175)
+├── admin/         — Admin backoffice (NestJS 11, port 3001)
 ├── packages/
 │   └── core/      — Shared domain library (@ironloot/core, no HTTP/DB)
 └── nginx/         — Reverse proxy
