@@ -24,7 +24,7 @@ import {
   ChangePasswordDto,
   AuthResponseDto,
   AuthTokensResponseDto,
-  UserResponseDto,
+  AuthUserResponseDto,
   MessageResponseDto,
 } from './dto';
 import { Public, CurrentUser, AuthenticatedUser } from './decorators';
@@ -79,7 +79,7 @@ export class AuthController {
   @ApiOperation({
     summary: 'User login',
     description:
-      'Authenticates user and returns JWT tokens. The access token contains the full user profile (UserResponseDto structure).',
+      'Authenticates user and returns JWT tokens. The access token contains the full user profile (AuthUserResponseDto structure).',
   })
   @ApiBody({ type: LoginDto })
   @ApiResponse({
@@ -169,10 +169,10 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Email verified successfully',
-    type: UserResponseDto,
+    type: AuthUserResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Invalid or expired token' })
-  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<UserResponseDto> {
+  async verifyEmail(@Body() dto: VerifyEmailDto): Promise<AuthUserResponseDto> {
     return this.authService.verifyEmail(dto.token);
   }
 
@@ -314,10 +314,10 @@ export class AuthController {
   @ApiResponse({
     status: 200,
     description: 'Current user info',
-    type: UserResponseDto,
+    type: AuthUserResponseDto,
   })
   @ApiResponse({ status: 401, description: 'Not authenticated' })
-  async me(@CurrentUser() user: AuthenticatedUser): Promise<UserResponseDto> {
+  async me(@CurrentUser() user: AuthenticatedUser): Promise<AuthUserResponseDto> {
     return this.authService.getMe(user.id);
   }
 }

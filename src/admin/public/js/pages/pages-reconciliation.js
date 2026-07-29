@@ -23,6 +23,18 @@ async function loadReconciliation() {
   csvBtn.href = `${API}/reconciliation/export?provider=${provider}&dateFrom=${from}&dateTo=${to}`;
   csvBtn.style.display = 'inline-block';
 }
+// PT-160 — El botón «Conciliar» tampoco estaba conectado.
+//
+// La plantilla lo declara con `data-accion="conciliar"`, y `ui-behaviours.js` busca esa acción en
+// `window.accionesAdmin`. Nadie la registraba, así que **pulsar «Conciliar» no hacía nada**: sin
+// error en consola, porque el despachador comprueba `typeof accion === 'function'` y calla si no la
+// encuentra.
+//
+// Tercer control muerto de ADMIN con la misma causa (PT-139 encontró dos): PT-096 sacó el JS de las
+// plantillas «tal cual», y «tal cual» dejó fuera los `onclick=` que lo cableaban.
+window.accionesAdmin = window.accionesAdmin || {};
+window.accionesAdmin['conciliar'] = loadReconciliation;
+
 document.getElementById('rcTo').valueAsDate = new Date();
 const d = new Date(); d.setDate(d.getDate() - 30);
 document.getElementById('rcFrom').valueAsDate = d;

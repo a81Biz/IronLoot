@@ -589,6 +589,28 @@ rules that do not exist. The guard accused itself on its first run for exactly t
 that a control block constructs rather than cites — **an exception excuses one file, a rule serves the
 next one.**
 
+### RULE-30: Every `data-accion` a template declares has a handler registered
+**What:** ADMIN dispatches actions through a bridge — the template writes `data-accion="conciliar"`,
+`ui-behaviours.js` looks that key up in `window.accionesAdmin`, and the page's script registers it.
+If you declare the attribute, register the handler.
+**Why:** **none of the three actions in all of ADMIN was registered.** The «Rechazar» button in
+moderation opened nothing; «Conciliar» queried nothing. In the panel that approves and rejects
+auctions.
+**Why it was invisible:** `ui-behaviours.js` checks `typeof accion === 'function'` before calling and
+**stays silent** if it finds nothing. That is right — it stops one missing handler from breaking the
+page — and it is exactly what leaves no trace: no exception, no log, nothing in the console. Just a
+button that does not respond.
+**The root cause, which is the part worth remembering:** PT-096 moved JavaScript out of templates so
+`'unsafe-inline'` could leave the CSP, and moved it **"as-is"** — correctly refusing to mix a move
+with a behaviour change. But "as-is" left behind the `onclick=` attributes that wired those
+functions, because they lived in the HTML, not in the `<script>` block. **A move that is faithful to
+the code can still lose the wiring.**
+PT-139 found two dead controls from the same cause and fixed them **without writing the mechanism**,
+so three more sat waiting. Same family as F-34 (24 dead handlers, including the `confirm()` calls
+that were supposed to ask before a destructive action) and RULE-19.
+**Enforced by:** `acciones-declaradas-tienen-manejador.spec.ts`, verified by removing a real
+registration and watching it accuse.
+
 ### RULE-28: The document that declares what gets audited may not cite what does not exist
 **What:** every file path `PTSA/audit-scope.yaml` names must exist. Same for the facts its comments
 assert about the repository (migration counts, and the like).

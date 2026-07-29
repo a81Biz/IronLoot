@@ -2308,3 +2308,33 @@ Delta (real vs planned): el paquete preveia «reapuntar cuatro rutas + guarda».
   rutas en **dos** listas. Y RULE-27, escrita en PT-141, acuso a este PT por citar RULE-28/29 antes
   de escribirlas en el contrato: la guarda de ayer atrapo el trabajo de hoy.
 PTSA reference: H-024 -> CORREGIDA (no CERRADA: `[R44]`)
+
+## PT-159 / PT-160 / PT-162 — BUG + REFACTOR: los tres pequeños, y uno que no lo era
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-159-160-162-los-pequenos
+Objective: cerrar los tres items de menor prioridad de FPGE-003.
+Root cause: PT-160 estaba clasificado como «usa `style.display`, funciona hoy». **No funcionaba.**
+  Las TRES `data-accion` declaradas en todo ADMIN estaban muertas: nadie rellenaba
+  `window.accionesAdmin`, que es donde `ui-behaviours.js` las busca. El boton «Rechazar» de
+  moderacion no abria nada y «Conciliar» no consultaba nada. Invisible porque el despachador
+  comprueba `typeof accion === 'function'` y calla si no la encuentra.
+  Causa de fondo: PT-096 saco el JS de las plantillas «tal cual» y «tal cual» dejo fuera los
+  `onclick=` que lo cableaban — vivian en el HTML, no en el `<script>`. PT-139 corrigio dos casos
+  sin escribir el mecanismo, y por eso quedaban tres.
+Solution: las tres acciones registradas; el modal pasa a `classList` con Esc, fondo y devolucion del
+  foco; **RULE-30** y su guarda lo impiden en adelante, verificada quitando un registro real.
+  PT-159: `maxWorkers: 1` en la configuracion, medido en tres configuraciones — `npx jest` sin flags
+  pasa ahora las 105 suites. PT-162: el `UserResponseDto` de `auth` se renombra a
+  `AuthUserResponseDto`; el duplicado del catalogo OpenAPI desaparece.
+Modified files: src/admin/public/js/pages/{pages-moderation,pages-reconciliation}.js,
+  src/api/src/modules/auth/{auth.controller,auth.service,dto/auth.dto,decorators/auth.decorators}.ts,
+  src/api/package.json, docs/enterprise-documentation/{11-Conventions.md,archive/03-TRD.md},
+  src/api/test/unit/web-views/acciones-declaradas-tienen-manejador.spec.ts
+Evidence: docs/implementation/evidence/PT-160/
+Delta (real vs planned): PT-160 crecio de «cambiar dos lineas» a «tres controles muertos y una
+  guarda», dentro del alcance declarado. Y salieron dos defectos que habia introducido yo esta misma
+  jornada: `test:guardas` filtraba por el nombre viejo del fichero que PT-148 renombro, y dos lineas
+  nuevas en `package.json` desplazaron dos citas del TRD — esto ultimo lo cazo la guarda de PT-130 en
+  la misma corrida, que es H-016 detectado en vivo.
+PTSA reference: H-023 -> CORREGIDA (no CERRADA: `[R44]`)
