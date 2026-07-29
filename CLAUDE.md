@@ -201,6 +201,21 @@ The `scheduler` module runs cron jobs to advance auction states automatically. D
 3. On auction close → winner's held funds converted to payment, others released
 4. Ledger records every balance change immutably
 
+**El monedero se crea de forma perezosa, y esa creación es atómica** (PT-142). Los tres caminos que
+lo crean —consultarlo, acreditar un depósito y abonar una venta— pasan por `asegurarMonedero()`, que
+usa `createMany({ skipDuplicates })`. Antes eran `findUnique` + `create`, y dos peticiones
+simultáneas dejaban una con `P2002`: un usuario sin monedero cuya notificación de depósito llegara
+mientras cargaba su panel podía ver fallar **la acreditación**. Dos cosas que hubo que medir y que no
+son evidentes: **`upsert` dentro de una transacción interactiva no es atómico** —Prisma hace `SELECT`
+y luego `INSERT`— y fuera tampoco lo garantiza. → **RULE-22**
+
+> **Pendiente y grave: PT-146.** Cerrada esa carrera aparece la de debajo. Los cinco caminos que
+> mueven saldo hacen *leer-modificar-escribir*: leen `balance`, suman y escriben un **absoluto**. Dos
+> acreditaciones simultáneas responden las dos con éxito y **una se pierde en silencio** —medido: 250
+> y 100 donde tocaban 350—, dejando su asiento en `ledger` con un `balanceAfter` que no cuadra con el
+> saldo. `Payment.reference @unique` no protege: impide acreditar **el mismo** pago dos veces, no dos
+> pagos distintos a la vez. **No tocar los caminos de dinero sin leer PT-146 antes.**
+
 ### Frontend Structure (`src/apps/base`, `src/apps/client`)
 
 Each SSR site follows the same convention:

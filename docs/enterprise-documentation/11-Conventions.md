@@ -460,6 +460,35 @@ has created is precisely what caused this.
 find locally. A network failure does **not** absolve: an unconfirmable branch is reported, never
 approved.
 
+### RULE-22: A row with a unique constraint is never created with `findX` + `create`
+**What:** to create a row that may not exist, use `createMany({ skipDuplicates: true })` followed by a
+read, or `upsert`. Never `findUnique`/`findFirst` + `if (!found) create`.
+**Why:** another process fits between the read and the write. This repository had **nine** such sites
+and **three were on the money path**: the lazy wallet creation in `getWallet()`, inside a deposit's
+ledger transaction, and in the seller credit when an auction closes (PT-142). The first CI run this
+project ever executed caught it — `Unique constraint failed on the fields: (key)` — and nobody had
+seen it before because it needs two conditions at once that development never provides: **real
+concurrency** (one instance, one browser) and **a database without the row already created** (the dev
+database has history, so the `create` branch never runs). It is the PT-122 lesson inverted: *a
+database with history hides what an empty one exposes.*
+**Two escapes that do NOT work**, both measured rather than assumed:
+1. **`upsert` inside an interactive transaction is not atomic.** Prisma does not compile it to
+   `INSERT ... ON CONFLICT` there; it issues `SELECT` then `INSERT`, and still raised `P2002`.
+   Being inside a transaction gives atomicity over what you write, **not exclusion over a row that
+   does not yet exist** — Prisma runs *read committed*.
+2. **`upsert` outside the transaction did not guarantee it either.** An 8-call concurrent test passing
+   with `upsert` was luck, not correctness. That is why there is a concurrency test and not a reading
+   of the code.
+**Correct:** `createMany({ data: [...], skipDuplicates: true })` — it compiles to
+`INSERT ... ON CONFLICT DO NOTHING`, never throws, and lets the unique index settle the race — then
+read the row.
+**Incorrect:** `findUnique(...) ?? create(...)`, even inside `$transaction`.
+**Declared exception:** `create` with explicit `P2002` handling **and its reason written down**, when
+rejecting the duplicate is the useful answer (a business guard returning 400).
+**Enforced by:** `creacion-perezosa-atomica.spec.ts`, which flags the pattern only when the read and
+the create target the **same model** — reading an order and creating a shipment is normal and has no
+race. Its exception list requires a PT reference and fails if an exception is no longer needed.
+
 ---
 
 ## 5. Files Requiring Extra Care Before Modification
