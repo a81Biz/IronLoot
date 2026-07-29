@@ -1,6 +1,6 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-29 (PT-141 — `.A` fusionado)
+**FDGE V3** · **Última actualización**: 2026-07-29 (VoBo humano sobre los once + delta sync S-003)
 Reconstruido en PT-140 contra el código y contra `HISTORY.log`, y con guarda desde entonces.
 
 > **Por qué se reconstruyó, otra vez.** PT-090 ya lo reconstruyó una vez y F-33 encontró que había
@@ -35,6 +35,10 @@ Reconstruido en PT-140 contra el código y contra `HISTORY.log`, y con guarda de
 | Trabajo | Qué | Estado |
 |---|---|---|
 | **PT-141.B** | `[START FOUNDATION]`. Sus cuatro prerrequisitos están cerrados y el protocolo ya está acotado a lo que debe generar (ADR-049). **Decisión del humano cuándo ejecutarlo** | Desbloqueado |
+| **H-021** | `audit:domain` imprime `cross_coherence_verified = true` con las **cinco** comprobaciones en `(ERR)`, y sale con código 0. Afirma sin haber medido, dentro del instrumento que mide. **ALTA** (S-003) | Abierto |
+| **H-022** | `audit:domain` y `audit:reliability` consultan con `docker exec psql` y no hay `docker` en el contenedor. PT-138 lo corrigió en el tercer script y dejó estos dos. Bloquea medir D1 y D5 (S-003) | Abierto |
+| **H-024** | `audit-scope.yaml` cita cuatro documentos que **archivó PT-141**, y describe mal las migraciones (S-003) | Abierto |
+| **H-023** | `UserResponseDto` publicado con dos esquemas distintos; la librería avisa de que en la próxima mayor será error (S-003) | Abierto |
 | **TD-016** | Nada comprueba vulnerabilidades de la **imagen base**. `audit:check` sólo mira npm. Ahora que las imágenes se construyen en CI (PT-147) es más barato de cerrar | Abierta |
 | **F-136-A** | Documentos que citan evidencia que **no está en el repositorio**: de 162 ficheros de `evidence/`, 83 seguidos. `PENDING_TASKS` llegó a mandar leer `regresion.txt`, ausente | Sin PT |
 
@@ -66,21 +70,14 @@ De sesiones anteriores:
 `PT-088` · `PT-089` · `PT-090` … `PT-104` · `PT-127` · `PT-128` · `PT-129` · `PT-130` · `PT-131` ·
 `PT-133` · `PT-135`
 
-De la tanda del 2026-07-28/29, con evidencia en `evidence/PT-XXX/medicion.md` y `self-review.md`:
+**Cerrados el 2026-07-29 con VoBo humano** — la tanda del 2026-07-28/29, los once:
 
-| PT | Qué cerró |
-|---|---|
-| **PT-136** | El CI que no se había ejecutado **nunca** |
-| **PT-137** | `REDIS_URL` como contrato único |
-| **PT-138** | Las guardas y checkpoints, donde vive npm |
-| **PT-139** | Dos controles muertos de ADMIN |
-| **PT-140** | Este fichero, y su guarda |
-| **PT-142** | La creación perezosa del monedero |
-| **PT-143** | El aislamiento de la suite e2e |
-| **PT-145** | Dos duplicados sin restricción |
-| **PT-146** | Dos depósitos simultáneos, uno perdido |
-| **PT-147** | Las imágenes, construidas y arrancadas |
-| **PT-141** | Una sola documentación oficial (`.A`); ADR-049 |
+`PT-136` · `PT-137` · `PT-138` · `PT-139` · `PT-142` · `PT-143` · `PT-145` · `PT-146` · `PT-147`
+→ **`CLOSED`** (los nueve BUG, validados por el humano; FDGE no deja que los cierre el agente)
+
+`PT-140` · `PT-141` → **`DONE`** (los dos REFACTOR: comportamiento preservado y evidencia)
+
+Registro del cierre en `HISTORY.log`, entrada «PT-136 … PT-147 — VALIDACION HUMANA».
 
 `PT-035` espera además **validación visual**, que no es automatizable: su tarea `T-035.12` sigue en
 `VALIDATION_PENDING` por eso.

@@ -2204,3 +2204,38 @@ Delta (real vs planned): el paquete preveia nueve tareas de reapuntado y archiva
   RULE-27 pero no limpiamente: las dos reglas se escribieron antes que la guarda, y esta se vio
   fallar por sus propias citas y no por la ausencia que motivo el trabajo.
 PTSA reference: cierra el pendiente DS-004 sobre las dos citas inexistentes.
+
+## PT-136 … PT-147 — VALIDACION HUMANA
+Date: 2026-07-29
+Status: CLOSED
+Branch: master (los once ya fusionados)
+Objective: registrar el VoBo humano sobre la tanda del 2026-07-28/29.
+
+**El humano valido los nueve BUG.** FDGE STATE 6 exige confirmacion humana para cerrar un bug y el
+agente no tiene esa autoridad; con el VoBo dado, pasan de VALIDATION_PENDING a CLOSED:
+
+  PT-136  el pipeline de CI que no se habia ejecutado nunca
+  PT-137  `REDIS_URL` parecia el contrato y no lo era
+  PT-138  las guardas y los checkpoints no corrian donde vive npm
+  PT-139  dos controles muertos en ADMIN
+  PT-142  la creacion perezosa del monedero no era atomica
+  PT-143  la suite e2e no aislaba sus datos
+  PT-145  dos duplicados sin restriccion que los impidiera
+  PT-146  dos depositos simultaneos y uno se perdia en silencio
+  PT-147  el job `docker` apuntaba a un Dockerfile que no existe
+
+**Y los dos REFACTOR pasan a DONE**, que el agente si puede: STATE 6 lo permite cuando el
+comportamiento se preserva —verificado por pruebas— y hay evidencia.
+
+  PT-140  doce almacenes de pendientes, ninguno con precedencia
+  PT-141  una sola documentacion oficial, y un contrato de agente acotado
+
+Evidence: docs/implementation/evidence/PT-XXX/ (medicion.md + self-review.md en los once)
+Verificacion en el cierre: 1039 pruebas unitarias en verde en los cinco servicios (API 786 en 102
+suites, CORE 134, CLIENT 103, ADMIN 13, BASE 3), arbol limpio, cero ramas sin fusionar.
+
+Nota de honestidad: **el cierre no significa que no quede nada de esta tanda**. El delta sync S-003,
+corrido despues, abrio cuatro hallazgos nuevos (H-021..H-024), y uno de ellos —H-024— lo introdujo
+PT-141 al archivar nueve documentos sin seguir la cita de `audit-scope.yaml`. Cerrar los PT es
+correcto: hicieron lo que declararon. Lo que la auditoria encontro despues es trabajo nuevo, y esta
+en su registro, no escondido en este.
