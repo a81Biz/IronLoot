@@ -22,19 +22,32 @@
 
 | # | Pendiente | Responsable |
 |---|---|---|
-| 1 | **H-021 — el instrumento afirma haber medido lo que no miró.** `audit:domain` imprime `cross_coherence_verified = true` con las cinco comprobaciones en `(ERR)`, y sale con código 0. ALTA, D2 | Agente, bajo FDGE |
-| 2 | **H-022 — los dos checkpoints de delta sync no corren en el contenedor.** PT-138 corrigió esto en el tercer script y dejó los otros dos. Bloquea medir D1 y D5 bien. MEDIA, D2 | Agente, bajo FDGE |
-| 3 | **H-024 — `audit-scope.yaml` cita cuatro documentos archivados** por PT-141, y describe mal las migraciones. MEDIA, D4 | Agente, bajo FDGE |
-| 4 | **H-005 — quién emite la factura.** Tres opciones en `F-1 § U-005`. Mantiene D1 en 85 y bloquea P-012. **Ningún PT puede resolverlo** | Humano (negocio + fiscal) |
-| 5 | **H-023 — `UserResponseDto` duplicado** en el catálogo OpenAPI. BAJA, D4, pero con fecha de caducidad puesta por la propia librería | Agente, bajo FDGE |
+| 1 | **H-005 — quién emite la factura.** Tres opciones en `F-1 § U-005`, con sus consecuencias técnicas medidas en `evidence/PT-155/hallazgos.md`. Mantiene D1 en 85 y bloquea P-012. **Ningún PT puede resolverlo** | Humano (negocio + fiscal) |
+| 2 | **Un `resume PTSA` que recalcule y emita.** Los scores de S-003 están superados: se midieron con cinco hallazgos activos y hoy hay uno. `freshness = STALE`, 25 commits desde `d260c80`. Sólo lo dispara el humano | Humano (disparador PTSA) |
+
+---
+
+## Lo que se podó, y por qué se deja dicho
+
+**PT-168 quitó cuatro filas que estaban hechas.** Este fichero listaba H-021, H-022, H-023 y H-024
+como abiertos con responsable «Agente, bajo FDGE». Los cuatro están `CERRADA` desde el 2026-07-29,
+corregidos por PT-149, PT-153, PT-162 y PT-157, con VoBo humano, y PT-168 lo verificó ejecutando.
+
+**Y es exactamente lo que la cabecera de arriba prohíbe.** Este fichero se reescribió en S-003 por
+haber acumulado siete bloques sin podar; volvió a acumular en **una sola jornada** — la misma en que se
+cerró el trabajo que declaraba pendiente. Un registro de estado que crece mientras el trabajo se cierra
+es el síntoma que abrió PT-140. Lo vigila ahora `estado-de-hallazgos-coherente.spec.ts` (**RULE-33**).
 
 ---
 
 ## Pendiente de VoBo humano
 
-`[R44]` prohíbe al agente cerrar hallazgos. Los de la tanda del 2026-07-28/29 no tienen hallazgo PTSA
-asociado —son defectos nuevos, no correcciones de auditoría— pero sí esperan validación como BUG:
-ver `docs/implementation/PENDING_TASKS.md` § 2.
+`[R44]` prohíbe al agente cerrar hallazgos, y STATE 6 le prohíbe cerrar bugs. **Dos PT esperan
+validación**: `PT-166` (el techo de memoria de la suite) y `PT-167` (el comando inexistente del README
+de TLS). Ninguno tiene hallazgo PTSA asociado — son defectos nuevos, no correcciones de auditoría.
+Detalle en `docs/implementation/PENDING_TASKS.md`.
+
+Los de la tanda del 2026-07-28/29 ya se cerraron con VoBo humano el 2026-07-29.
 
 ---
 
@@ -47,7 +60,7 @@ ver `docs/implementation/PENDING_TASKS.md` § 2.
 | 3 | La suite QA corre sobre **HTTP** | Cuando haya TLS local |
 | 4 | ¿Más servicios que mezclen un DTO transformado contra un JSON almacenado? (patrón de H-019) | Barrido |
 | 5 | `/api/v1/users/:id/ratings` exige sesión | Humano decide |
-| 6 | **D1 completo** — 7 de 14 reglas sin datos que mirar | La base está casi vacía; y H-022 impide medirlo desde donde toca |
+| 6 | **D1 completo** — 7 de 14 reglas sin datos que mirar | La base está casi vacía. **El impedimento técnico ya no existe**: PT-153 cerró H-022 y los checkpoints corren donde vive npm. Lo que falta son datos |
 | 7 | **D5 completo** — Success / Retry / Failure | Cero ciclos de pago. Mismo bloqueo que #6 |
 
 > **Los tres bloqueos de arriba se resuelven igual:** una corrida `run-all.sh` genera salida real.

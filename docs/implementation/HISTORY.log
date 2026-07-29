@@ -2532,3 +2532,41 @@ Modified files: docker-compose.yml
 Delta: no estaba planificado. Es una regresion de PT-159 causada por el crecimiento de la propia
   tanda, y deja el mismo sintoma que PT-159 vino a quitar: un fallo aparatoso sin que nada este roto,
   que enseña a desconfiar de la suite.
+
+## PT-168 — BUG: los derivados de PTSA declaraban activos cuatro hallazgos cerrados
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-168-derivados-ptsa-contradicen-hallazgos
+Objective: que ningun derivado de PTSA contradiga el estado que mandan los `H-XXX`.
+Root cause: `CLAUDE.md` declara que para «hallazgos de auditoria» manda `PTSA/Hallazgos/H-XXX.md` y
+  que `ESTADO_ACTUAL.md` y `RESUMEN.md` son derivados. Los cuatro hallazgos de S-003 (H-021, H-022,
+  H-023, H-024) se corrigieron y cerraron con VoBo el mismo dia, y **los tres derivados siguieron
+  declarandolos activos**: «Hallazgos activos: 5», D2 = 80 y D4 = 94 imputados a hallazgos cerrados, y
+  los cuatro listados en `PENDIENTES.md` como «Agente, bajo FDGE».
+  `PENDIENTES.md` es el caso peor: su cabecera declara que es **estado y no log** y que se poda —se
+  reescribio en S-003 por haber apilado siete bloques— y **volvio a acumular en una sola jornada**, la
+  misma en que se cerro el trabajo que declaraba pendiente. Es el sintoma que abrio PT-140.
+  Ademas `commits_since_audit = 0` y `freshness: FRESH` eran falsos: **25 commits** desde `d260c80`.
+Solution: los tres derivados dicen lo que dicen los `H-XXX` —**1 activo (H-005) / 23 cerrados**— y la
+  frescura pasa a `STALE` con el numero real. La atribucion historica de las dos regresiones se
+  conserva **en prosa**, que es su sitio.
+  **Lo que NO se hizo, y es la decision del PT:** no se recalculo el Health. La aritmetica daria
+  D2 = 100, D4 = 100 y `Risk_bruto = 6`, pero recalcular es una **emision** de PTSA y PTSA no se
+  auto-activa: `resume PTSA` es del humano. Afirmar un score que ningun instrumento emitio es **H-021
+  exactamente**, dentro del fichero que H-021 enseño a desconfiar. Se declara «SUPERADO, pendiente de
+  recalculo» con el calculo a la vista.
+  Los cuatro cierres se verificaron **ejecutando, no leyendo**: `audit:domain` da `verificado` con 5/5
+  medidas; con `DATABASE_URL` inalcanzable da `sin_datos` y **sale con 1**; `audit:reliability` corre
+  dentro del contenedor; el `warn` del DTO duplicado da **0** ocurrencias.
+  Guarda nueva: **RULE-33** — `estado-de-hallazgos-coherente.spec.ts`, 13 pruebas, añadida a
+  `test:guardas`.
+Modified files: PTSA/ESTADO_ACTUAL.md, PTSA/RESUMEN.md, PTSA/PENDIENTES.md,
+  docs/enterprise-documentation/11-Conventions.md, src/api/package.json,
+  src/api/test/unit/documentacion/estado-de-hallazgos-coherente.spec.ts
+Evidence: docs/implementation/evidence/PT-168/
+Delta (real vs planificado): una desviacion, y vale registrarla. La primera version de la guarda
+  **acusaba su propia prosa explicativa** —la seccion de activos dice legitimamente «Cerrados: 23
+  (H-001 … H-024)»—. Se corrigio mirando filas de tabla y no prosa, y se fijo en **AC-07**, que
+  comprueba las dos direcciones: que la prosa no se acuse y que sin el filtro si habria fallado. Un
+  falso positivo mata un control igual que un punto ciego.
+PTSA reference: no cierra hallazgo PTSA — corrige los derivados que los declaran. F-167-A, F-167-B.

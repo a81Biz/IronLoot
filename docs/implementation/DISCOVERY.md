@@ -5196,3 +5196,116 @@ resuelva. Es deliberado: rojo y visible por encima de saltado y oculto.
 - Root Cause Confidence: **100%** — `ls Dockerfile` en la raíz no devuelve nada.
 - Solution Confidence: **75%** — construir cuatro imágenes es directo; arrancarlas en CI con sus
   dependencias (base de datos, Redis) exige decidir cuánto entorno se levanta.
+
+---
+
+## F-167-A … F-167-H — Ocho defectos de registro: los arreglos son reales, las declaraciones no
+
+Date: 2026-07-29 · Tipo: **hallazgos**, agrupados · Origen: revisión de coherencia pedida por el
+humano — *«revisa todos los hallazgos y verifica que ya esté todo y que no falte nada»*.
+PT asignados: **PT-168 … PT-172**.
+
+### Cómo se buscaron, y por qué importa el método
+
+No se leyeron los cierres: se ejecutaron. Los 23 hallazgos PTSA cerrados se comprobaron contra la
+fuente real —`audit:domain` y su contraprueba con `DATABASE_URL` envenenada, `audit:reliability`,
+`_prisma_migrations` en la base, `audit:check`, los logs vivos del API, y grep dirigido para los
+trece restantes— y **los 23 están efectivamente corregidos**. Las 8 guardas de documentación pasan
+(78 pruebas) y la suite del API da **107 suites / 825 pruebas** en verde, exactamente lo que declara
+`HANDOFF.md`.
+
+**El código está bien. Lo que miente es lo que el repositorio dice de sí mismo.** Ése es el patrón
+de esta tanda entera, y ya tiene nombre en esta casa: F-33 («el estado se actualizó y la explicación
+no»), PT-103, PT-140, H-016.
+
+### F-167-A — Tres ficheros de PTSA declaran activos cuatro hallazgos que están `CERRADA`
+
+`PTSA/Hallazgos/H-XXX.md` **manda** para la clase «hallazgos de auditoría»; `ESTADO_ACTUAL.md` y
+`RESUMEN.md` son derivados y no se editan a mano. Los derivados contradicen a la autoridad:
+
+| Fichero | Lo que dice | La realidad |
+|---|---|---|
+| `PTSA/ESTADO_ACTUAL.md` | «Hallazgos activos: **5**» · «Cerrados: 20 (H-001…H-020)» | **1 activo**, **23 cerrados** |
+| `PTSA/RESUMEN.md` | D2 = **80** (H-021, H-022) · D4 = **94** (H-023, H-024) | los cuatro `CERRADA` con VoBo |
+| `PTSA/PENDIENTES.md` | H-021/022/023/024 en «Lo abierto de peso», responsable «Agente, bajo FDGE» | nada que hacer |
+
+`PENDIENTES.md` es el caso más grave de los tres porque **su cabecera declara que es estado y no
+log**, y que se poda: es el fichero que PT-140 reescribió por haber acumulado siete bloques sin
+podar. Volvió a pasar en una sola jornada.
+
+### F-167-B — `commits_since_audit = 0` y `freshness: FRESH` son falsos
+
+`ESTADO_ACTUAL.md:14`. Ese mismo día entraron **35 commits** después del delta sync, incluidos los
+veinte PT que cerraron los hallazgos. En PTSA la frescura **capa la clasificación** (`[A7]`, `[A8]`),
+así que no es un adorno: es una entrada del cálculo.
+
+### F-167-C — PT-167 no existe en ningún registro
+
+Sólo en el mensaje del commit `58fd605`. **Sin entrada en `HISTORY.log`** —que STATE 7 declara
+obligatoria y append-only— y **sin evidencia**. Tocó `docker-compose.yml`, `src/nginx/tls/README.md`
+y `generar-certificado.sh`.
+
+Un PT que no está en `HISTORY.log` es trabajo que, para el marco, no ha ocurrido.
+
+### F-167-D — Dos hallazgos cerrados citan evidencia que no está
+
+- `PTSA/Hallazgos/H-001.md` → `docs/implementation/evidence/PT-026/`
+- `PTSA/Hallazgos/H-023.md` → `docs/implementation/evidence/PT-162/`
+
+**Es H-016 dentro de los propios hallazgos.** Y la guarda que existe para exactamente esto
+—`evidencia-citada-esta-en-git.spec.ts` (RULE-31)— **no las ve por diseño**: su `evidenciaCitada()`
+exige extensión de fichero, y su caso de control AC-02 declara que *«una carpeta sin fichero no es
+una cita comprobable»*.
+
+Esa decisión era razonable para «está en git» y es errónea para «existe»: la existencia de un
+directorio **sí** es comprobable. La guarda pasa en verde con dos citas rotas delante.
+
+### F-167-E — Nueve PT sin carpeta de evidencia
+
+PT-152, 154, 156, 158, 159, 162, 165, 166, 167. FDGE dice *«el código no es evidencia; la ejecución
+es evidencia»* y **«No Missing Evidence — no exceptions»**.
+
+La guarda C2 de `coherencia-de-registros.spec.ts` vigila **la dirección contraria** (toda carpeta de
+evidencia tiene entrada en historia). El hueco es el simétrico y estaba sin vigilar.
+
+### F-167-F — PT-166 y PT-167 quedaron fuera del registro de pendientes
+
+El cierre en bloque con VoBo enumera PT-148…165 y H-021…024. **PT-166 entró después** y su entrada
+dice `Status: VALIDATION_PENDING`; PT-167 no tiene entrada. Los dos son BUG, y el agente no puede
+cerrar bugs (STATE 6). Mientras tanto `PENDING_TASKS.md` y `HANDOFF.md` afirman *«Nada más está
+pendiente»*.
+
+La guarda C1 comprueba que ningún PT marcado `PENDING`/`BLOCKED` figure terminado. **No comprueba el
+inverso**: un PT que la historia deja `VALIDATION_PENDING` y que el registro de pendientes no
+menciona. Con `PENDING_TASKS.md` sin filas pendientes, C1 pasa **en vacío**.
+
+### F-167-G — `ND-002` y `ND-003` contradicen al código
+
+`10-Technical-Debt.md` es la autoridad de la clase «deuda técnica».
+
+- **`ND-002`** afirma como evidencia *«no `ThrottlerStorageRedisService` referenced»* citando
+  `app.module.ts:75-85`. Está en `app.module.ts:90` **desde PT-030**, que es el PT que cerró H-002.
+  El registro de deuda contradice el cierre de un hallazgo.
+- **`ND-003`** dice que las plantillas de correo «no se encontraron». Están exactamente donde el
+  propio `ND-003` manda mirar: `notifications/templates/{verification,reset-password}.hbs`.
+
+`coherencia-deuda-tecnica.spec.ts` sólo mira `TD-XXX`. Los `ND-XXX` viven en el mismo fichero, con
+el mismo peso para quien lo lee, y sin vigilancia.
+
+`ND-004` (umbrales de cobertura) **sigue siendo cierto** —no hay `coverageThreshold`—; se deja.
+
+### F-167-H — La configuración de Jest emite un aviso de validación en cada corrida
+
+`src/api/package.json:115` — la clave `_comentario_maxWorkers` no es una opción de Jest, y Jest la
+denuncia **dos veces por corrida**: *«Unknown option … This is probably a typing mistake»*.
+
+Es pequeño y es exactamente el mecanismo que PT-159 y PT-166 vinieron a quitar: **ruido que enseña a
+descartar la salida de la suite**. El comentario merece existir; el sitio está mal.
+
+### Confianza
+
+- Root Cause Confidence: **100%** — los ocho se comprobaron leyendo el fichero y ejecutando.
+- Architecture Confidence: **100%** — no se toca arquitectura; son registros y guardas.
+- Solution Confidence: **95%** — directa en siete. El matiz está en A/B: recalcular el score de PTSA
+  es una **emisión**, y PTSA no se auto-activa (`resume PTSA` es del humano). Se corrige la falsedad
+  sin fabricar una emisión.

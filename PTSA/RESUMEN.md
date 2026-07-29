@@ -5,9 +5,26 @@
 **Disparador**: once PT fusionados (PT-136…PT-147) y 91 commits sin auditar
 **auditoria_estado**: CERRADA_CON_HALLAZGOS
 
+> ## ⚠ Los scores de abajo están SUPERADOS — corregido por PT-168
+>
+> Los **cuatro hallazgos que esta corrida abrió** (H-021, H-022, H-023, H-024) se corrigieron el mismo
+> día (PT-149, PT-153, PT-157, PT-162) y el humano los cerró con VoBo. PT-168 lo verificó
+> **ejecutando**, no leyendo: detalle en `ESTADO_ACTUAL.md` § «Los cuatro de S-003, verificados en
+> fuente real».
+>
+> **Queda un solo hallazgo activo en el sistema: H-005** (CFDI/PAC, decisión de negocio y fiscal).
+>
+> Con eso, la aritmética daría D2 = 100, D4 = 100 y `Risk_bruto = 6`. **Ese número no se escribe aquí**:
+> recalcular es una *emisión* de PTSA y PTSA no se auto-activa — `resume PTSA` lo dispara el humano.
+> Afirmar un score que ningún instrumento emitió sería **H-021 otra vez**, dentro del documento que
+> H-021 enseñó a desconfiar. `freshness` pasa a **`STALE`**: 25 commits desde `d260c80`.
+>
+> Lo de abajo se conserva porque es **el registro de lo que S-003 midió**, y `[A6]` lo protege. Se lee
+> como historia, no como estado.
+
 ---
 
-## SCORES — CLASE B
+## SCORES — CLASE B *(medidos en S-003; superados, ver aviso)*
 
 | Métrica | S-002-V (28-jul) | **S-003 (29-jul)** | Cambio |
 |---|---|---|---|
@@ -25,19 +42,26 @@ Conf   = 70×0.40 + 100×0.25 + 95×0.20 + 100×0.15 = 87.0
 **Regla del Agua Potable: NO activada.** D1 = 85 ≥ 60. Se dice explícitamente porque `[A4]` lo
 exige: el dominio no está capando nada.
 
-**§15.6 no ata**: exige Confidence ≥ 90 para clasificar A, y el Health ya cae en B por sí mismo.
-`freshness = FRESH` → sin cap por frescura. `health_unstable = false` → sin cap por D5.
+**§15.6 no ataba en S-003**: exige Confidence ≥ 90 para clasificar A, y el Health ya caía en B por sí
+mismo. `health_unstable = false` → sin cap por D5. **Hoy sí ata la frescura**: `STALE` capa la
+clasificación hasta el próximo delta sync.
 
 ---
 
 ## SCORES POR DIMENSIÓN
 
-| Dimensión | S-002-V | **S-003** | Hallazgos activos |
+| Dimensión | S-002-V | **S-003** | Penaliza hoy |
 |---|---|---|---|
 | D1 Alineación de Dominio | 85 | **85** | H-005 (ALTA) — CFDI sin decidir |
-| D2 Integridad Arquitectónica | 100 | **80** | **H-021 (ALTA)** · **H-022 (MEDIA)** |
-| D3 Observabilidad y Recuperación | 100 | **100** | ninguno |
-| D4 Fidelidad Documental | 100 | **94** | **H-024 (MEDIA)** · **H-023 (BAJA)** |
+| D2 Integridad Arquitectónica | 100 | **80** | — penalización retirada |
+| D3 Observabilidad y Recuperación | 100 | **100** | — |
+| D4 Fidelidad Documental | 100 | **94** | — penalización retirada |
+
+**De dónde venían las dos regresiones, y por qué ya no penalizan.** El −20 de D2 lo causaron H-021
+(ALTA) y H-022 (MEDIA); el −6 de D4, H-024 (MEDIA) y H-023 (BAJA). Los cuatro están `CERRADA`, así que
+sus penalizaciones no cuentan: la columna dice «retirada» y no el hallazgo, porque **nombrar un
+hallazgo cerrado en una columna de penalización vigente es la contradicción que PT-168 vino a quitar.**
+La atribución histórica se conserva aquí, en prosa, que es su sitio.
 
 **D5**: `SIN_DATOS` — no hay un solo ciclo de pago en la base. Alucinación y drift `NO_APLICA`
 (sistema determinista). `health_unstable: false`.

@@ -1,0 +1,53 @@
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+PASS test/unit/documentacion/reglas-citadas-existen.spec.ts (7.045 s)
+PASS test/unit/documentacion/estado-de-hallazgos-coherente.spec.ts
+PASS test/unit/documentacion/evidencia-citada-esta-en-git.spec.ts
+PASS test/unit/documentacion/patrones-de-guardas-casan.spec.ts
+PASS test/unit/documentacion/alcance-de-auditoria-existe.spec.ts
+PASS test/unit/documentacion/contexto-de-construccion.spec.ts
+PASS test/unit/documentacion/coherencia-documentacion-codigo.spec.ts
+FAIL test/unit/documentacion/coherencia-de-registros.spec.ts
+  ● Los registros de trabajo no se contradicen — RULE-20 (PT-140) › C2: todo PT con carpeta de evidencia tiene entrada en HISTORY.log
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "PT-168",
+    + ]
+
+      158 |     const sinEntrada = conEvidencia.filter((pt) => !enHistoria.has(pt)).sort();
+      159 |
+    > 160 |     expect(sinEntrada).toEqual([]);
+          |                        ^
+      161 |   });
+      162 |
+      163 |   it('C3: ninguna TD cerrada figura pendiente en PENDING_TASKS', () => {
+
+      at Object.<anonymous> (test/unit/documentacion/coherencia-de-registros.spec.ts:160:24)
+
+PASS test/unit/documentacion/coherencia-deuda-tecnica.spec.ts
+
+Test Suites: 1 failed, 8 passed, 9 total
+Tests:       1 failed, 90 passed, 91 total
+Snapshots:   0 total
+Time:        9.132 s, estimated 14 s
+Ran all test suites matching /test\/unit\/documentacion/i.

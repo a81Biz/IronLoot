@@ -1,0 +1,42 @@
+=== PT-168 — Verificacion de los cuatro cierres de S-003 en fuente real
+Fecha: 2026-07-29
+
+--- H-021/H-022: audit:domain DENTRO del contenedor
+=== Nivel 3 — Coherencia inter-producto (aparte del score) ===
+
+  [OK  ] P-002 → P-003    El importe del pedido coincide con el precio final  (0)
+  [OK  ] P-003 → P-010    La comision es el porcentaje aplicado al importe del pedido  (0)
+  [OK  ] P-010 → P-009    El registro de comision coincide con el asiento FEE_PLATFORM  (0)
+  [OK  ] P-003 → P-006    Toda disputa cuelga de un pedido existente  (0)
+  [OK  ] P-002 → P-007    El tipo del aviso corresponde al evento (H-012 / PT-117)  (0)
+
+  cross_coherence_verified = verificado
+  5 de 5 medidas · 0 incoherente(s) · 0 sin poder mirar
+
+--- H-021 contraprueba: DATABASE_URL inalcanzable (debe salir 1)
+EXIT=1
+  cross_coherence_verified = sin_datos
+  0 de 5 medidas · 0 incoherente(s) · 5 sin poder mirar
+  Esto NO es un aprobado: es una comprobacion que no ha podido mirar.
+
+  No se pudo medir. Revisa la conexion a la base antes de leer nada de arriba.
+
+
+--- H-022: audit:reliability DENTRO del contenedor
+  COMO LEER EL RETRY RATE: un POLL_ATTEMPT no es un fallo. Es la via garantizada
+  haciendo lo que PT-087 diseño — encontrar un pago que la notificacion no trajo.
+  Un Retry Rate alto significa «las pasarelas no notifican», no «el sistema falla».
+  Sigue valiendo medirlo: si sube, algo cambio en las pasarelas.
+
+  health_unstable = false
+
+--- H-023: warn de DTO duplicado en logs del API
+ocurrencias = 0
+
+--- H-014 (revisado en S-003): migraciones aplicadas
+                    migration_name                    | aplicada | rolled_back_at 
+------------------------------------------------------+----------+----------------
+ 20260727000000_initial_schema                        | t        | 
+ 20260729020000_pt145_rating_unico_por_pedido_y_autor | t        | 
+(2 rows)
+

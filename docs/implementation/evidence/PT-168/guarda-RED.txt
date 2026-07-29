@@ -1,0 +1,130 @@
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+FAIL test/unit/documentacion/estado-de-hallazgos-coherente.spec.ts
+  Los derivados de PTSA no contradicen los hallazgos — RULE-33 (PT-168)
+    ✓ hay hallazgos que leer — si no, todo lo de abajo pasa en vacio (1 ms)
+    ✕ C1: `ESTADO_ACTUAL.md` no presenta como activo ningun hallazgo cerrado (5 ms)
+    ✕ C2: el numero que `ESTADO_ACTUAL.md` anuncia es el que hay activo (2 ms)
+    ✕ C3: `PENDIENTES.md` no lista como abierto ningun hallazgo cerrado (1 ms)
+    ✕ C4: `RESUMEN.md` no imputa a una dimension un hallazgo cerrado (2 ms)
+    casos de control
+      ✓ AC-01: un cerrado presentado como activo se detecta
+      ✓ AC-02: el hallazgo realmente activo NO se acusa (1 ms)
+      ✓ AC-03: una seccion que no existe devuelve null, no cadena vacia
+      ✓ AC-04: la seccion se corta en el siguiente `##` (1 ms)
+      ✓ AC-05: el estado se lee del frontmatter, no del cuerpo
+      ✓ AC-06: un frontmatter sin `estado:` no se inventa (1 ms)
+
+  ● Los derivados de PTSA no contradicen los hallazgos — RULE-33 (PT-168) › C1: `ESTADO_ACTUAL.md` no presenta como activo ningun hallazgo cerrado
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 8
+
+    - Array []
+    + Array [
+    +   "H-021",
+    +   "H-022",
+    +   "H-024",
+    +   "H-023",
+    +   "H-001",
+    +   "H-020",
+    + ]
+
+      117 |
+      118 |     const listados = idsDeHallazgo(cuerpo as string);
+    > 119 |     expect(listados.filter((id) => cerrados.includes(id))).toEqual([]);
+          |                                                            ^
+      120 |   });
+      121 |
+      122 |   it('C2: el numero que `ESTADO_ACTUAL.md` anuncia es el que hay activo', () => {
+
+      at Object.<anonymous> (test/unit/documentacion/estado-de-hallazgos-coherente.spec.ts:119:60)
+
+  ● Los derivados de PTSA no contradicen los hallazgos — RULE-33 (PT-168) › C2: el numero que `ESTADO_ACTUAL.md` anuncia es el que hay activo
+
+    expect(received).toBe(expected) // Object.is equality
+
+    Expected: 1
+    Received: 5
+
+      125 |
+      126 |     expect(anunciado).toBeDefined();
+    > 127 |     expect(Number(anunciado)).toBe(activos.length);
+          |                               ^
+      128 |   });
+      129 |
+      130 |   it('C3: `PENDIENTES.md` no lista como abierto ningun hallazgo cerrado', () => {
+
+      at Object.<anonymous> (test/unit/documentacion/estado-de-hallazgos-coherente.spec.ts:127:31)
+
+  ● Los derivados de PTSA no contradicen los hallazgos — RULE-33 (PT-168) › C3: `PENDIENTES.md` no lista como abierto ningun hallazgo cerrado
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 6
+
+    - Array []
+    + Array [
+    +   "H-021",
+    +   "H-022",
+    +   "H-024",
+    +   "H-023",
+    + ]
+
+      135 |
+      136 |     const listados = idsDeHallazgo(cuerpo as string);
+    > 137 |     expect(listados.filter((id) => cerrados.includes(id))).toEqual([]);
+          |                                                            ^
+      138 |   });
+      139 |
+      140 |   it('C4: `RESUMEN.md` no imputa a una dimension un hallazgo cerrado', () => {
+
+      at Object.<anonymous> (test/unit/documentacion/estado-de-hallazgos-coherente.spec.ts:137:60)
+
+  ● Los derivados de PTSA no contradicen los hallazgos — RULE-33 (PT-168) › C4: `RESUMEN.md` no imputa a una dimension un hallazgo cerrado
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 6
+
+    - Array []
+    + Array [
+    +   "H-021",
+    +   "H-022",
+    +   "H-024",
+    +   "H-023",
+    + ]
+
+      151 |       .join('\n');
+      152 |
+    > 153 |     expect(idsDeHallazgo(filas).filter((id) => cerrados.includes(id))).toEqual([]);
+          |                                                                        ^
+      154 |   });
+      155 |
+      156 |   describe('casos de control', () => {
+
+      at Object.<anonymous> (test/unit/documentacion/estado-de-hallazgos-coherente.spec.ts:153:72)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 7 passed, 11 total
+Snapshots:   0 total
+Time:        4.601 s, estimated 5 s
+Ran all test suites matching /estado-de-hallazgos-coherente/i.

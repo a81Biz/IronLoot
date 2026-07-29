@@ -744,6 +744,26 @@ read prose: a guard that forces a particular wording teaches people to write for
 the document stops telling the truth. Its parser understands grouped headers (`## PT-090 … PT-104`)
 because a noisy guard gets disabled, and a disabled guard also stops catching what it did detect.
 
+### RULE-33: A PTSA derived file never contradicts the `H-XXX` it derives from
+**What:** `PTSA/Hallazgos/H-XXX.md` **rules** for audit findings. `ESTADO_ACTUAL.md`, `RESUMEN.md` and
+`PENDIENTES.md` are derived: none of them may **table** a finding as active when its frontmatter says
+`CERRADA`/`CLOSED`, and the count `ESTADO_ACTUAL.md` announces must be the number it lists.
+**Why:** measured 2026-07-29, all three declared **four** findings active (H-021, H-022, H-023, H-024)
+that were `CERRADA` with human VoBo the same day, their fixes verified by execution. `PENDIENTES.md`
+was the worst case: its own header declares it *state, not log*, and that it gets pruned — it was
+rewritten in S-003 for having stacked seven unpruned blocks and **re-accumulated in a single day**, the
+very day the work it called pending was closed (PT-168).
+**A register that grows while the work closes is the symptom that opened PT-140.** And in PTSA it is not
+cosmetic: `[A8]` makes declared coverage an input to the score, and freshness caps the classification.
+A false derived file is a false input to the calculation.
+**Correct:** derive from the frontmatter; keep historical attribution in **prose**, where it belongs.
+**Incorrect:** naming a closed finding in a column that means "penalises today"; or writing a
+recomputed Health — that is a PTSA *emission*, and **PTSA never self-activates** (`resume PTSA` is the
+human's trigger). Asserting a score no instrument emitted is H-021 all over again.
+**Enforced by:** `estado-de-hallazgos-coherente.spec.ts`. It reads **table rows, not prose**: an
+actives section legitimately states the closed count and explains where a score came from, and a false
+positive kills a control just as dead as a blind spot (AC-07 pins exactly that).
+
 ---
 
 ## 5. Files Requiring Extra Care Before Modification
@@ -794,3 +814,4 @@ When adding a new required environment variable:
 | 2026-07-28 | RULE-12 — "not sent" is not "sent empty" (from H-019) | PT-132 |
 | 2026-07-28 | RULE-13 — an endpoint with no callers is retired, not polished (from H-018) | PT-133 |
 | 2026-07-28 | RULE-14 — a guard nobody has seen fail is not a guard | PT-127…PT-133 |
+| 2026-07-29 | RULE-33 — a PTSA derived file never contradicts the `H-XXX` (from F-167-A/B) | PT-168 |
