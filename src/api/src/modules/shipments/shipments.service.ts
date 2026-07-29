@@ -65,6 +65,12 @@ export class ShipmentsService {
       });
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') {
+        // Se deja rastro a proposito. Llegar aqui significa que DOS peticiones pasaron la guarda de
+        // arriba a la vez: el usuario recibe el 400 que le toca, pero saber que la carrera ocurre
+        // de verdad —y con que frecuencia— es informacion que no se puede recuperar despues.
+        this.logger.warn('Envio duplicado detectado por la restriccion unica, no por la guarda', {
+          data: { orderId: dto.orderId, userId },
+        });
         throw new BadRequestException('Shipment already exists for this order');
       }
       throw error;

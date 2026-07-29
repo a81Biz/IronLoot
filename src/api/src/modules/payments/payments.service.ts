@@ -71,6 +71,10 @@ export class PaymentsService {
       return await this.crearMetodoClabe(userId, dto);
     } catch (error) {
       if ((error as { code?: string }).code === 'P2002') {
+        // Con rastro: que la carrera llegue hasta la restriccion unica es un dato, no un detalle.
+        this.logger.warn('CLABE duplicada detectada por la restriccion unica, no por la guarda', {
+          data: { userId },
+        });
         throw new BadRequestException('Esta CLABE ya está registrada');
       }
       throw error;
