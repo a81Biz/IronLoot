@@ -92,7 +92,53 @@ COPY src/api/src ./src
 # Build the application
 RUN npm run build
 
-# NO se podan las dependencias, y es una decision, no un olvido.
+# PT-164 — Las dependencias de desarrollo SI se quitan, y aqui esta por que cambio la decision.
+#
+# PT-129 dejo escrito que la imagen se las lleva, con las dos salidas que probo y por que fallan:
+#
+#   `npm prune --production`                  -> se lleva los binarios opcionales por plataforma
+#                                                (`@css-inline/css-inline-linux-x64-musl`).
+#   `npm install --omit=dev`                  -> dispara el `prepare` (husky), exit 127.
+#   `npm install --omit=dev --ignore-scripts` -> se salta tambien el `postinstall` de Prisma y deja
+#                                                el cliente a medias.
+#
+# La tercera via que ninguna contemplaba: **saltarse los scripts Y generar el cliente de Prisma a
+# mano**. Resuelve las dos objeciones a la vez.
+#
+# **PT-161 la probo y la descarto**, porque medida en TAMAÑO daba 548 -> 531 MB: un 3.1 %, que no
+# justifica tocar una zona que ha tirado cinco contenedores. Ese razonamiento era correcto con el
+# dato que habia.
+#
+# Lo que cambio: PT-150 escaneo la imagen y midio **seguridad** en vez de tamaño. Resultado:
+#
+#     0  vulnerabilidades del sistema operativo
+#    16  de npm empaquetado dentro de `node:20-alpine`   (no se pueden quitar desde aqui)
+#    14  de dependencias de DESARROLLO en la imagen      (eslint, rimraf, @typescript-eslint…)
+#
+# Catorce de treinta las causa algo que no tiene por que estar ahi. Ese dato no existia cuando se
+# tomo la decision de PT-161, y con el la balanza cambia: no es «3 % de tamaño», es «la mitad de la
+# superficie reportada».
+#
+# Se hace en una etapa APARTE y no podando la del builder, porque podar destruye lo que el build
+# necesita. **La aceptacion sigue siendo la de PT-129: la imagen tiene que ARRANCAR, no construir.**
+FROM node:20-alpine AS deps-prod
+
+RUN apk add --no-cache python3 make g++ openssl
+
+WORKDIR /repo
+COPY package*.json ./
+COPY tsconfig.base.json ./
+COPY --from=builder /repo/src/packages/core ./src/packages/core
+COPY src/api/package*.json ./src/api/
+COPY src/api/prisma ./src/api/prisma
+
+# `--ignore-scripts` evita husky, que es dependencia de desarrollo y sale con 127 sin git.
+RUN npm ci --omit=dev --ignore-scripts
+
+# Y el cliente se genera explicitamente, que es lo que `--ignore-scripts` se salto.
+RUN cd src/api && npx --yes prisma@5.22.0 generate
+
+# NO se podan las dependencias del BUILDER, y es una decision, no un olvido.
 #
 # Aqui habia `npm prune --production`. Se llevaba por delante los binarios opcionales por
 # plataforma. Medido:
@@ -147,11 +193,22 @@ RUN addgroup -g 1001 -S ironloot && \
 WORKDIR /repo/src/api
 
 # La libreria compartida, al mismo sitio relativo que en el builder: es a donde apunta el enlace.
-COPY --from=builder --chown=ironloot:ironloot /repo/src/packages/core /repo/src/packages/core
+#
+# PT-164 — Se copian `dist/` y `package.json`, NO el arbol entero.
+#
+# `src/packages/core/package.json` declara **`dependencies: {}`** — cero dependencias de ejecucion,
+# doce de desarrollo— y su `main` es `dist/index.js`. Copiar la carpeta completa metia en produccion
+# eslint, jest y sus arboles: **once de las catorce vulnerabilidades atribuibles al proyecto salian
+# de aqui**, no del API.
+#
+# Es el mismo error que se corrige arriba con `deps-prod`, cometido en la otra mitad. Y no se veia
+# porque `packages/core` parece «la libreria», no «dependencias de desarrollo».
+COPY --from=builder --chown=ironloot:ironloot /repo/src/packages/core/dist /repo/src/packages/core/dist
+COPY --from=builder --chown=ironloot:ironloot /repo/src/packages/core/package.json /repo/src/packages/core/package.json
 
 # Copy built application
 COPY --from=builder --chown=ironloot:ironloot /repo/src/api/dist ./dist
-COPY --from=builder --chown=ironloot:ironloot /repo/src/api/node_modules ./node_modules
+COPY --from=deps-prod --chown=ironloot:ironloot /repo/src/api/node_modules ./node_modules
 COPY --from=builder --chown=ironloot:ironloot /repo/src/api/package*.json ./
 
 # El esquema, que NO es solo del build.

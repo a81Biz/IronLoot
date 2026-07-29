@@ -1,7 +1,111 @@
 {
-  "_comentario": "PT-150 (TD-016) — Vulnerabilidades de la IMAGEN BASE triadas. Distinto de `security-baseline.json`, que cubre paquetes npm: `node:20-alpine` trae su propio sistema de ficheros, sus librerias de sistema y su OpenSSL, y nada de eso aparece en un `npm audit`. Cada entrada lleva id, fecha y MOTIVO. Una entrada sin motivo convierte esto en una lista de excusas, que es como el control dejaria de valer.",
+  "_comentario": "PT-150 (TD-016) / PT-164 — Vulnerabilidades de la IMAGEN BASE triadas. Distinto de `security-baseline.json`, que cubre paquetes npm del proyecto. Cada entrada lleva id, fecha y MOTIVO: una entrada sin motivo convierte esto en una lista de excusas, que es como el control dejaria de valer.",
   "fecha": "2026-07-29",
-  "nota": "Nace VACIA a proposito: se declara el mecanismo antes de conocer lo que mide. La primera corrida en CI producira el inventario real (artefacto `vulnerabilidades-imagen-base`), y lo que aparezca se corrige subiendo la imagen base o se tria aqui, una a una y con motivo.",
-  "alcance": "CRITICAL y HIGH con correccion publicada (`ignore-unfixed: true`). Una vulnerabilidad sin parche disponible no es accionable hoy y romperia el pipeline sin darle a nadie una salida.",
-  "triadas": []
+  "nota": "Primer triaje real, sobre `ironloot-api` ya recortada por PT-164. Antes del recorte habia 30 hallazgos (16 de npm + 14 del proyecto); despues quedan 18. Los del proyecto bajaron de 14 a 2 al dejar de copiar `packages/core` entera y al instalar sin dependencias de desarrollo.",
+  "alcance": "CRITICAL y HIGH con correccion publicada (`ignore-unfixed: true`). Una vulnerabilidad sin parche no es accionable hoy y romperia el pipeline sin darle salida a nadie.",
+  "revision": "Al subir de version la imagen base (`node:20-alpine`), RETIRAR estas entradas y volver a triar: la mayoria desaparecen solas. Si una sigue, es que la nueva base tampoco la corrige y merece leerse otra vez.",
+  "triadas": [
+    {
+      "id": "CVE-2026-13149",
+      "fecha": "2026-07-29",
+      "paquete": "brace-expansion",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-14257",
+      "fecha": "2026-07-29",
+      "paquete": "brace-expansion",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2024-21538",
+      "fecha": "2026-07-29",
+      "paquete": "cross-spawn",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2025-64756",
+      "fecha": "2026-07-29",
+      "paquete": "glob",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-26996",
+      "fecha": "2026-07-29",
+      "paquete": "minimatch",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-27903",
+      "fecha": "2026-07-29",
+      "paquete": "minimatch",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-27904",
+      "fecha": "2026-07-29",
+      "paquete": "minimatch",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-48815",
+      "fecha": "2026-07-29",
+      "paquete": "sigstore",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-59873",
+      "fecha": "2026-07-29",
+      "paquete": "tar",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-23745",
+      "fecha": "2026-07-29",
+      "paquete": "tar",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-23950",
+      "fecha": "2026-07-29",
+      "paquete": "tar",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-24842",
+      "fecha": "2026-07-29",
+      "paquete": "tar",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-26960",
+      "fecha": "2026-07-29",
+      "paquete": "tar",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-29786",
+      "fecha": "2026-07-29",
+      "paquete": "tar",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-31802",
+      "fecha": "2026-07-29",
+      "paquete": "tar",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-59874",
+      "fecha": "2026-07-29",
+      "paquete": "tar",
+      "motivo": "Empaquetado dentro de `node:20-alpine` en /usr/local/lib/node_modules/npm. El contenedor ejecuta `node dist/main` y NUNCA invoca npm: el codigo vulnerable no esta en ningun camino de ejecucion. No se puede quitar desde este repositorio — solo subiendo la imagen base."
+    },
+    {
+      "id": "CVE-2026-14257",
+      "fecha": "2026-07-29",
+      "paquete": "brace-expansion",
+      "motivo": "Sobrevive a `npm ci --omit=dev` como dependencia transitiva de eslint y rimraf en `src/api/node_modules`. `brace-expansion` solo se ejecuta al expandir patrones de fichero, cosa que hace una herramienta de desarrollo — nunca el servidor en produccion. Se revisa al subir esas dependencias."
+    }
+  ]
 }

@@ -2442,3 +2442,49 @@ Modified files: src/nginx/nginx-tls.conf, src/nginx/tls/{generar-certificado.sh,
 Evidence: docs/implementation/evidence/PT-155/hallazgos.md
 Delta (real vs planned): el paquete previo los tres desenlaces —PT-158 con riesgo de entorno, los
   otros dos bloqueados— y los tres salieron como se dijo. Es el unico bloque de la tanda sin sorpresa.
+
+## PT-163 / PT-164 / PT-165 — Lo que faltaba de la tanda, y una decision revisada
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: feature/PT-163-reputacion-publica
+
+PT-163 — La reputacion publica, implementando la alternativa B de PT-156. `@Public()` mas
+  `@Throttle` propio configurable (`RATINGS_PUBLIC_RATE_LIMIT`, 10/min). Verificado contra el API
+  real: sin sesion 200, y la peticion 10 recibe 429.
+  Correccion a mi propio ENRICHMENT: escribi que el guard estaba «en toda la clase». Es impreciso —
+  el mecanismo es `JwtAuthGuard` como guard GLOBAL (`app.module.ts:156`). La conclusion no cambiaba,
+  la cita si estaba mal.
+  El limite por IP levanta el liston, NO cierra la puerta a quien rote direcciones. Queda dicho para
+  que nadie lo lea como una defensa que no es; si el raspado se observa, la alternativa C sigue
+  disponible y esto no la estorba.
+
+PT-164 — **Revierte la decision de PT-161**, y el motivo es que aparecio el dato que faltaba.
+  PT-161 midio TAMAÑO: 548 -> 531 MB, 3.1 %, no compensaba. Correcto con lo que se sabia.
+  PT-150 midio SEGURIDAD sobre la imagen real: 0 vulnerabilidades del SO, 16 de npm empaquetado en
+  `node:20-alpine`, y **14 de dependencias de desarrollo metidas en la imagen**. La mitad de la
+  superficie reportada la causaba algo que no tiene por que estar ahi.
+  Y al mirar bien, el bulto no estaba donde creia: la primera pasada bajo de 14 a 11, y los once
+  restantes salian de `src/packages/core/node_modules`, que produccion copiaba ENTERA. CORE declara
+  `dependencies: {}` y su `main` es `dist/index.js` — **no necesita node_modules en ejecucion**.
+  Resultado: 548 -> **450 MB** (-18 %) y 14 -> **2** vulnerabilidades del proyecto (-86 %).
+  Verificado que ARRANCA, con control: las dos imagenes `Up (healthy)`. Los dos primeros intentos
+  fallaron por `NODE_ENV=production` sin credenciales de admin, y la imagen actual fallaba identico —
+  sin el control habria reportado una regresion inexistente. Segunda vez en el dia.
+  Leccion: **medi la variable equivocada**. «Es mas grande de lo necesario» lleva a medir MB; la
+  pregunta util era «que mete en produccion codigo que no se ejecuta».
+
+PT-165 — RULE-32: todo patron de `test:guardas` casa con alguna suite. PT-148 renombro un fichero y
+  el patron `rutas-que-el-client` dejo de casar con nada, en silencio: Jest no protesta y el guion
+  siguio en verde. **La guarda del contrato SSR-API salio del guion cuatro horas despues de
+  ampliarla.** Lo detecte a mano; ahora hay mecanismo. El modo de fallo es el peor: no se rompe, se
+  encoge.
+
+TD-016 — Primer triaje real. 17 entradas con motivo: 16 de npm empaquetado (el contenedor ejecuta
+  `node dist/main` y nunca invoca npm) y 1 transitiva de herramientas de desarrollo. La linea base
+  deja de estar vacia y **el escaner ya protege de algo**.
+
+Modified files: src/api/src/modules/ratings/ratings.controller.ts, src/api/Dockerfile,
+  src/api/base-image-baseline.json, .env.example,
+  docs/enterprise-documentation/11-Conventions.md,
+  src/api/test/unit/documentacion/patrones-de-guardas-casan.spec.ts
+Evidence: docs/implementation/evidence/PT-163/ y PT-164/
