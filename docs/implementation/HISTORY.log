@@ -1961,3 +1961,185 @@ Hallazgos ajenos registrados (DISCOVERY.md § U-002), **no son deuda de este PT*
   monorepo y `docker-compose` no lo monta.
 
 PTSA reference: ninguno. El defecto no tenia hallazgo abierto; procede de reporte humano.
+
+## PT-129 — BUG: la imagen de produccion no era utilizable (PTSA H-017)
+Date: 2026-07-27 (entrada escrita el 2026-07-29 por PT-140)
+Status: VALIDATION_PENDING
+Branch: fix/PT-129-imagen-de-produccion  (merges b421f15, bd5eed4)
+Objetivo: que las imagenes de produccion se construyan y arranquen.
+Root cause: `src/api/Dockerfile` declaraba su healthcheck contra `/health`, y la ruta real es
+  `/api/v1/health` desde que existe el prefijo global. La imagen se construia perfecta y el
+  contenedor quedaba `unhealthy` para siempre. ADMIN, BASE y CLIENT no tenian imagen de produccion:
+  solo `Dockerfile.dev`.
+Solucion: healthcheck corregido, tres `Dockerfile` de produccion nuevos, y las cuatro imagenes
+  arrancadas hasta `healthy`. Guarda `healthcheck-apunta-a-ruta-real.spec.ts`.
+Modified files: src/api/Dockerfile · src/admin/Dockerfile · src/apps/base/Dockerfile ·
+  src/apps/client/Dockerfile · docker-compose.yml · la guarda
+Evidence: docs/implementation/evidence/PT-129/
+Delta (real vs planned): el arranque de la imagen del API destapo CINCO bloqueos encadenados que el
+  plan no preveia, entre ellos la falta del binario `-musl` de `@css-inline` — tapada entonces con un
+  `npm install --no-save` cuyo comentario resulto falso, y que PT-135 encontro de nuevo.
+PTSA reference: H-017 (ALTA, D2) -> CORREGIDA.
+
+  NOTA DE PT-140 — Esta entrada faltaba. PT-129 tenia rama fusionada, carpeta de evidencia y su
+  hallazgo PTSA cerrado, y `HISTORY.log` saltaba de PT-128 a PT-131. Se anade al final, con su fecha
+  real anotada: el fichero es append-only y reordenarlo seria falsificar el registro que PT-140
+  existe para hacer fiable.
+
+## PT-130 — BUG: la documentacion describia un sistema que ya no corria (PTSA H-016)
+Date: 2026-07-27 (entrada escrita el 2026-07-29 por PT-140)
+Status: VALIDATION_PENDING
+Branch: fix/PT-130-coherencia-documental  (merges 676831c, 90d1fcf)
+Objetivo: que lo que la documentacion cita exista y diga lo que dice.
+Root cause: las CINCO citas de la tabla de stack del TRD apuntaban a la linea equivocada —se
+  desplazaron al crecer `package.json` y nadie las siguio— y TRES de las cinco versiones eran falsas:
+  NestJS 11.1.28 declarado ^10.3.0, Prisma 5.22.0 declarado ^5.8.0, TypeScript 5.9.3 declarado ^5.3.3.
+Solucion: citas y versiones corregidas, y la guarda `coherencia-documentacion-codigo.spec.ts`, que
+  comprueba DOS cosas por fila: que la linea citada contenga el paquete, y que la version coincida.
+Modified files: docs/enterprise-documentation/03-TRD.md · 06-Backend-Architecture.md · CLAUDE.md ·
+  la guarda
+Evidence: docs/implementation/evidence/PT-130/
+Delta (real vs planned): H-016 subio de MEDIA a ALTA al verificar una objecion humana. La leccion que
+  quedo: un documento sin citas se lee con desconfianza; uno con citas rotas se lee con confianza y es
+  falso.
+PTSA reference: H-016 (ALTA, D4) -> CORREGIDA.
+
+  NOTA DE PT-140 — Misma situacion que PT-129: faltaba.
+
+## PT-076 — FEATURE: PayPal Orders v2
+Date: 2026-07-25 (entrada escrita el 2026-07-29 por PT-140)
+Status: VALIDATION_PENDING
+Branch: feature/PT-076-paypal-orders-v2
+Objetivo: sustituir la integracion anterior de PayPal por Orders v2.
+Solucion: adaptador reescrito contra Orders v2, verificado contra el sandbox real (fase QA 71, 17/17).
+Evidence: docs/implementation/evidence/PT-076/
+Delta: la leccion que quedo y sigue viva en CLAUDE.md — en PayPal Orders v2 **aprobar no mueve el
+  dinero**: una orden APPROVED esta autorizada y sin cobrar, asi que la via garantizada CAPTURA.
+
+  NOTA DE PT-140 — Entrada reconstruida desde su evidencia y sus commits. No estaba.
+
+## PT-086 — FEATURE: traza completa de cada transaccion de pago
+Date: 2026-07-26 (entrada escrita el 2026-07-29 por PT-140)
+Status: VALIDATION_PENDING
+Branch: feature/PT-086-payment-trace  (merge eb18d50)
+Objetivo: saber por donde paso cada pago y que datos se enviaron.
+Solucion: `payment_cycle_events` y `PaymentTraceService` como punto UNICO de escritura, con la
+  redaccion de credenciales dentro para que ningun llamante pueda saltarsela. Nunca lanza: un apunte
+  de trazabilidad no puede costarle el deposito al usuario. Consulta por
+  `GET /admin/payments/trace/:reference`.
+Evidence: docs/implementation/evidence/PT-086/
+Delta: verificado con un cobro REAL en Mercado Pago — siete pasos en la traza y cero credenciales
+  filtradas.
+
+  NOTA DE PT-140 — Entrada reconstruida. No estaba.
+
+## PT-136 — BUG (MAJOR): el pipeline de CI no se habia ejecutado nunca
+Date: 2026-07-28
+Status: VALIDATION_PENDING
+Branch: fix/PT-136-ci-que-se-ejecuta  (merge 7e6bcef)
+Objetivo: que los jobs de CI se ejecuten.
+Root cause: `.github/workflows/ci.yml` disparaba en `[dev, qa, prep, prod]`. La unica rama de este
+  repositorio es `master`. `gh api .../actions/runs` devolvia `total_count: 0`: CERO ejecuciones en
+  toda la vida del proyecto. El YAML era valido y GitHub listaba el workflow como `active`, asi que
+  nadie vio nunca un error.
+Solucion: disparador en `master` + `workflow_dispatch`; guarda `ramas-del-disparador-existen.spec.ts`.
+  Corregidos ademas dos defectos del job que la primera corrida destapo: `@ironloot/core` no se
+  compilaba en ningun job —y el `build` de la raiz lo construia el ULTIMO, despues de sus
+  consumidores— y la base sombra que un comentario juraba que Prisma creaba sola.
+Evidence: docs/implementation/evidence/PT-136/
+Delta: la corrida cazo tambien un error mio —el caso de control C2 de la guarda comprobaba el estado
+  de mi maquina en vez del contrato— y abrio PT-142 y PT-143.
+PTSA reference: ninguno; defecto nuevo.
+
+## PT-137 — BUG: `REDIS_URL` parecia el contrato y no lo era (F-135-A)
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-137-contrato-de-redis
+Root cause: cuatro clientes con tres formas de configurarse. Dos leian `REDIS_HOST`/`REDIS_PORT` con
+  reserva `localhost` mientras `docker-compose` declaraba solo `REDIS_URL`: lo que hacia funcionar el
+  sistema era `REDIS_HOST=redis` dentro de `src/api/.env`, un fichero que no esta en git.
+Solucion: `REDIS_URL` unica, sin reserva; falla nombrando la variable. 25 variables mas que el API
+  leia y nadie declaraba, ahora en `.env.example`. Guarda RULE-17.
+Evidence: docs/implementation/evidence/PT-137/
+Delta: verificado con un 429 REAL —rafaga de 70 contra login, limite 60/min: 48 respuestas 401 y 22
+  respuestas 429— y arrancando sin `REDIS_HOST` en el `.env` local.
+
+## PT-138 — BUG: las guardas y los checkpoints no corrian donde vive npm (F-135-B)
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-138-guardas-en-el-contenedor  (merge 7d1d36c)
+Root cause: `src/api/scripts` no estaba montado, asi que el contenedor ejecutaba una copia congelada
+  y devolvia el resultado ANTERIOR sin avisar. `trace_completeness` consultaba con `docker exec`. Y
+  `SIN_DATOS` salia con codigo 0: un checkpoint que no habia podido medir se leia como aprobado.
+Solucion: montajes, consulta por `DATABASE_URL`, tres estados —medido / sin_ciclos / no_medible— y
+  `raizDelMonorepo()`, que LANZA si no la encuentra porque una raiz equivocada da resultados vacios.
+Evidence: docs/implementation/evidence/PT-138/
+Delta: al dejar de aprobar `SIN_DATOS`, CI delato que el job `observabilidad` NUNCA ha tenido base de
+  datos — aprobaba sin medir una de sus dos metricas desde PT-121.
+
+## PT-139 — BUG: dos controles muertos en ADMIN
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-139-controles-muertos-de-admin
+Root cause: el `<script>` de conciliacion vivia dentro de `{% block title %}`, que el layout no
+  declara; Nunjucks lo descartaba en silencio desde PT-096. Y el modal de reembolsos usaba `data-bs-*`
+  con cero Bootstrap en ADMIN.
+Solucion: bloque a `{% block scripts %}`, modal con la convencion que ADMIN YA TENIA
+  (`.modal-backdrop.oculto`), y RULE-19 con dos guardas.
+Evidence: docs/implementation/evidence/PT-139/
+Delta: eran CUATRO plantillas con el bloque muerto, no una.
+
+## PT-142 — BUG: la creacion perezosa del monedero no era atomica
+Date: 2026-07-28
+Status: VALIDATION_PENDING
+Branch: fix/PT-142-creacion-perezosa-atomica  (merge ad9ff48)
+Root cause: nueve sitios comprobaban si una fila existia y la creaban. Tres estaban en el camino del
+  dinero.
+Solucion: `createMany({ skipDuplicates })` — lo unico atomico. `upsert` NO sirve: ni dentro de una
+  transaccion interactiva ni fuera. RULE-22 y su guarda.
+Evidence: docs/implementation/evidence/PT-142/
+Delta: abrio PT-145 y PT-146.
+
+## PT-143 — BUG: la suite e2e no aislaba sus datos
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-143-aislamiento-e2e  (merge ad9ff48 previo; master 7e6bcef+)
+Root cause: `orders-flow.e2e-spec.ts` truncaba ONCE tablas sin filtro, con Jest en paralelo.
+Solucion: limpieza acotada, `auth-helper` en orden de dependencias, `TestApp` deja de imponer la base
+  de desarrollo, pasarela doblada. RULE-23.
+Evidence: docs/implementation/evidence/PT-143/
+Delta: destapo que el job `docker` estaba condicionado a las ramas fantasma de PT-136 -> PT-147.
+
+## PT-145 — BUG: dos duplicados sin restriccion que los impidiera
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-145-duplicados-sin-restriccion  (merge 4d7ba55)
+Root cause: `Rating` y `AccountVerification` comprobaban y creaban sin unicidad. En la segunda, cada
+  verificacion ENVIA DINERO.
+Solucion: `@@unique([orderId, authorId])` con migracion para `Rating`; bloqueo de la fila del metodo
+  de pago para `AccountVerification`, cuya invariante es PARCIAL y Prisma no puede declararla.
+Evidence: docs/implementation/evidence/PT-145/
+Delta: corrige el DISCOVERY, que daba por hecho que los dos exigian migracion.
+
+## PT-146 — BUG: dos depositos simultaneos y uno se perdia en silencio
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-146-actualizacion-perdida-de-saldo  (merge e9d86ae)
+Root cause: siete metodos leian el saldo, calculaban y escribian un absoluto. Seis depositos
+  simultaneos dejaban el saldo en 100 de 600, con los seis asientos escritos y ninguno cuadrando.
+Solucion: `SELECT ... FOR UPDATE` por un unico `bloquearMonedero()`, y orden fijo cuando la operacion
+  toca dos monederos. RULE-24.
+Evidence: docs/implementation/evidence/PT-146/
+Delta: medido que NO habia monederos descuadrados en la base. Y CI cazo que el `upsert` de
+  system-config que PT-142 dio por bueno fallaba contra base vacia.
+
+## PT-147 — BUG: el job `docker` apuntaba a un Dockerfile que no existe
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-147-imagenes-que-se-construyen  (merge ba3e789)
+Root cause: `file: ./Dockerfile`, que nunca ha existido. Y estaba condicionado a dos ramas fantasma,
+  asi que quedaba `skipped` — y un job saltado NO cuenta como fallo.
+Solucion: las cuatro imagenes con SU contexto, construidas y ARRANCADAS hasta `healthy`. RULE-26.
+Evidence: docs/implementation/evidence/PT-147/
+Delta: tres vueltas de triaje, las tres defectos del job. La segunda fue el control de arranque de
+  PT-036/PT-093 funcionando por primera vez dentro de una imagen.

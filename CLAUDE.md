@@ -708,6 +708,33 @@ Active investigations · Risks · Recommended next actions.
 
 Rules: `HISTORY.log` is append-only. Never rewrite history. `HANDOFF.md` represents current state only.
 
+## Dónde vive un pendiente
+
+Un pendiente puede escribirse en muchos sitios, y durante meses se escribió en varios a la vez sin que
+ninguno mandara. El resultado fue un registro que declaraba `BLOCKED` **cuarenta y cuatro tareas ya
+fusionadas** y perdía **dos PT enteros** —PT-129 y PT-130, con evidencia y commits— del fichero que
+FDGE declara fuente de verdad (PT-140).
+
+**Cada clase de pendiente tiene un registro que manda; los demás son derivados y no se editan a mano.**
+
+| Clase | Manda | Derivados |
+|---|---|---|
+| Trabajo FDGE pendiente o en curso | `docs/implementation/PENDING_TASKS.md` | `HANDOFF.md` |
+| Trabajo terminado | `docs/implementation/HISTORY.log` — **append-only** | todo lo demás |
+| Deuda técnica | `10-Technical-Debt.md` (`TD-XXX`) | `MATRIZ-DEUDA-TECNICA.md` |
+| Hallazgos de auditoría | `PTSA/Hallazgos/H-XXX.md` | `ESTADO_ACTUAL.md`, `RESUMEN.md` |
+| Bloqueantes de auditoría | `PTSA/PENDIENTES.md` — **un solo bloque vivo** | — |
+| Priorización | `docs/implementation/ROADMAP.md` | — |
+
+**Histórico explícito** — se leen, no se actualizan: `FDGE_HALLAZGOS_TRACKER.md`,
+`MATRIZ-HALLAZGOS-*.md`, `docs-v2/Informe-Remediacion.md`.
+
+**`HISTORY.log` es append-only**: lo que falte se añade al final con su fecha real anotada.
+Reordenarlo para que quede cronológico sería falsificar el registro que esta regla existe para hacer
+fiable.
+
+Lo vigila `coherencia-de-registros.spec.ts`.
+
 ## Allowed Status Values
 
 `PENDING` · `IN_PROGRESS` · `BLOCKED` · `DONE` · `VALIDATION_PENDING` · `CLOSED`
