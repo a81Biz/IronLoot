@@ -814,7 +814,14 @@ PTSA never bypasses FDGE and FDGE never bypasses PTSA.
 
 The canonical, normative specification lives in `docs/methodology/PTSA/PTSA-V3-Especificacion-Oficial.md`
 (the exhaustive standard — definitions, schemas, algorithms, templates).
-The operational agent manual lives in `PTSA/Motor-PTSA.md`; the working protocol in `PTSA/PTSA.md`.
+The operational detail lives in the same specification: it is the only PTSA authority that exists.
+
+> **PT-141 —** Estas dos líneas citaban `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`. **Ninguno de los dos
+> ha existido nunca.** Era un pendiente desde **DS-004**, repetido en cinco bloques de
+> `PTSA/PENDIENTES.md` a lo largo de cuatro sesiones, siempre como «responsable: humano».
+> Se retira la cita en vez de escribir dos documentos para justificarla: la especificación oficial
+> existe, está completa, y crear ficheros para que una referencia deje de estar rota es hacerlo al
+> revés. Es la familia de H-016 — **un documento con citas rotas se lee con confianza y es falso**.
 This section is the binding ruleset (rules in force). When detail is missing here, the official specification prevails.
 
 ## Trigger Rule
@@ -919,7 +926,8 @@ Stop and report a blocking state ONLY if: (1) the environment explicitly denies 
 (2) access credentials/parameters cannot be resolved from local files; (3) the user issued an explicit manual breakpoint.
 On halt: record blockers in `PENDIENTES.md`, set `BLOQUEADA`, append to `AUDIT_LOG.md`, show a hard-stop report.
 
-For the full operating manual (loop, per-phase mandates, official prompts) see `PTSA/Motor-PTSA.md`.
+For the full operating manual (loop, per-phase mandates, official prompts) see
+`docs/methodology/PTSA/PTSA-V3-Especificacion-Oficial.md` — Part IV.
 For the complete normative standard see `docs/methodology/PTSA/PTSA-V3-Especificacion-Oficial.md`.
 
 ---
