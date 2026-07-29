@@ -1,0 +1,53 @@
+# ROADMAP HISTORY — FPGE
+**Solo append — nunca sobrescribir**
+
+---
+
+## 2026-06-23 — Run FPGE-001
+
+- **Trigger:** `[START FPGE]`
+- **Origen PTSA:** S-001 (primera auditoría completa — 2026-06-23)
+- **Health al momento:** 86.1 / Clase C (cap freshness)
+- **Ítems emitidos:** R-001 a R-007 (7 ítems, todos PROPUESTO)
+- **Top por impacto:** R-001 (60.75), R-002 (10.13), R-003 (6.00)
+- **Top quick wins:** R-001, R-003, R-006
+- **Estado:** Esperando revisión y aprobación del desarrollador
+
+## 2026-06-23 — Promoción masiva R-001..R-007 → PT-026..PT-032
+
+- **Trigger:** `promote FPGE R-001..R-007` (todos APROBADO)
+- **Promotions:**
+  - R-001 → PT-026 (BUG, STATE 1-B) — DISCOVERY.md
+  - R-002 → PT-027 (FEATURE MAJOR, STATE 1-E) — ENRICHMENT.md
+  - R-003 → PT-028 (INVESTIGATION, STATE 1-B) — DISCOVERY.md (Investigation Gate ACTIVADO)
+  - R-004 → PT-029 (BUG, STATE 1-B) — DISCOVERY.md
+  - R-005 → PT-030 (REFACTOR, STATE 1-R) — REFACTOR_SCOPE.md
+  - R-006 → PT-031 (TRIVIAL, STATE 1-EXPRESS) — PLAN_ACTUAL.md
+  - R-007 → PT-032 (TRIVIAL, STATE 1-EXPRESS) — PLAN_ACTUAL.md
+- **Estado:** Todos en STATE 1 — esperando ACK humano por PT antes de STATE 2
+
+## 2026-07-29 — Run FPGE-002
+
+- **Trigger:** `[START FPGE]`
+- **Origen PTSA:** S-002-V (2026-07-28) — ultimo registro de `score-history.json`
+- **Health al momento:** 95.5 / Clase A / Risk 24 — **pero `score_freshness` STALE**
+- **Compuerta de frescura ACTIVADA:** 91 commits y 72 ficheros bajo `src/` desde la ultima
+  auditoria (once PT fusionados, PT-136..PT-147). Se emite el roadmap, pero se recomienda
+  `resume PTSA` **antes** de tratar el orden como definitivo.
+- **Contexto:** primera emision desde S-001 (2026-06-23). R-001 se promovio entero a PT-026..PT-032
+  y se retiro como documento vivo en PT-140. **FPGE llevaba cinco semanas sin ejecutarse, y esa era
+  la causa mecanica de que el trabajo no se cerrara**: el bucle FDGE -> PTSA -> FPGE -> FDGE estaba
+  roto en su tercer eslabon.
+- **Items emitidos:** R-008 a R-018 (11 items, todos PROPUESTO). Identificadores R-001..R-007
+  consumidos por la emision anterior.
+- **Top por impacto:** R-010 (+4.5 real) · R-009 (+4.5 evitado) · R-008 (+4.5 evitado)
+- **Top quick wins:** R-009 (121.50) · R-008 (40.50) · R-013 (27.00)
+- **Ajuste declarado en el algoritmo:** solo R-010 nace de un hallazgo activo. Para los otros diez
+  `ScoreImpact` literal seria 0 y todo quedaria empatado, asi que se usa **penalizacion evitada** —
+  la que se aplicaria si el defecto latente se registrara como hallazgo. Marcado item a item.
+- **Descartados por evidencia:** dos filas de `PTSA/PENDIENTES.md` («12 productos en BORRADOR» y
+  «faltan rubricas en F-1») resultaron **ya resueltas** al verificarlas contra la fuente. No entran
+  al roadmap. La correccion corresponde a `PENDIENTES.md`; FPGE es de solo lectura sobre PTSA.
+- **No compiten en el algoritmo:** `resume PTSA`, PT-141.B (`[START FOUNDATION]`), los once VoBo
+  pendientes, PT-035 T-035.12, y los dos bloqueos externos (TD-001, TD-002).
+- **Estado:** esperando revision humana. FPGE no promueve nada por si mismo.
