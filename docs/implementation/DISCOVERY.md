@@ -5341,3 +5341,103 @@ descartar la salida de la suite**. El comentario merece existir; el sitio está 
 - Solution Confidence: **95%** — directa en siete. El matiz está en A/B: recalcular el score de PTSA
   es una **emisión**, y PTSA no se auto-activa (`resume PTSA` es del humano). Se corrige la falsedad
   sin fabricar una emisión.
+
+---
+
+## F-172-A … F-172-C — La recepción no la confirma quien recibe
+
+Date: 2026-07-29 · Tipo: **hallazgos** · Origen: petición del humano de construir la fase de QA que
+cierra la subasta y llega hasta el retiro. **Al verificar qué existía, apareció el defecto de fondo.**
+PT asignados: **PT-173 … PT-176**.
+
+### Cómo se llegó aquí, porque importa
+
+El humano pidió una fase de QA que esperase el cierre de la subasta y encadenase hasta el retiro de la
+ganancia. Antes de escribirla se comprobó **qué parte del camino ya existía**, y la cadena real
+—medida hoy, sin sembrar nada— llega hasta aquí sola:
+
+```
+subasta CLOSED → pedido 950.00 PAID → comisión 95.00 → CREDIT_SALE 950 «pending clearance»
+              → vendedor con 855.00 en `pending_balance` (holdback, RN-64)
+```
+
+Y ahí se detiene. Lo que libera esos 855.00 es
+`auction-scheduler.service.ts:294`:
+
+```ts
+OR: [{ status: OrderStatus.DELIVERED }, { createdAt: { lte: cutoff } }]
+```
+
+**O pasan los 14 días de `DISPUTE_WINDOW_DAYS`, o el pedido se marca `DELIVERED`.** Al mirar quién
+puede marcarlo, apareció F-172-A.
+
+### F-172-A — El vendedor libera su propio holdback, y nadie más puede confirmar la recepción
+
+**Cuatro hechos verificados, y el cuarto es el que duele:**
+
+1. **`PATCH /shipments/:id/status` sólo lo puede llamar el vendedor.**
+   `shipments.service.ts:114-116` — `if (shipment.order.sellerId !== userId) throw new
+   ForbiddenException('Only the seller can update shipment status')`.
+2. **No hay guarda de transición.** `dto.status` se aplica tal cual: nada exige
+   `PENDING → SHIPPED → DELIVERED`. Un vendedor puede pasar de `PENDING` a `DELIVERED` **sin haber
+   marcado el envío**.
+3. **No existe máquina de estados de envío en `@ironloot/core`** — al contrario que la de subastas.
+4. **El comprador no tiene ninguna vía para confirmar la recepción.** Ni endpoint, ni permiso, ni
+   interfaz: `grep` sobre `src/apps/client/views/` y `public/js/` no devuelve **nada** sobre recibir,
+   confirmar entrega o marcar enviado. **Cero.**
+
+**La consecuencia, encadenando los cuatro:** el vendedor marca `DELIVERED` su propio envío —sin
+enviarlo, sin que nadie lo confirme— el pedido pasa a `DELIVERED`, y el cron libera **su propio
+holdback** en el siguiente tic de 30 minutos.
+
+**El holdback existe para proteger al comprador durante la ventana de disputa, y lo puede desactivar
+la única parte de la que protege.** No es un hueco de pruebas: es el control anulándose a sí mismo.
+
+Es la familia de H-025 y H-021 en otro plano — un mecanismo que aparenta proteger y no protege— pero
+aquí no se trata de un instrumento de medición: **es dinero, y es la garantía de RN-64.**
+
+### F-172-B — La fase 71 falla porque PayPal cambió su página de login
+
+`71-paypal-guaranteed.js:78` es `await loginBtn.click()` sobre `#btnLogin`. El error:
+
+```
+57 × waiting for element to be visible, enabled and stable
+   - <div class="loginSignUpSeparator ">…</div> from <div id="signupContainer" …>
+     subtree intercepts pointer events
+   - retrying click action
+name: 'TimeoutError'
+```
+
+El botón **es visible y está habilitado**, pero un `div` de PayPal se le superpone e intercepta el
+click. Cincuenta y siete reintentos hasta agotar los 30 s.
+
+**No es una regresión de IronLoot, y hay que decirlo claro porque yo lo insinué mal en S-004-M.** El
+ciclo completo de PayPal —incluida la aprobación en su checkout real y la **captura** por la vía
+garantizada— está probado en **PT-087**: `QA-PP-05` aprueba en el checkout real (`APPROVED`),
+`QA-PP-08` el sondeo **captura** (`COMPLETED`), y el saldo pasó de 321.50 a 643.00 **sin un solo
+webhook**. Lo que se rompió es el **harness contra una UI ajena**, con selectores fijos.
+
+### F-172-C — Ninguna fase de navegador conduce la venta; se siembra
+
+`60-withdrawal.js` lo declara en su propia cabecera, y conviene citarlo entero porque es honesto:
+
+> *«el ORIGEN del dinero (venta cerrada + cron de liberación) se **SIEMBRA** en BD replicando el camino
+> ya cubierto por pruebas unitarias. El SUBSISTEMA DE RETIRO en sí (solicitud→aprobación→pago→rechazo)
+> se ejercita REAL vía API.»*
+
+Así que el retiro **sí** se prueba de verdad; la venta que lo origina, **no**. Y hoy se ha demostrado
+que la parte sembrada **funciona sola** hasta el holdback. El eslabón que nadie conduce nunca es
+justo el que F-172-A deja en manos del vendedor.
+
+**Corrección de mi propio informe:** dije que esta cadena «nunca se había medido». **Es falso.** `E-019`
+(S-002, 27-jul) registra `auctions 1 (CLOSED) · orders 1 · commission_records 1` y las **14 reglas de
+dominio en OK**, incluidas `R-5.1a` y `R-5.1d`. Se había medido; lo que faltaba era una fase que lo
+condujese de forma repetible, y un reseteo se llevó la salida.
+
+### Confianza
+
+- Root Cause Confidence: **100 %** — los cuatro hechos de F-172-A se leyeron en el código y el flujo
+  se ejecutó hoy de punta a punta hasta el holdback.
+- Architecture Confidence: **90 %** — la parte técnica está clara; **lo que no es una decisión técnica
+  es cuánto debe durar la retención tras la confirmación del comprador**, y eso es de negocio.
+- Solution Confidence: **70 %** — depende de esa decisión. Ver `ENRICHMENT.md`.

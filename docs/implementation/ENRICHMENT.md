@@ -1,87 +1,158 @@
-# ENRICHMENT.md — PT-156
+# ENRICHMENT.md — PT-174
 
-**STATE 1-E.** `FEATURE`, promovido desde `R-017` (FPGE-003).
+**STATE 1-E.** `FEATURE` — El comprador confirma la recepción; el vendedor declara el envío.
 
-> **Estado: espera una decisión de producto.** El paquete de la tanda lo declaró bloqueado y sigue
-> siéndolo. Aquí están las tres alternativas con sus criterios; **no implemento ninguna**, porque
-> elegir sería decidir por ti un rasgo del producto.
+**Fecha**: 2026-07-29
+**Origen**: petición del humano — *«primero el comprador, el que gana la subasta, debe tener la opción de
+marcar "recibida" después de que el vendedor la marca como "enviada" … aquí se puede aclarar la entrega
+recepción, quizá falta profundizar»*.
+**Hallazgo que lo motiva**: `DISCOVERY.md § F-172-A`.
+**Estado**: esperando ACK. **Cero líneas de `src/` tocadas.**
+
+> El enrichment anterior (**PT-156**, `BLOCKED` esperando una decisión de producto) se conserva en
+> `archive/ENRICHMENT-PT-156.md`.
 
 ---
 
-## El hecho, verificado
+## El problema, en una frase
 
-`ratings.controller.ts:17` aplica `@UseGuards(JwtAuthGuard)` a toda la clase, así que
-`GET /api/v1/users/:userId/ratings` (línea 28) **exige sesión**.
+**Hoy el vendedor marca `DELIVERED` su propio envío y con eso libera su propio holdback.** El comprador
+no tiene ninguna vía —ni endpoint, ni permiso, ni interfaz— para confirmar que recibió.
 
-## Por qué está en el roadmap
+Verificado: `shipments.service.ts:114` restringe **todo** cambio de estado al vendedor; no hay validación
+de transición; `@ironloot/core` no tiene máquina de estados de envío; y `grep` sobre
+`src/apps/client/views/` y `public/js/` no devuelve **nada** sobre enviar, recibir o confirmar entrega.
 
-Es exactamente el dato que un comprador consulta **antes** de tener cuenta. La protección impide el
-uso que justifica el dato: quien evalúa si registrarse en una plataforma de subastas mira la
-reputación de los vendedores, y aquí no puede.
+---
 
-Detectado en S-002-V y marcado desde entonces como **«Humano decide»** — nunca fue un bug con
-tratamiento obvio.
+## Lo que hay que decidir antes de implementar
 
-## Por qué NO lo decido yo
+Esto es lo que el humano llamó *«quizá falta profundizar»*, y **no es una decisión técnica**. La retención
+existe para que, si algo sale mal, el dinero todavía esté ahí. Si la confirmación del comprador libera al
+instante, el dinero se va **antes** de que la ventana de disputa haya corrido.
 
-Puede haber una razón deliberada, y las tres que se me ocurren son legítimas:
+| | Cuándo se libera | A favor | En contra |
+|---|---|---|---|
+| **A** | **Inmediato** al confirmar el comprador | El vendedor cobra en minutos; es lo que pide «no esperar tantos minutos» | **Una disputa posterior no tiene fondos que reclamar.** La ventana de 14 días queda decorativa |
+| **B** | **Timer corto** (48–72 h) desde la confirmación | El vendedor cobra en días, no semanas, y queda margen para reclamar | Hay que elegir el número, y sigue siendo una espera |
+| **C** | Inmediato, con la disputa reclamando contra **saldo futuro** o una reserva de plataforma | Rápido **y** protegido | El más costoso: exige saldo negativo o una reserva, que hoy no existen |
 
-- **Raspado de reputación** por un competidor.
-- **Privacidad del vendedor** — el número de valoraciones revela volumen de ventas.
-- **Inferencia comercial**: con el histórico se reconstruye la actividad de un vendedor.
+**Recomendación: B con 72 h**, por una razón concreta de este repositorio: `DISPUTE_WINDOW_DAYS` ya existe
+y se lee del entorno, así que **B es un cambio de parámetro y de disparador, no de modelo**. A es un cambio
+de política de riesgo disfrazado de mejora de UX. C exige un modelo de saldo que no está.
 
-Abrirlo sin saber cuál pesa sería elegir por el producto.
+### Las dos mentiras, que no son simétricas
 
-## Las tres alternativas
+El humano lo dijo así: *«la regla de espera … para asegurar que no mienta el vendedor al enviar ni el
+comprador al recibir»*. Son dos riesgos distintos y **hoy sólo uno está contemplado**:
 
-### A) Abierto, sin más
+- **El vendedor miente al enviar** → hoy es posible y **sin coste**: marca `DELIVERED` sin enviar nada y
+  cobra. Es F-172-A.
+- **El comprador miente al recibir** → hoy **no puede**, porque no tiene la acción. Cuando la tenga, la
+  mentira útil para él es **negar** la recepción, que retendría el dinero del vendedor. **Eso exige un
+  vencimiento**: si no confirma ni disputa en N días, se libera igual.
 
-`@Public()` en el endpoint.
+`DISPUTE_WINDOW_DAYS` ya cumple ese papel de vencimiento, pero **hoy es un efecto lateral, no una regla
+declarada**. Este PT la declara.
 
-- **Criterios de aceptación:** un cliente sin sesión recibe 200 con las valoraciones · un usuario
-  inexistente recibe 404, no 401 (hoy 401 filtra si el guard va antes) · nada del perfil privado
-  viaja en la respuesta.
-- **A favor:** resuelve el caso de uso entero, coste mínimo.
-- **En contra:** raspado trivial. El rate limiting global (100/min) no lo impide de verdad.
+---
 
-### B) Abierto con límite de tasa agresivo — **la recomendación, si hay que elegir una**
+## Criterios de aceptación
 
-`@Public()` + `@Throttle` propio, del orden de 10/min por IP.
+**Autorización y máquina de estados**
 
-- **Criterios:** los de A · la petición 11 en un minuto recibe 429 · el límite es **configurable por
-  variable**, no una constante enterrada.
-- **A favor:** el caso de uso funciona y el raspado masivo cuesta.
-- **En contra:** un límite por IP no detiene a quien rote direcciones. Levanta el listón, no cierra la
-  puerta.
+- **AC-01** — el paso a `SHIPPED` sólo lo puede hacer **el vendedor** del pedido.
+- **AC-02** — el paso a `DELIVERED` sólo lo puede hacer **el comprador**. El vendedor recibe **403** con
+  un mensaje que dice por qué. *(Hoy devuelve 200: es el defecto.)*
+- **AC-03** — la transición se valida `PENDING → SHIPPED → DELIVERED`. El salto de `PENDING` a
+  `DELIVERED` se rechaza con **400**. *(Hoy se acepta.)*
+- **AC-04** — la máquina de estados vive en `@ironloot/core`, sin NestJS ni Prisma, como la de subastas
+  (RULE-02).
+- **AC-05** — la autorización se comprueba **en el servicio**, no sólo en el controlador.
 
-### C) Agregado público, detalle con sesión
+**Liberación del holdback**
 
-Endpoint nuevo `GET /users/:id/reputation` que devuelve **media y total**, público. El detalle
-—comentarios, quién valoró, cuándo— sigue exigiendo sesión.
+- **AC-06** — la confirmación del comprador dispara la liberación según la opción elegida (A/B/C).
+- **AC-07** — **el vencimiento sigue existiendo**: si el comprador no confirma, `DISPUTE_WINDOW_DAYS`
+  libera igual. Un comprador que calla no puede retener el dinero indefinidamente.
+- **AC-08** — la liberación es **idempotente**: `sellerSettledAt` impide una segunda del mismo pedido.
+- **AC-09** — el camino nuevo **no se salta RULE-24**: lee bloqueando la fila, y con orden fijo si toca
+  dos monederos.
 
-- **Criterios:** sin sesión se obtiene media y recuento y **nada más** · el detalle sigue en 401 ·
-  el agregado no permite reconstruir el histórico (sin fechas, sin desglose por periodo).
-- **A favor:** el comprador ve lo que necesita para decidir; el competidor no obtiene el histórico.
-- **En contra:** un endpoint más que mantener, y hay que definir qué es «suficiente agregado».
+**Interfaz (CLIENT)**
 
-## Fuera de alcance, decida lo que decida
+- **AC-10** — el vendedor tiene un control para declarar el envío, con transportista y guía.
+- **AC-11** — el comprador tiene un control para confirmar la recepción, **visible sólo cuando el envío
+  está `SHIPPED`**.
+- **AC-12** — el JS va en `public/js/` y los estilos al CSS del sitio: la CSP no lleva `'unsafe-inline'`,
+  así que un `onclick=` o un `style=` **no funcionaría y el navegador no diría nada** (RULE-07, RULE-09).
+- **AC-13** — confirmar la recepción tiene consecuencia económica: lleva confirmación previa, y ese
+  `confirm()` **debe estar registrado** (RULE-30 — es el defecto que dejó veinticuatro manejadores muertos
+  en ADMIN).
+- **AC-14** — toda ruta que el CLIENT invoque existe en el API (RULE-11).
 
-- Cambiar cómo se **calculan** las valoraciones.
-- Tocar el resto de endpoints de `RatingsController`.
-- Exponer datos de perfil que hoy no salen por ninguna vía pública.
+**Trazabilidad**
 
-## NFR aplicables
+- **AC-15** — envío y recepción quedan en `audit_events` vía `@AuditedAction`, con quién y cuándo.
+- **AC-16** — `shippedAt` y `deliveredAt` se sellan en el momento real de cada transición.
 
-- **Seguridad:** ninguna alternativa expone el correo, el teléfono ni el RFC del vendedor.
-- **Rendimiento:** al ser público entra en la superficie cacheable; conviene `Cache-Control` corto.
-- **Coherencia:** si se abre, **`rutas-que-los-ssr-invocan.spec.ts` (PT-148) ya cubre** que BASE lo
-  invoque correctamente. Esa guarda se amplió esta misma jornada.
+---
 
-## Qué hace falta para desbloquear
+## Escenarios de prueba
 
-**Una línea tuya: A, B o C.** Con eso, PT-156 pasa a STATE 2 y se implementa con sus pruebas.
+**Camino feliz**
 
-## Estado
+1. Vendedor declara envío → `SHIPPED`, `shippedAt` sellado, pedido `SHIPPED`, aviso al comprador.
+2. Comprador confirma recepción → `DELIVERED`, `deliveredAt` sellado, pedido `DELIVERED`.
+3. Liberación según la opción elegida → `pending_balance` → `balance` con asiento `SETTLEMENT_RELEASE`.
+4. Vendedor solicita el retiro de esa ganancia → reserva real, aprobación admin, `PAID`.
 
-`BLOCKED` — esperando decisión de producto. No es trabajo pendiente de hacer: es trabajo pendiente de
-**decidir**, y el registro que manda para eso es `PENDING_TASKS.md`.
+**Casos límite**
+
+5. **El vendedor intenta `DELIVERED`** → **403**. Hoy: 200. *Es el caso que prueba que el defecto murió.*
+6. **Salto `PENDING` → `DELIVERED`** → **400**. Hoy: se acepta.
+7. **El comprador confirma dos veces** → una sola liberación.
+8. **Un tercero** intenta cualquiera de las dos → 403.
+9. **El comprador nunca confirma** → a los `DISPUTE_WINDOW_DAYS` se libera igual.
+10. **Disputa abierta antes de liberar** → con B, el timer no libera mientras la disputa esté abierta.
+
+**Fallo**
+
+11. Envío inexistente o pedido no `PAID` → 400, como ya hace `create()`.
+12. **Dos confirmaciones simultáneas** → una sola liberación y un solo asiento (RULE-24).
+
+---
+
+## NFRs
+
+- **Concurrencia** — la liberación mueve saldo: `SELECT … FOR UPDATE`, orden fijo de bloqueo (RULE-24).
+- **Idempotencia** — `sellerSettledAt` como clave; una confirmación repetida no duplica el asiento.
+- **Observabilidad** — sin `catch` mudos. La línea base de silencios es **25** y no debe subir (D3).
+- **Rendimiento** — sin consultas nuevas en el camino de la puja ni del pago.
+
+---
+
+## Fuera de alcance, explícito
+
+- **`RETURNED` y las devoluciones.** El enum lo tiene y nada lo usa; abrirlo arrastra reembolsos y
+  logística.
+- **La resolución de disputas.** Resolver y reembolsar son dos pasos por decisión ya tomada; este PT no
+  los une.
+- **Integración con transportistas.** Transportista y guía se capturan como texto; no se consulta ninguna
+  API de tracking.
+- **Notificaciones por correo.** El aviso in-app entra; el correo no.
+- **La opción C.** Exige un modelo de saldo (negativo o reserva) que no existe.
+- **El retiro en sí.** Ya está implementado y probado real (PT-069…072); este PT sólo hace que el dinero
+  **llegue** a ser retirable por el camino verdadero.
+
+---
+
+## Confianza
+
+- Architecture Confidence: **90 %** — el modelo (`Shipment`, `Order`, `sellerSettledAt`,
+  `releaseSettlement`) ya existe; faltan autorización, transición e interfaz.
+- Implementation Confidence: **70 %**, y lo que falta **no es técnico**: es la decisión A/B/C. Con ella
+  tomada, **90 %**.
+
+**Esto es una pregunta, no una suposición.** Si el ACK llega sin elegir, asumo **B con 72 h**, lo dejo
+escrito en `PLAN_ACTUAL.md` y se puede revocar.
