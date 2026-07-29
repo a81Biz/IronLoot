@@ -51,3 +51,30 @@
 - **No compiten en el algoritmo:** `resume PTSA`, PT-141.B (`[START FOUNDATION]`), los once VoBo
   pendientes, PT-035 T-035.12, y los dos bloqueos externos (TD-001, TD-002).
 - **Estado:** esperando revision humana. FPGE no promueve nada por si mismo.
+
+## 2026-07-29 — Run FPGE-003
+
+- **Trigger:** `[START FPGE]` tras el delta sync S-003 y el cierre de los once PT.
+- **Origen PTSA:** S-003 (2026-07-29, delta sync)
+- **Health al momento:** 88.9 / Clase B / Risk 100 / Confidence 87.0
+- **Compuerta de frescura: CERRADA.** `commits_since_audit = 0`. **El orden de esta emision si es
+  fiable** — es la diferencia entera con FPGE-002, que ordenaba sobre scores que no habian visto once
+  PT ni 91 commits.
+- **Items emitidos:** 15 (R-008..R-022, todos PROPUESTO). Cuatro nuevos —R-019..R-022— desde los
+  hallazgos H-021, H-022, H-024 y H-023.
+- **Top por impacto:** R-019 (+4.5 real) · R-010 (+4.5 real) · R-009 (+4.5 evitado)
+- **Top quick wins:** R-009 (81.00) · R-019 (60.75) · R-008 (40.50)
+- **Cambio de metodo, declarado:** el `+0.5` de urgencia deja de aplicarse «por dimension STALE»
+  —ya no hay staleness— y pasa a aplicarse **por regresion medida**: D2 (100->80) y D4 (100->94) lo
+  llevan; D1 y D3, estables, no. Esto **corrige una incoherencia de FPGE-002**, donde el bonus se
+  aplico a algunos items de D2 y no a otros; la urgencia es de la dimension, no del item. Por eso
+  varios items sin cambio alguno suben o bajan de puntuacion.
+- **Prediccion fallida, anotada:** al cerrar S-003 dije que H-021 «tiene todos los numeros para
+  desbancar a R-009». No lo hace: 60.75 contra 81.00. H-021 tiene probabilidad 3, no 4 (solo falla
+  desde el contenedor), y R-009 es D1 con multiplicador 1.5.
+- **Lo que el algoritmo no modela, dicho aparte:** R-020 sale 6.º y **desbloquea la medicion de D1 y
+  D5**; la formula puntua penalizacion retirada, no «sin esto la proxima auditoria vuelve a ser
+  parcial». Y R-019 + R-020 son los mismos dos ficheros: si se aprueba uno, aprobar los dos.
+- **Bloque desaparecido:** los once VoBo pendientes de FPGE-002 se cerraron hoy (nueve CLOSED con
+  validacion humana, dos DONE). Era el mayor bloque de aquella emision.
+- **Estado:** esperando revision humana. FPGE no promueve nada por si mismo.
