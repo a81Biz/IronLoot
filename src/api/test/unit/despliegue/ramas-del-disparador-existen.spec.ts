@@ -87,7 +87,22 @@ export function esPatron(rama: string): boolean {
  * exactamente lo que PT-129 hizo con su parche y costo dos repeticiones.
  */
 export function ramasDeCondiciones(yml: string): string[] {
-  const encontradas = [...yml.matchAll(/refs\/heads\/([A-Za-z0-9._\-/]+)/g)].map((m) => m[1]);
+  // Los comentarios se descartan. Esta guarda **se acuso a si misma** en cuanto se escribio: el
+  // comentario que explica el defecto en `ci.yml` cita `refs/heads/prod` para contar que estaba
+  // mal, y la funcion lo leyo como una condicion viva. Es la septima vez en esta tanda que una
+  // guarda de este repositorio caza algo del agente que la escribe.
+  //
+  // Y no es un detalle cosmetico: sin esto, documentar por que una rama se retiro haria fallar la
+  // guarda, de modo que la forma de tenerla en verde seria **no explicar nada**. Una guarda que
+  // penaliza escribir la razon acaba produciendo ficheros sin razones.
+  const sinComentarios = yml
+    .split('\n')
+    .filter((l) => !/^\s*#/.test(l))
+    .join('\n');
+
+  const encontradas = [...sinComentarios.matchAll(/refs\/heads\/([A-Za-z0-9._\-/]+)/g)].map(
+    (m) => m[1],
+  );
   return [...new Set(encontradas)];
 }
 
@@ -256,6 +271,17 @@ describe('Las ramas del disparador de cada workflow existen (PT-136)', () => {
     it('C9: una condicion `if:` sobre `master` no se acusa', () => {
       expect(ramasDeCondiciones("if: github.ref == 'refs/heads/master'")).toEqual(['master']);
       expect(existe('master', conocidas)).toBe(true);
+    });
+
+    it('C11: un comentario que CITA una rama no cuenta como condicion', () => {
+      // Sin este caso, explicar por que una rama se retiro haria fallar la guarda: la unica forma
+      // de tenerla en verde seria no documentar nada.
+      const comentado = [
+        "  # antes decia: if: github.ref == 'refs/heads/prod'",
+        "    if: github.ref == 'refs/heads/master'",
+      ].join('\n');
+
+      expect(ramasDeCondiciones(comentado)).toEqual(['master']);
     });
 
     it('C10: un yml sin condiciones de rama no inventa ninguna', () => {
