@@ -2513,3 +2513,22 @@ Queda escrita la regla que lo evita: **una observacion no es un pendiente**. Si 
 alcance y un final reconocible, va a la nota que le corresponde y no a la lista de trabajo. Inflar la
 lista con notas es lo que hacia parecer que nada se cerraba — el mismo sintoma que abrio PT-140, por
 una causa distinta.
+
+## PT-166 — BUG: la suite volvio a no caber, y `maxWorkers` ya no bastaba
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: master (cambio de una linea en docker-compose, sin rama propia)
+Objective: que `npx jest` sin flags siga pasando, que es lo que PT-159 dejo funcionando.
+Root cause: PT-159 fijo `maxWorkers: 1` y con eso bastaba para 102 suites. Hoy son **107** —la tanda
+  añadio guardas— y con un solo proceso el heap acumula a lo largo de todas. El default de Node en un
+  contenedor de 1 GB (~512 MB) se queda corto: `JavaScript heap out of memory` y `Aborted (core
+  dumped)`.
+  **Detectado al verificar la documentacion**, no por una prueba: la suite venia pasando esta manana
+  y dejo de hacerlo al crecer. No hay nada que avise de que se acerca el techo.
+Solution: limite del contenedor a 2 GB y `NODE_OPTIONS=--max-old-space-size=1536` en el servicio.
+  Medido, no supuesto: `workerIdleMemoryLimit` se probo con 1 y con 2 workers y **NO sirve** — emite
+  un aviso de validacion y tumba seis suites. La palanca era el techo de heap, no el reciclado.
+Modified files: docker-compose.yml
+Delta: no estaba planificado. Es una regresion de PT-159 causada por el crecimiento de la propia
+  tanda, y deja el mismo sintoma que PT-159 vino a quitar: un fallo aparatoso sin que nada este roto,
+  que enseña a desconfiar de la suite.

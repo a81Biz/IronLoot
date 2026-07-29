@@ -86,6 +86,19 @@ services:
       - "${API_PORT:-3000}:3000"
     environment:
       - NODE_ENV=development
+      # PT-166 — Techo de heap para que `npx jest` SIN FLAGS pase la suite entera.
+      #
+      # PT-159 fijo `maxWorkers: 1` y con eso bastaba: 102 suites cabian. Hoy son 107 y con un solo
+      # proceso el heap acumula a lo largo de todas, asi que el default de Node en un contenedor de
+      # 1 GB (~512 MB) se queda corto y el proceso muere con `JavaScript heap out of memory`.
+      #
+      # No es un defecto del codigo. Pero deja el mismo sintoma que PT-159 vino a quitar —un
+      # «Aborted (core dumped)» sin que nada este roto— y quien lo vea aprende a desconfiar de la
+      # suite. Se sube el limite del contenedor a 2 GB y se le da a Node 1.5 GB de heap.
+      #
+      # `workerIdleMemoryLimit` se probo y NO sirve: emite un aviso de validacion y tumba seis
+      # suites. La palanca era el techo, no el reciclado.
+      - NODE_OPTIONS=--max-old-space-size=1536
       - DATABASE_URL=postgresql://${DB_USER:-ironloot}:${DB_PASSWORD:-ironloot_dev}@db:5432/${DB_NAME:-ironloot_db}
       - REDIS_URL=redis://redis:6379
       - LOG_LEVEL=${LOG_LEVEL:-debug}
@@ -141,7 +154,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 2G
     restart: unless-stopped
 
   # ===========================================
