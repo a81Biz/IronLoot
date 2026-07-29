@@ -510,6 +510,30 @@ times.
 **Enforced by:** `limpieza-de-tests-acotada.spec.ts`, with six control cases. It excludes itself: its
 control cases must contain the forbidden pattern to prove it can detect it.
 
+### RULE-24: Reading a balance, computing on it and writing an absolute requires locking the row
+**What:** every money-moving method reads the wallet with `SELECT ... FOR UPDATE` inside its
+transaction. When an operation touches two wallets, it locks them in a **fixed order** (ascending
+`userId`).
+**Why:** seven `WalletService` methods read, computed in memory and wrote an absolute. Six concurrent
+deposits of 100 left the balance at **100** — five of six lost — and every caller got a 200 (PT-146).
+The balance is not the worst part: **the losers' ledger entries were written**, each with a
+`balanceAfter` that did not match the row. The accounting contradicted itself by 500 MXN and nothing
+raised an error. `Payment.reference @unique` does not protect here: it prevents crediting *the same*
+payment twice, not two different payments arriving at once — a webhook and the cron's guaranteed path,
+for instance.
+**Why not `increment`:** `data: { balance: { increment } }` would leave the balance right and **the
+ledger entry wrong**, because `balanceBefore` comes from the stale read. Trading a wrong balance for
+wrong accounting is not a fix — the ledger is the audit record, and it is what gets read when someone
+disputes a charge.
+**Correct:** `bloquearMonedero(tx, userId)`; `bloquearDosMonederos(tx, a, b)` when two are involved.
+**Incorrect:** `tx.wallet.findUnique(...)` followed by arithmetic and an absolute write. Also
+incorrect: locking two wallets in call order — that is a deadlock waiting to happen, and a deadlock
+does not show up in development, it shows up in production as hung requests.
+**Enforced by:** `saldo-concurrente.e2e-spec.ts` — the concurrent burst, the ledger-equals-balance
+invariant, the crossed-capture deadlock case, and **BLQ-02**, which checks that two *different*
+wallets do not wait on each other. That last one matters: a global lock would also make the burst
+pass, and would be the expensive cure.
+
 ---
 
 ## 5. Files Requiring Extra Care Before Modification

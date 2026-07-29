@@ -15,6 +15,8 @@ describe('WalletService.releaseSettlement (PT-071)', () => {
 
   beforeEach(() => {
     tx = {
+      // PT-146 — `bloquearMonedero()` hace `SELECT ... FOR UPDATE` y luego relee con Prisma.
+      $queryRaw: jest.fn().mockResolvedValue([{ id: 'w-1' }]),
       wallet: { findUnique: jest.fn(), update: jest.fn() },
       ledger: { create: jest.fn() },
     };

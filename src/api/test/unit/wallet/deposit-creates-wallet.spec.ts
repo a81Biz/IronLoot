@@ -40,6 +40,7 @@ describe('WalletService.deposit — crea el monedero si no existe (PT-087)', () 
     ledgerCreate = jest.fn().mockResolvedValue({ id: 'l-1' });
 
     const tx = {
+      $queryRaw: jest.fn().mockResolvedValue([{ id: 'w-1' }]),
       wallet: { findUnique, findUniqueOrThrow, update },
       ledger: { create: ledgerCreate },
     };
@@ -62,6 +63,7 @@ describe('WalletService.deposit — crea el monedero si no existe (PT-087)', () 
   });
 
   it('W-01: sin monedero previo, el depósito lo crea y acredita', async () => {
+    findUnique.mockResolvedValue(wallet());
     findUniqueOrThrow.mockResolvedValue(wallet());
 
     const r = await service.deposit('u-1', 321.5, 'DEP-u-1-1', 'DEPOSIT');
@@ -79,6 +81,7 @@ describe('WalletService.deposit — crea el monedero si no existe (PT-087)', () 
   });
 
   it('W-02: con monedero existente NO se crea otro', async () => {
+    findUnique.mockResolvedValue(wallet({ balance: '100' }));
     findUniqueOrThrow.mockResolvedValue(wallet({ balance: '100' }));
 
     await service.deposit('u-1', 50, 'DEP-u-1-2', 'DEPOSIT');
@@ -89,6 +92,7 @@ describe('WalletService.deposit — crea el monedero si no existe (PT-087)', () 
   });
 
   it('W-03: el asiento parte del saldo real, no de cero', async () => {
+    findUnique.mockResolvedValue(wallet({ balance: '100' }));
     findUniqueOrThrow.mockResolvedValue(wallet({ balance: '100' }));
 
     await service.deposit('u-1', 50, 'DEP-u-1-3', 'DEPOSIT');

@@ -46,7 +46,25 @@ describe('El detector de catch mudos (PT-121)', () => {
 
   // ── La comparacion contra la linea base ────────────────────────────────
   it('CM-07: lo que esta en la base NO rompe: es una decision declarada', () => {
-    const r = comparar([{ fichero: 'a.ts', linea: 10 }], ['a.ts:10']);
+    const r = comparar([{ fichero: 'a.ts', linea: 10, huella: 'h-a' }], ['a.ts:10']);
+
+    expect(r.falla).toBe(false);
+  });
+
+  it('CM-07b: un silencio DESPLAZADO no cuenta como nuevo (F-142-A)', () => {
+    // La linea base se indexaba por `fichero:linea`, y eso envejece como una cita del TRD: en una
+    // sola sesion, el mismo `catch { // Fall through to ENV }` paso por las lineas 211, 223 y 234 y
+    // puso el job en rojo dos veces sin que hubiera aparecido ningun silencio. Ahora se identifica
+    // por su huella, que se mueve con el fichero sin cambiar.
+    const r = comparar([{ fichero: 'a.ts', linea: 999, huella: 'h-a' }], ['a.ts::h-a']);
+
+    expect(r.falla).toBe(false);
+  });
+
+  it('CM-07c: la forma antigua `fichero:linea` sigue valiendo', () => {
+    // Una linea base a medio migrar tiene que seguir sirviendo: si no, el arreglo obligaria a
+    // regenerarla entera de golpe, y regenerar una linea base a ciegas es como no tenerla.
+    const r = comparar([{ fichero: 'a.ts', linea: 10, huella: 'h-a' }], ['a.ts:10']);
 
     expect(r.falla).toBe(false);
   });
@@ -54,19 +72,19 @@ describe('El detector de catch mudos (PT-121)', () => {
   it('CM-08: uno nuevo SI rompe, y se nombra', () => {
     const r = comparar(
       [
-        { fichero: 'a.ts', linea: 10 },
-        { fichero: 'b.ts', linea: 4 },
+        { fichero: 'a.ts', linea: 10, huella: 'h-a' },
+        { fichero: 'b.ts', linea: 4, huella: 'h-b' },
       ],
       ['a.ts:10'],
     );
 
     expect(r.falla).toBe(true);
-    expect(r.nuevos).toEqual([{ fichero: 'b.ts', linea: 4 }]);
+    expect(r.nuevos).toEqual([{ fichero: 'b.ts', linea: 4, huella: 'h-b' }]);
   });
 
   it('CM-09: sin linea base, todo es nuevo', () => {
     // Deliberado: si la ausencia de base dejara pasar, bastaria con borrar el fichero.
-    const r = comparar([{ fichero: 'a.ts', linea: 1 }], []);
+    const r = comparar([{ fichero: 'a.ts', linea: 1, huella: 'h-a' }], []);
 
     expect(r.falla).toBe(true);
   });

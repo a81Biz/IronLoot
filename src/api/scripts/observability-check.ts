@@ -38,6 +38,33 @@ import { join } from 'path';
 export interface CatchMudo {
   fichero: string;
   linea: number;
+  /**
+   * Firma estable del `catch`, para identificarlo sin depender de en que linea este.
+   *
+   * F-142-A — La linea base se indexaba por `fichero:linea`, y eso envejece exactamente igual que
+   * una cita del TRD (H-016): **cualquier edicion por encima de un silencio declarado lo desplaza y
+   * lo hace parecer nuevo**. En una sola sesion, el mismo `catch { // Fall through to ENV }` de
+   * `system-config.service.ts` paso por las lineas 211, 223 y 234, y puso el job en rojo dos veces
+   * sin que hubiera aparecido ningun silencio.
+   *
+   * Mover el numero cada vez es mantenimiento manual invisible, y acaba haciendo que la linea base
+   * no signifique nada: quien la vea roja aprendera a mover el numero en vez de mirar.
+   *
+   * La huella es el contenido del bloque normalizado —incluidos los comentarios, que son justo lo
+   * que distingue un silencio de otro—. Se desplaza con el fichero sin cambiar.
+   */
+  huella: string;
+}
+
+/** Identificador estable de un silencio, para la linea base. */
+export function clave(c: Pick<CatchMudo, 'fichero' | 'huella'>): string {
+  return `${c.fichero}::${c.huella}`;
+}
+
+/** Normaliza el cuerpo de un `catch` a una linea legible y corta. */
+export function huellaDe(cuerpo: string): string {
+  const normalizado = cuerpo.replace(/\s+/g, ' ').trim();
+  return normalizado.length > 70 ? `${normalizado.slice(0, 70)}...` : normalizado || '(vacio)';
 }
 
 /** Ambitos barridos. El JavaScript de navegador entra: es donde vivia F-34. */
@@ -69,7 +96,11 @@ export function buscarCatchMudos(texto: string, fichero: string): CatchMudo[] {
   while ((m = CATCH.exec(texto)) !== null) {
     const sinComentarios = m[1].replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '').trim();
     if (!DEJA_RASTRO.test(sinComentarios)) {
-      out.push({ fichero, linea: texto.slice(0, m.index).split('\n').length });
+      out.push({
+        fichero,
+        linea: texto.slice(0, m.index).split('\n').length,
+        huella: huellaDe(m[1]),
+      });
     }
   }
   return out;
@@ -103,7 +134,11 @@ export interface Comparacion {
 /** Compara contra la linea base. Solo lo NUEVO rompe: lo viejo esta declarado. */
 export function comparar(observados: CatchMudo[], base: string[]): Comparacion {
   const enBase = new Set(base);
-  const nuevos = observados.filter((c) => !enBase.has(`${c.fichero}:${c.linea}`));
+  // Se acepta la huella (estable) **y** la forma antigua `fichero:linea`, para que una linea base
+  // a medio migrar siga valiendo. Lo nuevo se declara con huella; lo viejo deja de romperse solo.
+  const nuevos = observados.filter(
+    (c) => !enBase.has(clave(c)) && !enBase.has(`${c.fichero}:${c.linea}`),
+  );
   return { falla: nuevos.length > 0, nuevos, total: observados.length, base: base.length };
 }
 
@@ -154,7 +189,9 @@ function main(): void {
   console.log(`  silent_failure_count = ${c.total}   (linea base: ${c.base})`);
   if (c.nuevos.length) {
     console.log('\n  NUEVOS catch que no registran ni relanzan:');
-    for (const n of c.nuevos) console.log(`    ${n.fichero}:${n.linea}`);
+    // Se imprime la CLAVE, no la linea: es lo que hay que copiar a la linea base si el silencio se
+    // declara. Imprimir la linea invitaba a apuntar algo que caduca a la siguiente edicion.
+    for (const n of c.nuevos) console.log(`    ${clave(n)}    (linea ${n.linea})`);
   }
 
   const t = trazaCompleta();

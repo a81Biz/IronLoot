@@ -196,24 +196,35 @@ export class SystemConfigService implements OnModuleInit {
    * sola instancia, y la base tiene historia — las claves ya existen, asi que la rama del `create`
    * no llega a ejecutarse nunca.
    *
-   * `update: {}` es deliberado: **un arranque no pisa la configuracion que otro dejo**. Sembrar es
-   * rellenar lo que falta, no imponer los valores del entorno sobre lo ya configurado.
+   * ### Y `upsert` NO bastaba — segunda parte, cazada por CI
+   *
+   * PT-142 dejo aqui un `upsert` y lo dio por bueno porque su prueba concurrente pasaba en local.
+   * Pasaba **por la misma suerte contra la que ese mismo PT advertia por escrito**: la base de
+   * desarrollo ya tiene las claves sembradas, asi que la rama que crea no llega a ejecutarse y no
+   * hay carrera que reproducir.
+   *
+   * Contra una base vacia y con varios workers —o sea, en CI— `upsert` volvio a lanzar:
+   *
+   *     Invalid `upsert()` invocation — Unique constraint failed on the fields: (`key`)
+   *
+   * Prisma no siempre lo compila a `INSERT ... ON CONFLICT`. Lo unico que si es atomico es
+   * `createMany` con `skipDuplicates`, que emite `INSERT ... ON CONFLICT DO NOTHING` y **no lanza**.
+   * Es lo que PT-142 acabo usando para el monedero; este sitio se quedo atras.
+   *
+   * `skipDuplicates` da ademas la semantica que se quiere: **un arranque no pisa la configuracion
+   * que otro dejo**. Sembrar es rellenar lo que falta, no imponer los valores del entorno sobre lo
+   * ya configurado.
    */
   async seed(): Promise<void> {
-    for (const entry of SEEDED_KEYS) {
-      const envValue = process.env[entry.envKey];
-      await (this.prisma.systemConfig as any).upsert({
-        where: { key: entry.key },
-        create: {
-          key: entry.key,
-          value: envValue ?? entry.defaultValue ?? '',
-          isSecret: entry.isSecret,
-          category: entry.category,
-          description: entry.description,
-        },
-        update: {},
-      });
-    }
+    const filas = SEEDED_KEYS.map((entry) => ({
+      key: entry.key,
+      value: process.env[entry.envKey] ?? entry.defaultValue ?? '',
+      isSecret: entry.isSecret,
+      category: entry.category,
+      description: entry.description,
+    }));
+
+    await (this.prisma.systemConfig as any).createMany({ data: filas, skipDuplicates: true });
   }
 
   async get(key: string): Promise<string | undefined> {

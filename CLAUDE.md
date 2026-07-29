@@ -219,12 +219,17 @@ mientras cargaba su panel podía ver fallar **la acreditación**. Dos cosas que 
 son evidentes: **`upsert` dentro de una transacción interactiva no es atómico** —Prisma hace `SELECT`
 y luego `INSERT`— y fuera tampoco lo garantiza. → **RULE-22**
 
-> **Pendiente y grave: PT-146.** Cerrada esa carrera aparece la de debajo. Los cinco caminos que
-> mueven saldo hacen *leer-modificar-escribir*: leen `balance`, suman y escriben un **absoluto**. Dos
-> acreditaciones simultáneas responden las dos con éxito y **una se pierde en silencio** —medido: 250
-> y 100 donde tocaban 350—, dejando su asiento en `ledger` con un `balanceAfter` que no cuadra con el
-> saldo. `Payment.reference @unique` no protege: impide acreditar **el mismo** pago dos veces, no dos
-> pagos distintos a la vez. **No tocar los caminos de dinero sin leer PT-146 antes.**
+**Y todo camino que mueve saldo lee bloqueando la fila** (`SELECT ... FOR UPDATE`, PT-146). Los siete
+—depósito, retiro, retención, liberación, reintegro, liquidación y captura— hacían
+*leer-modificar-escribir* sin bloqueo: seis acreditaciones simultáneas dejaban el saldo en **100** en
+vez de 600, **con los seis asientos escritos** y ninguno cuadrando. La contabilidad se contradecía a
+sí misma y nadie recibía un error. `Payment.reference @unique` no protege de esto: impide acreditar
+**el mismo** pago dos veces, no dos pagos distintos a la vez.
+
+`increment` no habría servido —dejaría el saldo bien y el **asiento** mal, porque `balanceBefore` sale
+de la lectura previa—. Y cuando la operación toca dos monederos (`captureHeldFunds`), se bloquean en
+**orden fijo**: un interbloqueo no aparece en desarrollo, aparece en producción como peticiones
+colgadas. → **RULE-24**
 
 ### Frontend Structure (`src/apps/base`, `src/apps/client`)
 
