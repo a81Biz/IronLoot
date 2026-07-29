@@ -1,6 +1,7 @@
 import { Injectable, Logger, Module, OnModuleDestroy } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import Redis from 'ioredis';
+import { redisUrlObligatoria } from '../config/redis-url';
 
 /**
  * PT-128 (PTSA H-015) — El cliente Redis del limitador de peticiones, con ciclo de vida.
@@ -27,11 +28,10 @@ export class ThrottlerRedisService implements OnModuleDestroy {
   readonly client: Redis;
 
   constructor(config: ConfigService) {
-    this.client = new Redis({
-      host: config.get<string>('REDIS_HOST', 'localhost'),
-      port: config.get<number>('REDIS_PORT', 6379),
-      password: config.get<string>('REDIS_PASSWORD') || undefined,
-    });
+    // PT-137 — Mismo defecto que las colas: reserva a `localhost`. Aqui el precio de fallar en
+    // silencio es mayor, porque este cliente sostiene el rate limiting de los endpoints de
+    // autenticacion: apuntando a ninguna parte, la defensa desaparece sin que nada lo diga.
+    this.client = new Redis(redisUrlObligatoria(config.get<string>('REDIS_URL')));
   }
 
   async onModuleDestroy(): Promise<void> {

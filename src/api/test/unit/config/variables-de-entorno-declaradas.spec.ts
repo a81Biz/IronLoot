@@ -58,10 +58,25 @@ function ficherosTs(dir: string): string[] {
   return salida;
 }
 
-/** Las variables que un fichero lee, por cualquiera de las dos vias que usa el API. */
+/**
+ * Las variables que un fichero lee, por cualquiera de las dos vias que usa el API.
+ *
+ * **Los comentarios se descartan primero.** Esta guarda se acuso a si misma en cuanto se escribio:
+ * `redis-url.ts` explica el defecto citando `config.get('REDIS_HOST', 'localhost')` —para contar que
+ * esa era la forma equivocada— y la guarda lo leyo como una lectura viva.
+ *
+ * Es la octava vez en esta tanda que le pasa a una guarda de este repositorio, y la leccion es
+ * siempre la misma: **si documentar por que algo se retiro hace fallar la guarda, la forma de
+ * tenerla en verde es no explicar nada.** Una guarda que penaliza escribir la razon acaba
+ * produciendo ficheros sin razones.
+ */
 export function variablesLeidas(codigo: string): string[] {
-  const directas = [...codigo.matchAll(/process\.env\.([A-Z][A-Z0-9_]{2,})/g)].map((m) => m[1]);
-  const porConfig = [...codigo.matchAll(/\.get(?:<[^>]*>)?\('([A-Z][A-Z0-9_]{2,})'/g)].map(
+  const sinComentarios = codigo.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*/g, '');
+
+  const directas = [...sinComentarios.matchAll(/process\.env\.([A-Z][A-Z0-9_]{2,})/g)].map(
+    (m) => m[1],
+  );
+  const porConfig = [...sinComentarios.matchAll(/\.get(?:<[^>]*>)?\('([A-Z][A-Z0-9_]{2,})'/g)].map(
     (m) => m[1],
   );
   return [...new Set([...directas, ...porConfig])];
@@ -133,6 +148,18 @@ describe('Toda variable que el API lee esta declarada — RULE-17 (PT-137)', () 
       const decl = new Set(variablesDeclaradas('OTRA=1'));
 
       expect(leidas.filter((v) => !decl.has(v))).toEqual(['NO_DECLARADA_JAMAS']);
+    });
+
+    it('C5b: una variable citada en un COMENTARIO no cuenta como lectura', () => {
+      // Sin este caso, explicar por que `REDIS_HOST` se retiro haria fallar la guarda, y la unica
+      // forma de tenerla en verde seria borrar la explicacion.
+      const conComentario = [
+        "// antes: config.get('REDIS_HOST', 'localhost') — esa era la forma equivocada",
+        '/* y process.env.REDIS_PORT tampoco se usa ya */',
+        "const url = config.get('REDIS_URL');",
+      ].join('\n');
+
+      expect(variablesLeidas(conComentario)).toEqual(['REDIS_URL']);
     });
 
     it('C6: un texto sin variables no inventa ninguna', () => {

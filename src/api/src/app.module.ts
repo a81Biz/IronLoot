@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
 import { APP_GUARD } from '@nestjs/core';
+import { conexionRedis, redisUrlObligatoria } from './common/config/redis-url';
 
 // Configuration
 import configuration from './common/config/configuration';
@@ -56,12 +57,10 @@ import { BullModule } from '@nestjs/bullmq';
     // BullMQ — shared Redis connection (PT-038)
     BullModule.forRootAsync({
       inject: [ConfigService],
+      // PT-137 — Esto leia `REDIS_HOST`/`REDIS_PORT` con reserva `localhost`, mientras el compose
+      // declaraba solo `REDIS_URL`: las colas funcionaban por un `src/api/.env` fuera de git.
       useFactory: (config: ConfigService) => ({
-        connection: {
-          host: config.get<string>('REDIS_HOST', 'localhost'),
-          port: config.get<number>('REDIS_PORT', 6379),
-          password: config.get<string>('REDIS_PASSWORD') || undefined,
-        },
+        connection: conexionRedis(redisUrlObligatoria(config.get<string>('REDIS_URL'))),
       }),
     }),
 
