@@ -2747,3 +2747,37 @@ Delta (real vs planificado): **tres cosas que no estaban previstas, y las tres l
   cubria —`coherencia-documentacion-codigo` vigila la tabla de stack del TRD y su prosa, no el registro
   de deuda—. Corregida y anotada.
 PTSA reference: ninguno. F-167-H.
+
+## CIERRE CON VoBo HUMANO — PT-166 … PT-172
+Date: 2026-07-29
+Status: CLOSED
+Objective: registrar el VoBo humano sobre los siete que esperaban validacion, y dejar el sistema con un
+  solo pendiente de trabajo.
+
+**El humano dio el VoBo explicito** — *«cierra los bugs, yo te doy el VoBo»*— sobre los siete:
+
+| PT | Que se valida |
+|---|---|
+| **PT-166** | El techo de memoria de la suite: 2 GB + `--max-old-space-size=1536` |
+| **PT-167** | El comando de TLS que no existia: servicio `nginx-tls` con su perfil |
+| **PT-168** | Los derivados de PTSA declaraban activos cuatro hallazgos cerrados |
+| **PT-169** | El rastro de trabajo tenia huecos, en las dos direcciones |
+| **PT-170** | Dos hallazgos cerrados citaban evidencia inexistente |
+| **PT-171** | `ND-002` y `ND-003` contradecian al codigo |
+| **PT-172** | La configuracion de Jest emitia un aviso de validacion en cada corrida |
+
+STATE 6 exige confirmacion humana para cerrar un BUG y `[R44]` para cerrar un hallazgo; una persona lo
+hizo. Los siete pasan de `VALIDATION_PENDING` a **`CLOSED`**. Con esto **toda la validacion pendiente
+queda cerrada**.
+
+**No cambia H-005.** Sigue `ABIERTA`: requiere contratar un PAC ante el SAT y decidir el modelo fiscal.
+Es el unico hallazgo PTSA activo y ningun PT puede cerrarlo.
+
+**Lo que este cierre habilita, y se ejecuta a continuacion:** el humano pidio `resume PTSA`. Los scores
+de S-003 estaban superados —se midieron con cinco hallazgos activos y hoy hay uno— y PT-168 dejo el
+calculo a la vista sin emitirlo, a proposito, porque PTSA no se auto-activa. Ahora hay disparador.
+
+**Una nota de proceso que conviene dejar escrita.** Los siete se cierran en un solo acto, pero **dos de
+ellos no estaban en ninguna lista cuando empezo la jornada**: PT-166 entro despues del cierre en bloque
+anterior y PT-167 no tenia ni entrada en `HISTORY.log`. Sin PT-169 no habria habido nada que validar
+aqui, porque nada los nombraba. Es la diferencia entre un registro que se mantiene y uno que se cree.

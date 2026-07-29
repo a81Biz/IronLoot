@@ -1,31 +1,21 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-29 (PT-169)
+**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-166…PT-172)
 
 ---
 
-## Esperando validación humana
+## Cero trabajo FDGE pendiente
 
-`[R44]` y STATE 6 prohíben al agente cerrar bugs. **Estos esperan tu palabra, no trabajo:**
+**Los siete que esperaban validación se cerraron con VoBo humano el 2026-07-29**: PT-166, PT-167,
+PT-168, PT-169, PT-170, PT-171 y PT-172. Detalle y evidencia en `HISTORY.log` § «CIERRE CON VoBo HUMANO
+— PT-166 … PT-172», que es append-only y manda para lo terminado.
 
-| PT | Qué es | Evidencia |
-|---|---|---|
-| **PT-166** | El techo de memoria de la suite: 2 GB + `--max-old-space-size=1536`. `npx jest` sin flags vuelve a pasar | `evidence/PT-166/` |
-| **PT-167** | El comando de TLS que no existía: se declara el servicio `nginx-tls` con su perfil | `evidence/PT-167/` |
-| **PT-168** | Los derivados de PTSA declaraban activos cuatro hallazgos cerrados | `evidence/PT-168/` |
-| **PT-169** | El rastro de trabajo tenía huecos: PT-167 sin entrada, PT-166 sin evidencia | `evidence/PT-169/` |
-| **PT-170** | Dos hallazgos citaban carpetas de evidencia inexistentes | `evidence/PT-170/` |
-| **PT-171** | `ND-002` y `ND-003` contradecían al código, y a un hallazgo cerrado | `evidence/PT-171/` |
-| **PT-172** | La clave `_comentario_maxWorkers` producía dos avisos de Jest por corrida | `evidence/PT-172/` |
+**Dos de ellos no estaban en ninguna lista cuando empezó la jornada** —PT-166 entró después del cierre
+en bloque anterior y PT-167 no tenía ni entrada en `HISTORY.log`— y ése fue el defecto F-167-F. Sin
+PT-169 no habría habido nada que validar, porque nada los nombraba. Lo vigila ahora
+`rastro-de-trabajo-completo.spec.ts` (**RULE-34**).
 
-Las filas de PT-171 y PT-172 **se añadieron al cerrar cada uno, con su evidencia ya en disco**. No se
-citaron por adelantado: una cita a evidencia que todavía no existe es exactamente lo que PT-170 vino a
-quitar, y la guarda de RULE-31 la cazó — en esta misma tabla.
-
-**PT-166 y PT-167 estuvieron fuera de esta lista, y ése fue el defecto F-167-F.** El cierre en bloque
-con VoBo enumeraba PT-148…165; PT-166 entró después y PT-167 no tenía ni entrada, mientras este fichero
-afirmaba *«Nada más está pendiente»*. Lo vigila ahora `rastro-de-trabajo-completo.spec.ts`
-(**RULE-34**).
+Lo que queda abajo **no es trabajo del repositorio**: es un tercero y una decisión de negocio.
 
 ---
 

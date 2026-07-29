@@ -11,19 +11,17 @@ ADMIN **13** · BASE **3**. `test:guardas`: **17** suites / **183** pruebas.
 
 ---
 
-## Pendiente: siete validaciones y una decisión de negocio
+## Pendiente: una decisión de negocio, y nada más
 
-### Esperando tu palabra (no trabajo)
+### Cerrado con VoBo humano
 
-`[R44]` y STATE 6 prohíben al agente cerrar bugs. **PT-166, PT-167, PT-168, PT-169, PT-170, PT-171 y
-PT-172** están hechos, cada uno con su evidencia ejecutada en su carpeta bajo
-[`evidence/`](evidence/). La lista, con la ruta de cada uno, manda en
-[`PENDING_TASKS.md`](PENDING_TASKS.md).
+**PT-166 … PT-172 → `CLOSED`** el 2026-07-29, con VoBo explícito del humano. Cada uno con su evidencia
+ejecutada bajo [`evidence/`](evidence/). **Cero trabajo FDGE pendiente.**
 
-> **PT-166 y PT-167 no estaban en ninguna lista, y ése era el defecto.** El cierre en bloque del
-> 2026-07-29 enumeró PT-148…165; PT-166 entró después y PT-167 **no tenía ni entrada en
-> `HISTORY.log`** — sólo su mensaje de commit. Este fichero afirmaba «Nada más está pendiente» y era
-> falso. Lo vigila ahora **RULE-34**.
+> **PT-166 y PT-167 no estaban en ninguna lista, y ése era el defecto.** El cierre en bloque anterior
+> enumeró PT-148…165; PT-166 entró después y PT-167 **no tenía ni entrada en `HISTORY.log`** — sólo su
+> mensaje de commit. Este fichero afirmaba «Nada más está pendiente» y era falso. Sin PT-169 no habría
+> habido nada que validar, porque nada los nombraba. Lo vigila ahora **RULE-34**.
 
 ### Bloqueado por un tercero
 
