@@ -1,6 +1,6 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-29 (VoBo humano sobre los once + delta sync S-003)
+**FDGE V3** · **Última actualización**: 2026-07-29 (tanda FPGE-003 completada: PT-148…PT-162)
 Reconstruido en PT-140 contra el código y contra `HISTORY.log`, y con guarda desde entonces.
 
 > **Por qué se reconstruyó, otra vez.** PT-090 ya lo reconstruyó una vez y F-33 encontró que había
@@ -32,31 +32,33 @@ Reconstruido en PT-140 contra el código y contra `HISTORY.log`, y con guarda de
 
 ## 1. Trabajo pendiente de implementar
 
-| Trabajo | Qué | Estado |
+**La tanda FPGE-003 (PT-148…PT-162) está hecha.** Doce ejecutados, dos bloqueados por decisión
+externa, uno medido y revertido con motivo. Detalle en `HISTORY.log`.
+
+### Esperando una decisión tuya — no es trabajo pendiente, es decisión pendiente
+
+| Qué | Quién decide | Dónde está preparado |
 |---|---|---|
-| **PT-141.B** | `[START FOUNDATION]`. Sus cuatro prerrequisitos están cerrados y el protocolo ya está acotado a lo que debe generar (ADR-049). **Decisión del humano cuándo ejecutarlo** | Desbloqueado |
-| **H-021** | `audit:domain` imprime `cross_coherence_verified = true` con las **cinco** comprobaciones en `(ERR)`, y sale con código 0. Afirma sin haber medido, dentro del instrumento que mide. **ALTA** (S-003) | Abierto |
-| **H-022** | `audit:domain` y `audit:reliability` consultan con `docker exec psql` y no hay `docker` en el contenedor. PT-138 lo corrigió en el tercer script y dejó estos dos. Bloquea medir D1 y D5 (S-003) | Abierto |
-| **H-024** | `audit-scope.yaml` cita cuatro documentos que **archivó PT-141**, y describe mal las migraciones (S-003) | Abierto |
-| **H-023** | `UserResponseDto` publicado con dos esquemas distintos; la librería avisa de que en la próxima mayor será error (S-003) | Abierto |
-| **TD-016** | Nada comprueba vulnerabilidades de la **imagen base**. `audit:check` sólo mira npm. Ahora que las imágenes se construyen en CI (PT-147) es más barato de cerrar | Abierta |
-| **F-136-A** | Documentos que citan evidencia que **no está en el repositorio**: de 162 ficheros de `evidence/`, 83 seguidos. `PENDING_TASKS` llegó a mandar leer `regresion.txt`, ausente | Sin PT |
+| **PT-156** — ¿`/users/:id/ratings` público? Tres alternativas con criterios | Producto | `ENRICHMENT.md` |
+| **H-005 / PT-155** — ¿quién emite la factura? Tres modelos con sus consecuencias técnicas | Negocio + fiscal | `evidence/PT-155/hallazgos.md` |
+| **PT-141.B** — `[START FOUNDATION]`. Ahora con RULE-29 protegiendo ADR-049 | Tú | — |
 
-### Menores, medidos y sin PT asignado
+### Pendiente de hacer, con dueño claro
 
-| Qué | Dónde salió |
+| Qué | Nota |
 |---|---|
-| La guarda del contrato SSR↔API cubre **sólo CLIENT**; faltan ADMIN y BASE | S-002 |
-| La suite QA corre sobre **HTTP**: lo que dependa de origen seguro no queda ejercido | S-002-V |
-| `/api/v1/users/:id/ratings` exige sesión; la reputación es lo que se mira **antes** de registrarse | S-002-V. Decisión humana |
-| `pages-moderation.js` usa `style.display` para su modal — funciona, pero es el patrón contra el que avisa RULE-19 | PT-139 |
-| La imagen del API se lleva dependencias de desarrollo (541 MB) | S-002 |
+| **Triar el inventario de la imagen base** | PT-150 construyó el escáner y la línea base nace **vacía**. La primera corrida en CI producirá el inventario real (2 críticas y 23 altas según el IDE) y hay que triarlo o corregirlo |
+| **Medir D1 y D5 completos** | Exigen base **con historia**. Secuencia: `run-all.sh` → medir **inmediatamente después**, antes de que otro reseteo se la lleve |
+| **Los 304 MB de `node_modules` de producción** | Hallazgo nuevo de PT-161: es ahí donde está el peso, no en las dependencias de desarrollo. Otra investigación |
+| **Activar y ejercer el TLS local** | PT-158 dejó la configuración lista y **nadie la ha ejercido**. Requiere confiar el certificado (acción sobre la máquina) |
+| **`test:guardas` no tiene mecanismo** | Sus patrones pueden dejar de casar en silencio, como pasó al renombrar un fichero en PT-148. Detectado a mano, sin guarda |
+| **RULE-30 sólo mira ADMIN** | BASE y CLIENT no usan `data-accion` hoy; si empiezan, la guarda no avisará de que no los mira |
 
 ### Bloqueado por algo externo — no se intenta
 
 | Trabajo | Bloqueo |
 |---|---|
-| CFDI/PAC (TD-001, **H-005**) | Contratar un PAC certificado ante el SAT, y decidir **quién emite la factura** |
+| CFDI/PAC (TD-001, **H-005**) | Contratar un PAC ante el SAT, y la decisión de PT-155 |
 | Stripe y HeyBanco (TD-002) | Credenciales de ambas pasarelas |
 
 ---

@@ -1,113 +1,87 @@
 # HANDOFF — estado actual
 
-**FDGE V3** · **2026-07-29** · Este fichero se **sobrescribe**: es el estado de ahora, no la
-historia. La historia está en `HISTORY.log`, que es append-only.
+**FDGE V3** · **2026-07-29** · Se **sobrescribe**: es el estado de ahora, no la historia. La historia
+está en `HISTORY.log`, que es append-only.
 
-**Rama**: `master`. Once PT fusionados el 2026-07-28/29 —**PT-136, 137, 138, 139, 140, 141, 142, 143,
-145, 146, 147**— y **los once cerrados el 2026-07-29 con VoBo humano**: los nueve BUG a `CLOSED`, los
-dos REFACTOR a `DONE`.
+**Rama**: `master`, árbol limpio, cero ramas sin fusionar.
+**Sin subir a `origin`**: unos cuantos commits locales. `git push origin master` cuando quieras.
 
-**Cero ramas sin fusionar** (comprobado: `git branch --no-merged master` vacío, 82 ramas locales todas
-ya en master). **`master` va 10 commits por delante de `origin`** — listo para `git push origin master`,
-sin empujar todavía.
+**Pruebas**: **1072** unitarias en verde — API **819** (106 suites) · CORE **134** · CLIENT **103** ·
+ADMIN **13** · BASE **3**. Medidas una a una el 2026-07-29.
 
-**Pruebas**: **1039** unitarias en verde — API **786** (102 suites) · CORE **134** · CLIENT **103** ·
-ADMIN **13** · BASE **3**. Medidas una a una el 2026-07-29, no arrastradas.
+> Y desde PT-159, `npx jest` **sin flags** pasa la suite del API dentro del contenedor. Antes tres
+> suites morían por SIGKILL y el resumen decía «4 failed» sin que nada estuviera roto — que es como
+> se aprende a ignorar los fallos de una suite.
 
-> El total anterior era **944**. Los 95 nuevos son las guardas de esta tanda: RULE-16, RULE-17,
-> RULE-19, RULE-20, RULE-22, RULE-23, RULE-26, RULE-27 y las tres e2e de concurrencia.
-
-**Plataforma**: NestJS **11.1.28** · Express **5.2.1** en los cuatro servicios.
+**Reglas duras**: **28** `RULE-NN`. Las nuevas de hoy: RULE-28 (el alcance de auditoría no cita lo que
+no existe) · RULE-29 (ADR-049 no se deshace sola) · RULE-30 (toda `data-accion` tiene manejador) ·
+RULE-31 (la evidencia citada está en git).
 
 ---
 
-## Estado del sistema
+## La tanda FPGE-003: quince PT, cerrados
 
-| | |
-|---|---|
-| CI | **8 jobs, todos verdes, y se ejecuta.** Hasta PT-136 la tubería **no se había ejecutado nunca** |
-| Imágenes Docker | Las cuatro se construyen **y se arrancan** en CI (PT-147) |
-| Documentación oficial | **`docs-v2/`** (ADR-049). `docs/enterprise-documentation/` queda acotado al contrato de agente |
-| Reglas duras | **24** `RULE-NN`, y una guarda que impide citar una que no exista (RULE-27) |
-| Registros de trabajo | Con tabla de precedencia y guarda (PT-140). Antes: doce sitios, ninguno declarando cuál mandaba |
+Doce ejecutados, dos bloqueados por decisión externa, uno **medido y revertido con motivo**.
 
-## De qué trataba esta tanda
+| Bloque | PT | Qué |
+|---|---|---|
+| Instrumentos | **149 · 153** | `audit:domain` afirmaba `cross_coherence_verified = true` con las cinco comprobaciones en error, y salía con 0. Los dos checkpoints pasan a `PrismaClient` y corren donde vive npm |
+| Guardas | **148** | El contrato SSR↔API cubre los tres sitios. Destapó **tres defectos de la propia guarda**, ninguna ruta rota |
+| Guardas | **154 · 157** | El alcance de auditoría verificado, y ADR-049 con mecanismo |
+| Guardas | **152** | La evidencia citada entra en git: 81 de 189 ficheros estaban fuera |
+| CI | **150** | Escáner de la imagen base. **TD-016 cerrada** |
+| Pequeños | **159 · 160 · 162** | PT-160 no era pequeño: **las tres `data-accion` de ADMIN estaban muertas** |
+| Investigación | **151** | El patrón de H-019 no se repite, **y ahora se sabe por qué** |
+| Medido y revertido | **161** | 3.1 % de ahorro no justifica tocar esa zona |
+| Bloqueados | **155 · 156** | Decisión fiscal y decisión de producto |
 
-La pregunta que la abrió fue *«se han realizado ya varias fases y al parecer siempre quedan cosas por
-hacer y nunca se cierran completo»*. La respuesta resultó ser **estructural, no de disciplina**:
+### Lo que más importa de esta tanda
 
-1. **Un pendiente podía vivir en doce registros y ninguno declaraba cuál mandaba.** De los doce, uno
-   solo tenía guarda. Lo cierra PT-140, que escribió además la tabla de precedencia.
-2. **FPGE no se había vuelto a ejecutar desde S-001.** El bucle `FDGE → PTSA → FPGE → FDGE` estaba
-   roto en su tercer eslabón: nadie decidía qué venía después, así que todo seguía «pendiente».
+**Tres cosas se descubrieron sólo porque algo las miró, no porque nadie sospechara:**
 
-Y por debajo, un patrón que apareció **cuatro veces**:
+1. `audit:domain` **afirmaba haber verificado lo que no miró** — dentro del instrumento que la
+   auditoría usa para medir.
+2. **Las tres acciones de ADMIN estaban muertas.** PT-096 movió el JS «tal cual» y «tal cual» perdió
+   los `onclick` que lo cableaban. PT-139 corrigió dos casos **sin escribir el mecanismo**, y por eso
+   quedaban tres.
+3. `audit-scope.yaml` citaba cuatro documentos que **PT-141 archivó el día anterior** — y al
+   corregirlo apareció una **segunda lista** con las mismas rutas. Sin guarda, habría quedado
+   mintiendo en otro sitio y yo lo habría dado por cerrado.
 
-> **Un mecanismo que no se ejecuta no avisa de nada.**
+**Y dos cosas que rompí yo y detectó el mecanismo**: `test:guardas` apuntando al fichero que renombré
+horas antes, y dos líneas nuevas en `package.json` desplazando citas del TRD — esto último lo cazó la
+guarda de PT-130 en la misma corrida. **H-016 detectado en vivo.**
 
-La tubería que nunca corrió (PT-136) · el job saltado que contaba como éxito (PT-147) · `SIN_DATOS`
-saliendo con código 0 (PT-138) · el job de observabilidad aprobando sin base de datos que medir
-(PT-137). Es ahora RULE-26.
-
-**Lo más grave que se encontró**: seis depósitos simultáneos dejaban el saldo en **100 de 600**, con
-los seis asientos escritos y ninguno cuadrando (PT-146). Se midieron **cero** descuadres
-preexistentes en la base de datos real.
-
-## Auditoría — S-003 (delta sync, 2026-07-29)
+## Auditoría — S-003
 
 ```
-Health  95.5 -> 88.9     Clase A -> B
-Risk      24 -> 100      saturado por CERTEZA, no por gravedad
-Confid. 95.0 -> 87.0     la baja la cobertura, no la evidencia
+Health 88.9  ·  Risk 100 (saturado por certeza, no gravedad)  ·  Confidence 87.0  ·  Clase B
 ```
 
-**Cuatro hallazgos nuevos, y no los trajeron los once PT: los trajo mirar.**
+**H-021, H-022, H-023 y H-024 → `CORREGIDA`.** No `CERRADA`: `[R44]` reserva el cierre a una persona
+que haya visto la evidencia, y que me autorizaras a trabajar en autonomía no cambia quién valida.
 
-| ID | Dim | Sev | Qué |
-|---|:--:|---|---|
-| **H-021** | D2 | ALTA | `audit:domain` imprime `cross_coherence_verified = true` con las **cinco** comprobaciones en `(ERR)`, y sale con código 0 |
-| **H-022** | D2 | MEDIA | Los dos checkpoints de delta sync usan `docker exec psql` y no hay `docker` en el contenedor |
-| **H-024** | D4 | MEDIA | `audit-scope.yaml` cita cuatro documentos que **archivó PT-141**, y describe mal las migraciones |
-| **H-023** | D4 | BAJA | `UserResponseDto` publicado con dos esquemas distintos |
+**H-005 sigue `ABIERTA`** y mantiene D1 en 85. PT-155 documentó las tres opciones; ningún PT la cierra.
 
-**Cobertura declarada PARCIAL**: D2/D3/D4 al 100 %, **D1 al 50 %**, **D5 al 0 %**. La base está casi
-vacía porque un reseteo se llevó la salida real de S-002. Eso es lo que baja Confidence, y declararlo
-es el punto — `[A8]` no admite un score sin cobertura declarada.
+## Lo que queda, en `PENDING_TASKS.md`
 
-**H-014 quedó verificado en la fuente real**: las dos migraciones aplicadas, sin rollback. Ya no se
-sostiene en el testimonio del PT que lo corrigió.
-
-## Qué falta, y por qué no se hizo
-
-| Trabajo | Estado |
-|---|---|
-| **PT-141.B** — `[START FOUNDATION]` | Desbloqueado: los cuatro prerrequisitos cerrados y el protocolo ya acotado a lo que debe generar. **Decisión del humano cuándo ejecutarlo** |
-| **TD-016** — escáner de la imagen base | Abierta. Más barata ahora que las imágenes se construyen en CI |
-| **F-136-A** — evidencia no seguida por git | 79 de 162 ficheros. Documentos que citan lo que no está en el repositorio |
-| **H-005** — quién emite la factura | **Decisión de negocio.** Ningún PT la resuelve |
-| **PT-035** — `T-035.12` | Validación **visual**, no automatizable |
-| **H-021 · H-022 · H-023 · H-024** | Abiertos desde S-003. `[R44]`: el agente no cierra hallazgos |
-| **D1 y D5 completos** | Requieren una base **con historia**. Ver riesgos |
+Tres decisiones tuyas (PT-156, H-005, PT-141.B) y seis pendientes con dueño claro — entre ellos triar
+el inventario del escáner nuevo, y medir D1/D5 completos, que exigen una base con historia.
 
 ## Riesgos vivos
 
-- **La ventana para medir D1 y D5 es estrecha.** `run-all.sh` genera salida real y **trunca la base al
-  empezar**: es lo que se llevó la salida de S-002 y por qué D1 sólo pudo medir 7 de 14 reglas. Hay que
-  medir **justo después** de una corrida por navegador. Y no se medirá bien mientras H-022 siga
-  abierto.
-- **`archive/` es citado por registros históricos** (`PTSA/Evidencias/`, `changes/`). Se archivó en
-  vez de borrarse justamente por eso —la inmutabilidad auditable `[A6]` no permite dejar una
-  evidencia sin fuente—, pero quien siga una cita antigua tiene que saber bajar un directorio. Está
-  dicho en los dos README.
-- **Un `[START FOUNDATION]` descuidado deshace ADR-049.** El protocolo lo advierte en su propio texto
-  y en el README, pero es prosa: **nada mecánico lo impide**.
-- **La suite del API no cabe en el contenedor con los workers por defecto.** Tres suites mueren por
-  SIGKILL (OOM) con `--maxWorkers=2`; con `--runInBand` pasa entera. En CI no ocurre. No es un
-  defecto del código, pero sí una trampa para quien la ejecute en local y lea «4 failed».
+- **Diecinueve PT sin VoBo** (los cuatro de S-003 más los quince de FPGE-003). Es mucha superficie sin
+  confirmar por una persona.
+- **El TLS de PT-158 no lo ha ejercido nadie.** La configuración está escrita y `nginx -t` la valida,
+  pero nadie la ha arrancado. Declarado en su README.
+- **La línea base del escáner nace vacía.** Es correcto —se declara el mecanismo antes de conocer lo
+  que mide— pero significa que hoy **no protege de nada** hasta que se triе la primera corrida.
+- **La ventana de D1/D5 sigue estrecha.** `run-all.sh` genera la salida real y **trunca la base al
+  empezar**. Medir justo después o volver a quedarse sin datos.
 
 ## Siguiente acción recomendada
 
-**Ejecutar FPGE** (`[START FPGE]`). Es el eslabón que llevaba roto desde S-001, y ahora tiene con qué
-trabajar: `HISTORY.log` al día, `PENDING_TASKS.md` con guarda, once PT con evidencia y los hallazgos
-PTSA que quedan abiertos. Sin él, la siguiente sesión vuelve a decidir por intuición qué toca — que
-es exactamente cómo se llegó aquí.
+1. **`git push origin master`**.
+2. **Las tres decisiones** de `PENDING_TASKS.md` § 1 — son lo único que bloquea trabajo real.
+3. **`run-all.sh` + medir D1/D5** inmediatamente después. Es lo que subiría la cobertura de la
+   auditoría del 50 %/0 % actual.

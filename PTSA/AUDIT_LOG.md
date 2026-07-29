@@ -643,3 +643,33 @@ seguir la cita de `audit-scope.yaml`. Se registra sin atenuantes: PTSA audita lo
 tambien cuando FDGE es el trabajo de ayer.
 
 **Estado de la corrida:** CERRADA_CON_HALLAZGOS.
+
+---
+
+## Correccion de los cuatro hallazgos de S-003 — 2026-07-29
+
+**Disparador:** la tanda FDGE PT-148…PT-162 (FPGE-003), autorizada por el humano en bloque.
+
+| Hallazgo | Estado | PT | Verificacion |
+|---|---|---|---|
+| **H-021** (D2 ALTA) | `CORREGIDA` | PT-149 | Con base alcanzable `verificado` + exit 0; con `DATABASE_URL` envenenada `sin_datos` + **exit 1** |
+| **H-022** (D2 MEDIA) | `CORREGIDA` | PT-153 | Los dos checkpoints corren **dentro del contenedor** y devuelven datos reales |
+| **H-023** (D4 BAJA) | `CORREGIDA` | PT-162 | `UserResponseDto` de auth renombrado; el `warn` de arranque desaparece |
+| **H-024** (D4 MEDIA) | `CORREGIDA` | PT-157 | Las seis rutas del alcance existen; RULE-28 lo vigila |
+| **H-005** (D1 ALTA) | **sigue `ABIERTA`** | PT-155 | Investigacion cerrada; la decision es de negocio y fiscal |
+
+**Ninguno pasa a `CERRADA`.** `[R44]` reserva el cierre a una persona que haya visto la evidencia, y
+que el humano autorizara trabajar en autonomia no cambia quien valida. Los scores de S-003 siguen
+vigentes hasta el proximo delta sync.
+
+**Nota sobre H-024:** lo introdujo PT-141 y lo corrige PT-157, los dos del mismo dia. Al corregirlo
+aparecio una **segunda lista** con las mismas rutas archivadas, que la correccion a mano no habria
+visto: es la justificacion entera de que el PT llevara guarda (RULE-28) y no solo una correccion.
+
+**Nota sobre H-021:** la correccion aplica al veredicto de coherencia el mismo criterio de tres
+estados que `puntuar()` ya usaba veinte lineas mas arriba en el mismo fichero. El problema estaba
+pensado; no se habia trasladado.
+
+**Pendiente de medir, sin cambios:** D1 al 50 % y D5 al 0 %. Siguen exigiendo una base **con
+historia**. PT-153 quita el impedimento tecnico —los checkpoints ya corren donde toca— pero la
+ventana sigue estrecha: `run-all.sh` genera la salida real y trunca la base al empezar.
