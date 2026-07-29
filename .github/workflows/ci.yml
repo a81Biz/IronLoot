@@ -498,6 +498,22 @@ jobs:
 
           arrancar ironloot-client-ci ironloot-client:ci             -e NODE_ENV=production             -e CLIENT_PORT=5175             -e API_URL=http://localhost:3000
 
+          # El esquema, ANTES de arrancar el API.
+          #
+          # La imagen de produccion **no aplica migraciones al arrancar**: su `CMD` es
+          # `node dist/main` y nada mas. Es lo correcto —migrar es un paso de despliegue deliberado,
+          # no un efecto colateral de levantar un contenedor— pero significa que arrancarla exige
+          # una base preparada. La corrida anterior lo dijo sin rodeos:
+          #
+          #     P2021 — The table `public.system_config` does not exist in the current database
+          #
+          # Se migra CON LA PROPIA IMAGEN, que lleva `prisma/` dentro (`src/api/Dockerfile:163`).
+          # Asi se comprueba de paso que puede migrar por si misma, que es lo que un despliegue real
+          # le va a pedir. Hacerlo desde el runner con un `npm ci` aparte probaria otra cosa.
+          echo '::group::migraciones'
+          docker run --rm --network host -e DATABASE_URL=postgresql://ironloot:ironloot_test@localhost:5432/ironloot_test ironloot-api:ci npx prisma migrate deploy
+          echo '::endgroup::'
+
           arrancar ironloot-api-ci ironloot-api:ci             -e NODE_ENV=production             -e PORT=3000             -e DATABASE_URL=postgresql://ironloot:ironloot_test@localhost:5432/ironloot_test             -e REDIS_URL=redis://localhost:6379             -e REDIS_HOST=localhost             -e REDIS_PORT=6379             -e JWT_SECRET=ci-jwt-secret-solo-para-verificar-que-la-imagen-arranca             -e SESSION_SECRET=ci-session-secret-solo-para-verificar-que-la-imagen-arranca             -e MERCADO_PAGO_ACCESS_TOKEN=TEST-ci-no-es-un-token-real             -e MERCADO_PAGO_WEBHOOK_SECRET=TEST-ci-no-es-un-secreto-real             -e PAYPAL_CLIENT_ID=TEST-ci-no-es-real             -e PAYPAL_CLIENT_SECRET=TEST-ci-no-es-real             -e PAYPAL_WEBHOOK_ID=TEST-ci-no-es-real             -e ALLOWED_ORIGINS=http://localhost:5174,http://localhost:5175             -e ADMIN_API_KEY=ci-admin-api-key-no-usar-fuera-de-este-job             -e ADMIN_USERNAME=ci-verificador-de-imagen             -e ADMIN_PASSWORD=ci-password-larga-y-no-por-defecto-solo-para-este-job             -e ADMIN_TOTP_SECRET=CIVERIFICADORDEIMAGEN234567
 
           # NOTA — Estas cinco ultimas no estaban, y el API se nego a arrancar por ellas:
