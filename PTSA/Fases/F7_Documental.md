@@ -255,3 +255,25 @@ en ambos casos.
 
 `02-PRD.md`, `09-Security-Architecture.md` y el resto de `03-TRD.md` y `06-Backend-Architecture.md`
 **siguen sin barrer**. La severidad se sube por lo comprobado, no por lo sospechado.
+
+---
+
+## Update U-007 — 2026-07-29 (S-003, delta sync)
+
+**Las cinco rutas de `docs:` de `audit-scope.yaml`, comprobadas una a una.** Cuatro estan rotas:
+`02-PRD.md`, `03-TRD.md`, `09-Security-Architecture.md` y `06-Backend-Architecture.md` bajo
+`docs/enterprise-documentation/`. **Las archivo PT-141** ayer bajo ADR-049. Solo `CLAUDE.md` sigue en
+pie.
+
+Y el comentario `# 23 migraciones — ninguna se ha ejecutado nunca` es falso por partida doble: son
+**2** y **las dos estan aplicadas** (verificado en F5/U-007).
+
+Se registra como **H-024** (MEDIA). Es la familia de H-016 aplicada al documento que declara **que se
+audita**: una auditoria que dice cubrir cuatro documentos inexistentes declara una cobertura que no
+tiene, y `[A8]` hace de la cobertura declarada un requisito del score.
+
+**No se tocan** los 13 ficheros de `PTSA/` que citan las rutas viejas: son registro historico y `[A6]`
+los protege — por eso los nueve documentos se archivaron en vez de borrarse. `audit-scope.yaml` es
+otra cosa: no es historico, es la declaracion de alcance vigente.
+
+**D4 baja de 100 a 94** (H-024 MEDIA −5, H-023 BAJA −1).

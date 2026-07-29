@@ -1,207 +1,180 @@
 # PTSA V3 — RESUMEN DE AUDITORÍA
 ## IronLoot Auction Platform v1.0.0
-**Sesión**: S-002 — corrida completa desde F-1 | **Fecha**: 2026-07-27
-**Tipo**: Auditoría completa (`[START PTSA]`), no delta sync
-**auditoria_estado**: EN_CURSO — ver «Criterio de compleción» al final
+
+**Sesión**: S-003 — **delta sync** (`resume PTSA`) | **Fecha**: 2026-07-29
+**Disparador**: once PT fusionados (PT-136…PT-147) y 91 commits sin auditar
+**auditoria_estado**: CERRADA_CON_HALLAZGOS
 
 ---
 
 ## SCORES — CLASE B
 
-| Métrica | DS-009 (27-jul) | **S-002 (27-jul)** | Cambio |
+| Métrica | S-002-V (28-jul) | **S-003 (29-jul)** | Cambio |
 |---|---|---|---|
-| **Health Score** | 94.0 | **76.0 / 100** | −18.0 |
-| **Risk Score** | 40 | **100 / 100** | +60 — saturado |
-| **Confidence** | 94.2 | **90.0 / 100** | −4.2 |
+| **Health Score** | 95.5 | **88.9 / 100** | −6.6 |
+| **Risk Score** | 24 | **100 / 100** | +76 — saturado |
+| **Confidence** | 95.0 | **87.0 / 100** | −8.0 |
 | **Clasificación** | A | **B** | Bajada |
 
 ```
-Health = (85×0.30) + (40×0.30) + (100×0.30) + (85×0.10) = 76.0
-Risk   = min(100, 41 × 4) = 100        Risk_bruto = 6+8+12+9+6 = 41
+Health = (85×0.30) + (80×0.30) + (100×0.30) + (94×0.10) = 88.9
+Risk   = min(100, 35 × 4) = 100         Risk_bruto = 6+9+8+4+8 = 35
+Conf   = 70×0.40 + 100×0.25 + 95×0.20 + 100×0.15 = 87.0
 ```
 
 **Regla del Agua Potable: NO activada.** D1 = 85 ≥ 60. Se dice explícitamente porque `[A4]` lo
-exige: el dominio no está capando nada. **Lo que baja el Health es D2.**
+exige: el dominio no está capando nada.
 
-Confidence 90 ≥ 90 → no aplica la degradación de §15.6. `health_unstable = false`. Sin cap.
+**§15.6 no ata**: exige Confidence ≥ 90 para clasificar A, y el Health ya cae en B por sí mismo.
+`freshness = FRESH` → sin cap por frescura. `health_unstable = false` → sin cap por D5.
 
 ---
 
 ## SCORES POR DIMENSIÓN
 
-| Dimensión | DS-009 | **S-002** | Hallazgos activos |
+| Dimensión | S-002-V | **S-003** | Hallazgos activos |
 |---|---|---|---|
 | D1 Alineación de Dominio | 85 | **85** | H-005 (ALTA) — CFDI sin decidir |
-| D2 Integridad Arquitectónica | 95 | **40** | **H-014 (CRITICA)** · **H-015 (ALTA)** · **H-017 (ALTA)** |
+| D2 Integridad Arquitectónica | 100 | **80** | **H-021 (ALTA)** · **H-022 (MEDIA)** |
 | D3 Observabilidad y Recuperación | 100 | **100** | ninguno |
-| D4 Fidelidad Documental | 100 | **85** | **H-016 (ALTA)** |
+| D4 Fidelidad Documental | 100 | **94** | **H-024 (MEDIA)** · **H-023 (BAJA)** |
 
-**D5**: `NO_APLICA` para alucinación y drift (sistema determinista). Success 100 % · Retry 0 % ·
-Failure 0 %, los tres en verde. `health_unstable: false`.
+**D5**: `SIN_DATOS` — no hay un solo ciclo de pago en la base. Alucinación y drift `NO_APLICA`
+(sistema determinista). `health_unstable: false`.
 
 ---
 
 ## LO QUE ENCONTRÓ ESTA CORRIDA
 
-### El esquema es correcto. El artefacto que lo construye no. (H-014, CRITICA)
+Los cuatro hallazgos nuevos **no los trajeron los once PT**: los trajo *mirar*. Tres llevaban tiempo
+ahí sin que ningún mecanismo los señalara. El cuarto lo introdujo la sesión anterior.
 
-La base que esta auditoría lleva nueve sesiones certificando la construye
-`prisma db push --accept-data-loss` en cada arranque del contenedor. `db push` no escribe
-`_prisma_migrations`, y esa tabla **no existe**.
+### El instrumento afirmaba haber medido lo que no miró (H-021, ALTA, D2)
 
-Consecuencia comprobada: **las 23 migraciones no se han ejecutado nunca.** Aplicadas a una base
-limpia producen otro esquema, y sobre él la aplicación no funciona:
+`npm run audit:domain` cierra imprimiendo `cross_coherence_verified = true`. Ejecutado en el
+contenedor, **las cinco comprobaciones devuelven `(ERR)`** y la línea sigue diciendo `true`. El
+proceso sale con **código 0**.
+
+Las cinco cubren dinero: importe del pedido contra precio final, comisión contra importe, registro de
+comisión contra el asiento del ledger.
+
+Lo grave no es que falle: es que **afirma sin haber medido**, dentro del instrumento que esta
+auditoría usa para medir, y contra `[A1]`. Y escuece más porque el mismo script hace lo correcto tres
+líneas antes: devuelve `rubric_compliance_score = null` y escribe *«Esto NO es un 100: es una
+auditoria que no ha podido mirar»*. Alguien pensó este problema para el score y no lo aplicó a la
+línea de al lado.
+
+**Quinta aparición del patrón de la casa** —*un mecanismo que no se ejecuta no avisa de nada*—, aquí
+agravada: no calla, **dice que sí**.
+
+### Se corrigió uno de tres y nadie notó los otros dos (H-022, MEDIA, D2)
+
+`audit:domain` y `audit:reliability` consultan con `execSync('docker exec … psql')`. Dentro del
+contenedor no hay `docker`. PT-138 corrigió **exactamente esto** en el tercer script pasándolo a
+`PrismaClient`; los otros dos se quedaron con la forma vieja. Desde el host funcionan — o sea que
+quien siga la convención de CLAUDE.md («npm se ejecuta en el contenedor») obtiene `SIN_DATOS` y
+ninguna pista de por qué. Los dos salen con **código 0**.
+
+### El fichero que declara el alcance cita cuatro documentos que ya no están (H-024, MEDIA, D4)
+
+`audit-scope.yaml` apunta a `02-PRD.md`, `03-TRD.md`, `09-Security-Architecture.md` y
+`06-Backend-Architecture.md` bajo `docs/enterprise-documentation/`. **Los cuatro los archivó PT-141**
+ayer, y ese PT no siguió esta cita — sí siguió las de `CLAUDE.md` y la guarda del TRD. Y el comentario
+`# 23 migraciones — ninguna se ha ejecutado nunca` es falso por partida doble: son **2** y **las dos
+están aplicadas**.
+
+Se registra sin atenuantes. PTSA audita lo que FDGE produce, también cuando FDGE es el trabajo de
+ayer y también cuando todo lo demás salió bien. Una auditoría que declara cubrir cuatro documentos
+inexistentes declara una cobertura que no tiene, y `[A8]` hace de eso un requisito del score.
+
+### El catálogo publica dos esquemas con un solo nombre (H-023, BAJA, D4)
+
+`UserResponseDto`, definido dos veces con formas distintas. Sale como `warn` **en cada arranque**, con
+su propia fecha de caducidad puesta: *«will throw an error in the next major version»*. Pequeño hoy;
+el día que alguien suba de mayor será «se rompió al actualizar» en vez de «lo sabíamos».
+
+---
+
+## LO QUE SE VERIFICÓ Y ESTÁ BIEN
+
+`[A1]` obliga a sostener también lo que se afirma en verde.
+
+**H-014 queda verificado en la fuente real.** Fue el CRÍTICO de S-002: la base se construía con
+`db push` y `_prisma_migrations` **no existía**. Hoy:
 
 ```
-  FALLA  userPaymentMethod.findMany    -> falta la columna user_payment_methods.type
-  FALLA  paymentCycle.findMany         -> falta la columna payment_cycles.provider_ref
-  FALLA  accountVerification.findMany  -> falta la tabla account_verifications
-  OK     payment.findMany
+20260727000000_initial_schema                        | aplicada | sin rollback
+20260729020000_pt145_rating_unico_por_pedido_y_autor | aplicada | sin rollback
 ```
 
-Y `payments.reference` deja de ser único: **la unicidad que CLAUDE.md declara como garantía de que
-un reintento no duplique el asiento contable no existe en el artefacto desplegable.**
+Dos en disco, dos aplicadas. Ya no es el testimonio del PT que lo corrigió: es observación directa.
 
-No hay despliegue productivo hoy, así que nada está roto ahora mismo. Pero el `Dockerfile` de
-producción no aplica esquema alguno y `ci.yml` no tiene job de despliegue: **las migraciones son el
-único camino que existe, y no funciona.**
+**La invariante contable se cumple.** Dos monederos a 100.00 con un asiento cada uno,
+`balance_before 0.00 → balance_after 100.00`. Saldo y asiento dicen lo mismo — la comprobación
+pequeña pero directa de lo que arregló PT-146.
 
-### El job de CI llamado «Integration Tests» no integra nada (H-015, ALTA)
+**D3 sigue en 100 con logs vivos detrás.** 4 780 líneas en 24 h, estructuradas, con `traceId` y
+`isBusinessError`. 84 `error_events`, y **los 84 son de negocio**: 60 credenciales inválidas, 22
+rate-limit, 2 no autorizado. **Cero no-de-negocio.** Los 22 × `429` demuestran que el rate limiting
+*actúa*, no que está configurado.
 
-Levanta un Postgres y corre la suite e2e **sin crear el esquema** — ni `migrate deploy`, ni
-`db push`, ni `prisma generate`. Y la suite tampoco cierra sus manejadores: con esquema completo los
-9 tests de `auth` pasan en 22 s, pero sólo terminan si se añade `--forceExit`, que el script no
-lleva.
-
-`build: needs: [test-unit, test-integration]` y `docker: needs: build`. **Ni `build` ni `docker` se
-ejecutan.**
-
-Es el mismo patrón que PT-118 arregló para las dependencias, un escalón más abajo. Y llegó tarde por
-la misma razón: **`.github/workflows/**` no estaba en `auditable_patterns`.** Se ha añadido, junto
-con `src/api/scripts/**`, que es donde vive la causa de H-014.
-
-### No hay imagen de producción utilizable (H-017, ALTA)
-
-El healthcheck de la única imagen de producción pide `http://localhost:3000/health`. Esa ruta
-devuelve **404**: el prefijo global es `/api`, la real es `/api/v1/health`. Un contenedor de
-producción quedaría `unhealthy` para siempre con la aplicación funcionando. En `docker-compose` está
-corregido — se arregló ahí y no en la imagen.
-
-ADMIN, BASE y CLIENT **no tienen `Dockerfile` de producción**, sólo `.dev`. Y el job `docker` de CI
-construye `./Dockerfile`, que no existe en la raíz.
-
-**Los tres hallazgos D2 son el mismo camino visto desde tres sitios**: esquema (H-014), pipeline
-(H-015) e imagen (H-017). Ninguna de las tres piezas se ha ejecutado nunca.
-
-### El TRD cita una línea que ya dice otra cosa (H-016, MEDIA)
-
-`03-TRD.md:13` declara `NestJS ^10.3.0` **citando `src/api/package.json:36`**. Los cuatro servicios
-están en `^11.0.0` desde PT-126. La cita convierte un número viejo en un dato falso avalado.
-
-Segundo caso, encontrado sin buscarlo: `CLAUDE.md:138` documenta `/health` y `/health/detailed`.
-Ninguna de las dos existe. Dos casos en una sesión sugieren que hay más — de ahí la recomendación
-de medirlo en vez de corregirlo a mano.
+**Un hallazgo falso, descartado antes de escribirlo.** La primera consulta dio 12 eventos de traza sin
+ciclo, con `payment_cycles` a cero: parecía integridad rota. Los doce tienen `cycle_id` **nulo**, y la
+FK es `ON DELETE SET NULL` sobre columna opcional — es **diseño**: la traza sobrevive al ciclo.
+Huérfanos reales: **0**. Queda escrito porque el `LEFT JOIN … IS NULL` inicial habría producido un
+hallazgo grave y falso.
 
 ---
 
-## LO QUE ESTÁ SANO, Y CÓMO SE COMPROBÓ
+## COBERTURA DECLARADA — por qué Confidence baja a 87
 
-Todo ejecutado por el auditor (`[A5]`, `[R61]`). Nada de segunda mano.
+`[A8]`: ningún score vale sin cobertura declarada. **Ésta no es completa, y decirlo es el punto.**
 
-| | |
-|---|---|
-| **D1 — 14 reglas de dominio sobre salida real** | `rubric_compliance_score = 100`, 0 violaciones |
-| **Nivel 3 — coherencia inter-producto** | 5 parejas, 0 desviaciones. `cross_coherence_verified` |
-| **D2 — dependencias** | **0 avisos** en producción, línea base vacía. **TD-015 cerrado** (PT-126) |
-| **D2 — compilación y pruebas** | typecheck limpio · API 83 suites / 603 tests · CORE 8 / 134 |
-| **D2 — esquema real** | 33 tablas · 17 columnas de dinero, **todas** `numeric` · **0** float |
-| **D3 — traza de pagos** | 49 eventos, 8 pasos · **0 credenciales** · 4 redacciones que nombran qué ocultaron |
-| **D3 — logs en vivo** | JSON estructurado con `traceId` extremo a extremo · 0 excepciones sin manejar |
-| **D3 — checkpoint** | `trace_completeness = 100 %` · `silent_failure_count = 25` (línea base) |
-| **D5** | Success 100 % · Retry 0 % · Failure 0 %, los tres verdes |
-| **Superficie autenticada** | 401 en los tres endpoints sensibles probados |
-| **WebSockets** | los 5 `emit` van a salas `auction:<id>` con datos públicos. Ningún dato por usuario |
+| Dimensión | Cobertura | Cómo se midió |
+|---|---:|---|
+| D2 | 100 % | `audit:schema` + `audit:check` + esquema real por shell |
+| D3 | 100 % | `audit:observability` + logs vivos + tablas de auditoría |
+| D4 | 100 % | Rutas citadas comprobadas una a una |
+| **D1** | **50 %** | 7 de 14 reglas. Las otras 7 no tienen datos que mirar |
+| **D5** | **0 %** | No hay un solo ciclo de pago en la base |
 
-**H-008 y H-009 quedan comprobados corregidos en la fuente real**: 0 vulnerabilidades, y los cinco
-documentos del alcance seguidos por git.
+**La causa es que la base está casi vacía**: 4 usuarios, 4 monederos, 2 asientos, y **cero** subastas,
+pujas, pedidos, pagos y ciclos. La salida real que sostenía las validaciones de S-002 la consumió un
+reseteo — `run-all.sh` trunca, y CLAUDE.md avisa de ello. No es un defecto: es la razón por la que D1
+se mide a medias y D5 no se mide.
 
----
+Las 7 reglas de D1 que **sí** se midieron pasaron todas: `rubric_compliance_score = 100` sobre ese
+denominador reducido, que es lo que significa y no más.
 
-## PRODUCTOS
-
-| Estado | Productos |
-|---|---|
-| **`VALIDADO`** | P-001 · P-002 · P-003 · P-004 · P-005 · **P-006** ⚠️ · P-007 · P-008 · P-009 · P-010 · P-011 |
-| `IDENTIFICADO` | P-012 CfdiRecord — sin instancias, bloqueado por H-005 |
-
-Ninguna transición esta sesión. Los tres hallazgos nuevos son **sistémicos** (`producto_id: null`,
-§13.7): penalizan su dimensión y no se imputan a producto. H-014 no dice que P-004 esté mal — dice
-que el artefacto que reconstruiría su base en otro entorno lo está.
-
-⚠️ **P-006 Dispute**: llegó a VALIDADO en DS-008 con evidencia E-015 sobre disputas reales. La base
-se reconstruyó después y hoy `disputes` tiene 0 filas. E-015 sigue siendo captura válida de lo que
-se observó; **no es reproducible hoy**. No se degrada el estado, pero queda anotado.
+Los 11 productos `VALIDADO` **conservan su estado**: `[A6]` y `[R39]` los validaron con evidencia
+observada en su momento (E-025). No se revalidan ni se degradan por falta de datos hoy — pero tampoco
+se cuentan como cobertura de esta corrida.
 
 ---
 
-## FRESCURA
+## SOBRE EL RISK 100
 
-```
-score_freshness:
-  last_verified: 2026-07-27
-  commits_since_audit: 0
-  status: FRESH
-```
+Es la salida honesta de la fórmula, y es engañosa si se lee sola. `Risk = min(100, 35 × 4)`: se
+satura en 25 de riesgo bruto, y aquí hay 35.
 
-`audit_due` de los cinco productos CRÍTICOS: **2026-08-26**.
+**Lo que lo empuja es la certeza, no la gravedad.** Cuatro de los cinco hallazgos activos llevan
+`probabilidad = 4` porque son deterministas: la ruta rota está rota siempre, el `warn` sale en cada
+arranque, el checkpoint falla cada vez que se invoca desde el contenedor. Sólo uno es ALTA. Un Risk
+saturado por tres MEDIA/BAJA ciertas no es el mismo Risk que uno saturado por dos CRÍTICAS.
 
----
-
-## LO QUE ESTA AUDITORÍA NO CUBRE
-
-Declarado para que no se confunda con cobertura:
-
-| Área | Estado |
-|---|---|
-| **P-006 y P-012** | Sin salida real hoy (0 filas). `coverage` = 10 de 12 |
-| **Revisión documental exhaustiva** | **No hecha.** F7 verificó la versión del framework y tres afirmaciones de CLAUDE.md. Otras podrían estar desactualizadas sin medir |
-| **Historial de GitHub Actions** | `gh` no disponible. No se sabe **desde cuándo** H-015 está así |
-| **Qué migración introdujo cada divergencia** | No medido |
-| **El área de despliegue, recién metida en el alcance** | `.github/workflows/**`, `src/api/scripts/**` y los `Dockerfile` entraron en el alcance **en esta sesión**. Se auditó lo que saltó a la vista y salieron tres hallazgos. **No es una revisión exhaustiva de esa área**: es su primera pasada |
-| **Explotación de vulnerabilidades** | No aplica: 0 avisos |
-| **Concurrencia y carga** | Fuera de alcance |
-| **Nivel 4 del Acid Test** | `NO_APLICA` — sistema determinista |
-
-Y la limitación de siempre, sin adornos: la muestra es pequeña —4 monederos, 3 pujas, 1 pago
-liquidado—. Demuestra que los invariantes no se violan en el camino observado, **no** que sean
-inviolables bajo concurrencia.
+Se reporta 100 porque es lo que dice la fórmula. Se explica porque reportarlo sin explicarlo sería tan
+inútil como maquillarlo.
 
 ---
 
-## RECOMENDACIÓN
+## CRITERIO DE COMPLECIÓN
 
-1. **H-015, H-014 y H-017 son un solo trabajo**, en ese orden. El paso de esquema que le falta al
-   job de CI es exactamente la prueba de que las migraciones funcionan; y un pipeline que construya
-   y arranque la imagen una vez cierra H-017 solo. **Recorrer el camino entero una vez** cierra los
-   tres y deja el mecanismo que impide que vuelvan. Arreglarlos por separado es lo que permitió que
-   esto durase nueve sesiones.
-2. **Para H-014, decidir la vía**: rebasar el historial (`migrate resolve --applied` tras una
-   migración de reconciliación) o colapsar las 23 en una inicial. La primera conserva historia; la
-   segunda es más limpia. Es decisión de plataforma.
-3. **H-005 sigue esperando una decisión de negocio**, no técnica: quién emite la factura. Las tres
-   opciones están en F-1 § U-005. Sin ella P-012 no existe y D1 no pasa de 85.
-4. **H-016 cuesta minutos.** Y si se quiere que no vuelva, el repositorio ya tiene el patrón:
-   una prueba que compare las versiones citadas en el TRD contra los `package.json`, como
-   `coherencia-deuda-tecnica.spec.ts` hace con la deuda.
-5. **D1.N1 y D3 no tienen job en CI.** Están declarados como checkpoints y se ejecutan porque el
-   auditor los ejecuta. Cae dentro de H-015, pero conviene no perderlo de vista.
+La corrida está **cerrada**. Lo que queda abierto son los hallazgos, y los cierra quien corresponde:
 
----
+- **H-021, H-022, H-023, H-024** — `ABIERTA`. `[R44]`: el agente no cierra hallazgos.
+- **H-005** — sigue `ABIERTA`. Decisión de negocio y fiscal; ningún PT la resuelve.
+- **D1 y D5 completos** — requieren un entorno **con historia**. La próxima corrida por navegador
+  (`run-all.sh`) genera salida real: **medir antes de que otro reseteo se la lleve.**
 
-## CRITERIO DE COMPLECIÓN (`[R74]`)
-
-`auditoria_estado` **no** puede ser `COMPLETADA`. Falla el punto 1: P-012 no tiene estado final
-(`IDENTIFICADO`, bloqueado por H-005). Los otros seis puntos se cumplen: trazabilidad completa,
-evidencias catalogadas con origen y fingerprint, validaciones registradas como hallazgo con
-severidad y dimensión, `F10_Matriz_Maestra.md` al día, `RESUMEN.md` coherente con las fases, y
-`score-history.json` y `score_freshness` actualizados.
+`audit_due` de los nuevos: ALTA a 60 días → **2026-09-27** (H-021). MEDIA a 90 → **2026-10-27**
+(H-022, H-024). BAJA a 180 → **2027-01-25** (H-023). H-005 conserva el suyo: **2026-08-22**.

@@ -663,6 +663,65 @@
         "IDENTIFICADO": 1
       },
       "nota": "Siete hallazgos CERRADOS con VoBo humano tras validacion por navegador: suite QA completa (127 comprobaciones, 0 fallos, con cobro real en Mercado Pago y orden real en PayPal) mas 9 dirigidas. La suite corrio DESPUES de retirar los endpoints legados. Queda un unico hallazgo activo en todo el sistema: H-005, que es una decision de negocio que ningun PT puede tomar."
+    },
+    {
+      "session": "S-003",
+      "date": "2026-07-29",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 85,
+        "D2": 80,
+        "D3": 100,
+        "D4": 94,
+        "health": 88.9,
+        "risk": 100,
+        "confidence": 87.0
+      },
+      "classification": "B",
+      "classification_without_cap": "B",
+      "cap_reason": null,
+      "score_freshness": {
+        "last_verified": "2026-07-29",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "risk_detail": {
+        "risk_bruto": 35,
+        "detalle": "H-005 (6) + H-021 (9) + H-022 (8) + H-023 (4) + H-024 (8). Saturado por CERTEZA, no por gravedad: cuatro de los cinco tienen probabilidad 4 porque son deterministas, y solo uno es ALTA ademas de cierto."
+      },
+      "coverage_detail": {
+        "D1": 50,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "D5": 0,
+        "motivo": "La base esta casi vacia (4 usuarios, 0 subastas/pedidos/pagos/ciclos): un reseteo se llevo la salida real de S-002. D1 midio 7 de 14 reglas; D5 ninguna."
+      },
+      "trigger": "resume PTSA — 91 commits y once PT (PT-136..PT-147) sin auditar; freshness STALE señalada por la compuerta de FPGE-002",
+      "findings_changes": {
+        "nuevos": [
+          "H-021",
+          "H-022",
+          "H-023",
+          "H-024"
+        ],
+        "revisados": [
+          "H-014 -> verificado en fuente real: _prisma_migrations existe con las dos migraciones aplicadas y sin rollback"
+        ],
+        "cerrados": []
+      },
+      "evidencias_nuevas": [
+        "E-026",
+        "E-027",
+        "E-028"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "IDENTIFICADO": 1
+      },
+      "nota": "Los cuatro hallazgos nuevos no los trajeron los once PT: los trajo mirar. Tres llevaban tiempo ahi sin que ningun mecanismo los señalara; H-024 lo introdujo PT-141 al archivar nueve documentos sin seguir la cita de audit-scope.yaml, y se registra sin atenuantes. El mas grave (H-021) es un instrumento de auditoria que imprime cross_coherence_verified=true con las cinco comprobaciones en error y sale con codigo 0: quinta aparicion del patron de la casa, agravada porque no calla, dice que si. Se descarto ademas un hallazgo falso (12 eventos de traza aparentemente huerfanos que resultaron ser cycle_id NULL por diseño)."
     }
   ]
 }

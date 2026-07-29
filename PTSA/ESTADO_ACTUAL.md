@@ -1,5 +1,5 @@
 # ESTADO ACTUAL — PTSA V3
-**Última actualización**: 2026-07-28 | **Sesión**: S-002 + PT-127…PT-134
+**Última actualización**: 2026-07-29 | **Sesión**: S-003 (delta sync)
 
 ---
 
@@ -7,65 +7,90 @@
 
 ```
 Sistema:        IronLoot Auction Platform v1.0.0
-Fase actual:    CERTIFICADO — Clase A
-Health:         95.5 / 100      (76.0 tras la auditoria -> 95.5 tras el ciclo completo)
-Risk:           24 / 100        CONTROLADO
-Confidence:     95.0 / 100      ALTA
-Freshness:      FRESH
-Productos:      11 VALIDADO · 1 IDENTIFICADO
+Fase actual:    CERTIFICADO — Clase B
+Health:         88.9 / 100      (95.5 -> 88.9 tras el delta sync)
+Risk:           100 / 100       SATURADO — por certeza, no por gravedad (ver nota)
+Confidence:     87.0 / 100      MEDIA-ALTA — la baja la cobertura, no la evidencia
+Freshness:      FRESH           medido el 2026-07-29, commits_since_audit = 0
+Cobertura:      PARCIAL         D2/D3/D4 al 100 % · D1 al 50 % · D5 al 0 %
 ```
 
-```
-D1 = 100 − 15 (H-005)  =  85          D2 = 100          D3 = 100          D4 = 100
+**Regla del Agua Potable: NO activada** — D1 = 85 ≥ 60.
 
-Health = (85×0.30) + (100×0.30) + (100×0.30) + (100×0.10) = 95.5
-Risk   = min(100, 6 × 4) = 24                  Risk_bruto = 6 (H-005, unico activo)
-```
+---
 
-## Un solo hallazgo abierto en todo el sistema
+## Dimensiones
 
-**H-005** — nadie ha decidido quién emite la factura. Las tres opciones están en F-1 § U-005.
-Es lo único que mantiene D1 en 85 y bloquea P-012, y **ningún PT puede resolverlo**: es una
-decisión de negocio y fiscal.
+| Dim | Score | Estado | Activos |
+|---|---:|---|---|
+| D1 Alineación de Dominio | 85 | Estable | H-005 |
+| D2 Integridad Arquitectónica | **80** | **Regresión (−20)** | H-021, H-022 |
+| D3 Observabilidad y Recuperación | 100 | Estable | — |
+| D4 Fidelidad Documental | **94** | **Regresión (−6)** | H-023, H-024 |
+| D5 Fiabilidad Operacional | `SIN_DATOS` | No medible hoy | — |
 
-## Hallazgos
+**La regresión de D2 y D4 no la causaron los once PT.** La causaron cuatro defectos que ya estaban
+—tres desde antes de esta tanda— y que nadie había mirado. La excepción es H-024, que lo introdujo
+PT-141 al archivar los nueve documentos sin seguir esta cita.
 
-| ID | Dim | Estado |
-|---|:--|---|
-| **H-005** | D1 | **ABIERTA** — decisión de negocio pendiente |
-| H-014 · H-015 · H-016 · H-017 · H-018 · H-019 · H-020 | — | **CERRADA** con VoBo humano (2026-07-28) |
-| H-001 … H-013 | — | CERRADA en sesiones anteriores |
+---
 
-## Validación por navegador — `E-025`
+## Hallazgos activos: 5
 
-```
-Suite QA completa            127 comprobaciones · 0 fallos
-  · cobro REAL en Mercado Pago con traza de 7 pasos y 0 credenciales filtradas
-  · orden REAL aprobada en el checkout de PayPal
-  · retiro real: KYC → CLABE → holdback → aprobación admin → PAID → rechazo reintegra
-  · Firefox y WebKit además de Chromium
-Validación dirigida            9 comprobaciones · 0 fallos
-```
+| ID | Dim | Sev | Título | `audit_due` |
+|---|:--:|---|---|---|
+| **H-021** | D2 | ALTA | `cross_coherence_verified = true` con las cinco comprobaciones en error | 2026-09-27 |
+| **H-022** | D2 | MEDIA | Los dos checkpoints de delta sync no corren donde vive npm | 2026-10-27 |
+| **H-024** | D4 | MEDIA | `audit-scope.yaml` cita cuatro documentos archivados y describe mal las migraciones | 2026-10-27 |
+| **H-005** | D1 | ALTA | CFDI/PAC sin integrar — quién emite la factura | 2026-08-22 |
+| **H-023** | D4 | BAJA | `UserResponseDto` duplicado en el catálogo OpenAPI | 2027-01-25 |
 
-**La suite corrió después de retirar los endpoints legados.** Que el cobro real pase entero es la
-prueba de que se retiró la puerta que sobraba y no la que se usa.
+**Cerrados**: 20 (H-001 … H-020). Ninguno reabierto en esta corrida.
 
-## El camino al despliegue, recorrido entero
+---
 
-| | |
+## Productos: 12
+
+`VALIDADO` **11** · `IDENTIFICADO` **1** (P-012 `CfdiRecord`, bloqueado por H-005).
+
+**Ninguno cambia de estado.** Se validaron con evidencia observada (E-025) y `[A6]` los protege; que
+hoy no haya datos para revalidarlos no los degrada — pero tampoco cuenta como cobertura de S-003.
+
+---
+
+## Por qué el Risk marca 100
+
+`Risk = min(100, Risk_bruto × 4)`, con `Risk_bruto = 35`. Se satura a partir de 25.
+
+**Lo empuja la certeza, no la gravedad**: cuatro de los cinco activos tienen `probabilidad = 4`
+porque son deterministas —la ruta rota está rota siempre, el `warn` sale en cada arranque, el
+checkpoint falla cada vez que se le invoca desde el contenedor—. Sólo uno es ALTA además de cierto.
+
+Un Risk saturado por tres MEDIA/BAJA ciertas no es el mismo que uno saturado por dos CRÍTICAS. Se
+reporta como sale y se explica al lado.
+
+---
+
+## Qué falta medir, y por qué
+
+| Qué | Bloqueo |
 |---|---|
-| **Esquema** | Las migraciones reproducen `schema.prisma`; `audit:schema` lo vigila en CI |
-| **Pipeline** | El job aplica el esquema y la suite e2e pasa entera — **16/16 suites, 77 tests** |
-| **Imagen** | Las cuatro imágenes de producción arrancan y llegan a `healthy` |
-| **Unitarias** | 666 (API) + 134 (CORE) |
-| **Navegador** | 127 + 9 comprobaciones sobre el stack real |
+| **D1 completo** (7 de 14 reglas sin datos) | La base está casi vacía: 0 subastas, pujas, pedidos y pagos |
+| **D5** (Success / Retry / Failure) | Cero ciclos de pago que evaluar |
+| **`trace_completeness`** | Cero ciclos liquidados |
 
-## Once mecanismos nuevos, todos probados en los dos sentidos
+**Los tres tienen el mismo bloqueo y la misma salida:** una corrida por navegador (`run-all.sh`)
+genera salida real. **Medir D1 y D5 inmediatamente después, antes de que otro reseteo se la lleve** —
+`run-all.sh` trunca la base al empezar, y es lo que se llevó la salida de S-002.
 
-`audit:schema` · `audit:observability` en CI · esquema por migración en el arranque · el job de
-integración verifica las migraciones · coherencia documentación↔código · healthcheck de las
-imágenes · **contrato CLIENT↔API (SSR y JS de navegador)** · `PATCH` parcial no borra ·
-subasta válida según el DTO de hoy · **endpoints legados retirados** · guardas de deuda y CSP
-heredadas.
+Y no se medirá bien mientras H-022 siga abierto: los dos checkpoints que hacen esa medición no corren
+en el contenedor.
 
-Tres cazaron errores del propio agente mientras se escribían.
+---
+
+## Siguiente
+
+1. **Los cuatro hallazgos nuevos van a FPGE.** Cambian el orden de FPGE-002, emitido esta misma
+   mañana con la compuerta de frescura activada precisamente para esto.
+2. **VoBo humano** sobre los nueve PT en `VALIDATION_PENDING` (`[R44]`).
+3. **H-005** — decisión de negocio. Sigue siendo el único hallazgo que ningún PT puede cerrar.

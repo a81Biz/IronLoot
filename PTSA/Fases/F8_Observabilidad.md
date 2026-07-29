@@ -178,3 +178,28 @@ Credenciales: **0 visibles**. 4 eventos redactados, y cada uno **nombra qué ocu
 ```
 
 Sin hallazgos activos en D3.
+
+---
+
+## Update U-007 — 2026-07-29 (S-003, delta sync)
+
+**Logs vivos leidos**, no supuestos. 4 780 lineas del API en 24 h, JSON estructurado con `traceId`,
+`level`, `context`, `http` y `error.code`, mas la distincion `isBusinessError`.
+
+Persistencia: `request_logs` 1 943 · `error_events` 84 · `audit_events` 1. En cada arranque:
+*«Error persistence connected»*.
+
+**Los 84 errores, clasificados:** 60 `INVALID_CREDENTIALS` (401), 22 `RATE_LIMIT_EXCEEDED` (429), 2
+`UNAUTHORIZED` (401). **Cero no-de-negocio.** Los 22 × 429 demuestran que el rate limiting *actua*.
+
+`audit:observability`: `silent_failure_count` 25 = 25, sin silencios nuevos.
+`trace_completeness` = **SIN CICLOS** — el tercer estado de PT-138 haciendo su trabajo: dice que no
+pudo medir en vez de devolver 0 % o null.
+
+**D3 se mantiene en 100**, y esta vez con observacion directa detras.
+
+**Nuevo, detectado aqui:** H-023 — `UserResponseDto` publicado dos veces con esquemas distintos en el
+catalogo OpenAPI, con aviso en cada arranque de que en la proxima version mayor sera un error.
+
+**Nuevo, detectado aqui:** H-021 y H-022 salieron al ejecutar los checkpoints de delta sync (D1.N1 y
+D5), que es trabajo de F8 aunque penalicen D2.

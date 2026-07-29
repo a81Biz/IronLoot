@@ -190,3 +190,31 @@ Evidencia **E-021**, hallazgo **H-017** (ALTA, D2, penalización 15).
 
 Los tres describen lo mismo desde tres ángulos: **el camino de este entorno a cualquier otro no se
 ha recorrido nunca.** Esquema, pipeline e imagen.
+
+---
+
+## Update U-007 — 2026-07-29 (S-003, delta sync)
+
+**Esquema real verificado por shell**, no por migraciones (F5 lo exige asi).
+
+33 tablas en `public`. `_prisma_migrations` **existe y esta poblada**:
+
+```
+20260727000000_initial_schema                        | aplicada 2026-07-28 22:22 | sin rollback
+20260729020000_pt145_rating_unico_por_pedido_y_autor | aplicada 2026-07-29 02:18 | sin rollback
+```
+
+Dos migraciones en disco, dos aplicadas. **H-014 —el CRITICO de S-002— queda verificado en la fuente
+real** y deja de sostenerse solo en el testimonio del PT que lo corrigio.
+
+`audit:schema` OK: las migraciones reproducen `schema.prisma`. `audit:check` OK contra una linea base
+vacia a proposito.
+
+**Invariante contable comprobada directamente:** dos monederos a 100.00 con un asiento cada uno,
+`balance_before 0.00 -> balance_after 100.00`. Saldo y asiento coinciden.
+
+**Integridad de la traza:** 12 `payment_cycle_events` con `cycle_id` NULL, **0 huerfanos reales**. La
+FK es `ON DELETE SET NULL` sobre columna opcional: es diseño, la traza sobrevive al ciclo.
+
+**Nuevo en D2:** H-021 (ALTA) y H-022 (MEDIA), los dos en `src/api/scripts/**`, que esta dentro de
+`auditable_patterns` desde S-002.

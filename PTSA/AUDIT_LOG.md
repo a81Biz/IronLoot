@@ -593,3 +593,53 @@ D1 = 85 · **D2 = 100** · D3 = 100 · D4 = 100.
 
 **Queda un único hallazgo activo en todo el sistema: H-005** — quién emite la factura. Es una
 decisión de negocio y fiscal, y ningún PT puede tomarla.
+
+---
+
+## S-003 — Delta sync · 2026-07-29
+
+**Disparador:** `resume PTSA` del humano. Motivo: 91 commits y once PT fusionados (PT-136…PT-147)
+desde S-002-V, con `score_freshness` STALE. Lo habia señalado la compuerta de frescura de FPGE-002
+esa misma mañana.
+
+**Alcance del delta:** 28 ficheros dentro de `auditable_patterns` — 15 en `src/api/src/`, 3 en
+`scripts/` y `.github/workflows/`, seis Dockerfiles y `docker-compose.yml`.
+
+**Ejecutado por el auditor (`[A5]`), no pedido al humano:**
+
+| Checkpoint | Resultado |
+|---|---|
+| `audit:schema` (D2) | OK — las migraciones reproducen `schema.prisma` |
+| `audit:check` (D2) | OK — 0 avisos, linea base vacia sin novedades |
+| `audit:observability` (D3) | OK — 25 = 25 silencios, sin nuevos. `trace_completeness` SIN CICLOS |
+| `audit:domain` (D1.N1) | **FALLA en contenedor y sale con 0.** Desde host: 7 de 14 reglas, score 100 |
+| `audit:reliability` (D5) | **FALLA en contenedor y sale con 0.** Desde host: SIN_DATOS |
+
+Ademas, por consulta directa: esquema real (33 tablas, `_prisma_migrations`), volumen de datos,
+invariante ledger-vs-saldo, integridad de la traza, logs vivos (24 h) y las tres tablas de auditoria.
+
+**Evidencias nuevas:** E-026 (los cinco checkpoints), E-027 (esquema y datos reales), E-028 (logs).
+
+**Hallazgos nuevos:** H-021 (D2 ALTA), H-022 (D2 MEDIA), H-023 (D4 BAJA), H-024 (D4 MEDIA).
+Ninguno cerrado por el agente — `[R44]`.
+
+**H-014 verificado en fuente real.** Era el CRITICO de S-002. `_prisma_migrations` existe con las dos
+migraciones aplicadas y sin rollback. Deja de sostenerse en el testimonio del PT que lo corrigio.
+
+**Un hallazgo falso, descartado antes de escribirlo.** 12 eventos de traza sin ciclo parecian
+integridad rota; los doce tienen `cycle_id` NULL y la FK es `ON DELETE SET NULL` sobre columna
+opcional. Huerfanos reales: 0. Queda constancia porque el `LEFT JOIN … IS NULL` inicial habria
+producido un hallazgo grave y falso.
+
+**Scores:** Health 95.5 -> **88.9** · Risk 24 -> **100** (saturado por certeza, no por gravedad) ·
+Confidence 95.0 -> **87.0** (la baja la cobertura: D1 al 50 %, D5 al 0 %) · Clase A -> **B**.
+
+**Cobertura declarada PARCIAL** (`[A8]`): la base esta casi vacia —4 usuarios, 0 subastas, 0 pedidos,
+0 ciclos— porque un reseteo se llevo la salida real de S-002. No es un defecto; es la razon por la
+que D1 se mide a medias y D5 no se mide.
+
+**Autoinculpacion registrada:** H-024 lo introdujo PT-141 al archivar los nueve documentos sin
+seguir la cita de `audit-scope.yaml`. Se registra sin atenuantes: PTSA audita lo que FDGE produce,
+tambien cuando FDGE es el trabajo de ayer.
+
+**Estado de la corrida:** CERRADA_CON_HALLAZGOS.
