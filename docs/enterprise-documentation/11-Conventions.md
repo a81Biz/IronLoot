@@ -586,6 +586,27 @@ library's attributes as documentation of intent.
 `atributos-bootstrap-sin-bootstrap.spec.ts`. Both strip comments before scanning — they each accused
 their own explanation of the defect on first run.
 
+### RULE-20: Each class of pending work has one register that rules
+**What:** closing something is written in the register that owns it. The others are derived and are
+not edited by hand. `HISTORY.log` is **append-only**: what is missing gets added at the end with its
+real date noted.
+**Why:** this repository reached **twelve** places where a pending item could live and **one** of them
+had an automated guard. The result, measured on 2026-07-28: `PENDING_TASKS.md` marked `PENDING` things
+that were done, declared `BLOCKED` **forty-four task rows** for four PTs already merged, asked to
+"push master" when master was already pushed, and — worst — **PT-129 and PT-130 had no entry in
+`HISTORY.log`** despite having evidence folders, merged commits and closed PTSA findings (PT-140).
+None of those rows was undone work. All of them were **done work that no register picked up**.
+PT-090 had already rebuilt that file once, and F-33 found it lying again **three PTs later**. A
+register fixed by hand drifts again; one with a guard does not.
+**Correct:** the ownership table in `CLAUDE.md` § "Dónde vive un pendiente". Add missing history at
+the end, dated.
+**Incorrect:** reordering `HISTORY.log` so entries land chronologically — that falsifies the record
+this rule exists to make trustworthy.
+**Enforced by:** `coherencia-de-registros.spec.ts`, three deterministic checks only. It does **not**
+read prose: a guard that forces a particular wording teaches people to write for the linter, and then
+the document stops telling the truth. Its parser understands grouped headers (`## PT-090 … PT-104`)
+because a noisy guard gets disabled, and a disabled guard also stops catching what it did detect.
+
 ---
 
 ## 5. Files Requiring Extra Care Before Modification
