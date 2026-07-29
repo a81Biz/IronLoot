@@ -32,7 +32,7 @@ import {
   LoginDto,
   AuthResponseDto,
   AuthTokensResponseDto,
-  UserResponseDto,
+  AuthUserResponseDto,
 } from './dto';
 import { Prisma } from '@prisma/client';
 import { JwtPayload, AuthenticatedUser, Role } from './decorators';
@@ -429,7 +429,7 @@ export class AuthService {
   // VERIFY EMAIL
   // ===========================================
 
-  async verifyEmail(token: string): Promise<UserResponseDto> {
+  async verifyEmail(token: string): Promise<AuthUserResponseDto> {
     const traceId = this.ctx.getTraceId();
     this.log.info('Verifying email');
 
@@ -672,7 +672,7 @@ export class AuthService {
   // GET CURRENT USER
   // ===========================================
 
-  async getMe(userId: string): Promise<UserResponseDto> {
+  async getMe(userId: string): Promise<AuthUserResponseDto> {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
       include: { profile: true },
@@ -783,7 +783,7 @@ export class AuthService {
         postalCode: string | null;
       } | null;
     },
-  ): UserResponseDto {
+  ): AuthUserResponseDto {
     return {
       id: user.id,
       email: user.email,

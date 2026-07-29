@@ -233,7 +233,29 @@ export class ProfileDto {
   legalName?: string;
 }
 
-export class UserResponseDto {
+/**
+ * PT-162 (H-023) — Se llamaba `UserResponseDto`, igual que
+ * `src/modules/users/dto/user-response.dto.ts`, **con esquemas distintos**.
+ *
+ * Swagger lo avisaba en **cada arranque** del API:
+ *
+ * ```
+ * warn — Duplicate DTO detected: "UserResponseDto" is defined multiple times with different
+ * schemas. … Note: This will throw an error in the next major version.
+ * ```
+ *
+ * `/docs` publica el contrato del API. Dos formas bajo un nombre significan que quien lea el
+ * catalogo **no sabe cual de las dos recibira** — y el catalogo es lo que se lee para integrarse.
+ *
+ * Lo que lo hacia digno de un PT pese a ser BAJA: **traia fecha de caducidad puesta por la propia
+ * libreria**. El dia que alguien suba Swagger de version mayor, el arranque deja de completarse, y
+ * seria «se rompio al actualizar» en vez de «lo sabiamos» — con el aviso llevando meses en los logs
+ * de cada arranque.
+ *
+ * Se renombra este y no el de `users` porque este es especifico de autenticacion (respuesta de
+ * login, verificacion y refresco) mientras el otro es la representacion general de usuario.
+ */
+export class AuthUserResponseDto {
   @ApiProperty({ example: '550e8400-e29b-41d4-a716-446655440000' })
   id: string;
 
@@ -269,8 +291,8 @@ export class UserResponseDto {
 }
 
 export class AuthResponseDto {
-  @ApiProperty({ type: UserResponseDto })
-  user: UserResponseDto;
+  @ApiProperty({ type: AuthUserResponseDto })
+  user: AuthUserResponseDto;
 
   @ApiProperty({ type: AuthTokensResponseDto })
   tokens: AuthTokensResponseDto;

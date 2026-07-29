@@ -25,7 +25,7 @@ export interface JwtPayload {
   username: string;
   state: UserState;
   role: Role;
-  // Expanded fields matching UserResponseDto
+  // Expanded fields matching AuthUserResponseDto
   displayName?: string;
   avatarUrl?: string;
   isSeller: boolean;
