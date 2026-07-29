@@ -6,6 +6,9 @@ import { PrismaService } from '../../src/database/prisma.service';
 import { LedgerType } from '@prisma/client';
 import { AuctionSchedulerService } from '../../src/modules/scheduler/auction-scheduler.service';
 
+const EMAIL_COMPRADOR = 'buyer_e2e@test.com';
+const EMAIL_VENDEDOR = 'seller_e2e@test.com';
+
 describe('Orders Flow (E2E)', () => {
   let app: INestApplication;
   let prisma: PrismaService;
@@ -28,25 +31,69 @@ describe('Orders Flow (E2E)', () => {
     // Cuando se escribio esto, un pedido no tenia envios, valoraciones ni comisiones colgando.
     // Ahora si. Se borra de las hojas hacia la raiz — y las tablas nuevas se anaden AQUI, que es
     // la deuda que este orden explicito deja a la vista en vez de esconder.
-    await prisma.rating.deleteMany();
-    await prisma.shipment.deleteMany();
-    await prisma.commissionRecord.deleteMany();
-    await prisma.dispute.deleteMany();
-    await prisma.ledger.deleteMany();
-    await prisma.order.deleteMany();
-    await prisma.bid.deleteMany();
-    await prisma.auction.deleteMany();
-    // Los avisos y el monedero tambien cuelgan del usuario.
-    await prisma.notification.deleteMany();
-    await prisma.wallet.deleteMany();
-    await prisma.session.deleteMany();
-    await prisma.user.deleteMany({
-      where: {
-        email: { in: ['buyer_e2e@test.com', 'seller_e2e@test.com'] },
-      },
-    });
-    // Don't delete all users in shared env, but for E2E usually safe if specific db
+    //
+    // PT-143 — El orden era correcto y el ALCANCE no: eran once `deleteMany()` **sin filtro**, es
+    // decir once tablas truncadas enteras. Jest corre las suites en paralelo, asi que mientras
+    // `ratings.e2e` preparaba su pedido, esta suite se lo borraba: de ahi sus `expected 201, got
+    // 404` y que los fallos cambiaran de sitio entre corridas.
+    //
+    // Y habia un riesgo mayor que el paralelismo: `deleteMany()` sin filtro borra sobre la base a
+    // la que apunte `DATABASE_URL`, y la de desarrollo de este repositorio sostiene validaciones
+    // PTSA. El propio `auth-helper` lo temia por escrito y se quedo en un comentario.
+    //
+    // Ahora se borra **solo lo de esta suite**, resolviendo los ids desde sus dos usuarios.
+    await limpiarDatosDeEstaSuite();
   });
+
+  /**
+   * Borra lo que crea esta suite y nada mas, de las hojas hacia la raiz.
+   *
+   * Si los dos usuarios no existen todavia —primera corrida— no hay nada que borrar y las consultas
+   * devuelven listas vacias: la funcion es idempotente a proposito, porque un `beforeAll` que falla
+   * cuando la base esta limpia es un `beforeAll` que solo funciona la segunda vez.
+   */
+  async function limpiarDatosDeEstaSuite(): Promise<void> {
+    const usuarios = await prisma.user.findMany({
+      where: { email: { in: [EMAIL_COMPRADOR, EMAIL_VENDEDOR] } },
+      select: { id: true },
+    });
+    if (usuarios.length === 0) return;
+
+    const userIds = usuarios.map((u) => u.id);
+
+    const subastas = await prisma.auction.findMany({
+      where: { sellerId: { in: userIds } },
+      select: { id: true },
+    });
+    const auctionIds = subastas.map((a) => a.id);
+
+    const pedidos = await prisma.order.findMany({
+      where: { OR: [{ buyerId: { in: userIds } }, { sellerId: { in: userIds } }] },
+      select: { id: true },
+    });
+    const orderIds = pedidos.map((o) => o.id);
+
+    const monederos = await prisma.wallet.findMany({
+      where: { userId: { in: userIds } },
+      select: { id: true },
+    });
+    const walletIds = monederos.map((w) => w.id);
+
+    // Hojas primero. El orden es el mismo que ya habia; lo que cambia es que cada borrado lleva su
+    // `where`.
+    await prisma.rating.deleteMany({ where: { orderId: { in: orderIds } } });
+    await prisma.shipment.deleteMany({ where: { orderId: { in: orderIds } } });
+    await prisma.commissionRecord.deleteMany({ where: { orderId: { in: orderIds } } });
+    await prisma.dispute.deleteMany({ where: { orderId: { in: orderIds } } });
+    await prisma.ledger.deleteMany({ where: { walletId: { in: walletIds } } });
+    await prisma.order.deleteMany({ where: { id: { in: orderIds } } });
+    await prisma.bid.deleteMany({ where: { auctionId: { in: auctionIds } } });
+    await prisma.auction.deleteMany({ where: { id: { in: auctionIds } } });
+    await prisma.notification.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.wallet.deleteMany({ where: { id: { in: walletIds } } });
+    await prisma.session.deleteMany({ where: { userId: { in: userIds } } });
+    await prisma.user.deleteMany({ where: { id: { in: userIds } } });
+  }
 
   // NOTE: This test requires a running DB and fully configured environment.
   // If it fails with "Tests: 0 total", check Jest config paths and DB connection.
@@ -57,7 +104,7 @@ describe('Orders Flow (E2E)', () => {
     // 1. Create Seller & Buyer
     const buyer = await prisma.user.create({
       data: {
-        email: 'buyer_e2e@test.com',
+        email: EMAIL_COMPRADOR,
         username: 'buyer_e2e',
         passwordHash: 'hash',
         isSeller: false,
@@ -68,7 +115,7 @@ describe('Orders Flow (E2E)', () => {
 
     const seller = await prisma.user.create({
       data: {
-        email: 'seller_e2e@test.com',
+        email: EMAIL_VENDEDOR,
         username: 'seller_e2e',
         passwordHash: 'hash',
         isSeller: true,

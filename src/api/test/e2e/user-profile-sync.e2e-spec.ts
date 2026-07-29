@@ -36,16 +36,23 @@ describe('User Profile Sync (e2e)', () => {
     await app.init();
     prisma = app.get(PrismaService);
 
-    // Cleanup
-    await prisma.session?.deleteMany({});
-    await prisma.user?.deleteMany({ where: { email: testUser.email } });
+    // PT-143 — Acotado: borraba todas las sesiones, tambien las de otros workers.
+    await limpiarUsuarioDeLaSuite();
   });
 
+  /** Borra el usuario de esta suite y su sesion, y nada mas. */
+  async function limpiarUsuarioDeLaSuite(): Promise<void> {
+    const u = await prisma.user.findUnique({
+      where: { email: testUser.email },
+      select: { id: true },
+    });
+    if (!u) return;
+    await prisma.session?.deleteMany({ where: { userId: u.id } });
+    await prisma.user?.deleteMany({ where: { id: u.id } });
+  }
+
   afterAll(async () => {
-    if (prisma) {
-      await prisma.session?.deleteMany({});
-      await prisma.user?.deleteMany({ where: { email: testUser.email } });
-    }
+    if (prisma) await limpiarUsuarioDeLaSuite();
     await app.close();
   });
 
