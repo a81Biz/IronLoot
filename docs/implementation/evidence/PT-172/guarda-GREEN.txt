@@ -1,0 +1,18 @@
+PASS test/unit/documentacion/configuracion-de-pruebas-montada.spec.ts
+  La configuracion de pruebas vive en un sitio y esta montada (PT-172)
+    ✓ C1: `jest.config.js` existe (2 ms)
+    ✓ C2: `package.json` NO recupera su bloque `jest` — una sola fuente (1 ms)
+    ✓ C3: el fichero esta declarado como montaje del servicio `api` (1 ms)
+    ✓ C4: `maxWorkers` sigue fijado y explicado (1 ms)
+    ✓ C5: no queda ninguna clave de comentario que Jest rechace (1 ms)
+    casos de control
+      ✓ AC-01: se extraen los montajes de un bloque de servicio
+      ✓ AC-02: el bloque se corta en el siguiente servicio
+      ✓ AC-03: un servicio que no existe da lista vacia, y C3 lo detectaria
+      ✓ AC-04: un volumen nombrado (no una ruta) no se cuenta como montaje de fichero (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       9 passed, 9 total
+Snapshots:   0 total
+Time:        4.521 s, estimated 5 s
+Ran all test suites matching /configuracion-de-pruebas-montada/i.

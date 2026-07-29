@@ -176,7 +176,10 @@ Trade-off: simpler deployment, no build step, SEO-friendly; cost: less interacti
 
 ## DEPENDENCY NOTES
 
-- `stripe: ^20.1.2` is installed in `src/api/package.json:68` but Stripe integration is not confirmed.
+- `stripe: ^20.1.2` is installed in `src/api/package.json:80` but Stripe integration is not confirmed.
+  <!-- PT-172: la cita decia `:68`, que es `ioredis`. Estaba mal ANTES de este PT —`stripe` no se ha
+       movido— y ninguna guarda la cubria: `coherencia-documentacion-codigo.spec.ts` vigila la tabla de
+       stack del TRD y su prosa, no este documento. Es H-016 en el registro de deuda. -->
 - `mercadopago: ^2.11.0` — primary payment provider.
 - `otplib: ^12.0.1` — TOTP for 2FA.
 - `bullmq: ^5.79.0` — async job queue (PT-038).

@@ -2709,3 +2709,41 @@ Delta (real vs planificado): sin desviacion en el alcance. Se deja constancia de
   afirmacion sobre la auditoria, no sobre el codigo—. Cerrarlos exige mirar y citar, y eso es trabajo con
   alcance propio. Se dejan como estan en vez de declararlos cerrados por haberlos leido de pasada.
 PTSA reference: ninguno. Toca el registro que contradecia el cierre de H-002. F-167-G.
+
+## PT-172 — BUG: la configuracion de Jest emitia un aviso de validacion en cada corrida
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-172-aviso-de-validacion-de-jest
+Objective: que `npx jest` no emita ruido que enseñe a descartar su propia salida.
+Root cause: el bloque `jest` de `package.json` llevaba una clave `_comentario_maxWorkers` con la
+  medicion de PT-159. JSON no admite comentarios, asi que la explicacion se colaba como clave — y
+  **Jest la rechaza**, emitiendo *«Unknown option … This is probably a typing mistake»* **dos veces por
+  corrida**.
+  Es pequeño y es exactamente el mecanismo que PT-159 y PT-166 vinieron a quitar: **ruido que enseña a
+  descartar la salida de la suite**. Quien se acostumbra a ver un aviso que no importa deja de leer los
+  que importan.
+Solution: la configuracion pasa a `src/api/jest.config.js`, donde un comentario es un comentario. **El
+  texto no se pierde**: se conserva integro pegado a `maxWorkers`, con la medicion de PT-159 y la de
+  PT-166, porque es la razon de que el valor sea 1 — y *«fue una prevencion que se quedo en una nota lo
+  que hizo volver a H-014 en cuatro dias»*.
+Modified files: src/api/jest.config.js, src/api/package.json, docker-compose.yml,
+  docs/enterprise-documentation/archive/03-TRD.md, docs/enterprise-documentation/10-Technical-Debt.md,
+  src/api/test/unit/documentacion/configuracion-de-pruebas-montada.spec.ts
+Evidence: docs/implementation/evidence/PT-172/
+Delta (real vs planificado): **tres cosas que no estaban previstas, y las tres las encontro probar en
+  vez de suponer.**
+  (1) **Al mover la config, las 111 suites fallaron con `SyntaxError` sobre TypeScript valido.**
+  `docker-compose` no montaba el fichero nuevo, asi que Jest caia a Babel y no aplicaba `ts-jest`. Es
+  **PT-138 otra vez**, y su comentario ya estaba escrito tres lineas mas arriba en el mismo compose:
+  *«lo que no esta montado, el contenedor lo ejecuta de otra forma — no falla, miente»*. Aqui fallo
+  ruidosamente por suerte. Se añade el montaje y **una guarda que lo vigila**
+  (`configuracion-de-pruebas-montada.spec.ts`), vista fallar al retirar el montaje a proposito.
+  (2) **Retirar el bloque `jest` desplazo lineas, y la guarda de H-016 lo cazo en el acto**: el TRD
+  citaba `package.json:156` y `:157` para Node y npm, que quedaron fuera de rango. Corregidas a `:121`
+  y `:122`. Es la demostracion en vivo de para que existe RULE — una cita por numero de linea envejece
+  con cualquier edicion del fichero citado.
+  (3) **Y aparecio una cita que ya estaba mal antes de este PT**: `10-Technical-Debt.md` situaba
+  `stripe` en `package.json:68`, que es `ioredis`; esta en la 80, y no se ha movido. Ninguna guarda la
+  cubria —`coherencia-documentacion-codigo` vigila la tabla de stack del TRD y su prosa, no el registro
+  de deuda—. Corregida y anotada.
+PTSA reference: ninguno. F-167-H.

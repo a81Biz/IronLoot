@@ -6,8 +6,8 @@
 
 | Requirement | Value | Source |
 |---|---|---|
-| Node.js | ≥ 20.0.0 | `src/api/package.json:156` |
-| npm | ≥ 10.0.0 | `src/api/package.json:157` |
+| Node.js | ≥ 20.0.0 | `src/api/package.json:121` |
+| npm | ≥ 10.0.0 | `src/api/package.json:122` |
 | PostgreSQL | 16 (alpine) | `docker-compose.yml:133` |
 | Redis | 7 (alpine) | `docker-compose.yml:162` |
 | NestJS | ^11.0.0 | `src/api/package.json:49` |

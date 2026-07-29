@@ -1,0 +1,35 @@
+FAIL test/unit/documentacion/configuracion-de-pruebas-montada.spec.ts
+  La configuracion de pruebas vive en un sitio y esta montada (PT-172)
+    ✓ C1: `jest.config.js` existe (1 ms)
+    ✓ C2: `package.json` NO recupera su bloque `jest` — una sola fuente (1 ms)
+    ✕ C3: el fichero esta declarado como montaje del servicio `api` (4 ms)
+    ✓ C4: `maxWorkers` sigue fijado y explicado (2 ms)
+    ✓ C5: no queda ninguna clave de comentario que Jest rechace (1 ms)
+    casos de control
+      ✓ AC-01: se extraen los montajes de un bloque de servicio
+      ✓ AC-02: el bloque se corta en el siguiente servicio
+      ✓ AC-03: un servicio que no existe da lista vacia, y C3 lo detectaria
+      ✓ AC-04: un volumen nombrado (no una ruta) no se cuenta como montaje de fichero
+
+  ● La configuracion de pruebas vive en un sitio y esta montada (PT-172) › C3: el fichero esta declarado como montaje del servicio `api`
+
+    expect(received).toContain(expected) // indexOf
+
+    Expected value: "./src/api/jest.config.js:/app/jest.config.js"
+    Received array: ["./src/api/src:/app/src", "./src/api/prisma:/app/prisma", "./src/api/test:/app/test", "./src/api/package.json:/app/package.json", "./src/api/tsconfig.json:/app/tsconfig.json", "./src/api/nest-cli.json:/app/nest-cli.json", "./src/api/scripts:/app/scripts", "./src/api/security-baseline.json:/app/security-baseline.json", "./src/api/observability-baseline.json:/app/observability-baseline.json", "./src/packages/core:/packages/core"]
+
+      68 |
+      69 |     expect(montajes.length).toBeGreaterThan(5);
+    > 70 |     expect(montajes).toContain('./src/api/jest.config.js:/app/jest.config.js');
+         |                      ^
+      71 |   });
+      72 |
+      73 |   it('C4: `maxWorkers` sigue fijado y explicado', () => {
+
+      at Object.<anonymous> (test/unit/documentacion/configuracion-de-pruebas-montada.spec.ts:70:22)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 8 passed, 9 total
+Snapshots:   0 total
+Time:        4.534 s, estimated 5 s
+Ran all test suites matching /configuracion-de-pruebas-montada/i.
