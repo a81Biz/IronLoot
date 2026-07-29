@@ -1,10 +1,31 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-29
+**FDGE V3** · **Última actualización**: 2026-07-29 (PT-169)
 
 ---
 
-## Queda una cosa
+## Esperando validación humana
+
+`[R44]` y STATE 6 prohíben al agente cerrar bugs. **Estos esperan tu palabra, no trabajo:**
+
+| PT | Qué es | Evidencia |
+|---|---|---|
+| **PT-166** | El techo de memoria de la suite: 2 GB + `--max-old-space-size=1536`. `npx jest` sin flags vuelve a pasar | `evidence/PT-166/` |
+| **PT-167** | El comando de TLS que no existía: se declara el servicio `nginx-tls` con su perfil | `evidence/PT-167/` |
+| **PT-168** | Los derivados de PTSA declaraban activos cuatro hallazgos cerrados | `evidence/PT-168/` |
+| **PT-169** | El rastro de trabajo tenía huecos: PT-167 sin entrada, PT-166 sin evidencia | `evidence/PT-169/` |
+| **PT-170** | Dos hallazgos citaban carpetas de evidencia inexistentes | `evidence/PT-170/` |
+| **PT-171** | `ND-002` y `ND-003` contradecían al código | `evidence/PT-171/` |
+| **PT-172** | La clave `_comentario_maxWorkers` producía un aviso de Jest en cada corrida | `evidence/PT-172/` |
+
+**PT-166 y PT-167 estuvieron fuera de esta lista, y ése fue el defecto F-167-F.** El cierre en bloque
+con VoBo enumeraba PT-148…165; PT-166 entró después y PT-167 no tenía ni entrada, mientras este fichero
+afirmaba *«Nada más está pendiente»*. Lo vigila ahora `rastro-de-trabajo-completo.spec.ts`
+(**RULE-34**).
+
+---
+
+## Bloqueado por un tercero
 
 | Trabajo | Qué falta | Quién |
 |---|---|---|
@@ -21,18 +42,26 @@ presentes cuando llegue el proveedor:
   y C no. Este repositorio ya sabe lo que cuesta poner algo frágil en la ruta de un pago (ADR-038).
 
 Mientras tanto `H-005` sigue `ABIERTA`, mantiene **D1 en 85** y deja `P-012 (CfdiRecord)` en
-`IDENTIFICADO`. Es el **único hallazgo activo del sistema**.
+`IDENTIFICADO`. Es el **único hallazgo PTSA activo del sistema**.
 
 **Bloqueado por lo mismo**: TD-001 (CFDI/PAC). Y TD-002 (Stripe y HeyBanco) espera credenciales de
 ambas pasarelas — también un tercero, también fuera del repositorio.
 
 ---
 
-## Nada más está pendiente
+## Y una cosa que sólo puede disparar el humano
 
-Todo lo demás está cerrado con VoBo humano el 2026-07-29: los once PT de la tanda del 28/29, los
-quince de FPGE-003, los tres del cierre (PT-163/164/165) y los cuatro hallazgos de auditoría
-(H-021…H-024). Detalle en `HISTORY.log`, que es append-only y manda para lo terminado.
+**`resume PTSA`.** Los scores de S-003 están superados: se midieron con cinco hallazgos activos y hoy
+hay uno. `freshness = STALE`, 25 commits desde `d260c80`. PT-168 dejó el cálculo a la vista y **no lo
+emitió a propósito** — PTSA no se auto-activa.
+
+---
+
+## Lo que sí está cerrado
+
+Los once PT de la tanda del 28/29, los quince de FPGE-003, los tres del cierre (PT-163/164/165) y los
+cuatro hallazgos de auditoría (H-021…H-024), todos con VoBo humano el 2026-07-29. Detalle en
+`HISTORY.log`, que es append-only y manda para lo terminado.
 
 ---
 

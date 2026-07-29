@@ -1,0 +1,117 @@
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+FAIL test/unit/documentacion/rastro-de-trabajo-completo.spec.ts
+  El rastro de trabajo no tiene huecos — RULE-34 (PT-169)
+    ✓ se leyeron entradas, cierres y evidencia — si no, C1 y C2 pasan en vacio (3 ms)
+    ✕ C1: todo PT que sigue esperando validacion figura en PENDING_TASKS (6 ms)
+    ✕ C2: todo grupo de la historia tiene evidencia — contada por grupo (2 ms)
+    ✓ C3: la ventana excluida se dice, no se calla
+    casos de control
+      ✓ AC-01: un rango se expande — sin esto C1 acusaria a catorce PT validados
+      ✓ AC-02: una cabecera agrupada da todos sus PT
+      ✓ AC-03: un VALIDATION_PENDING sin cierre posterior se detecta
+      ✓ AC-04: una entrada de VoBo cierra lo que enumera en el CUERPO
+      ✓ AC-08: un VoBo de totalidad cierra lo acumulado, aunque no enumere (1 ms)
+      ✓ AC-09: el orden importa — lo pendiente DESPUES de un VoBo total sigue pendiente
+      ✓ AC-05: un grupo con evidencia en cualquiera de sus PT no se acusa
+      ✓ AC-06: un grupo sin evidencia en ninguno de sus PT SI se acusa
+      ✓ AC-07: `Status:` con prosa detras se sigue leyendo
+
+  ● El rastro de trabajo no tiene huecos — RULE-34 (PT-169) › C1: todo PT que sigue esperando validacion figura en PENDING_TASKS
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "PT-166",
+    + ]
+
+      174 |     const huerfanos = pendientesVivos(entradas).filter((p) => !enPendientes.has(p));
+      175 |
+    > 176 |     expect(huerfanos).toEqual([]);
+          |                       ^
+      177 |   });
+      178 |
+      179 |   it('C2: todo grupo de la historia tiene evidencia — contada por grupo', () => {
+
+      at Object.<anonymous> (test/unit/documentacion/rastro-de-trabajo-completo.spec.ts:176:23)
+
+  ● El rastro de trabajo no tiene huecos — RULE-34 (PT-169) › C2: todo grupo de la historia tiene evidencia — contada por grupo
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  -  1
+    + Received  + 38
+
+    - Array []
+    + Array [
+    +   "## PT-031 — TRIVIAL: StructuredLogger en PaymentsService",
+    +   "## PT-032 — TRIVIAL: Corrección PRD AC-3.2 held funds invari",
+    +   "## PT-030 — REFACTOR: ThrottlerModule a Redis storage (DONE)",
+    +   "## PT-031 — TRIVIAL: StructuredLogger en PaymentsService (DO",
+    +   "## PT-032 — TRIVIAL: PRD AC-3.2 held funds invariant (DONE)",
+    +   "## PT-045/046 — CFDI (bloqueo externo) + limpiezas + reconci",
+    +   "## PT-047 — Cierre de hallazgos abiertos: toggle CFDI (AUD-0",
+    +   "## PT-048 — BUG — Contrato CLIENT↔API en escrituras del port",
+    +   "## PT-049 — BUG — Persistencia de auditoría con ids no-UUID",
+    +   "## PT-050 — BUG — Slice Python en plantillas Nunjucks (500)",
+    +   "## PT-051 — BUG — Enum inválido en broadcast de notificacion",
+    +   "## PT-052 — BUG — CMS admin no cargaba (fetch client-side 40",
+    +   "## PT-053 — BUG — Enlace footer /contact sin ruta (404)",
+    +   "## PT-054 — BUG — Subasta inexistente devolvía 200",
+    +   "## PT-055 — BUG — Overflow horizontal en móvil (header BASE)",
+    +   "## PT-056 — BUG — Reembolsos admin no cargaban (fetch client",
+    +   "## PT-057 — BUG — SEO admin no cargaba (fetch client-side 40",
+    +   "## PT-055 (ext) — BUG — Portal CLIENT sin responsive (overfl",
+    +   "## PT-073 — BUG: Contrato de depósito falla por carrera de n",
+    +   "## PT-074 — BUG: Fase 31-outbid redundante falla en run-all ",
+    +   "## PT-075 — BUG: E2E-3 falla por precondición temporal (suba",
+    +   "## Cierre de validación — PT-073 / PT-074 / PT-075",
+    +   "## PT-109 — DOCS: la documentacion deja de contradecir al co",
+    +   "## PT-112 — REFACTOR: el repositorio versiona decisiones, no",
+    +   "## PT-113 — INVESTIGATION: el bloqueo del CFDI no es el PAC ",
+    +   "## PT-115 — BUG: la ventana de disputa se medía desde la ult",
+    +   "## PT-116 — REFACTOR: la cadena del mailer (TD-015)",
+    +   "## PT-123 — INVESTIGATION: alcanzabilidad real de los 12 avi",
+    +   "## PT-124 — BUG (seguridad): la subida dejaba al cliente ele",
+    +   "## PT-125 — REFACTOR: bcrypt 5->6 y fuera la dependencia uui",
+    +   "## PT-126 — REFACTOR (MAJOR): NestJS 10->11 y Express 4->5 e",
+    +   "## PT-124 … PT-126 — VALIDACION",
+    +   "## PT-132 — BUG: dos defectos reales que los tests llevaban ",
+    +   "## PT-134 — VALIDACION: por navegador, sobre el stack real",
+    +   "## PT-145 — BUG: dos duplicados sin restriccion que los impi",
+    +   "## PT-166 — BUG: la suite volvio a no caber, y `maxWorkers` ",
+    + ]
+
+      185 |       .map((e) => e.cabecera.slice(0, 60));
+      186 |
+    > 187 |     expect(sinEvidencia).toEqual([]);
+          |                          ^
+      188 |   });
+      189 |
+      190 |   it('C3: la ventana excluida se dice, no se calla', () => {
+
+      at Object.<anonymous> (test/unit/documentacion/rastro-de-trabajo-completo.spec.ts:187:26)
+
+Test Suites: 1 failed, 1 total
+Tests:       2 failed, 11 passed, 13 total
+Snapshots:   0 total
+Time:        4.652 s, estimated 5 s
+Ran all test suites matching /rastro-de-trabajo-completo/i.

@@ -5260,13 +5260,45 @@ una cita comprobable»*.
 Esa decisión era razonable para «está en git» y es errónea para «existe»: la existencia de un
 directorio **sí** es comprobable. La guarda pasa en verde con dos citas rotas delante.
 
-### F-167-E — Nueve PT sin carpeta de evidencia
+### F-167-E — Dos PT sin evidencia *(corregido a la baja: eran nueve, y siete no lo eran)*
 
-PT-152, 154, 156, 158, 159, 162, 165, 166, 167. FDGE dice *«el código no es evidencia; la ejecución
-es evidencia»* y **«No Missing Evidence — no exceptions»**.
+> **Corrección del propio hallazgo, antes de actuar sobre él.** La primera medición dijo **nueve**
+> —PT-152, 154, 156, 158, 159, 162, 165, 166, 167— por contar carpetas `evidence/PT-XXX/` una a una.
+> Al verificar contra `HISTORY.log` resultó que **siete de los nueve no son un hueco, sino una
+> convención**: las entradas usan **cabeceras agrupadas** y una carpeta de evidencia **por grupo**.
+>
+> | Cabecera en `HISTORY.log` | Evidencia del grupo |
+> |---|---|
+> | `## PT-152 / PT-151` | `evidence/PT-151/` |
+> | `## PT-154 / PT-157` | `evidence/PT-157/` |
+> | `## PT-158 / PT-155 / PT-156` | `evidence/PT-155/` |
+> | `## PT-159 / PT-160 / PT-162` | `evidence/PT-160/` |
+> | `## PT-163 / PT-164 / PT-165` | `evidence/PT-163/`, `evidence/PT-164/` |
+>
+> Contar por PT en vez de por grupo produce **siete falsos positivos**. Queda escrito porque un
+> hallazgo falso que llega a la corrección cuesta trabajo real: se habrían creado siete carpetas para
+> satisfacer una métrica mal definida. Es la misma disciplina con la que S-003 descartó los doce
+> eventos de traza «huérfanos» que resultaron ser `cycle_id NULL` por diseño.
+
+**El hueco real son dos**, y los dos son del final de la jornada:
+
+| PT | Qué falta |
+|---|---|
+| **PT-166** | Tiene entrada en `HISTORY.log` **sin línea `Evidence:`** y sin carpeta. Es el único PT de la tanda sin rastro de ejecución |
+| **PT-167** | **No tiene entrada** en `HISTORY.log` (F-167-C) ni evidencia |
+
+FDGE dice *«el código no es evidencia; la ejecución es evidencia»* y **«No Missing Evidence — no
+exceptions»**.
+
+**Y hay un tercer caso, que no se puede arreglar escribiendo evidencia:** `HISTORY.log` cita
+`Evidence: docs/implementation/evidence/PT-026/`, que no existe y nunca existió — la carpeta de
+evidencia más antigua es `PT-029`, así que PT-026 y PT-046 **preceden a la convención**. `HISTORY.log`
+es append-only: no se edita para taparlo. Lo que sí se corrige es la cita **viva** que cuelga de ahí
+(`H-001`, ver F-167-D).
 
 La guarda C2 de `coherencia-de-registros.spec.ts` vigila **la dirección contraria** (toda carpeta de
-evidencia tiene entrada en historia). El hueco es el simétrico y estaba sin vigilar.
+evidencia tiene entrada en historia). El hueco es el simétrico y estaba sin vigilar — y hay que
+vigilarlo **por grupo**, no por PT, o la guarda nace con siete falsos positivos.
 
 ### F-167-F — PT-166 y PT-167 quedaron fuera del registro de pendientes
 

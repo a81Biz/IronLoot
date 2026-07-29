@@ -2570,3 +2570,68 @@ Delta (real vs planificado): una desviacion, y vale registrarla. La primera vers
   comprueba las dos direcciones: que la prosa no se acuse y que sin el filtro si habria fallado. Un
   falso positivo mata un control igual que un punto ciego.
 PTSA reference: no cierra hallazgo PTSA — corrige los derivados que los declaran. F-167-A, F-167-B.
+
+## PT-167 — BUG: un comando documentado que no existia
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: master (cambio en docker-compose y dos ficheros de `src/nginx/tls/`, sin rama propia)
+Objective: que el comando que arranca nginx con TLS sea el comando que arranca nginx con TLS.
+Root cause: PT-158 documento `docker compose --profile tls up -d nginx` en
+  `src/nginx/tls/README.md` y en `generar-certificado.sh`, y **ese perfil no estaba declarado en
+  ninguna parte**. Docker Compose **no protesta ante un perfil desconocido**: monta el `nginx` de
+  siempre, sin TLS, y todo parece funcionar.
+  **Es peor que un error: es el comando que promete una cosa y hace otra, en silencio.** La familia de
+  H-014/H-015/H-021 otra vez — un mecanismo que no se ejecuta no avisa de nada, y aqui ademas aparenta
+  exito. Lo escribio el trabajo de unas horas antes: se documento un comando sin ejecutarlo.
+Solution: se declara el servicio **`nginx-tls`** con su perfil `tls`, su puerto 443 y
+  `nginx-tls.conf` montada; los dos guiones apuntan ya a el. **Servicio aparte y no un perfil sobre el
+  `nginx` normal**, porque los dos no pueden convivir en el puerto 80.
+Modified files: docker-compose.yml, src/nginx/tls/README.md, src/nginx/tls/generar-certificado.sh
+Evidence: docs/implementation/evidence/PT-167/
+Delta (real vs planificado): no estaba planificado. **Lo encontro el grafo de conocimiento** al cruzar
+  el guion con `docker-compose.yml`; ninguna prueba lo miraba. Esta entrada la escribe PT-169: el
+  trabajo se hizo y se fusiono en `58fd605` **sin entrada en `HISTORY.log` ni evidencia**, que es el
+  hallazgo F-167-C. Se añade al final con su fecha real — no se reordena el fichero, porque reordenar
+  un log append-only es falsificar el registro que la regla existe para hacer fiable.
+PTSA reference: ninguno. F-167-C.
+
+## PT-169 — BUG: el rastro de trabajo tenia huecos, y las guardas miraban al otro lado
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-169-rastro-de-trabajo-con-huecos
+Objective: que ningun PT quede sin entrada, sin evidencia o sin figurar donde se le espera.
+Root cause: `coherencia-de-registros.spec.ts` (RULE-20) vigilaba dos direcciones y le faltaban las
+  simetricas. **Las dos fallaron el mismo dia:**
+  1. **PT-167 no existia en `HISTORY.log`**, solo en el mensaje de su commit. STATE 7 la declara
+     obligatoria.
+  2. **PT-166 quedo `VALIDATION_PENDING` fuera del registro de pendientes.** Su entrada es posterior al
+     cierre en bloque con VoBo (que enumera PT-148…165), asi que nadie lo valido, mientras
+     `PENDING_TASKS.md` y `HANDOFF.md` afirmaban «Nada mas esta pendiente».
+  Y C1 **pasaba en vacio**: sin filas pendientes que comparar, no hay nada que comprobar. Una guarda
+  que pasa en vacio no dice que todo este bien, dice que no ha mirado.
+Solution: entrada de PT-167 (arriba) con su contenido real leido del commit; **evidencia ejecutada**
+  para PT-166 (la corrida completa termina sin OOM; 2 GB y `--max-old-space-size=1536` verificados
+  dentro del contenedor) y para PT-167 (el servicio `nginx-tls` existe, el perfil `tls` resuelve, y sin
+  el perfil no se levanta); los dos entran en `PENDING_TASKS.md` y `HANDOFF.md` como
+  `VALIDATION_PENDING`, porque son BUG y **el agente no cierra bugs** (STATE 6).
+  Guarda nueva: **RULE-34** — `rastro-de-trabajo-completo.spec.ts`, 17 pruebas.
+Modified files: docs/implementation/HISTORY.log, docs/implementation/PENDING_TASKS.md,
+  docs/implementation/HANDOFF.md, docs/implementation/evidence-baseline.json,
+  docs/enterprise-documentation/11-Conventions.md, src/api/package.json,
+  src/api/test/unit/documentacion/rastro-de-trabajo-completo.spec.ts
+Evidence: docs/implementation/evidence/PT-169/
+Delta (real vs planificado): **dos desviaciones, y las dos corrigen el hallazgo original a la baja.**
+  (1) F-167-E decia «nueve PT sin evidencia». Al verificar, **siete no lo eran**: la historia usa
+  cabeceras agrupadas (`## PT-159 / PT-160 / PT-162`) con **una carpeta por grupo**. Contar por PT daba
+  siete falsos positivos, y perseguirlos habria creado siete carpetas para satisfacer una metrica mal
+  definida. La guarda cuenta **por grupo**. El hueco real eran dos: PT-166 y PT-167.
+  (2) C1 en su primera forma acusaba a **treinta** PT antiguos. La causa: tres VoBo historicos son
+  **declaraciones de totalidad** («toda la validacion pendiente», «dalos a todos por validados»), no
+  enumeraciones. Se resolvio recorriendo la historia **en orden cronologico** —lo que un log
+  append-only permite y exige— en vez de con un corte arbitrario, que habria sido un tope silencioso
+  disfrazado de umbral. Tras el cambio, C1 acusaba **exactamente PT-166**.
+  (3) C2 no admite ventana limpia: de 131 grupos, **34** no tienen evidencia, repartidos por toda la
+  historia. Fabricarla desde la descripcion de un PT seria **inventar ejecucion**, asi que se declaran
+  en `evidence-baseline.json` con el criterio de `security-baseline.json`: **la lista solo baja**.
+  C3/C4/C5 vigilan la propia linea base — que no crezca, que no tape a PT-166/167, y que no envejezca.
+PTSA reference: ninguno. F-167-C, F-167-E, F-167-F.

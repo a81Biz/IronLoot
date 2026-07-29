@@ -744,6 +744,31 @@ read prose: a guard that forces a particular wording teaches people to write for
 the document stops telling the truth. Its parser understands grouped headers (`## PT-090 … PT-104`)
 because a noisy guard gets disabled, and a disabled guard also stops catching what it did detect.
 
+### RULE-34: The work trail has no gaps — in both directions
+**What:** (a) every PT the history still leaves awaiting validation appears in `PENDING_TASKS.md`;
+(b) every **group** in `HISTORY.log` has an evidence folder, measured against a declared baseline that
+may only shrink.
+**Why:** RULE-20 watched two directions and was missing the symmetric ones. Both failed on 2026-07-29:
+**PT-167 existed only in its commit message** — no `HISTORY.log` entry, which STATE 7 makes mandatory —
+and **PT-166 sat at `VALIDATION_PENDING` outside the pending register**, because its entry landed *after*
+the blanket VoBo that enumerated PT-148…165, while `PENDING_TASKS.md` claimed *"nothing else is
+pending"*. Meanwhile C1 **passed vacuously**: with no pending rows there is nothing to compare. A guard
+that passes on an empty set does not say everything is fine — it says it did not look.
+**Count by GROUP, not by PT.** `HISTORY.log` uses grouped headers (`## PT-159 / PT-160 / PT-162`) with
+one evidence folder per group. Counting per PT produced **seven false positives**, and chasing them
+would have created seven folders to satisfy a badly defined metric (F-167-E, corrected before acting).
+**Chronology, not a cutoff.** Three historical VoBos are **totality statements** (*"toda la validación
+pendiente"*, *"dalos a todos por validados"*), not enumerations. Treating them as enumerations accused
+**thirty** already-validated PTs. The trail is walked in order — what an append-only log both permits
+and demands — instead of applying an arbitrary "from PT-140 onwards", which would be a silent cap
+dressed as a threshold.
+**The baseline is declared, never silent.** Of 131 groups, **34** have no evidence, spread across the
+whole history. Fabricating it from a PT's description would be **inventing execution**, and FDGE says
+the evidence *is* the execution. So they are declared in `evidence-baseline.json` on the same terms as
+`security-baseline.json`: the list only goes down. Its own checks watch that it does not grow, does not
+get used to cover today's gap, and does not age into declaring already-closed holes.
+**Enforced by:** `rastro-de-trabajo-completo.spec.ts`.
+
 ### RULE-33: A PTSA derived file never contradicts the `H-XXX` it derives from
 **What:** `PTSA/Hallazgos/H-XXX.md` **rules** for audit findings. `ESTADO_ACTUAL.md`, `RESUMEN.md` and
 `PENDIENTES.md` are derived: none of them may **table** a finding as active when its frontmatter says
@@ -815,3 +840,4 @@ When adding a new required environment variable:
 | 2026-07-28 | RULE-13 — an endpoint with no callers is retired, not polished (from H-018) | PT-133 |
 | 2026-07-28 | RULE-14 — a guard nobody has seen fail is not a guard | PT-127…PT-133 |
 | 2026-07-29 | RULE-33 — a PTSA derived file never contradicts the `H-XXX` (from F-167-A/B) | PT-168 |
+| 2026-07-29 | RULE-34 — the work trail has no gaps, both directions (from F-167-C/E/F) | PT-169 |

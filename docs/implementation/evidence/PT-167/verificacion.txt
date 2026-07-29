@@ -1,0 +1,60 @@
+=== PT-167 — Verificacion posterior (PT-169), 2026-07-29
+Lo que PT-167 afirmo: el servicio nginx-tls existe con su perfil, su 443 y la config montada.
+
+--- docker-compose.yml: servicio nginx-tls
+  nginx-tls:
+    build:
+      context: ./src/nginx
+      dockerfile: Dockerfile
+    container_name: ironloot-nginx-tls
+    profiles:
+      - tls
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./src/nginx/nginx-tls.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./src/nginx/tls:/etc/nginx/tls:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      admin:
+        condition: service_started
+      base:
+        condition: service_started
+      client:
+        condition: service_started
+    networks:
+      - ironloot-network
+    restart: unless-stopped
+
+  # ===========================================
+  # Iron Loot Admin Panel (NestJS SSR)
+  # ===========================================
+  admin:
+
+--- El perfil 'tls' esta declarado y resuelve (docker compose config)
+db
+redis
+api
+base
+admin
+client
+nginx
+mailhog
+nginx-tls
+
+--- Sin el perfil, nginx-tls NO se levanta (es lo que hace que el comando sea honesto)
+db
+redis
+api
+base
+client
+mailhog
+admin
+nginx
+
+--- Los dos guiones apuntan a nginx-tls, no al nginx normal
+src/nginx/tls/README.md:35:docker compose --profile tls up -d nginx-tls
+src/nginx/tls/README.md:47:**PT-158 documentó `docker compose --profile tls up -d nginx` y ese perfil no existía.** Docker
+src/nginx/tls/generar-certificado.sh:64:[tls] Despues:  docker compose --profile tls up -d nginx-tls

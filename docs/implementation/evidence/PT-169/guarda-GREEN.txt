@@ -1,0 +1,42 @@
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+PASS test/unit/documentacion/rastro-de-trabajo-completo.spec.ts
+  El rastro de trabajo no tiene huecos — RULE-34 (PT-169)
+    ✓ se leyeron entradas, cierres y evidencia — si no, C1 y C2 pasan en vacio (3 ms)
+    ✓ C1: todo PT que sigue esperando validacion figura en PENDING_TASKS (3 ms)
+    ✓ C2: ningun grupo NUEVO se queda sin evidencia — contada por grupo (1 ms)
+    ✓ C3: la linea base solo puede BAJAR — nunca crecer
+    ✓ C4: la linea base no cubre a PT-166 ni a PT-167 — se resolvieron, no se declararon (1 ms)
+    ✓ C5: lo declarado en la linea base sigue siendo cierto
+    casos de control
+      ✓ AC-01: un rango se expande — sin esto C1 acusaria a catorce PT validados (1 ms)
+      ✓ AC-02: una cabecera agrupada da todos sus PT
+      ✓ AC-03: un VALIDATION_PENDING sin cierre posterior se detecta
+      ✓ AC-04: una entrada de VoBo cierra lo que enumera en el CUERPO
+      ✓ AC-08: un VoBo de totalidad cierra lo acumulado, aunque no enumere
+      ✓ AC-09: el orden importa — lo pendiente DESPUES de un VoBo total sigue pendiente (1 ms)
+      ✓ AC-05: un grupo con evidencia en cualquiera de sus PT no se acusa
+      ✓ AC-06: un grupo sin evidencia en ninguno de sus PT SI se acusa (1 ms)
+      ✓ AC-10: una entrada sin PT en cabecera no exige evidencia
+      ✓ AC-11: la clave de un grupo con rango expande el rango
+      ✓ AC-07: `Status:` con prosa detras se sigue leyendo (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       17 passed, 17 total
+Snapshots:   0 total
+Time:        4.773 s, estimated 5 s
+Ran all test suites matching /rastro-de-trabajo-completo/i.
