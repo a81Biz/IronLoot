@@ -589,6 +589,37 @@ rules that do not exist. The guard accused itself on its first run for exactly t
 that a control block constructs rather than cites — **an exception excuses one file, a rule serves the
 next one.**
 
+### RULE-28: The document that declares what gets audited may not cite what does not exist
+**What:** every file path `PTSA/audit-scope.yaml` names must exist. Same for the facts its comments
+assert about the repository (migration counts, and the like).
+**Why:** it declared five documents and **four had been archived the day before** by PT-141 under
+ADR-049 — which followed the citations in `CLAUDE.md` and the TRD guard, and missed this one. And a
+comment still read *"23 migrations — none has ever run"*; there are **2** and **both are applied**.
+An audit that claims to cover four non-existent documents is claiming coverage it does not have, and
+`[A8]` makes declared coverage a requirement of the score. H-016's family, aimed at the file that
+says *what is audited*.
+incorrect: fixing the paths and moving on. The first attempt at this fix corrected the `docs:` block
+and left **a second list** with the same three archived paths a few lines above — the file kept lying
+somewhere else, and the guard is what caught it. A datum in two places with no declared owner drifts
+(PT-140, in miniature).
+**Enforced by:** `alcance-de-auditoria-existe.spec.ts`. It skips globs on purpose: `src/**/*.ts` is a
+pattern, not a citation, and demanding literal existence would guarantee a false positive.
+
+### RULE-29: The nine documents archived by ADR-049 do not come back
+**What:** none of `01-Platform-Overview` … `09-Security-Architecture` may reappear at the root of
+`docs/enterprise-documentation/`. They must stay in `archive/`, and the agent contract
+(`10-Technical-Debt.md`, `11-Conventions.md`, `inventory/`) must stay at the root.
+**Why:** ADR-049 archived them, and its only protection was **three prose warnings**. A
+`[START FOUNDATION]` run that re-emitted them would undo the decision **with no error at all**: nine
+files would appear and everything would stay green. A control that exists only as text is not a
+control (RULE-14).
+**Both directions matter:** the guard also checks the nine are still *in* `archive/`. Deleting them
+would satisfy "none at the root" while destroying what `[A6]` protects — PTSA cites them in closed
+evidence, and `03-TRD.md` is still verified there by `coherencia-documentacion-codigo.spec.ts`.
+**If you genuinely want them back:** retire ADR-049 first. That is the point of the rule — not to
+forbid the change, but to stop it happening by accident.
+**Enforced by:** `alcance-de-auditoria-existe.spec.ts`.
+
 ### RULE-17: No connection variable has a default, and everything the code reads is declared
 **What:** `REDIS_URL` is the single Redis contract — queues, rate limiting, the distributed lock and
 ADMIN's session store all read it. Connection variables have **no fallback**: if one is missing the

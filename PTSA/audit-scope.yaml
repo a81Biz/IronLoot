@@ -40,10 +40,19 @@ auditable_patterns:
   - "**/Dockerfile"
   - "**/Dockerfile.dev"
   # Documentación crítica
+  #
+  # PT-157 — Aquí había una SEGUNDA lista con las mismas tres rutas archivadas. Corregir sólo la de
+  # `docs:` habría dejado el fichero mintiendo igual, en otro sitio y con la guarda en verde: la
+  # primera versión de esta corrección hizo exactamente eso, y fue la guarda quien lo dijo.
+  #
+  # Es la lección de PT-140 en pequeño — un dato en dos sitios sin declarar cuál manda se desvía —
+  # y la razón de que este PT lleve mecanismo y no sólo una corrección.
   - "CLAUDE.md"
-  - "docs/enterprise-documentation/02-PRD.md"
-  - "docs/enterprise-documentation/03-TRD.md"
-  - "docs/enterprise-documentation/09-Security-Architecture.md"
+  - "docs-v2/1-negocio/PRD-Product-Requirements.md"
+  - "docs-v2/3-arquitectura/Software-Architecture-Document.md"
+  - "docs-v2/4-ingenieria/Software-Design-Document.md"
+  - "docs/enterprise-documentation/11-Conventions.md"
+  - "docs/enterprise-documentation/10-Technical-Debt.md"
 
 ignore_patterns:
   - "**/node_modules/**"
@@ -67,13 +76,30 @@ coverage_targets:
   services: all        # 39 ficheros *.service.ts en el API
   tables: all          # 33 modelos Prisma = 33 tablas en la BD real
   prompts: "N/A"       # Sistema determinístico, sin prompts LLM
-  migrations: all      # 23 migraciones — OJO: ninguna se ha ejecutado nunca (H-014)
+  # PT-157 — Esto decia «23 migraciones — OJO: ninguna se ha ejecutado nunca (H-014)». Las dos
+  # mitades eran falsas: son 2 —PT-127 las refundio en un `initial_schema`— y **las dos estan
+  # aplicadas**, verificado en `_prisma_migrations` el 2026-07-29 (E-027). El comentario congelo el
+  # estado de H-014 en el momento de detectarlo y nadie lo reviso al cerrarlo.
+  migrations: all      # 2 migraciones, las dos aplicadas y sin rollback (H-014 CERRADA)
+  # PT-157 (H-024) — Las cuatro rutas de abajo apuntaban a
+  # `docs/enterprise-documentation/{02-PRD,03-TRD,09-Security-Architecture,06-Backend-Architecture}.md`
+  # y **ninguna existia ya**: PT-141 las archivo el 2026-07-29 bajo ADR-049, y ese PT siguio las
+  # citas de CLAUDE.md y la del TRD pero no esta.
+  #
+  # Es la familia de H-016 aplicada al fichero que declara QUE se audita: una auditoria que dice
+  # cubrir cuatro documentos inexistentes declara una cobertura que no tiene, y `[A8]` hace de la
+  # cobertura declarada un requisito del score.
+  #
+  # Se reapuntan a `docs-v2/`, que es donde ADR-049 dejo la documentacion de producto. Y lo vigila
+  # `alcance-de-auditoria-existe.spec.ts` (RULE-28), porque es la TERCERA vez que el patron aparece
+  # —H-016, PT-130, esto— y reapuntar rutas sin mecanismo es lo que produjo la tercera.
   docs:
     - CLAUDE.md
-    - docs/enterprise-documentation/02-PRD.md
-    - docs/enterprise-documentation/03-TRD.md
-    - docs/enterprise-documentation/09-Security-Architecture.md
-    - docs/enterprise-documentation/06-Backend-Architecture.md
+    - docs-v2/1-negocio/PRD-Product-Requirements.md
+    - docs-v2/3-arquitectura/Software-Architecture-Document.md
+    - docs-v2/4-ingenieria/Software-Design-Document.md
+    - docs/enterprise-documentation/11-Conventions.md
+    - docs/enterprise-documentation/10-Technical-Debt.md
 
 audit_due_policy:
   CRITICA: 30d
