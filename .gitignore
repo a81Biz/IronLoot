@@ -202,6 +202,15 @@ logs/
 lerna-debug.log*
 lerna.log
 
+# Excepcion declarada: los dos registros append-only de la metodologia NO son logs de aplicacion.
+# `HISTORY.log` ya estaba seguido —alguien lo forzo y no lo dejo dicho—, y `ROADMAP_HISTORY.log`
+# **nunca lo estuvo**: la misma regla, dos resultados distintos, ninguno declarado. Eso dejaba sin
+# rastro cada corrida de FPGE, que es justo lo que el fichero existe para conservar.
+# Es la leccion de ADR-048: una regla que dice lo contrario de lo que el repositorio hace es una
+# trampa para quien la lea y la respete.
+!docs/implementation/HISTORY.log
+!docs/implementation/ROADMAP_HISTORY.log
+
 # Temporary files
 tmp/
 temp/
