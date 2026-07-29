@@ -48,18 +48,28 @@ presentes cuando llegue el proveedor:
   y C no. Este repositorio ya sabe lo que cuesta poner algo frágil en la ruta de un pago (ADR-038).
 
 Mientras tanto `H-005` sigue `ABIERTA`, mantiene **D1 en 85** y deja `P-012 (CfdiRecord)` en
-`IDENTIFICADO`. Es el **único hallazgo PTSA activo del sistema**.
+`IDENTIFICADO`. Es el **único de los cuatro hallazgos activos que ningún PT puede cerrar**: los otros tres
+(H-025, H-026, H-027) son trabajo de este repositorio.
 
 **Bloqueado por lo mismo**: TD-001 (CFDI/PAC). Y TD-002 (Stripe y HeyBanco) espera credenciales de
 ambas pasarelas — también un tercero, también fuera del repositorio.
 
 ---
 
-## Y una cosa que sólo puede disparar el humano
+## La auditoría, al día
 
-**`resume PTSA`.** Los scores de S-003 están superados: se midieron con cinco hallazgos activos y hoy
-hay uno. `freshness = STALE`, 25 commits desde `d260c80`. PT-168 dejó el cálculo a la vista y **no lo
-emitió a propósito** — PTSA no se auto-activa.
+**`resume PTSA` ejecutado (S-004) y medición dirigida hecha (S-004-M)**, las dos el 2026-07-29.
+`freshness = FRESH`, `commits_since_audit = 0`.
+
+**Health 88.0 · Risk 100 · Confidence 97.9 · Clase B.** La Confianza subió 14.3 puntos porque
+`run-all.sh` generó salida real y **se midió en la misma sesión**: D1 pasó de 1 a **12 de 14** reglas
+—las 12 cumplen— y **D5 se midió por primera vez** (Success 100 %, Retry 0 %, Failure 0 %, sobre 3
+ciclos). Por primera vez la clase no la limita la cobertura sino los defectos: faltan **2 puntos de
+Health**.
+
+**Queda un hueco de medición, y no se cierra con otra corrida igual:** `R-5.1a` y `R-5.1d` exigen una
+subasta en `CLOSED`, y la suite no espera los 120 s de la ventana de cierre. Ampliarla es la tarea de la
+tabla de arriba.
 
 ---
 
