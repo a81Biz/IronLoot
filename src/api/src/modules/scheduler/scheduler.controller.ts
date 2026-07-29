@@ -1,4 +1,11 @@
-import { Controller, Post, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  NotFoundException,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiOperation, ApiResponse, ApiTags, ApiBearerAuth } from '@nestjs/swagger';
 import { AuctionSchedulerService } from './auction-scheduler.service';
 import { DevelopmentOnlyGuard } from '../../common/guards/development-only.guard';
@@ -36,6 +43,47 @@ export class SchedulerController {
     private readonly scheduler: AuctionSchedulerService,
     private readonly prisma: PrismaService,
   ) {}
+
+  @Post('expire-auction/:id')
+  @ApiOperation({
+    summary: 'Adelanta el fin de una subasta y ejecuta el cierre (sólo desarrollo)',
+    description:
+      'Pone `endsAt` en el pasado inmediato y corre `closeExpiredAuctions`. Existe porque una subasta ' +
+      'dura como mínimo una hora por regla de negocio (`create-auction.dto.ts`), y ninguna prueba puede ' +
+      'esperar eso. Adelanta el reloj; el cierre lo hace el código real.',
+  })
+  @ApiResponse({ status: 201, description: 'Subasta expirada y cierre ejecutado' })
+  @ApiResponse({ status: 403, description: 'No disponible en producción' })
+  async expireAuction(@Param('id', ParseUUIDPipe) id: string): Promise<{
+    estadoAntes: string;
+    estadoDespues: string;
+  }> {
+    // PT-175 — **Adelantar el reloj no es falsear el resultado.**
+    //
+    // Una subasta dura >= 1 h por regla de negocio, asi que la fase de QA que recorre la cadena completa
+    // no puede esperar a que venza. Lo unico que se toca es `endsAt`; **el cierre lo hace
+    // `closeExpiredAuctions()` de verdad** — con su cerrojo distribuido, su transaccion, la creacion del
+    // pedido, la captura de fondos retenidos, la comision y los avisos.
+    //
+    // La alternativa que habia en la suite era sembrar el resultado con un `INSERT`: escribir a mano el
+    // pedido y el asiento que el sistema deberia haber creado. Eso no prueba el camino, lo reproduce.
+    const antes = await this.prisma.auction.findUnique({ where: { id }, select: { status: true } });
+    if (!antes) throw new NotFoundException('Auction not found');
+
+    await this.prisma.auction.update({
+      where: { id },
+      data: { endsAt: new Date(Date.now() - 1000) },
+    });
+
+    await this.scheduler.closeExpiredAuctions();
+
+    const despues = await this.prisma.auction.findUnique({
+      where: { id },
+      select: { status: true },
+    });
+
+    return { estadoAntes: antes.status, estadoDespues: despues?.status ?? 'DESAPARECIDA' };
+  }
 
   @Post('release-settlements')
   @ApiOperation({
