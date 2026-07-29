@@ -11,7 +11,7 @@ ADMIN **13** · BASE **3**. `test:guardas`: **17** suites / **183** pruebas.
 
 ---
 
-## Pendiente: una decisión de negocio, y nada más
+## Pendiente: tres hallazgos que corregir y una decisión de negocio
 
 ### Cerrado con VoBo humano
 
@@ -26,8 +26,8 @@ ejecutada bajo [`evidence/`](evidence/). **Cero trabajo FDGE pendiente.**
 ### Bloqueado por un tercero
 
 **H-005 — la facturación fiscal.** Falta **contratar un PAC** ante el SAT y **decidir quién emite la
-factura**. Sin proveedor no hay nada que implementar. Es el **único hallazgo PTSA activo**; mantiene D1
-en 85 y `P-012` en `IDENTIFICADO`. Los tres modelos, con sus consecuencias técnicas medidas, están en
+factura**. Sin proveedor no hay nada que implementar. Es el **único hallazgo que ningún PT puede cerrar**;
+mantiene D1 en 85 y `P-012` en `IDENTIFICADO`. Los tres modelos, con sus consecuencias técnicas medidas, están en
 `evidence/PT-155/hallazgos.md`.
 
 ### El `resume PTSA` — ejecutado, y encontró dos cosas
@@ -78,8 +78,13 @@ siguiente y la salida ya no estaba.
 
 **D4 vuelve a 100**: es lo que confirma que la tanda PT-168…PT-172 sirvió.
 
-Los dos hallazgos nuevos **no los cierra el agente** (`[R44]`) y **no están corregidos**: son trabajo para
-el próximo ciclo FDGE.
+**Los tres hallazgos nuevos —H-025, H-026, H-027— no los cierra el agente** (`[R44]`) y **no están
+corregidos**: son trabajo para el próximo ciclo FDGE, y **ninguno depende de terceros**. Manda
+`PTSA/Hallazgos/H-XXX.md`; convertirlos en PT es decisión tuya.
+
+**Hay además un cuarto pendiente que no es un hallazgo**: ampliar la suite QA para que **cierre una
+subasta**. Es el único hueco que queda en D1 (`R-5.1a`, `R-5.1d`) y daría filas reales a las cuatro
+comprobaciones de coherencia que hoy comparan cero — la mitad de lo que hace grave a H-025.
 
 ---
 

@@ -15,13 +15,15 @@ en bloque anterior y PT-167 no tenía ni entrada en `HISTORY.log`— y ése fue 
 PT-169 no habría habido nada que validar, porque nada los nombraba. Lo vigila ahora
 `rastro-de-trabajo-completo.spec.ts` (**RULE-34**).
 
-**Cero PT abiertos.** Pero el delta sync S-004, ejecutado justo después, **abrió dos hallazgos** que sí
-son trabajo de este repositorio y que todavía **no tienen PT**:
+**Cero PT abiertos.** Pero el delta sync **S-004** y la medición dirigida **S-004-M**, ejecutados justo
+después, **abrieron tres hallazgos** que sí son trabajo de este repositorio y que todavía **no tienen
+PT**:
 
 | Hallazgo | Dim | Sev | Qué |
 |---|:--:|---|---|
-| **H-025** | D2 | ALTA | `cross_coherence_verified = verificado` sobre una base con cero filas — el instrumento de auditoría afirma sin comparar |
+| **H-025** | D2 | ALTA | `cross_coherence_verified = verificado` sin comparar filas — confirmado también con la base poblada |
 | **H-026** | D3 | MEDIA | `/health/detailed` dice `degraded` siempre; una caída real de Redis diría lo mismo |
+| **H-027** | D3 | MEDIA | El `RESUMEN FINAL` de la suite QA omite la fase que falla — se leyeron nueve fases «todas PASS» de diez |
 
 Manda `PTSA/Hallazgos/H-XXX.md`. **Convertirlos en PT es una decisión tuya** — vía FPGE
 (`promote FPGE`) o pidiéndolo directamente. No se anotan aquí como tarea porque **todavía no son
