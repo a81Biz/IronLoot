@@ -136,6 +136,35 @@ describe('Saldo bajo concurrencia (PT-146)', () => {
     expect(Number(w.balance)).toBe(3 * IMPORTE);
   });
 
+  it('BLQ-03: dos capturas CRUZADAS a la vez no se interbloquean', async () => {
+    // `captureHeldFunds` bloquea DOS monederos. Si dos transacciones los pidieran en orden
+    // distinto, se quedarian esperandose para siempre: cada una con el cerrojo que la otra
+    // necesita. `bloquearDosMonederos()` los ordena por `userId`, de modo que todas piden en la
+    // misma secuencia y el ciclo no puede formarse.
+    //
+    // Esta prueba existe porque «deberia impedirlo» no es un criterio. Un interbloqueo no aparece
+    // en desarrollo: aparece en produccion, de noche, como peticiones colgadas.
+    const a = await usuarioConMonedero('cruzado-a');
+    const b = await usuarioConMonedero('cruzado-b');
+    const t = Date.now();
+
+    // Los dos necesitan saldo retenido para poder capturar.
+    await wallet.deposit(a, 1000, `pt146-x-a-${t}`);
+    await wallet.deposit(b, 1000, `pt146-x-b-${t}`);
+    await wallet.holdFunds(a, 100, `pt146-hold-a-${t}`, 'cruzado');
+    await wallet.holdFunds(b, 100, `pt146-hold-b-${t}`, 'cruzado');
+
+    // A paga a B **y** B paga a A, simultaneamente: el orden natural de bloqueo es opuesto.
+    const cruzadas = Promise.all([
+      wallet.captureHeldFunds(a, b, 100, `pt146-cap-ab-${t}`, 'A paga a B'),
+      wallet.captureHeldFunds(b, a, 100, `pt146-cap-ba-${t}`, 'B paga a A'),
+    ]);
+
+    // Si hubiera interbloqueo, esto no resolveria nunca; Postgres lo cortaria por deteccion
+    // de deadlock y una de las dos lanzaria. Cualquiera de los dos desenlaces es un fallo.
+    await expect(cruzadas).resolves.toBeDefined();
+  }, 30000);
+
   it('BLQ-02: dos monederos DISTINTOS no se esperan entre si', async () => {
     // Un bloqueo global tambien haria pasar CC-01, y seria el remedio caro. Esta prueba es la que
     // distingue «serializa lo que se pisa» de «serializa todo».
