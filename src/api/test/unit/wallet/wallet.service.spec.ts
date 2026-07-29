@@ -18,6 +18,7 @@ const mockWallet = {
 const mockTx = {
   wallet: {
     findUnique: jest.fn(),
+    findUniqueOrThrow: jest.fn(),
     update: jest.fn(),
     create: jest.fn(),
   },
@@ -29,6 +30,10 @@ const mockTx = {
 const mockPrismaService = {
   wallet: {
     findUnique: jest.fn(),
+    findUniqueOrThrow: jest.fn(),
+    // PT-142 — El monedero se asegura con `createMany({ skipDuplicates })`, que es lo unico
+    // atomico: `create` dentro de un `if` dejaba una ventana entre la comprobacion y la escritura.
+    createMany: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
   },
@@ -76,25 +81,32 @@ describe('WalletService', () => {
 
   describe('getWallet', () => {
     it('should return existing wallet', async () => {
-      jest.spyOn(prisma.wallet, 'findUnique').mockResolvedValue(mockWallet as any);
+      jest.spyOn(prisma.wallet, 'createMany').mockResolvedValue({ count: 0 } as any);
+      jest.spyOn(prisma.wallet, 'findUniqueOrThrow').mockResolvedValue(mockWallet as any);
 
       const result = await service.getWallet('user-123');
       expect(result).toEqual(mockWallet);
     });
 
     it('should create new wallet if not found', async () => {
-      jest.spyOn(prisma.wallet, 'findUnique').mockResolvedValue(null);
-      jest.spyOn(prisma.wallet, 'create').mockResolvedValue(mockWallet as any);
+      jest.spyOn(prisma.wallet, 'createMany').mockResolvedValue({ count: 1 } as any);
+      jest.spyOn(prisma.wallet, 'findUniqueOrThrow').mockResolvedValue(mockWallet as any);
 
       const result = await service.getWallet('user-123');
-      expect(prisma.wallet.create).toHaveBeenCalled();
+      // Lo que se afirma no cambia —si no existe, se crea— pero el como si: `skipDuplicates`
+      // convierte la comprobacion en trabajo de la base, que es donde no hay ventana.
+      expect(prisma.wallet.createMany).toHaveBeenCalledWith(
+        expect.objectContaining({ skipDuplicates: true }),
+      );
       expect(result).toEqual(mockWallet);
     });
   });
 
   describe('deposit', () => {
     it('should increase balance and create ledger entry', async () => {
-      mockTx.wallet.findUnique.mockResolvedValue(mockWallet);
+      // PT-142 — `deposit` asegura el monedero FUERA de la transaccion y dentro solo lo lee.
+      (prisma.wallet.createMany as jest.Mock).mockResolvedValue({ count: 0 });
+      mockTx.wallet.findUniqueOrThrow.mockResolvedValue(mockWallet);
       mockTx.wallet.update.mockResolvedValue({ ...mockWallet, balance: new Decimal(200) });
       mockTx.ledger.create.mockResolvedValue({});
 

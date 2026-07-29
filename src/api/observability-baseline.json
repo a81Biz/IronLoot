@@ -1,6 +1,6 @@
 {
   "generado": "2026-07-27",
-  "motivo": "Silencios declarados y aceptados a 2026-07-27. Casi todos llevan comentario explicativo y son decisiones deliberadas. NO se juzga cuales son aceptables: se fija el estado para que el numero 26 se vea el dia que aparezca. Recuerda F-34: aquel catch TENIA comentario, y la puja en vivo estuvo apagada varios dias con la suite en verde.",
+  "motivo": "Silencios declarados y aceptados a 2026-07-27. Casi todos llevan comentario explicativo y son decisiones deliberadas. NO se juzga cuales son aceptables: se fija el estado para que el numero 26 se vea el dia que aparezca. Recuerda F-34: aquel catch TENIA comentario, y la puja en vivo estuvo apagada varios dias con la suite en verde. PT-142: la entrada de `system-config.service.ts` paso de :211 a :223 al hacer atomico el `seed()`. El `catch` es EL MISMO (`// Fall through to ENV`); lo que cambio fue su numero de linea. Esta linea base se indexa por fichero:linea, asi que envejece igual que una cita del TRD: cualquier edicion por encima de un silencio declarado lo hace parecer nuevo. Registrado como F-142-A.",
   "revisar_antes_de": "2026-10-27",
   "silencios": [
     "src/admin/public/js/dashboard-charts.js:77",
@@ -13,7 +13,7 @@
     "src/api/src/modules/auth/guards/jwt-auth.guard.ts:78",
     "src/api/src/modules/bids/bids.service.ts:213",
     "src/api/src/modules/payments/payment-trace.service.ts:204",
-    "src/api/src/modules/system-config/system-config.service.ts:211",
+    "src/api/src/modules/system-config/system-config.service.ts:223",
     "src/apps/base/public/js/pages/pages-auth-login.js:33",
     "src/apps/base/public/js/pages/pages-auth-recovery.js:21",
     "src/apps/base/public/js/pages/pages-auth-register.js:23",

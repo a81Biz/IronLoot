@@ -36,26 +36,21 @@ export class WatchlistService {
       throw new AuctionNotFoundException(auctionId);
     }
 
-    // 2. Idempotent create (upsert-like behavior via ignore or check)
-    // Prisma `create` will throw if unique constraint fails.
-    // We can use `upsert` or just catch exception.
-    // However, `upsert` requires a `where` clause on unique key.
-    // unique key is [userId, auctionId].
-
-    // Explicit check approach (cleaner logic):
-    const existing = await this.prisma.watchlist.findUnique({
-      where: {
-        userId_auctionId: { userId, auctionId },
-      },
-    });
-
-    if (existing) {
-      this.log.debug('Watchlist item already exists', { userId, auctionId });
-      return; // Idempotent 200 OK
-    }
-
-    await this.prisma.watchlist.create({
-      data: { userId, auctionId },
+    // 2. Alta idempotente.
+    //
+    // PT-142 — Aqui habia un `findUnique` + `if (existing) return` + `create`, con un comentario
+    // que decia haber considerado `upsert` y haberlo descartado por «cleaner logic». La logica era
+    // mas clara y **no era idempotente**: dos peticiones simultaneas pasan las dos por el `return`
+    // y las dos crean, y la perdedora recibe `P2002` — un 500 justo donde el codigo prometia
+    // «Idempotent 200 OK».
+    //
+    // La duda que registraba el comentario («upsert requiere un where sobre la clave unica») tenia
+    // respuesta: `@@unique([userId, auctionId])` genera `userId_auctionId`, que es exactamente ese
+    // `where`. Ya se estaba usando dos lineas mas abajo.
+    await this.prisma.watchlist.upsert({
+      where: { userId_auctionId: { userId, auctionId } },
+      create: { userId, auctionId },
+      update: {},
     });
 
     this.log.info('Added to watchlist', { userId, auctionId });

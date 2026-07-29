@@ -186,21 +186,33 @@ export class SystemConfigService implements OnModuleInit {
     await this.seed();
   }
 
+  /**
+   * PT-142 — Esto era `findUnique` + `if (!existing)` + `create`, y `seed()` corre en el
+   * `onModuleInit`: en **cada arranque de la aplicacion**. Dos instancias arrancando a la vez
+   * —un despliegue progresivo, un evento de escalado, una tormenta de reinicios— chocaban, y la
+   * segunda **moria al arrancar** con `Unique constraint failed on the fields: (key)`.
+   *
+   * Lo cazo la primera corrida de CI de este repositorio. En desarrollo era invisible: hay una
+   * sola instancia, y la base tiene historia — las claves ya existen, asi que la rama del `create`
+   * no llega a ejecutarse nunca.
+   *
+   * `update: {}` es deliberado: **un arranque no pisa la configuracion que otro dejo**. Sembrar es
+   * rellenar lo que falta, no imponer los valores del entorno sobre lo ya configurado.
+   */
   async seed(): Promise<void> {
     for (const entry of SEEDED_KEYS) {
-      const existing = await this.prisma.systemConfig.findUnique({ where: { key: entry.key } });
-      if (!existing) {
-        const envValue = process.env[entry.envKey];
-        await (this.prisma.systemConfig as any).create({
-          data: {
-            key: entry.key,
-            value: envValue ?? entry.defaultValue ?? '',
-            isSecret: entry.isSecret,
-            category: entry.category,
-            description: entry.description,
-          },
-        });
-      }
+      const envValue = process.env[entry.envKey];
+      await (this.prisma.systemConfig as any).upsert({
+        where: { key: entry.key },
+        create: {
+          key: entry.key,
+          value: envValue ?? entry.defaultValue ?? '',
+          isSecret: entry.isSecret,
+          category: entry.category,
+          description: entry.description,
+        },
+        update: {},
+      });
     }
   }
 
