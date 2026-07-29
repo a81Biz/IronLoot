@@ -22,7 +22,7 @@
  *
  * Uso:  npm run audit:reliability
  */
-import { execSync } from 'child_process';
+import { PrismaClient } from '@prisma/client';
 
 export type Semaforo = 'VERDE' | 'AMBAR' | 'ROJO' | 'SIN_DATOS';
 
@@ -48,21 +48,38 @@ export function clasificarReintento(pct: number | null): Semaforo {
   return 'ROJO';
 }
 
-const CONTENEDOR = process.env.PTSA_DB_CONTAINER ?? 'ironloot-db';
+/**
+ * PT-153 (H-022) — La consulta va por Prisma, no por `docker exec`.
+ *
+ * Esto era `execSync('docker exec ironloot-db psql …')`, y **dentro del contenedor del API no hay
+ * binario `docker`**: el checkpoint devolvia SIN_DATOS siempre y salia con 0. PT-138 (F-135-B)
+ * corrigio exactamente esto en `observability-check.ts`; este fichero y `domain-rules.ts` se
+ * quedaron con la forma vieja y nadie lo noto.
+ *
+ * Un checkpoint tiene que correr **donde corre npm** — el contenedor (RULE-15). `DATABASE_URL` esta
+ * en los dos entornos, asi que esto funciona en ambos; `docker exec` solo funcionaba en uno.
+ */
+let prisma: PrismaClient | null = null;
 
-function q(sql: string): number {
-  return Number(
-    execSync(`docker exec ${CONTENEDOR} psql -U ironloot -d ironloot_db -t -A -c "${sql}"`, {
-      encoding: 'utf8',
-    }).trim(),
-  );
+async function q(sql: string): Promise<number> {
+  if (!prisma) prisma = new PrismaClient();
+  const filas = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql);
+  if (!filas.length) return 0;
+  return Number(Object.values(filas[0])[0] ?? 0);
 }
 
-export function medir(): Tasa[] {
-  const resueltos = q(
+export async function cerrarConexion(): Promise<void> {
+  if (prisma) {
+    await prisma.$disconnect();
+    prisma = null;
+  }
+}
+
+export async function medir(): Promise<Tasa[]> {
+  const resueltos = await q(
     "SELECT count(*) FROM payment_cycles WHERE status IN ('SETTLED','EXPIRED','FAILED')",
   );
-  const totales = q('SELECT count(*) FROM payment_cycles');
+  const totales = await q('SELECT count(*) FROM payment_cycles');
 
   if (!totales) {
     const sinDatos = (nombre: string): Tasa => ({
@@ -80,20 +97,22 @@ export function medir(): Tasa[] {
   // esperando a que alguien pague. Contarlo como reintento inflaba la tasa al 75% ROJO cuando la
   // realidad era 0% — y esa lectura habria puesto `health_unstable = true` y capado la clase a B
   // por una metrica mal definida, no por un sistema inestable.
-  const conSondeo = q(
+  const conSondeo = await q(
     'SELECT count(DISTINCT c.reference) FROM payment_cycles c ' +
       "WHERE c.status IN ('SETTLED','EXPIRED','FAILED') AND EXISTS(" +
       "SELECT 1 FROM payment_cycle_events e WHERE e.reference=c.reference AND e.step='POLL_ATTEMPT')",
   );
   // Los ciclos abiertos en sondeo se informan aparte: son señal, pero no de reintento.
-  const abiertosEnSondeo = q(
+  const abiertosEnSondeo = await q(
     "SELECT count(DISTINCT c.reference) FROM payment_cycles c WHERE c.status='REQUESTED' AND EXISTS(" +
       "SELECT 1 FROM payment_cycle_events e WHERE e.reference=c.reference AND e.step='POLL_ATTEMPT')",
   );
-  const fallidos = q("SELECT count(*) FROM payment_cycles WHERE status IN ('EXPIRED','FAILED')");
+  const fallidos = await q(
+    "SELECT count(*) FROM payment_cycles WHERE status IN ('EXPIRED','FAILED')",
+  );
 
   // «Exito al primer intento» = resuelto SIN haber necesitado la via garantizada.
-  const alPrimerIntento = q(
+  const alPrimerIntento = await q(
     "SELECT count(*) FROM payment_cycles c WHERE c.status='SETTLED' AND NOT EXISTS(" +
       "SELECT 1 FROM payment_cycle_events e WHERE e.reference=c.reference AND e.step='POLL_ATTEMPT')",
   );
@@ -128,16 +147,25 @@ export function medir(): Tasa[] {
   ];
 }
 
-function main(): void {
+async function main(): Promise<void> {
   console.log('=== D5 — Fiabilidad operacional (metrica de delta sync, NO de CI) ===\n');
 
   let tasas: Tasa[];
   try {
-    tasas = medir();
+    tasas = await medir();
   } catch (e) {
-    console.log(`  SIN_DATOS — no se pudo consultar la base: ${(e as Error).message.slice(0, 60)}`);
-    console.log('\n  D5 se mide contra un entorno CON HISTORIA. En CI no la hay.');
-    return;
+    // PT-153: esto hacia `return`, y un `return` desde `main` sale con **codigo 0**. Es decir: no
+    // poder consultar la base se reportaba como corrida correcta. Es el mismo defecto que H-021 en
+    // el fichero de al lado, y por eso los dos PT van juntos.
+    //
+    // «No hay ciclos que evaluar» (SIN_DATOS legitimo) y «no pude mirar» son cosas distintas: la
+    // primera sale por `medir()` con las tasas a null, la segunda sale por aqui y **falla**.
+    console.error(
+      `  NO MEDIBLE — no se pudo consultar la base: ${(e as Error).message.slice(0, 90)}`,
+    );
+    console.error('\n  Esto NO es «sin datos»: es una medicion que no ha podido hacerse.\n');
+    await cerrarConexion();
+    process.exit(1);
   }
 
   for (const t of tasas) {
@@ -162,8 +190,14 @@ function main(): void {
   } else {
     console.log('  health_unstable = false');
   }
+
+  await cerrarConexion();
 }
 
 if (require.main === module) {
-  main();
+  main().catch(async (e) => {
+    console.error(`\n  audit:reliability fallo: ${(e as Error).message}\n`);
+    await cerrarConexion();
+    process.exit(1);
+  });
 }
