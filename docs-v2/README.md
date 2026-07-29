@@ -1,8 +1,20 @@
 # IronLoot — Documentación Oficial (docs-v2)
 
-> **✅ REMEDIACIÓN COMPLETA Y FUSIONADA A MASTER (2026-07-23):** 36/36 hallazgos resueltos (código + doc), PTs 036–047, sin abiertos. AUD-016 cerrado como interruptor `CFDI_ENABLED` (la integración real del PAC queda como decisión de negocio a contratar). Ver [Informe-Remediacion.md](Informe-Remediacion.md). Verificación: API `tsc` 0 + **181 tests** · core 134 · CLIENT/ADMIN builds OK.
+> **✅ REMEDIACIÓN COMPLETA Y FUSIONADA A MASTER (2026-07-23):** 36/36 hallazgos resueltos (código + doc), PTs 036–047, sin abiertos. AUD-016 cerrado como interruptor `CFDI_ENABLED` (la integración real del PAC queda como decisión de negocio a contratar). Ver [Informe-Remediacion.md](Informe-Remediacion.md). Verificación de entonces: API `tsc` 0 + 181 tests · core 134 · CLIENT/ADMIN builds OK. **Hoy (2026-07-29): 1078 unitarias en verde** — API 825 en 107 suites · CORE 134 · CLIENT 103 · ADMIN 13 · BASE 3.
 >
-> **Esta carpeta es la única fuente de verdad del proyecto.** Sustituye funcionalmente a `docs/enterprise-documentation/` como documentación oficial. La documentación anterior (`docs/`, `PTSA/`, `changes/`) permanece intacta como insumo histórico y de evidencia.
+> **Esta carpeta es la documentación oficial del producto.** Negocio, producto, arquitectura,
+> ingeniería, QA, DevOps y UX.
+>
+> **Matiz de ADR-049 (2026-07-29), porque esta línea decía otra cosa.** Aquí se leía *«sustituye
+> funcionalmente a `docs/enterprise-documentation/`»*, y esa afirmación era cierta para **nueve de
+> doce** documentos, no para todos. Los nueve están archivados en
+> `docs/enterprise-documentation/archive/` con un mapa documento a documento. Los otros tres **se
+> conservan y no tienen equivalente aquí**: `11-Conventions.md` (las treinta `RULE-NN`, el contrato
+> que un agente no puede romper), `10-Technical-Debt.md` (el registro `TD-XXX`) e `inventory/`.
+>
+> No es «uno gana»: son dos funciones que estaban mezcladas. Ésta describe el producto para personas;
+> aquélla le dice a un agente qué no puede romper. `PTSA/` y `changes/` siguen intactos como insumo
+> histórico y de evidencia.
 
 | Metadato | Valor |
 |---|---|

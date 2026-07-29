@@ -23,6 +23,8 @@
 13. [Acceso a la base de datos](#13-acceso-a-la-base-de-datos)
 14. [Diagnóstico y logs](#14-diagnóstico-y-logs)
 15. [Solución de problemas frecuentes](#15-solución-de-problemas-frecuentes)
+16. [Pruebas, guardas y CI](#16-pruebas-guardas-y-ci)
+17. [Dónde está cada documento](#17-dónde-está-cada-documento)
 
 ---
 
@@ -147,21 +149,21 @@ cd IronLoot
 
 ### 4.2 Crear el archivo de variables de entorno
 
-El archivo `.env` ya existe en la raíz del repositorio y en `api/.env`. Si no existe, crear uno a partir del ejemplo:
+El archivo `.env` ya existe en la raíz del repositorio y en `src/api/.env`. Si no existe, crear uno a partir del ejemplo:
 
 ```bash
 # Raíz del monorepo
 cp .env.example .env
 
 # API
-cp api/.env.example api/.env
+cp src/api/.env.example src/api/.env
 ```
 
 Los valores por defecto del `.env.example` son suficientes para correr el entorno local sin modificar nada.
 
-### 4.3 Verificar las variables críticas en `api/.env`
+### 4.3 Verificar las variables críticas en `src/api/.env`
 
-Abrir `api/.env` y confirmar que estas variables están presentes:
+Abrir `src/api/.env` y confirmar que estas variables están presentes:
 
 ```env
 DATABASE_URL=postgresql://ironloot:ironloot_dev@localhost:5432/ironloot_db?schema=public
@@ -607,7 +609,7 @@ DRAFT → PUBLISHED → ACTIVE → CLOSED
 
 Cuando alguien puja en los **últimos 120 segundos** antes del cierre, la subasta se extiende 120 segundos adicionales desde el momento de esa puja. Esto puede suceder indefinidamente si los competidores siguen pujando justo antes del cierre.
 
-Este comportamiento es configurable con la variable `AUCTION_SOFT_CLOSE_WINDOW_SEC=120` en `api/.env`.
+Este comportamiento es configurable con la variable `AUCTION_SOFT_CLOSE_WINDOW_SEC=120` en `src/api/.env`.
 
 ### Wallet — fondos retenidos vs disponibles
 
@@ -625,13 +627,13 @@ Cuando alguien puja:
 ### Disputas
 
 - Ventana de apertura: **14 días** después de la entrega confirmada
-- Configurable con `DISPUTE_WINDOW_DAYS=14` en `api/.env`
+- Configurable con `DISPUTE_WINDOW_DAYS=14` en `src/api/.env`
 - Solo el comprador puede abrir una disputa
 - La resolución la toma el administrador desde el panel de admin
 
 ### Expiración de pagos pendientes
 
-Un pago iniciado pero no completado expira a las **72 horas**. Configurable con `PAYMENT_EXPIRATION_HOURS=72` en `api/.env`.
+Un pago iniciado pero no completado expira a las **72 horas**. Configurable con `PAYMENT_EXPIRATION_HOURS=72` en `src/api/.env`.
 
 ### Moneda
 
@@ -696,7 +698,7 @@ El sistema está diseñado para que la cookie emitida en `base.localhost` sea re
 
 **Si el SSO no funciona en Chrome** (el dashboard redirige al login después de hacer login en BASE):
 
-1. Actualizar `api/.env`:
+1. Actualizar `src/api/.env`:
    ```env
    COOKIE_DOMAIN=.ironloot.local
    ```
@@ -708,7 +710,11 @@ El sistema está diseñado para que la cookie emitida en `base.localhost` sea re
    ```
 4. Usar `http://base.ironloot.local` y `http://client.ironloot.local` en lugar de `*.localhost`
 
-Ver el runbook completo en `implementation/SSO_VALIDATION_RUNBOOK.md`.
+> **Nota (2026-07-29):** aquí se citaba `implementation/SSO_VALIDATION_RUNBOOK.md`. **Ese documento
+> nunca ha existido** — no está en el árbol ni en la historia de git. Se retira la cita en vez de
+> escribir un documento para justificarla: el procedimiento completo está en la sección 12 de este
+> mismo README, que es donde alguien lo va a buscar. Es la misma decisión que PT-141 tomó con las dos
+> citas a `PTSA/` que tampoco existían.
 
 ---
 
@@ -856,7 +862,7 @@ Esperar ~20-30 segundos para que compile.
 ### El SSO no funciona: hago login en BASE pero CLIENT me manda al login
 
 **Causa:** La cookie `access_token` emitida con `Domain=localhost` no se propaga entre subdominios en Chrome ≥ 90.  
-**Solución:** Cambiar a `COOKIE_DOMAIN=.ironloot.local` en `api/.env` y usar las entradas de hosts `ironloot.local`. Ver la sección 12 de este README y `implementation/SSO_VALIDATION_RUNBOOK.md`.
+**Solución:** Cambiar a `COOKIE_DOMAIN=.ironloot.local` en `src/api/.env` y usar las entradas de hosts `ironloot.local`. Ver la sección 12 de este README.
 
 ---
 
@@ -890,7 +896,7 @@ docker compose ps mailhog
 ### Al abrir DevTools sale error CORS en Network
 
 **Causa:** El origen no está en la lista `ALLOWED_ORIGINS` de la API.  
-**Solución:** Verificar en `api/.env` que la URL del servicio está incluida en:
+**Solución:** Verificar en `src/api/.env` que la URL del servicio está incluida en:
 ```env
 ALLOWED_ORIGINS=http://base.localhost,http://client.localhost,...
 ```
@@ -908,6 +914,87 @@ docker compose restart api
 
 ---
 
+## 16. Pruebas, guardas y CI
+
+**1078 pruebas unitarias**, en verde, repartidas en los cinco servicios:
+
+| Servicio | Pruebas | Suites |
+|---|---:|---:|
+| API | **825** | 107 |
+| CORE | 134 | — |
+| CLIENT | 103 | — |
+| ADMIN | 13 | — |
+| BASE | 3 | — |
+
+```bash
+docker compose exec api npx jest --no-coverage    # el API, dentro del contenedor
+cd src/packages/core && npm test                  # CORE: sin NestJS, sin base de datos
+```
+
+> **`npm` se ejecuta en el contenedor, no en el host.** Un `npm install` en Windows regenera el lock
+> con el árbol de esa plataforma y se lleva los binarios nativos de Linux: el contenedor falla **al
+> arrancar**, en otra máquina y días después. Lo impide `scripts/solo-en-contenedor.js`. Para
+> regenerar un lock: `npm run lock:api`.
+
+### Las guardas
+
+Buena parte de esas pruebas no comprueban lógica de negocio: comprueban que **el repositorio no se
+contradice a sí mismo**. Cada una nace de un fallo real que ya ocurrió.
+
+Ejemplos de lo que vigilan: que ninguna ruta que un SSR invoca falte en el API · que toda `data-accion`
+de una plantilla tenga manejador · que la evidencia que un documento cita esté en git · que las
+migraciones reproduzcan el esquema · que ningún patrón del guion de guardas se quede sin casar.
+
+**Las treinta reglas están en
+[`docs/enterprise-documentation/11-Conventions.md`](docs/enterprise-documentation/11-Conventions.md)**,
+cada una con el fallo que la originó y la guarda que la impone. Es de lectura obligada antes de tocar
+código.
+
+### Los checkpoints de auditoría
+
+```bash
+cd src/api
+npm run audit:schema         # las migraciones reproducen schema.prisma
+npm run audit:check          # vulnerabilidades de npm contra la línea base
+npm run audit:observability  # catch mudos y traza completa
+npm run audit:domain         # 14 reglas de dominio sobre SALIDA REAL   (delta sync)
+npm run audit:reliability    # Success/Retry/Failure del ciclo de pago  (delta sync)
+```
+
+Los tres primeros corren en CI. Los dos últimos **no**, y a propósito: se calculan sobre historia de
+ejecución, y en CI la base nace vacía en cada corrida — devolverían `SIN_DATOS` siempre, que alguien
+acabaría leyendo como verde.
+
+### CI
+
+**Ocho jobs**: `lint` · `security-audit` · `schema-drift` · `test-unit` · `test-integration` ·
+`observabilidad` · `build` · `docker`. El último construye las cuatro imágenes, **las arranca**, y
+escanea la del API en busca de vulnerabilidades de la imagen base.
+
+Dispara en `master` y admite ejecución manual.
+
+---
+
+## 17. Dónde está cada documento
+
+| Qué buscas | Dónde |
+|---|---|
+| **Producto, arquitectura, PRD, TRD, decisiones** | [`docs-v2/`](docs-v2/) — la documentación oficial |
+| **Las decisiones ya tomadas** | [`docs-v2/transversal/Registro-Maestro-de-ADR.md`](docs-v2/transversal/Registro-Maestro-de-ADR.md) — 49 ADR razonadas |
+| **Lo que un agente no puede romper** | [`docs/enterprise-documentation/11-Conventions.md`](docs/enterprise-documentation/11-Conventions.md) — las `RULE-NN` |
+| **Deuda técnica** | [`docs/enterprise-documentation/10-Technical-Debt.md`](docs/enterprise-documentation/10-Technical-Debt.md) |
+| **Qué se hizo y por qué** | [`docs/implementation/HISTORY.log`](docs/implementation/HISTORY.log) — append-only |
+| **Qué falta** | [`docs/implementation/PENDING_TASKS.md`](docs/implementation/PENDING_TASKS.md) |
+| **Estado de la auditoría** | [`PTSA/RESUMEN.md`](PTSA/RESUMEN.md) |
+| **Metodología (FDGE, PTSA, FPGE)** | [`docs/methodology/`](docs/methodology/) y la Parte 2-5 de `CLAUDE.md` |
+| **Pruebas por navegador** | [`tests/qa-browser-suite/`](tests/qa-browser-suite/) |
+
+> **`docs/enterprise-documentation/` no es documentación de producto.** Desde ADR-049 se acota al
+> **contrato de agente**: las reglas, la deuda y los inventarios. Los nueve documentos que sí eran de
+> producto están en `archive/` con un mapa a su equivalente en `docs-v2/`.
+
+---
+
 ## Resumen de accesos rápidos
 
 ```
@@ -922,5 +1009,10 @@ Base de datos:        localhost:5432  → usuario: ironloot / contraseña: ironl
 ---
 
 *Iron Loot v1.0.0 — Arquitectura multi-dominio (Fases 0-7 completas)*  
-*Para dudas técnicas ver: `implementation/PROJECT_KNOWLEDGE_BASE.md`*  
-*Para pruebas de QA ver: `QA/BROWSER_TEST_PLAN.md`*
+*Para dudas técnicas: [`docs-v2/`](docs-v2/) — arquitectura, PRD, TRD y el Registro Maestro de ADR.*
+*Para el contrato que un agente no puede romper: [`docs/enterprise-documentation/11-Conventions.md`](docs/enterprise-documentation/11-Conventions.md).*
+*Para las pruebas por navegador: [`tests/qa-browser-suite/`](tests/qa-browser-suite/).*
+
+> **Nota (2026-07-29):** aquí se citaban `implementation/PROJECT_KNOWLEDGE_BASE.md` y
+> `QA/BROWSER_TEST_PLAN.md`. **Ninguno de los dos ha existido nunca.** Se sustituyen por lo que sí
+> existe y cubre esa necesidad.

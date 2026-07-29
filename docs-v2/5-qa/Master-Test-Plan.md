@@ -4,7 +4,7 @@
 |---|---|
 | **Origen** | Reconstrucción basada en evidencia (no existía un Master Test Plan) |
 | **Fuente** | `audit/raw/F-core-tests.md`, `src/api/test/*`, `src/packages/core/**/*.spec.ts`, `.github/workflows/ci.yml` |
-| **Fecha** | 2026-07-23 |
+| **Fecha** | 2026-07-23 · **actualizado 2026-07-29** (cifras y matriz de entornos) |
 | **Documentos usados** | 10-Technical-Debt (ND-004 thresholds) |
 | **Código usado** | ~57 archivos de test en el repo |
 | **Nivel de confianza** | Alto (conteos por grep; casos con `it.each` marcados "aprox") |
@@ -117,7 +117,7 @@ reescribir el documento: lo de arriba conserva el diagnóstico, que sigue siendo
 
 | Proyecto | Suites | Casos | Nota |
 |---|--:|--:|---|
-| API | 93 | 691 | Incluye las guardas de S-002 (esquema, CI, healthcheck, contrato SSR↔API, ajustes parciales, endpoints retirados) y **las dos de PT-135**: el lock declara los binarios de Linux, y npm no se ejecuta fuera del contenedor |
+| API | **107** | **825** | Incluye las guardas de S-002 (esquema, CI, healthcheck, contrato SSR↔API, ajustes parciales, endpoints retirados) y **las dos de PT-135**: el lock declara los binarios de Linux, y npm no se ejecuta fuera del contenedor |
 | CLIENT | 8 | 103 | Incluye las guardas estáticas de plantillas (PT-096, PT-102, PT-105) |
 | CORE | 8 | 134 | Sin NestJS ni BD |
 | ADMIN | 2 | 13 | **No existían** hasta PT-101 |
@@ -163,7 +163,7 @@ Esto costó tres intentos fallidos y merece quedar escrito:
 
 | Suite | Dónde SÍ | Dónde NO, y por qué |
 |---|---|---|
-| Unitarias | Host, o contenedor **con la raíz del monorepo montada** | Dentro de `ironloot-api` fallan **ocho** guardas: leen el árbol del monorepo y `docker-compose` no lo monta, así que `RAIZ` resuelve a `/` (F-135-B) |
+| Unitarias | **Contenedor**, y es donde deben correr | ~~Dentro de `ironloot-api` fallan ocho guardas~~ — **cerrado por PT-137/PT-138**: `raizDelMonorepo()` resuelve la raíz comprobándola y lanza si no la encuentra, en vez de devolver una ruta parcial. Y **PT-159** fijó `maxWorkers: 1`, así que `npx jest` sin flags pasa las 107 suites dentro del contenedor: antes tres morían por SIGKILL y el resumen decía «4 failed» sin que nada estuviera roto |
 | e2e | Contenedor desechable en la red del stack, **con la imagen del API** | **En el host**: `db` y `redis` son nombres de la red de Docker, y Postgres está mapeado al **5433** · **dentro de `ironloot-api`**: exit **137**, lo mata el límite de 1 GB · **con `node:20-slim` pelado**: sin el binario `openssl`, Prisma pide el motor de OpenSSL 1.1 y no arranca (el bloqueo 6 de PT-129, reapareciendo) |
 | Navegador | Host, con la pila levantada | Dentro de un contenedor no hay navegador que conducir |
 

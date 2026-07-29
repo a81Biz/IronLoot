@@ -9,7 +9,7 @@ automático no puede romper.
 
 | Documento | Qué es | Quién lo vigila |
 |---|---|---|
-| **[`11-Conventions.md`](./11-Conventions.md)** | Las reglas `RULE-NN`. Estructura, nomenclatura, patrones, y **veinticuatro reglas duras**, cada una con su porqué y el fallo real que la originó. | `reglas-citadas-existen.spec.ts` (RULE-27) y, una a una, las guardas que cada regla nombra |
+| **[`11-Conventions.md`](./11-Conventions.md)** | Las reglas `RULE-NN`. Estructura, nomenclatura, patrones, y **treinta reglas duras**, cada una con su porqué y el fallo real que la originó. | `reglas-citadas-existen.spec.ts` (RULE-27) y, una a una, las guardas que cada regla nombra |
 | **[`10-Technical-Debt.md`](./10-Technical-Debt.md)** | El registro `TD-XXX`. Cerrar una deuda son **dos escrituras**: el código y esta tabla. | `coherencia-deuda-tecnica.spec.ts` (RULE-08), `coherencia-de-registros.spec.ts` (RULE-20) |
 | **[`inventory/`](./inventory/)** | Seis inventarios derivables del código: rutas, endpoints, entidades, componentes, servicios, integraciones. | — |
 
@@ -85,7 +85,7 @@ entra un patrón arquitectónico nuevo, pasan más de 3 meses sin ejecución, o 
 ---
 
 **Generado:** 2026-06-23 (Foundation Protocol 1.0, primera ejecución) · **Acotado a contrato de
-agente:** 2026-07-29 (PT-141, ADR-049)
+agente:** 2026-07-29 (PT-141, ADR-049) · **Reglas al día:** 2026-07-29 (PT-165, RULE-32)
 **Alcance:** `src/` (api, apps/base, apps/client, admin, packages/core, nginx) + `docker-compose.yml`
 + `src/api/prisma/schema.prisma`
 **Decisión de referencia:** ADR-049 en [`docs-v2/transversal/Registro-Maestro-de-ADR.md`](../../docs-v2/transversal/Registro-Maestro-de-ADR.md)
