@@ -2400,3 +2400,45 @@ Modified files: .github/workflows/ci.yml, src/api/scripts/base-image-audit.js,
 Evidence: docs/implementation/evidence/PT-150/ y PT-161/
 Delta (real vs planned): el paquete ordenaba «PT-150 antes que PT-161: mide antes de recortar». Se
   respeto, y es lo que evito el recorte: medir dijo que no valia la pena.
+
+## PT-158 / PT-155 / PT-156 — REFACTOR + dos INVESTIGATION/FEATURE bloqueados
+Date: 2026-07-29
+Status: VALIDATION_PENDING (PT-158) · CLOSED (PT-155) · BLOCKED (PT-156)
+Branch: refactor/PT-158-156-155-tls-y-decisiones
+Objective: cerrar los tres ultimos de la tanda FPGE-003.
+
+PT-158 (TLS para la suite QA) — **entrega la configuracion, no la activa.** `nginx-tls.conf` con los
+  cuatro subdominios y `X-Forwarded-Proto` (sin el, el SSR construye URLs `http://` detras de un TLS
+  terminado, que es como se rompe el retorno de un pago), el guion que genera el certificado con los
+  SAN correctos, y las instrucciones de confianza para los tres SO. **Sintaxis verificada ejecutando
+  `nginx -t` de verdad**, no leida.
+  No se activa por dos razones: confiar un certificado es una accion sobre la maquina y exige
+  privilegios; y verificarlo de punta a punta exige `run-all.sh`, que **trunca la base** — y la base
+  actual sostiene las mediciones de S-003. Entregar algo que aparenta funcionar es peor que entregar
+  menos, que es la misma leccion que PT-161. Riesgo residual declarado en `src/nginx/tls/README.md`:
+  nadie ha ejercido todavia esa configuracion.
+  Se descarta `ignoreHTTPSErrors`: daria sensacion falsa de cobertura — transporte HTTPS con nadie
+  comprobando que el certificado sirve.
+
+PT-155 (H-005, CFDI) — **cierra CLOSED; H-005 sigue ABIERTA.** Ningun PT puede resolverlo: exige
+  contratar un PAC y una decision fiscal entre tres modelos. Lo que aporta y no estaba escrito: las
+  consecuencias TECNICAS de cada uno. Dos conclusiones utiles — (1) **C es subconjunto de B**, asi que
+  si la decision tarda, C no cierra puertas, mientras que ir de C a B despues exigiria pedir datos
+  fiscales y una autorizacion legal **retroactivamente a quien ya vendio**, que no se puede; (2) la
+  eleccion decide sin querer **si el timbrado entra en el camino del dinero** — en B entra, en A y C
+  no, y este repositorio ya sabe lo que cuesta poner algo fragil en la ruta de un pago (ADR-038).
+  Y por que `CR-011` no es auditable: dice que toda transaccion gravable debe producir un CfdiRecord
+  y **no dice de quien es la obligacion**.
+
+PT-156 (`/users/:id/ratings`) — **BLOCKED, esperando una decision de producto.** Verificado:
+  `ratings.controller.ts:17` aplica `@UseGuards(JwtAuthGuard)` a toda la clase. Se entregan las tres
+  alternativas con criterios de aceptacion (abierto · abierto con limite agresivo · agregado publico
+  con detalle privado) y la recomendacion si hay que elegir una. No se implementa: puede haber razon
+  deliberada —raspado de reputacion, privacidad del vendedor, inferencia comercial— y elegir seria
+  decidir un rasgo del producto.
+
+Modified files: src/nginx/nginx-tls.conf, src/nginx/tls/{generar-certificado.sh,README.md},
+  docs/implementation/ENRICHMENT.md
+Evidence: docs/implementation/evidence/PT-155/hallazgos.md
+Delta (real vs planned): el paquete previo los tres desenlaces —PT-158 con riesgo de entorno, los
+  otros dos bloqueados— y los tres salieron como se dijo. Es el unico bloque de la tanda sin sorpresa.
