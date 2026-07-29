@@ -297,6 +297,30 @@ jobs:
     name: Observabilidad (D3)
     runs-on: ubuntu-latest
 
+    # PT-138 — Este job NO tenia base de datos, y aun asi salia en verde.
+    #
+    # `trace_completeness` consultaba con `docker exec ironloot-db psql`; en el runner no hay tal
+    # contenedor, la consulta fallaba, el script devolvia `SIN_DATOS` y **salia con codigo 0**. O sea
+    # que el checkpoint D3 aprobaba sin haber medido una de sus dos metricas, en todas las corridas
+    # desde que existe.
+    #
+    # Ahora `SIN_DATOS` se separa en «no hay nada que evaluar» (legitimo) y «no pude medir» (fallo),
+    # asi que el job pide lo que necesita para medir de verdad.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ironloot
+          POSTGRES_PASSWORD: ironloot_test
+          POSTGRES_DB: ironloot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -310,8 +334,19 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Generar el cliente Prisma
+        run: npm --prefix ./src/api run db:generate
+
+      # El esquema tiene que existir: sin las tablas, la consulta falla y eso ahora ES un fallo.
+      - name: Aplicar el esquema con migraciones
+        run: npm --prefix ./src/api run db:migrate:deploy
+        env:
+          DATABASE_URL: postgresql://ironloot:ironloot_test@localhost:5432/ironloot_test
+
       - name: Comprobar silencios nuevos contra la linea base
         run: npm --prefix ./src/api run audit:observability
+        env:
+          DATABASE_URL: postgresql://ironloot:ironloot_test@localhost:5432/ironloot_test
 
   # ===========================================
   # Build
