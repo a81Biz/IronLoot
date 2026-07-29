@@ -61,6 +61,65 @@ export class WalletService {
   }
 
   /**
+   * Lee el monedero **bloqueando su fila** hasta que la transaccion termine.
+   *
+   * PT-146 — Los siete metodos que mueven saldo hacian *leer, calcular en memoria, escribir un
+   * absoluto*. Sin bloqueo eso es una actualizacion perdida de manual, y se midio:
+   *
+   *     6 depositos simultaneos de 100      saldo final: 100
+   *     ledger:  600                        monedero:    100
+   *
+   * Los seis asientos SE ESCRIBIERON, cada uno con su `balanceAfter`, y ninguno coincidia con la
+   * fila. **La contabilidad se contradecia a si misma en 500 MXN**, y nadie recibia un error.
+   *
+   * ### Por que no `increment`
+   *
+   * `data: { balance: { increment: amount } }` dejaria el SALDO bien y **el ASIENTO mal**: el
+   * `balanceBefore` se calcula de la lectura previa, que bajo carrera esta obsoleta. Cambiar un
+   * saldo equivocado por una contabilidad equivocada no es un arreglo — el ledger es el registro de
+   * auditoria, y es donde se mira cuando alguien reclama.
+   *
+   * `FOR UPDATE` bloquea al leer, asi que `balanceBefore` es autoritativo y la operacion entera
+   * queda serializada **por monedero**. Dos usuarios distintos no se esperan: es lo que comprueba
+   * `BLQ-02`, y es lo que distingue esto de un cerrojo global, que tambien "funcionaria".
+   *
+   * Devuelve el monedero releido con el cliente de Prisma —no la fila cruda de `$queryRaw`— para no
+   * perder el tipado ni la conversion de `Decimal`. La lectura posterior ve el estado bloqueado:
+   * ya nadie mas puede tocarlo dentro de esta transaccion.
+   */
+  private async bloquearMonedero(
+    tx: Prisma.TransactionClient,
+    userId: string,
+  ): Promise<Wallet | null> {
+    const filas = await tx.$queryRaw<{ id: string }[]>`
+      SELECT id FROM wallets WHERE user_id = ${userId}::uuid FOR UPDATE
+    `;
+    if (filas.length === 0) return null;
+
+    return tx.wallet.findUnique({ where: { userId } });
+  }
+
+  /**
+   * Bloquea DOS monederos en orden fijo.
+   *
+   * PT-146 — `captureHeldFunds` toca comprador y vendedor. Dos transacciones que bloqueen los mismos
+   * dos monederos en orden distinto se quedan esperandose: un interbloqueo. Ordenar por `userId` lo
+   * hace imposible, porque todas las transacciones piden los cerrojos en la misma secuencia.
+   *
+   * Es la mitigacion clasica, y se escribe en vez de confiarse: un interbloqueo no aparece en
+   * desarrollo — aparece en produccion, de noche, y se manifiesta como peticiones colgadas.
+   */
+  private async bloquearDosMonederos(
+    tx: Prisma.TransactionClient,
+    userIdA: string,
+    userIdB: string,
+  ): Promise<void> {
+    for (const userId of [userIdA, userIdB].sort()) {
+      await this.bloquearMonedero(tx, userId);
+    }
+  }
+
+  /**
    * Get wallet balance
    */
   async getBalance(userId: string): Promise<{
@@ -85,7 +144,9 @@ export class WalletService {
    */
   async refundWithdrawal(userId: string, amount: number, referenceId: string): Promise<void> {
     await this.prisma.$transaction(async (tx) => {
-      const wallet = await tx.wallet.findUnique({ where: { userId } });
+      // PT-146 — Con bloqueo: el saldo que se lee aqui es el que se escribira, sin que otra
+      // transaccion pueda colarse entre medias.
+      const wallet = await this.bloquearMonedero(tx, userId);
       if (!wallet) throw new NotFoundException('Wallet not found');
       const amt = new Decimal(amount);
       const before = new Decimal(wallet.balance);
@@ -117,7 +178,8 @@ export class WalletService {
     outerTx?: Prisma.TransactionClient,
   ): Promise<void> {
     const run = async (tx: Prisma.TransactionClient) => {
-      const wallet = await tx.wallet.findUnique({ where: { userId: sellerId } });
+      // PT-146 — Con bloqueo.
+      const wallet = await this.bloquearMonedero(tx, sellerId);
       if (!wallet) throw new NotFoundException('Seller wallet not found');
       const amt = new Decimal(amount);
       const pendingBefore = new Decimal(wallet.pendingBalance);
@@ -179,7 +241,11 @@ export class WalletService {
 
     return this.prisma.$transaction(async (tx) => {
       // 1. Get current wallet — existe con seguridad; la línea de arriba se ha encargado.
-      const wallet = await tx.wallet.findUniqueOrThrow({ where: { userId } });
+      //
+      // PT-146 — Y se lee **bloqueando la fila**: sin eso, seis acreditaciones simultaneas dejaban
+      // el saldo en 100 con el ledger sumando 600.
+      const wallet = await this.bloquearMonedero(tx, userId);
+      if (!wallet) throw new NotFoundException('Wallet not found');
 
       const amountDecimal = new Decimal(amount);
       const newBalance = new Decimal(wallet.balance).plus(amountDecimal);
@@ -225,7 +291,9 @@ export class WalletService {
     if (amount <= 0) throw new BadRequestException('Amount must be positive');
 
     return this.prisma.$transaction(async (tx) => {
-      const wallet = await tx.wallet.findUnique({ where: { userId } });
+      // PT-146 — Con bloqueo. Aqui la carrera es peor que perder dinero: dos retiradas
+      // simultaneas con saldo para una sola pasarian las dos y **dejarian el saldo en negativo**.
+      const wallet = await this.bloquearMonedero(tx, userId);
       if (!wallet) throw new NotFoundException('Wallet not found');
 
       const amountDecimal = new Decimal(amount);
@@ -280,7 +348,9 @@ export class WalletService {
     if (amount <= 0) throw new BadRequestException('Amount must be positive');
 
     return this.prisma.$transaction(async (tx) => {
-      const wallet = await tx.wallet.findUnique({ where: { userId } });
+      // PT-146 — Con bloqueo. Aqui la carrera permitiria retener mas de lo que hay: dos pujas
+      // simultaneas del mismo usuario pasarian las dos la comprobacion de saldo suficiente.
+      const wallet = await this.bloquearMonedero(tx, userId);
       if (!wallet) throw new NotFoundException('Wallet not found');
       if (!wallet.isActive) throw new BadRequestException('Wallet is not active');
 
@@ -337,7 +407,8 @@ export class WalletService {
     if (amount <= 0) throw new BadRequestException('Amount must be positive');
 
     return this.prisma.$transaction(async (tx) => {
-      const wallet = await tx.wallet.findUnique({ where: { userId } });
+      // PT-146 — Con bloqueo: `heldFunds` se lee, se resta y se escribe absoluto, igual que el saldo.
+      const wallet = await this.bloquearMonedero(tx, userId);
       if (!wallet) throw new NotFoundException('Wallet not found');
 
       const amountDecimal = new Decimal(amount);
@@ -405,6 +476,11 @@ export class WalletService {
       // const sellerNet = amountDecimal.minus(feeAmount); // Unused
 
       // --- 1. BUYER SIDE (Debit) ---
+      // PT-146 — Esta operacion toca DOS monederos, asi que se bloquean los dos **en orden fijo**
+      // antes de leer ninguno: dos transacciones que los pidieran en orden distinto se quedarian
+      // esperandose. Un interbloqueo no aparece en desarrollo; aparece en produccion, de noche.
+      await this.bloquearDosMonederos(tx, buyerId, sellerId);
+
       const buyerWallet = await tx.wallet.findUnique({ where: { userId: buyerId } });
       if (!buyerWallet) throw new NotFoundException('Buyer wallet not found');
 

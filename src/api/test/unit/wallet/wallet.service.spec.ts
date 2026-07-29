@@ -16,6 +16,7 @@ const mockWallet = {
 };
 
 const mockTx = {
+  $queryRaw: jest.fn().mockResolvedValue([{ id: 'w-1' }]),
   wallet: {
     findUnique: jest.fn(),
     findUniqueOrThrow: jest.fn(),
@@ -106,6 +107,7 @@ describe('WalletService', () => {
     it('should increase balance and create ledger entry', async () => {
       // PT-142 — `deposit` asegura el monedero FUERA de la transaccion y dentro solo lo lee.
       (prisma.wallet.createMany as jest.Mock).mockResolvedValue({ count: 0 });
+      mockTx.wallet.findUnique.mockResolvedValue(mockWallet);
       mockTx.wallet.findUniqueOrThrow.mockResolvedValue(mockWallet);
       mockTx.wallet.update.mockResolvedValue({ ...mockWallet, balance: new Decimal(200) });
       mockTx.ledger.create.mockResolvedValue({});

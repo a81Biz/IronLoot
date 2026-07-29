@@ -38,6 +38,7 @@ describe('WalletService Exceptions', () => {
 
   it('should throw InsufficientBalanceException on withdraw if balance is low', async () => {
     const mockTx = {
+      $queryRaw: jest.fn().mockResolvedValue([{ id: 'w-1' }]),
       wallet: {
         findUnique: jest
           .fn()
