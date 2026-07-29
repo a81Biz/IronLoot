@@ -13,8 +13,23 @@
  * debe poder hacerlo sin tocar el motor.
  *
  * Uso:  npm run audit:domain
+ *
+ * ## PT-153 (H-022) — la consulta va por Prisma, no por `docker exec`
+ *
+ * Esto usaba `execSync('docker exec ironloot-db psql …')`, y **dentro del contenedor del API no hay
+ * binario `docker`**: las 19 reglas devolvian SIN_DATOS y el proceso salia con 0. PT-138 (F-135-B)
+ * corrigio exactamente esto en `observability-check.ts` pasandolo a `PrismaClient`; este fichero y
+ * `reliability-check.ts` se quedaron con la forma vieja y nada lo noto durante nueve sesiones.
+ *
+ * Un checkpoint tiene que correr **donde corre npm**, que en este repositorio es el contenedor
+ * (RULE-15). La conexion sale de `DATABASE_URL`, que ambos entornos tienen.
+ *
+ * ## PT-149 (H-021) — el veredicto se DERIVA, no se imprime aparte
+ *
+ * Ver `veredictoCoherencia()` al final. Resumen: `cross_coherence_verified = true` se emitia con las
+ * cinco comprobaciones en error.
  */
-import { execSync } from 'child_process';
+import { PrismaClient } from '@prisma/client';
 
 export type Veredicto = 'CUMPLE' | 'VIOLADA' | 'SIN_DATOS';
 
@@ -262,51 +277,117 @@ export const COHERENCIA: { par: string; regla: string; sql: string }[] = [
   },
 ];
 
-const CONTENEDOR = process.env.PTSA_DB_CONTAINER ?? 'ironloot-db';
+let prisma: PrismaClient | null = null;
 
-function consultar(sql: string): string {
-  return execSync(
-    `docker exec ${CONTENEDOR} psql -U ironloot -d ironloot_db -t -A -c "${sql.replace(/"/g, '\\"')}"`,
-    { encoding: 'utf8' },
-  ).trim();
+/**
+ * Ejecuta una consulta de conteo y devuelve su valor como cadena.
+ *
+ * Las consultas del catalogo devuelven **una fila con un numero**. `$queryRawUnsafe` es correcto
+ * aqui —y no una puerta de inyeccion— porque el SQL es **literal en este fichero**: no hay entrada
+ * de usuario en ningun punto del camino. Es el mismo criterio que `observability-check.ts`.
+ */
+async function consultar(sql: string): Promise<string> {
+  if (!prisma) prisma = new PrismaClient();
+  const filas = await prisma.$queryRawUnsafe<Record<string, unknown>[]>(sql);
+  if (!filas.length) return '0';
+  const valor = Object.values(filas[0])[0];
+  return String(valor ?? '0');
 }
 
-export function evaluar(catalogo: Regla[] = CATALOGO): Evaluada[] {
-  return catalogo.map((r) => {
+export async function cerrarConexion(): Promise<void> {
+  if (prisma) {
+    await prisma.$disconnect();
+    prisma = null;
+  }
+}
+
+export async function evaluar(catalogo: Regla[] = CATALOGO): Promise<Evaluada[]> {
+  const salida: Evaluada[] = [];
+
+  for (const r of catalogo) {
     try {
-      const poblacion = Number(consultar(r.poblacion));
+      const poblacion = Number(await consultar(r.poblacion));
       if (!poblacion) {
-        return {
+        salida.push({
           id: r.id,
           peso: r.peso,
           veredicto: 'SIN_DATOS' as const,
           enunciado: r.enunciado,
           observado: 'sin productos que evaluar',
-        };
+        });
+        continue;
       }
-      const infracciones = Number(consultar(r.sql));
-      return {
+      const infracciones = Number(await consultar(r.sql));
+      salida.push({
         id: r.id,
         peso: r.peso,
         veredicto: (infracciones === 0 ? 'CUMPLE' : 'VIOLADA') as Veredicto,
         enunciado: r.enunciado,
         observado: `${infracciones} infraccion(es) sobre ${poblacion} registro(s)`,
-      };
+      });
     } catch (e) {
-      return {
+      salida.push({
         id: r.id,
         peso: r.peso,
         veredicto: 'SIN_DATOS' as const,
         enunciado: r.enunciado,
         observado: `error: ${(e as Error).message.slice(0, 70)}`,
-      };
+      });
     }
-  });
+  }
+
+  return salida;
 }
 
-function main(): void {
+/** Lo que devuelve una comprobacion de coherencia: el conteo, o `ERR` si no se pudo mirar. */
+export interface Comprobacion {
+  par: string;
+  resultado: string;
+}
+
+export type EstadoCoherencia = 'verificado' | 'sin_datos' | 'incoherente';
+
+export interface VeredictoCoherencia {
+  estado: EstadoCoherencia;
+  medidas: number;
+  incoherentes: number;
+  noMedidas: number;
+}
+
+/**
+ * PT-149 (H-021) — El veredicto de coherencia, DERIVADO del resultado.
+ *
+ * Lo que habia era `let incoherentes = 0; if (!ok && n !== 'ERR') incoherentes++;` y luego
+ * `cross_coherence_verified = incoherentes === 0`. Un error **no contaba**, asi que con las cinco
+ * comprobaciones en `(ERR)` el veredicto era `true`: **cuantos menos datos, mas verde**.
+ *
+ * Tres estados, no un booleano — el mismo criterio que `puntuar()` ya aplicaba al
+ * `rubric_compliance_score` veinte lineas mas arriba, y que nadie traslado aqui:
+ *
+ *   - `verificado`   todas midieron y ninguna fallo. **El unico que permite salir con 0.**
+ *   - `incoherente`  alguna MEDIDA fallo. Gana sobre la falta de datos: una incoherencia observada
+ *                    es peor noticia que una no observada.
+ *   - `sin_datos`    alguna no se pudo mirar. **No es un aprobado.**
+ *
+ * Un catalogo vacio da `sin_datos`, no `verificado`: afirmar que se verifico la coherencia de cero
+ * pares es la version degenerada del mismo error.
+ */
+export function veredictoCoherencia(comprobaciones: Comprobacion[]): VeredictoCoherencia {
+  const noMedidas = comprobaciones.filter((c) => c.resultado === 'ERR').length;
+  const incoherentes = comprobaciones.filter(
+    (c) => c.resultado !== 'ERR' && c.resultado !== '0',
+  ).length;
+  const medidas = comprobaciones.length - noMedidas;
+
+  const estado: EstadoCoherencia =
+    incoherentes > 0 ? 'incoherente' : medidas === 0 || noMedidas > 0 ? 'sin_datos' : 'verificado';
+
+  return { estado, medidas, incoherentes, noMedidas };
+}
+
+async function main(): Promise<void> {
   console.log('=== D1.N1 — Reglas de dominio (F-1) sobre la salida real ===\n');
-  const evaluadas = evaluar();
+  const evaluadas = await evaluar();
   for (const e of evaluadas) {
     const marca = { CUMPLE: 'OK  ', VIOLADA: 'FALLA', SIN_DATOS: 'n/d ' }[e.veredicto];
     console.log(
@@ -322,30 +403,47 @@ function main(): void {
     console.log(`  Sin datos (fuera del denominador): ${p.sinDatos.join(', ')}`);
 
   console.log('\n=== Nivel 3 — Coherencia inter-producto (aparte del score) ===\n');
-  let incoherentes = 0;
+  const comprobaciones: Comprobacion[] = [];
   for (const c of COHERENCIA) {
     let n: string;
     try {
-      n = consultar(c.sql);
+      n = await consultar(c.sql);
     } catch (e) {
       n = 'ERR';
     }
-    const ok = n === '0';
-    if (!ok && n !== 'ERR') incoherentes++;
-    console.log(
-      `  [${ok ? 'OK  ' : n === 'ERR' ? 'n/d ' : 'FALLA'}] ${c.par.padEnd(16)} ${c.regla}  (${n})`,
-    );
+    comprobaciones.push({ par: c.par, resultado: n });
+    const marca = n === '0' ? 'OK  ' : n === 'ERR' ? 'n/d ' : 'FALLA';
+    console.log(`  [${marca}] ${c.par.padEnd(16)} ${c.regla}  (${n})`);
   }
-  console.log(`\n  cross_coherence_verified = ${incoherentes === 0}`);
 
-  if (p.falla || incoherentes > 0) {
+  const v = veredictoCoherencia(comprobaciones);
+  console.log(`\n  cross_coherence_verified = ${v.estado}`);
+  console.log(
+    `  ${v.medidas} de ${comprobaciones.length} medidas · ${v.incoherentes} incoherente(s) · ` +
+      `${v.noMedidas} sin poder mirar`,
+  );
+  if (v.estado === 'sin_datos') {
+    console.log('  Esto NO es un aprobado: es una comprobacion que no ha podido mirar.');
+  }
+
+  await cerrarConexion();
+
+  // PT-149: salir con 0 cuando no se pudo medir era lo que hacia grave a H-021. Un fallo que sale
+  // con 0 no es un fallo para nadie que lo automatice. `verificado` es el unico estado que pasa.
+  if (p.falla || v.estado !== 'verificado') {
     console.error(
-      '\n  Una regla de dominio violada es un HALLAZGO, no un test roto: registralo en PTSA.\n',
+      p.falla || v.estado === 'incoherente'
+        ? '\n  Una regla de dominio violada es un HALLAZGO, no un test roto: registralo en PTSA.\n'
+        : '\n  No se pudo medir. Revisa la conexion a la base antes de leer nada de arriba.\n',
     );
     process.exit(1);
   }
 }
 
 if (require.main === module) {
-  main();
+  main().catch(async (e) => {
+    console.error(`\n  audit:domain fallo: ${(e as Error).message}\n`);
+    await cerrarConexion();
+    process.exit(1);
+  });
 }
