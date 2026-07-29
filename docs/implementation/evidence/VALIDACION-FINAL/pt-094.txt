@@ -1,0 +1,4 @@
+=== PT-094 — docker restart ya no tumba ADMIN ===
+reiniciado, esperando...
+HTTP: 200
+ironloot-admin  Up 50 seconds (healthy)

@@ -1,0 +1,27 @@
+PT-121 — el checkpoint D3, probado en los dos sentidos
+
+ESTADO REAL
+  silent_failure_count = 25   (linea base: 25)
+  trace_completeness   = 100%   (1 de 1 ciclos liquidados con traza completa)
+  prompt_provenance    = NO_APLICA
+  fallback_quality     = evaluacion documentada
+  OK — sin silencios nuevos.        codigo de salida: 0
+
+CON UN SILENCIO INYECTADO (un catch con solo un comentario, como F-34)
+  NUEVOS catch que no registran ni relanzan:
+    src/api/src/modules/health/health.service.ts:97
+  codigo de salida: 1
+
+TRAS RESTAURAR
+  codigo de salida: 0
+
+EL REPARTO DE LOS 25
+  API             8
+  SSR             8   (base, client, admin)
+  Core            1
+  Navegador       8   <- es donde vivia F-34, y el ambito que nada miraba
+
+TESTS
+  catch-mudos.spec.ts: 9/9
+  CM-04 reproduce el catch de F-34 LITERAL y comprueba que un comentario no
+  cuenta como rastro. Es el caso que da sentido a todo lo demas.

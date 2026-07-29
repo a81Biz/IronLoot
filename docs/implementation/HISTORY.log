@@ -2338,3 +2338,31 @@ Delta (real vs planned): PT-160 crecio de «cambiar dos lineas» a «tres contro
   nuevas en `package.json` desplazaron dos citas del TRD — esto ultimo lo cazo la guarda de PT-130 en
   la misma corrida, que es H-016 detectado en vivo.
 PTSA reference: H-023 -> CORREGIDA (no CERRADA: `[R44]`)
+
+## PT-152 / PT-151 — BUG + INVESTIGATION: la evidencia entra en git, y el patron de H-019 no se repite
+Date: 2026-07-29
+Status: VALIDATION_PENDING (PT-152) · CLOSED (PT-151)
+Branch: fix/PT-152-151-evidencia-y-barrido
+Objective: cerrar F-136-A y barrer el patron de H-019.
+Root cause (PT-152): `.gitignore` seguia solo los `.md` de `evidence/` bajo el criterio «los .md son
+  razonamiento, el resto son volcados». El criterio suena razonable y esta al reves: **la evidencia
+  ES el volcado** — FDGE dice que el codigo no es evidencia, la ejecucion lo es. 81 de 189 ficheros
+  sin seguir, empeorando (eran 79 de 162 al registrarse). `PENDING_TASKS` llego a mandar leer un
+  `regresion.txt` que no esta en git.
+Solution (PT-152): se invierte el criterio — entra la evidencia (`.md`, `.txt`, `.png`, `.json`,
+  `.log`), quedan fuera los respaldos `.sql`, que son la copia previa a ejecutar algo y no su
+  resultado. 73 ficheros añadidos, ~5 MB pagados a proposito. **RULE-31** lo vigila en las dos
+  direcciones: seguido por git Y presente en disco.
+Findings (PT-151): **el patron no se repite, y ahora se sabe por que.** Se rastrearon las 11 columnas
+  `Json` del esquema y quien las escribe. `Object.assign`: cero. `deepMerge`: uno, el corregido.
+  Lo que protege al resto es que **Prisma ignora `undefined` en `data:` por contrato**: por eso
+  `auctions.update` puede hacer `data: { ...dto }` con seguridad, mientras el mismo spread a mano
+  sobre un objeto leido habria borrado las imagenes. La exposicion no es tener columnas Json: es
+  escribir un merge a mano en vez de dejarselo a Prisma.
+  No se escribe guarda: hoy no tendria sujeto y arriesgaria falsos positivos sobre spreads legitimos.
+  Queda la recomendacion de escribirla cuando aparezca el segundo caso.
+Modified files: .gitignore, docs/enterprise-documentation/11-Conventions.md,
+  src/api/test/unit/documentacion/evidencia-citada-esta-en-git.spec.ts, 73 ficheros de evidencia
+Evidence: docs/implementation/evidence/PT-151/hallazgos.md
+Delta (real vs planned): el paquete decia que PT-152 «lleva una decision dentro» — que evidencia
+  pertenece al repositorio. Se tomo: entra lo que prueba, no lo que se guardo por si acaso.

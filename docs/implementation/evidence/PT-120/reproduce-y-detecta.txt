@@ -1,0 +1,33 @@
+PT-120 — el catalogo reproduce DS-008 y detecta la violacion
+
+CON LA BD REAL
+  14 reglas evaluadas
+  rubric_compliance_score = 100
+  Sin datos (fuera del denominador): R-5.1a, R-5.1d
+  cross_coherence_verified = true
+  codigo de salida: 0
+
+  DS-008 dio el mismo 100 — pero calculado a mano, y SIN distinguir que dos
+  reglas no tenian productos que evaluar. El catalogo si lo dice.
+
+CON UNA VIOLACION INYECTADA (un monedero a balance -1)
+  [FALLA] CR-001  El balance del monedero nunca es negativo
+  [FALLA] CR-002  Los fondos retenidos no superan el balance
+  [FALLA] CR-003  El ultimo balance_after del ledger coincide con el balance
+  rubric_compliance_score = 69
+  3 regla(s) de dominio violada(s)
+  codigo de salida: 1
+
+  La cascada es correcta: un balance negativo rompe tres invariantes a la vez.
+  Una regla que solo detectara CR-001 estaria mirando de menos.
+
+TRAS RESTAURAR
+  codigo de salida: 0
+
+El codigo de salida se comprobo SIN tuberia, por la leccion de PT-118: con
+`| grep` habria devuelto el codigo de grep.
+
+TESTS DEL MOTOR
+  reglas-como-codigo.spec.ts: 6/6
+  DR-02 (violada) y DR-04 (todas sin datos -> null, nunca 100) son los que dan
+  valor a DR-01.

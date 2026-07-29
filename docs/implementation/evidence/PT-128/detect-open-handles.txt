@@ -1,0 +1,249 @@
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\auction\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\auction\auction-status.enum.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\auction\auction-state-machine.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\bid\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\bid\bid-validation.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\wallet\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\wallet\wallet-calculation.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\order\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\order\order-status.enum.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\order\order-state-machine.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\payment\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\payment\webhook-signature-validator.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\payment\ipn-validator.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\dispute\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\dispute\dispute-status.enum.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\dispute\dispute-state-machine.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\money\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\domain\money\money.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\events\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\events\bid-placed.event.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\events\auction-closed.event.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\events\payment-completed.event.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\events\refund-processed.event.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\events\order-created.event.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\integrations\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\integrations\payment-provider.interface.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\integrations\email-service.interface.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\integrations\storage-service.interface.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\integrations\cfdi-pac-provider.interface.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\contracts\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\contracts\auction-repository.interface.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\contracts\bid-repository.interface.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\contracts\wallet-repository.interface.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\contracts\order-repository.interface.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\shared\index.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\shared\pagination.dto.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+ts-jest[ts-compiler] (WARN) Got a `.js` file to compile while `allowJs` option is not set to `true` (file: C:\DevOps\Desarrollos\IronLoot\src\packages\core\dist\shared\money.dto.js). To fix this:
+  - if you want TypeScript to process JS files, set `allowJs` to `true` in your TypeScript config (usually tsconfig.json)
+  - if you do not want TypeScript to process your `.js` files, in your Jest config change the `transform` key which value is `ts-jest` so that it does not match `.js` files anymore
+FAIL test/e2e/auth.e2e-spec.ts (51.029 s)
+  ● Console
+
+    console.info
+      {"timestamp":"2026-07-28T03:01:24.143Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Error persistence connected","context":"AuditPersistence"}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+          at Function.from (<anonymous>)
+
+    console.info
+      {"timestamp":"2026-07-28T03:01:24.158Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Audit persistence connected","context":"AuditPersistence"}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+          at Function.from (<anonymous>)
+
+  ● Auth (e2e) › /api/v1/auth/register (POST) › should register a new user
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      76 |     });
+      77 |
+    > 78 |     it('should register a new user', async () => {
+         |     ^
+      79 |       const response = await request(app.getHttpServer())
+      80 |         .post('/api/v1/auth/register')
+      81 |         .send(testUser)
+
+      at e2e/auth.e2e-spec.ts:78:5
+      at e2e/auth.e2e-spec.ts:64:3
+      at Object.<anonymous> (e2e/auth.e2e-spec.ts:7:1)
+
+  ● Auth (e2e) › /api/v1/auth/register (POST) › should fail with duplicate email
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      86 |     });
+      87 |
+    > 88 |     it('should fail with duplicate email', async () => {
+         |     ^
+      89 |       // First registration
+      90 |       await request(app.getHttpServer()).post('/api/v1/auth/register').send(testUser);
+      91 |
+
+      at e2e/auth.e2e-spec.ts:88:5
+      at e2e/auth.e2e-spec.ts:64:3
+      at Object.<anonymous> (e2e/auth.e2e-spec.ts:7:1)
+
+  ● Auth (e2e) › /api/v1/auth/register (POST) › should fail with invalid email format
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+       99 |     });
+      100 |
+    > 101 |     it('should fail with invalid email format', async () => {
+          |     ^
+      102 |       const response = await request(app.getHttpServer())
+      103 |         .post('/api/v1/auth/register')
+      104 |         .send({
+
+      at e2e/auth.e2e-spec.ts:101:5
+      at e2e/auth.e2e-spec.ts:64:3
+      at Object.<anonymous> (e2e/auth.e2e-spec.ts:7:1)
+
+  ● Auth (e2e) › /api/v1/auth/register (POST) › should fail with weak password
+
+    thrown: "Exceeded timeout of 5000 ms for a test.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      111 |     });
+      112 |
+    > 113 |     it('should fail with weak password', async () => {
+          |     ^
+      114 |       const response = await request(app.getHttpServer())
+      115 |         .post('/api/v1/auth/register')
+      116 |         .send({
+
+      at e2e/auth.e2e-spec.ts:113:5
+      at e2e/auth.e2e-spec.ts:64:3
+      at Object.<anonymous> (e2e/auth.e2e-spec.ts:7:1)
+
+  ● Auth (e2e) › /api/v1/auth/login (POST) › should fail login for unverified user
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      125 |
+      126 |   describe('/api/v1/auth/login (POST)', () => {
+    > 127 |     beforeAll(async () => {
+          |     ^
+      128 |       // Create user for login tests
+      129 |       try {
+      130 |         await request(app.getHttpServer()).post('/api/v1/auth/register').send(testUser);
+
+      at e2e/auth.e2e-spec.ts:127:5
+      at e2e/auth.e2e-spec.ts:126:3
+      at Object.<anonymous> (e2e/auth.e2e-spec.ts:7:1)
+
+  ● Auth (e2e) › /api/v1/auth/login (POST) › should fail with invalid credentials
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      125 |
+      126 |   describe('/api/v1/auth/login (POST)', () => {
+    > 127 |     beforeAll(async () => {
+          |     ^
+      128 |       // Create user for login tests
+      129 |       try {
+      130 |         await request(app.getHttpServer()).post('/api/v1/auth/register').send(testUser);
+
+      at e2e/auth.e2e-spec.ts:127:5
+      at e2e/auth.e2e-spec.ts:126:3
+      at Object.<anonymous> (e2e/auth.e2e-spec.ts:7:1)
+
+  ● Auth (e2e) › /api/v1/auth/login (POST) › should fail with non-existent user
+
+    thrown: "Exceeded timeout of 5000 ms for a hook.
+    Add a timeout value to this test to increase the timeout, if this is a long-running test. See https://jestjs.io/docs/api#testname-fn-timeout."
+
+      125 |
+      126 |   describe('/api/v1/auth/login (POST)', () => {
+    > 127 |     beforeAll(async () => {
+          |     ^
+      128 |       // Create user for login tests
+      129 |       try {
+      130 |         await request(app.getHttpServer()).post('/api/v1/auth/register').send(testUser);
+
+      at e2e/auth.e2e-spec.ts:127:5
+      at e2e/auth.e2e-spec.ts:126:3

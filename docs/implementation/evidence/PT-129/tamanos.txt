@@ -1,0 +1,7 @@
+
+ironloot-api:pt129	541MB
+pt129-builder:latest	1.28GB
+ironloot-admin:pt129	156MB
+ironloot-client:pt129	151MB
+ironloot-base:pt129	152MB
+

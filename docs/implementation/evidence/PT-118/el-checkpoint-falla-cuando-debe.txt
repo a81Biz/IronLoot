@@ -1,0 +1,29 @@
+PT-118 — el checkpoint D2, probado en los dos sentidos
+
+ESTADO REAL (13 paquetes con aviso propio, todos en la linea base)
+  [audit:check] 13 paquete(s) con aviso propio en produccion.
+  [audit:check] Linea base de 2026-07-27: 13 — TD-015 ...
+  [audit:check] OK — Sin novedades respecto a la linea base.
+  codigo de salida: 0
+
+CON UN AVISO NUEVO Y UNO AGRAVADO (linea base alterada a proposito)
+  [audit:check] FALLA — 1 aviso(s) nuevo(s) y 1 agravado(s) respecto a la linea base.
+
+    NUEVO      critical  tar
+               node-tar Vulnerable to Arbitrary File Creation/Overwrite via Hardlink Path Traversal
+    AGRAVADO   low -> high   glob
+
+    Que hacer: triar cada uno. Si se puede subir dentro del MISMO mayor, subelo.
+    Si exige un salto mayor, registralo en TD-015 y anadelo a `security-baseline.json`
+    con su motivo. No uses `npm audit fix --force` en un servidor de pagos.
+
+  codigo de salida: 1      <- el CI fallara
+
+El codigo de salida se comprobo por separado, sin tuberia: un `| tail` habria
+devuelto el codigo de tail y no el del script, y el control habria parecido
+funcionar sin hacerlo.
+
+TESTS
+  checkpoint-de-dependencias.spec.ts: 7/7
+  AC-02 y AC-03 son los que dan valor a AC-01: sin ellos, un verde podria
+  significar que el comparador no compara.

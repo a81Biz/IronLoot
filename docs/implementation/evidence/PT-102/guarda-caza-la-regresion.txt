@@ -1,0 +1,8 @@
+    × OS-03: ninguna plantilla de CLIENT usa un global antes de cargarlo (22 ms)
+    × OS-01: en el detalle de subasta, socket.io se carga antes que la puja (1 ms)
+    × OS-02: ambos scripts del detalle llevan `defer`
+    √ OS-04: el SRI de socket.io sigue en su sitio (PT-089)
+    √ OS-05: el análisis RECHAZA el orden invertido (caso de control) (1 ms)
+    √ OS-06: el análisis ACEPTA el orden correcto con `defer` (caso de control)
+    Received: "apps/client/views/pages/auction/detail.html: /js/pages/pages-auction-detail.js usa `io` y se ejecuta ANTES que https://cdn.socket.io/4.7.5/socket.io.min.js, que es quien lo define
+Tests:       3 failed, 3 passed, 6 total

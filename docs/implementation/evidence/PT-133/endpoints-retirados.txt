@@ -1,0 +1,5 @@
+  404  POST /api/v1/wallet/deposit
+  404  POST /api/v1/payments/checkout
+  401  POST /api/v1/payments/initiate
+  401  GET  /api/v1/payments/status/x
+  401  POST /api/v1/wallet/withdraw

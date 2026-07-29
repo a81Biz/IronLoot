@@ -1,0 +1,11 @@
+
+Migration 20260727000000_initial_schema marked as applied.
+
+
+--- migrate status ---
+Prisma schema loaded from prisma/schema.prisma
+Datasource "db": PostgreSQL database "ironloot_db", schema "public" at "db:5432"
+
+1 migration found in prisma/migrations
+
+Database schema is up to date!

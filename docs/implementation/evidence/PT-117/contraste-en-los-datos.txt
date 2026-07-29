@@ -1,0 +1,17 @@
+PT-117 (H-012) — verificacion sobre salida real
+
+Se cerraron dos subastas con el mismo flujo (el cron, sin invocar nada a mano),
+una antes del cambio y otra despues.
+
+  tipo          destinatario  titulo             hora
+  AUCTION_WON   comprador     You won the auction!   21:49   <- antes
+  AUCTION_WON   vendedor      Auction Sold!          21:49   <- antes, el defecto
+  AUCTION_WON   comprador     You won the auction!   22:11   <- despues
+  AUCTION_SOLD  vendedor      Auction Sold!          22:11   <- despues, corregido
+
+LA PAREJA DE COHERENCIA QUE FALLABA (Nivel 3, P-002 -> P-007)
+  avisos AUCTION_WON sin pedido que los respalde, tras el arreglo: 0
+
+SUITES
+  npm test: API 485/485 · CLIENT 103/103
+  tipo-de-aviso-al-cerrar.spec.ts: 3/3

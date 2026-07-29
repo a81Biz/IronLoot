@@ -1,0 +1,12 @@
+[1;36m==== 6b) Fase 32 — PUJA EN VIVO en dos navegadores (PT-102/F-34) ====[0m
+lidera "comprador2_022054@test.local" → observa comprador2_022054@test.local, puja comprador_022054@test.local
+subasta f99709f0 ACTIVE precio=700 → B pujara 950
+[PASS] V-LIVE-1  La pagina de detalle carga para A :: uctions/f99709f0-ead6-453e-aba2-92415315cf02
+[PASS] V-LIVE-2  A abre el WebSocket contra su propio dominio :: client.ironloot.local
+[PASS] V-LIVE-5  La cuenta atras sigue viva tras defer :: "0h 29m 51s"
+[PASS] V-LIVE-0  B puja 950 desde el formulario :: HTTP 201 "¡Puja realizada!"
+[PASS] V-LIVE-3  A ve subir el precio SIN recargar :: "$700" -> "$950" (esperado >= 950)
+[PASS] V-LIVE-4  La lista de pujas de A crece :: 2 -> 3
+[PASS] V-LIVE-6  Cero violaciones de CSP en el recorrido :: 0 violaciones
+[PASS] V-LIVE-7  La puja quedo asentada en la base :: current_price=950
+

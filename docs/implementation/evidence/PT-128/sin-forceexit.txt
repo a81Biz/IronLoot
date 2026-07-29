@@ -1,0 +1,1267 @@
+PASS test/e2e/auth.e2e-spec.ts (7.571 s)
+  ● Console
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:33.963Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Error persistence connected","context":"AuditPersistence"}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+          at Function.from (<anonymous>)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:33.976Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Audit persistence connected","context":"AuditPersistence"}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+          at Function.from (<anonymous>)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.066Z","level":"debug","service":"ironloot-api","env":"test","traceId":"702717b9-3680-4e6c-a203-b997d541554f","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:34.074Z","level":"info","service":"ironloot-api","env":"test","traceId":"702717b9-3680-4e6c-a203-b997d541554f","message":"Attempting user registration","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","username":"testuser"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.082Z","level":"debug","service":"ironloot-api","env":"test","traceId":"702717b9-3680-4e6c-a203-b997d541554f","message":"Existing email check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","found":false}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.083Z","level":"debug","service":"ironloot-api","env":"test","traceId":"702717b9-3680-4e6c-a203-b997d541554f","message":"Existing username check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"username":"testuser","found":false}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.276Z","level":"debug","service":"ironloot-api","env":"test","traceId":"702717b9-3680-4e6c-a203-b997d541554f","message":"Creating user in DB","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","username":"testuser"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:34.280Z","level":"info","service":"ironloot-api","env":"test","traceId":"702717b9-3680-4e6c-a203-b997d541554f","message":"User registered successfully","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"userId":"20f42579-52c6-488c-89f4-b7fda15145de"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.280Z","level":"debug","service":"ironloot-api","env":"test","traceId":"702717b9-3680-4e6c-a203-b997d541554f","message":"Created user record","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","userId":"20f42579-52c6-488c-89f4-b7fda15145de"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.error
+      {"timestamp":"2026-07-28T03:37:34.320Z","level":"error","service":"ironloot-api","env":"test","traceId":"702717b9-3680-4e6c-a203-b997d541554f","message":"Failed to send verification email","context":"EmailService","http":{"method":"POST","path":"/"},"error":{}}
+
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+    > 164 |         console.error(json);
+          |                 ^
+      165 |         break;
+      166 |     }
+      167 |   }
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.error (../src/common/observability/logger.service.ts:65:10)
+      at ChildLogger.error (../src/common/observability/logger.service.ts:247:17)
+      at EmailService.sendVerificationEmail (../src/modules/notifications/email.service.ts:39:16)
+      at AuthService.register (../src/modules/auth/auth.service.ts:219:5)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.321Z","level":"debug","service":"ironloot-api","env":"test","traceId":"702717b9-3680-4e6c-a203-b997d541554f","message":"AuthController.register() completed","context":"AuthController","duration":255,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.341Z","level":"debug","service":"ironloot-api","env":"test","traceId":"d00d3677-d9e2-4c62-b305-5ca0ba0d28f7","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:34.342Z","level":"info","service":"ironloot-api","env":"test","traceId":"d00d3677-d9e2-4c62-b305-5ca0ba0d28f7","message":"Attempting user registration","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","username":"testuser"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.344Z","level":"debug","service":"ironloot-api","env":"test","traceId":"d00d3677-d9e2-4c62-b305-5ca0ba0d28f7","message":"Existing email check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","found":false}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.345Z","level":"debug","service":"ironloot-api","env":"test","traceId":"d00d3677-d9e2-4c62-b305-5ca0ba0d28f7","message":"Existing username check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"username":"testuser","found":false}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.536Z","level":"debug","service":"ironloot-api","env":"test","traceId":"d00d3677-d9e2-4c62-b305-5ca0ba0d28f7","message":"Creating user in DB","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","username":"testuser"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:34.539Z","level":"info","service":"ironloot-api","env":"test","traceId":"d00d3677-d9e2-4c62-b305-5ca0ba0d28f7","message":"User registered successfully","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"userId":"81f3a941-5861-48fb-8dba-81bedb643158"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.539Z","level":"debug","service":"ironloot-api","env":"test","traceId":"d00d3677-d9e2-4c62-b305-5ca0ba0d28f7","message":"Created user record","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","userId":"81f3a941-5861-48fb-8dba-81bedb643158"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.error
+      {"timestamp":"2026-07-28T03:37:34.549Z","level":"error","service":"ironloot-api","env":"test","traceId":"d00d3677-d9e2-4c62-b305-5ca0ba0d28f7","message":"Failed to send verification email","context":"EmailService","http":{"method":"POST","path":"/"},"error":{}}
+
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+    > 164 |         console.error(json);
+          |                 ^
+      165 |         break;
+      166 |     }
+      167 |   }
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.error (../src/common/observability/logger.service.ts:65:10)
+      at ChildLogger.error (../src/common/observability/logger.service.ts:247:17)
+      at EmailService.sendVerificationEmail (../src/modules/notifications/email.service.ts:39:16)
+      at AuthService.register (../src/modules/auth/auth.service.ts:219:5)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.549Z","level":"debug","service":"ironloot-api","env":"test","traceId":"d00d3677-d9e2-4c62-b305-5ca0ba0d28f7","message":"AuthController.register() completed","context":"AuthController","duration":208,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.555Z","level":"debug","service":"ironloot-api","env":"test","traceId":"9aa85ed9-e6da-4fc6-960c-3c4eed9df5cb","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:34.556Z","level":"info","service":"ironloot-api","env":"test","traceId":"9aa85ed9-e6da-4fc6-960c-3c4eed9df5cb","message":"Attempting user registration","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","username":"testuser"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.558Z","level":"debug","service":"ironloot-api","env":"test","traceId":"9aa85ed9-e6da-4fc6-960c-3c4eed9df5cb","message":"Existing email check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","found":true,"existingId":"81f3a941-5861-48fb-8dba-81bedb643158"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:34.558Z","level":"warn","service":"ironloot-api","env":"test","traceId":"9aa85ed9-e6da-4fc6-960c-3c4eed9df5cb","message":"Registration failed: email already exists","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.warn (../src/common/observability/logger.service.ts:61:10)
+      at ChildLogger.warn (../src/common/observability/logger.service.ts:243:17)
+      at AuthService.register (../src/modules/auth/auth.service.ts:108:16)
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:34.565Z","level":"warn","service":"ironloot-api","env":"test","traceId":"9aa85ed9-e6da-4fc6-960c-3c4eed9df5cb","message":"Email already registered","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":409,"isBusinessError":true},"error":{"code":"EMAIL_ALREADY_EXISTS","message":"Email already registered","stack":"EmailAlreadyExistsException: Email already registered\n    at AuthService.register (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\auth\\auth.service.ts:110:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.590Z","level":"debug","service":"ironloot-api","env":"test","traceId":"a2ffc893-d99a-477b-b0ec-b8d61e847591","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:34.592Z","level":"warn","service":"ironloot-api","env":"test","traceId":"a2ffc893-d99a-477b-b0ec-b8d61e847591","message":"[\"Invalid email format\"]","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":400,"isBusinessError":true},"error":{"code":"VALIDATION_ERROR","message":"Bad Request Exception","stack":"BadRequestException: Bad Request Exception\n    at ValidationPipe.exceptionFactory (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\common\\pipes\\validation.pipe.js:112:20)\n    at ValidationPipe.transform (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\common\\pipes\\validation.pipe.js:79:30)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at resolveParamValue (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:151:23)\n    at async Promise.all (index 0)\n    at pipesFn (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:154:13)\n    at C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:37:30"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.598Z","level":"debug","service":"ironloot-api","env":"test","traceId":"d6ce82f4-6dd6-4932-9a61-61e65f7a363a","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:34.599Z","level":"warn","service":"ironloot-api","env":"test","traceId":"d6ce82f4-6dd6-4932-9a61-61e65f7a363a","message":"[\"Password must include uppercase, lowercase and number\",\"Password must be at least 8 characters\"]","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":400,"isBusinessError":true},"error":{"code":"VALIDATION_ERROR","message":"Bad Request Exception","stack":"BadRequestException: Bad Request Exception\n    at ValidationPipe.exceptionFactory (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\common\\pipes\\validation.pipe.js:112:20)\n    at ValidationPipe.transform (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\common\\pipes\\validation.pipe.js:79:30)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at resolveParamValue (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:151:23)\n    at async Promise.all (index 0)\n    at pipesFn (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:154:13)\n    at C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:37:30"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.604Z","level":"debug","service":"ironloot-api","env":"test","traceId":"753e1b21-7086-4d6b-bb73-cc19d9460edd","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:34.605Z","level":"info","service":"ironloot-api","env":"test","traceId":"753e1b21-7086-4d6b-bb73-cc19d9460edd","message":"Attempting user registration","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","username":"testuser"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.607Z","level":"debug","service":"ironloot-api","env":"test","traceId":"753e1b21-7086-4d6b-bb73-cc19d9460edd","message":"Existing email check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","found":false}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.609Z","level":"debug","service":"ironloot-api","env":"test","traceId":"753e1b21-7086-4d6b-bb73-cc19d9460edd","message":"Existing username check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"username":"testuser","found":false}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.801Z","level":"debug","service":"ironloot-api","env":"test","traceId":"753e1b21-7086-4d6b-bb73-cc19d9460edd","message":"Creating user in DB","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","username":"testuser"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:34.806Z","level":"info","service":"ironloot-api","env":"test","traceId":"753e1b21-7086-4d6b-bb73-cc19d9460edd","message":"User registered successfully","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"userId":"ab29e323-aa58-406b-b5cc-88efb446d3cb"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.806Z","level":"debug","service":"ironloot-api","env":"test","traceId":"753e1b21-7086-4d6b-bb73-cc19d9460edd","message":"Created user record","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com","userId":"ab29e323-aa58-406b-b5cc-88efb446d3cb"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.error
+      {"timestamp":"2026-07-28T03:37:34.816Z","level":"error","service":"ironloot-api","env":"test","traceId":"753e1b21-7086-4d6b-bb73-cc19d9460edd","message":"Failed to send verification email","context":"EmailService","http":{"method":"POST","path":"/"},"error":{}}
+
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+    > 164 |         console.error(json);
+          |                 ^
+      165 |         break;
+      166 |     }
+      167 |   }
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.error (../src/common/observability/logger.service.ts:65:10)
+      at ChildLogger.error (../src/common/observability/logger.service.ts:247:17)
+      at EmailService.sendVerificationEmail (../src/modules/notifications/email.service.ts:39:16)
+      at AuthService.register (../src/modules/auth/auth.service.ts:219:5)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.817Z","level":"debug","service":"ironloot-api","env":"test","traceId":"753e1b21-7086-4d6b-bb73-cc19d9460edd","message":"AuthController.register() completed","context":"AuthController","duration":213,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:34.822Z","level":"debug","service":"ironloot-api","env":"test","traceId":"059c7bb6-10e8-4107-929e-235abf7a9dea","message":"AuthController.login() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:34.823Z","level":"info","service":"ironloot-api","env":"test","traceId":"059c7bb6-10e8-4107-929e-235abf7a9dea","message":"Login attempt","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:35.016Z","level":"warn","service":"ironloot-api","env":"test","traceId":"059c7bb6-10e8-4107-929e-235abf7a9dea","message":"Email verification required","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":403,"isBusinessError":true,"entityType":"User","entityId":"ab29e323-aa58-406b-b5cc-88efb446d3cb"},"error":{"code":"USER_NOT_VERIFIED","message":"Email verification required","stack":"UserNotVerifiedException: Email verification required\n    at AuthService.validateUserState (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\auth\\auth.service.ts:743:15)\n    at AuthService.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\auth\\auth.service.ts:282:10)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:35.023Z","level":"debug","service":"ironloot-api","env":"test","traceId":"e72e2485-8c84-4d98-82d5-aebcd4c5037e","message":"AuthController.login() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:35.024Z","level":"info","service":"ironloot-api","env":"test","traceId":"e72e2485-8c84-4d98-82d5-aebcd4c5037e","message":"Login attempt","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test@test-e2e.com"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:35.215Z","level":"warn","service":"ironloot-api","env":"test","traceId":"e72e2485-8c84-4d98-82d5-aebcd4c5037e","message":"Login failed: invalid password","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"userId":"ab29e323-aa58-406b-b5cc-88efb446d3cb"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.warn (../src/common/observability/logger.service.ts:61:10)
+      at ChildLogger.warn (../src/common/observability/logger.service.ts:243:17)
+      at AuthService.login (../src/modules/auth/auth.service.ts:250:16)
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:35.220Z","level":"warn","service":"ironloot-api","env":"test","traceId":"e72e2485-8c84-4d98-82d5-aebcd4c5037e","message":"Invalid email or password","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"INVALID_CREDENTIALS","message":"Invalid email or password","stack":"InvalidCredentialsException: Invalid email or password\n    at AuthService.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\auth\\auth.service.ts:262:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:35.229Z","level":"debug","service":"ironloot-api","env":"test","traceId":"0010014d-86ce-436d-8ace-2daf18fedc41","message":"AuthController.login() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:35.230Z","level":"info","service":"ironloot-api","env":"test","traceId":"0010014d-86ce-436d-8ace-2daf18fedc41","message":"Login attempt","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"nonexistent@test-e2e.com"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:35.231Z","level":"warn","service":"ironloot-api","env":"test","traceId":"0010014d-86ce-436d-8ace-2daf18fedc41","message":"Login failed: user not found","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"nonexistent@test-e2e.com"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.warn (../src/common/observability/logger.service.ts:61:10)
+      at ChildLogger.warn (../src/common/observability/logger.service.ts:243:17)
+      at AuthService.login (../src/modules/auth/auth.service.ts:241:16)
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:35.231Z","level":"warn","service":"ironloot-api","env":"test","traceId":"0010014d-86ce-436d-8ace-2daf18fedc41","message":"Invalid email or password","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"INVALID_CREDENTIALS","message":"Invalid email or password","stack":"InvalidCredentialsException: Invalid email or password\n    at AuthService.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\auth\\auth.service.ts:243:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+PASS test/e2e/watchlist.e2e-spec.ts
+  ● Console
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:36.043Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Error persistence connected","context":"AuditPersistence"}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+          at Function.from (<anonymous>)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:36.044Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Audit persistence connected","context":"AuditPersistence"}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+          at Function.from (<anonymous>)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.099Z","level":"debug","service":"ironloot-api","env":"test","traceId":"2ec7ec18-5afd-4a64-b15d-9f3fad235698","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:36.100Z","level":"info","service":"ironloot-api","env":"test","traceId":"2ec7ec18-5afd-4a64-b15d-9f3fad235698","message":"Attempting user registration","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-m2djr@test.com","username":"userm2djr"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.103Z","level":"debug","service":"ironloot-api","env":"test","traceId":"2ec7ec18-5afd-4a64-b15d-9f3fad235698","message":"Existing email check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-m2djr@test.com","found":false}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.105Z","level":"debug","service":"ironloot-api","env":"test","traceId":"2ec7ec18-5afd-4a64-b15d-9f3fad235698","message":"Existing username check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"username":"userm2djr","found":false}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.307Z","level":"debug","service":"ironloot-api","env":"test","traceId":"2ec7ec18-5afd-4a64-b15d-9f3fad235698","message":"Creating user in DB","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-m2djr@test.com","username":"userm2djr"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:36.311Z","level":"info","service":"ironloot-api","env":"test","traceId":"2ec7ec18-5afd-4a64-b15d-9f3fad235698","message":"User registered successfully","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"userId":"04e95edf-e92c-4121-99d9-14d2fd35c378"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.311Z","level":"debug","service":"ironloot-api","env":"test","traceId":"2ec7ec18-5afd-4a64-b15d-9f3fad235698","message":"Created user record","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-m2djr@test.com","userId":"04e95edf-e92c-4121-99d9-14d2fd35c378"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.error
+      {"timestamp":"2026-07-28T03:37:36.338Z","level":"error","service":"ironloot-api","env":"test","traceId":"2ec7ec18-5afd-4a64-b15d-9f3fad235698","message":"Failed to send verification email","context":"EmailService","http":{"method":"POST","path":"/"},"error":{}}
+
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+    > 164 |         console.error(json);
+          |                 ^
+      165 |         break;
+      166 |     }
+      167 |   }
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.error (../src/common/observability/logger.service.ts:65:10)
+      at ChildLogger.error (../src/common/observability/logger.service.ts:247:17)
+      at EmailService.sendVerificationEmail (../src/modules/notifications/email.service.ts:39:16)
+      at AuthService.register (../src/modules/auth/auth.service.ts:219:5)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.338Z","level":"debug","service":"ironloot-api","env":"test","traceId":"2ec7ec18-5afd-4a64-b15d-9f3fad235698","message":"AuthController.register() completed","context":"AuthController","duration":239,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.366Z","level":"debug","service":"ironloot-api","env":"test","traceId":"d6b879a3-d6e1-4f37-8da6-d8f647832465","message":"AuthController.login() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:36.367Z","level":"info","service":"ironloot-api","env":"test","traceId":"d6b879a3-d6e1-4f37-8da6-d8f647832465","message":"Login attempt","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-m2djr@test.com"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:36.560Z","level":"info","service":"ironloot-api","env":"test","traceId":"d6b879a3-d6e1-4f37-8da6-d8f647832465","message":"User logged in successfully","context":"AuthService","userId":"04e95edf-e92c-4121-99d9-14d2fd35c378","http":{"method":"POST","path":"/"},"data":{"userId":"04e95edf-e92c-4121-99d9-14d2fd35c378"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.568Z","level":"debug","service":"ironloot-api","env":"test","traceId":"d6b879a3-d6e1-4f37-8da6-d8f647832465","message":"AuthController.login() completed","context":"AuthController","userId":"04e95edf-e92c-4121-99d9-14d2fd35c378","duration":202,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.573Z","level":"debug","service":"ironloot-api","env":"test","traceId":"8d066b8d-0a54-481c-8b2d-612c272d6e5f","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:36.573Z","level":"info","service":"ironloot-api","env":"test","traceId":"8d066b8d-0a54-481c-8b2d-612c272d6e5f","message":"Attempting user registration","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-kwfungj@test.com","username":"userkwfungj"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.575Z","level":"debug","service":"ironloot-api","env":"test","traceId":"8d066b8d-0a54-481c-8b2d-612c272d6e5f","message":"Existing email check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-kwfungj@test.com","found":false}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.576Z","level":"debug","service":"ironloot-api","env":"test","traceId":"8d066b8d-0a54-481c-8b2d-612c272d6e5f","message":"Existing username check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"username":"userkwfungj","found":false}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.768Z","level":"debug","service":"ironloot-api","env":"test","traceId":"8d066b8d-0a54-481c-8b2d-612c272d6e5f","message":"Creating user in DB","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-kwfungj@test.com","username":"userkwfungj"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:36.772Z","level":"info","service":"ironloot-api","env":"test","traceId":"8d066b8d-0a54-481c-8b2d-612c272d6e5f","message":"User registered successfully","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.772Z","level":"debug","service":"ironloot-api","env":"test","traceId":"8d066b8d-0a54-481c-8b2d-612c272d6e5f","message":"Created user record","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-kwfungj@test.com","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.error
+      {"timestamp":"2026-07-28T03:37:36.781Z","level":"error","service":"ironloot-api","env":"test","traceId":"8d066b8d-0a54-481c-8b2d-612c272d6e5f","message":"Failed to send verification email","context":"EmailService","http":{"method":"POST","path":"/"},"error":{}}
+
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+    > 164 |         console.error(json);
+          |                 ^
+      165 |         break;
+      166 |     }
+      167 |   }
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.error (../src/common/observability/logger.service.ts:65:10)
+      at ChildLogger.error (../src/common/observability/logger.service.ts:247:17)
+      at EmailService.sendVerificationEmail (../src/modules/notifications/email.service.ts:39:16)
+      at AuthService.register (../src/modules/auth/auth.service.ts:219:5)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.781Z","level":"debug","service":"ironloot-api","env":"test","traceId":"8d066b8d-0a54-481c-8b2d-612c272d6e5f","message":"AuthController.register() completed","context":"AuthController","duration":209,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.791Z","level":"debug","service":"ironloot-api","env":"test","traceId":"b05fd423-737c-4afa-b069-48f0e73d0fad","message":"AuthController.login() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:36.792Z","level":"info","service":"ironloot-api","env":"test","traceId":"b05fd423-737c-4afa-b069-48f0e73d0fad","message":"Login attempt","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-kwfungj@test.com"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:36.986Z","level":"info","service":"ironloot-api","env":"test","traceId":"b05fd423-737c-4afa-b069-48f0e73d0fad","message":"User logged in successfully","context":"AuthService","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"POST","path":"/"},"data":{"userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:36.993Z","level":"debug","service":"ironloot-api","env":"test","traceId":"b05fd423-737c-4afa-b069-48f0e73d0fad","message":"AuthController.login() completed","context":"AuthController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","duration":202,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.004Z","level":"info","service":"ironloot-api","env":"test","traceId":"86600263-e148-4a22-a695-48d29662861a","message":"AuctionsController.create() called","context":"AuctionsController","userId":"04e95edf-e92c-4121-99d9-14d2fd35c378","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:37.006Z","level":"debug","service":"ironloot-api","env":"test","traceId":"86600263-e148-4a22-a695-48d29662861a","message":"Creating auction","context":"AuctionsService","userId":"04e95edf-e92c-4121-99d9-14d2fd35c378","http":{"method":"POST","path":"/"},"data":{"userId":"04e95edf-e92c-4121-99d9-14d2fd35c378","title":"Watchlist Test Auction"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.013Z","level":"info","service":"ironloot-api","env":"test","traceId":"86600263-e148-4a22-a695-48d29662861a","message":"Auction created successfully","context":"AuctionsService","userId":"04e95edf-e92c-4121-99d9-14d2fd35c378","http":{"method":"POST","path":"/"},"data":{"auctionId":"7a39c7bc-abb4-493f-b80f-10eae8d6b48b"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.013Z","level":"info","service":"ironloot-api","env":"test","traceId":"86600263-e148-4a22-a695-48d29662861a","message":"AuctionsController.create() completed","context":"AuctionsController","userId":"04e95edf-e92c-4121-99d9-14d2fd35c378","duration":9,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.020Z","level":"info","service":"ironloot-api","env":"test","traceId":"ab9d399a-b8cd-4b9a-8539-e72dfa4dad19","message":"AuctionsController.publish() called","context":"AuctionsController","userId":"04e95edf-e92c-4121-99d9-14d2fd35c378","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.028Z","level":"info","service":"ironloot-api","env":"test","traceId":"ab9d399a-b8cd-4b9a-8539-e72dfa4dad19","message":"Auction published","context":"AuctionsService","userId":"04e95edf-e92c-4121-99d9-14d2fd35c378","http":{"method":"POST","path":"/"},"data":{"auctionId":"7a39c7bc-abb4-493f-b80f-10eae8d6b48b"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.028Z","level":"info","service":"ironloot-api","env":"test","traceId":"ab9d399a-b8cd-4b9a-8539-e72dfa4dad19","message":"AuctionsController.publish() completed","context":"AuctionsController","userId":"04e95edf-e92c-4121-99d9-14d2fd35c378","duration":8,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:37.038Z","level":"debug","service":"ironloot-api","env":"test","traceId":"4566b0a5-c12a-4228-9d3f-51fff3652918","message":"WatchlistController.getWatchlist() called","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:37.040Z","level":"debug","service":"ironloot-api","env":"test","traceId":"4566b0a5-c12a-4228-9d3f-51fff3652918","message":"WatchlistController.getWatchlist() completed","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","duration":2,"http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:37.047Z","level":"warn","service":"ironloot-api","env":"test","traceId":"2a83b452-8d2c-41ad-9ac0-dfcaf64a1a2c","message":"Authentication required","context":"ExceptionFilter","http":{"method":"GET","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"UNAUTHORIZED","message":"Authentication required","stack":"UnauthorizedException: Authentication required\n    at JwtAuthGuard.handleRequest (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\auth\\guards\\jwt-auth.guard.ts:41:20)\n    at C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\passport\\dist\\auth.guard.js:44:124\n    at C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\passport\\dist\\auth.guard.js:83:24\n    at allFailed (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\passport\\lib\\middleware\\authenticate.js:110:18)\n    at attempt (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\passport\\lib\\middleware\\authenticate.js:183:28)\n    at JwtStrategy.strategy.fail (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\passport\\lib\\middleware\\authenticate.js:314:9)\n    at JwtStrategy.Object.<anonymous>.JwtStrategy.authenticate (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\passport-jwt\\lib\\strategy.js:96:21)\n    at attempt (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\passport\\lib\\middleware\\authenticate.js:378:16)\n    at authenticate (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\passport\\lib\\middleware\\authenticate.js:379:7)\n    at C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\passport\\dist\\auth.guard.js:88:3\n    at new Promise (<anonymous>)\n    at C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\passport\\dist\\auth.guard.js:80:83\n    at JwtAuthGuard.canActivate (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\passport\\dist\\auth.guard.js:44:32)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.056Z","level":"info","service":"ironloot-api","env":"test","traceId":"20981524-1ce7-4b73-8eef-08494b8d568d","message":"WatchlistController.addToWatchlist() called","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.063Z","level":"info","service":"ironloot-api","env":"test","traceId":"20981524-1ce7-4b73-8eef-08494b8d568d","message":"Added to watchlist","context":"WatchlistService","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"POST","path":"/"},"data":{"userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","auctionId":"7a39c7bc-abb4-493f-b80f-10eae8d6b48b"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.064Z","level":"info","service":"ironloot-api","env":"test","traceId":"20981524-1ce7-4b73-8eef-08494b8d568d","message":"WatchlistController.addToWatchlist() completed","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","duration":9,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.072Z","level":"info","service":"ironloot-api","env":"test","traceId":"287d1e4c-de80-42ae-b4c8-ac1795d7d825","message":"WatchlistController.addToWatchlist() called","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:37.076Z","level":"debug","service":"ironloot-api","env":"test","traceId":"287d1e4c-de80-42ae-b4c8-ac1795d7d825","message":"Watchlist item already exists","context":"WatchlistService","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"POST","path":"/"},"data":{"userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","auctionId":"7a39c7bc-abb4-493f-b80f-10eae8d6b48b"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.076Z","level":"info","service":"ironloot-api","env":"test","traceId":"287d1e4c-de80-42ae-b4c8-ac1795d7d825","message":"WatchlistController.addToWatchlist() completed","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","duration":4,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.084Z","level":"info","service":"ironloot-api","env":"test","traceId":"f766832f-ddf5-4c1a-a86a-d51c44d00b90","message":"WatchlistController.addToWatchlist() called","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:37.088Z","level":"warn","service":"ironloot-api","env":"test","traceId":"f766832f-ddf5-4c1a-a86a-d51c44d00b90","message":"Auction not found","context":"ExceptionFilter","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"POST","path":"/"},"data":{"httpStatus":404,"isBusinessError":true,"entityType":"Auction","entityId":"00000000-0000-0000-0000-000000000000"},"error":{"code":"AUCTION_NOT_FOUND","message":"Auction not found","stack":"AuctionNotFoundException: Auction not found\n    at WatchlistService.add (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\watchlist\\watchlist.service.ts:36:13)\n    at WatchlistController.addToWatchlist (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\watchlist\\watchlist.controller.ts:53:5)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:37.095Z","level":"debug","service":"ironloot-api","env":"test","traceId":"ec4d94bc-6ab0-45b4-bf99-b9c2b6fd830c","message":"WatchlistController.getWatchlist() called","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:37.098Z","level":"debug","service":"ironloot-api","env":"test","traceId":"ec4d94bc-6ab0-45b4-bf99-b9c2b6fd830c","message":"WatchlistController.getWatchlist() completed","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","duration":3,"http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.106Z","level":"info","service":"ironloot-api","env":"test","traceId":"6aa851cb-493d-4c14-92ab-f100a63e6f25","message":"WatchlistController.removeFromWatchlist() called","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"DELETE","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.109Z","level":"info","service":"ironloot-api","env":"test","traceId":"6aa851cb-493d-4c14-92ab-f100a63e6f25","message":"Removed from watchlist","context":"WatchlistService","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"DELETE","path":"/"},"data":{"userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","auctionId":"7a39c7bc-abb4-493f-b80f-10eae8d6b48b"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.109Z","level":"info","service":"ironloot-api","env":"test","traceId":"6aa851cb-493d-4c14-92ab-f100a63e6f25","message":"WatchlistController.removeFromWatchlist() completed","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","duration":3,"http":{"method":"DELETE","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.116Z","level":"info","service":"ironloot-api","env":"test","traceId":"e9fca542-26c9-417b-868a-a5ef355fddc1","message":"WatchlistController.removeFromWatchlist() called","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"DELETE","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.log
+      prisma:error 
+      Invalid `this.prisma.watchlist.delete()` invocation in
+      C:\DevOps\Desarrollos\IronLoot\src\api\src\modules\watchlist\watchlist.service.ts:70:41
+      
+        67 async remove(userId: string, auctionId: string): Promise<void> {
+        68   // Idempotent delete
+        69   try {
+      → 70     await this.prisma.watchlist.delete(
+      An operation failed because it depends on one or more records that were required but not found. Record to delete does not exist.
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:37.122Z","level":"debug","service":"ironloot-api","env":"test","traceId":"e9fca542-26c9-417b-868a-a5ef355fddc1","message":"Watchlist item did not exist, ignoring","context":"WatchlistService","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"DELETE","path":"/"},"data":{"userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","auctionId":"7a39c7bc-abb4-493f-b80f-10eae8d6b48b"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.122Z","level":"info","service":"ironloot-api","env":"test","traceId":"e9fca542-26c9-417b-868a-a5ef355fddc1","message":"WatchlistController.removeFromWatchlist() completed","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","duration":6,"http":{"method":"DELETE","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:37.129Z","level":"debug","service":"ironloot-api","env":"test","traceId":"5ad8d084-1bd9-4041-9f2d-95179ab93fbf","message":"WatchlistController.getWatchlist() called","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:37.130Z","level":"debug","service":"ironloot-api","env":"test","traceId":"5ad8d084-1bd9-4041-9f2d-95179ab93fbf","message":"WatchlistController.getWatchlist() completed","context":"WatchlistController","userId":"3d9cd4c0-cd90-4405-9804-5dee14e499ae","duration":1,"http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.log
+      prisma:error 
+      Invalid `this.prisma.user.deleteMany()` invocation in
+      C:\DevOps\Desarrollos\IronLoot\src\api\test\core\auth-helper.ts:77:30
+      
+        74 // Be careful not to delete real users if running on dev db
+        75 // Ideally we run on test db
+        76 try {
+      → 77   await this.prisma.user.deleteMany(
+      Foreign key constraint violated: `auctions_seller_id_fkey (index)`
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+    console.error
+      Cleanup failed PrismaClientKnownRequestError: 
+      Invalid `this.prisma.user.deleteMany()` invocation in
+      C:\DevOps\Desarrollos\IronLoot\src\api\test\core\auth-helper.ts:77:30
+      
+        74 // Be careful not to delete real users if running on dev db
+        75 // Ideally we run on test db
+        76 try {
+      → 77   await this.prisma.user.deleteMany(
+      Foreign key constraint violated: `auctions_seller_id_fkey (index)`
+          at $n.handleRequestError (C:\DevOps\Desarrollos\IronLoot\src\api\node_modules\@prisma\client\runtime\library.js:121:7315)
+          at $n.handleAndLogRequestError (C:\DevOps\Desarrollos\IronLoot\src\api\node_modules\@prisma\client\runtime\library.js:121:6623)
+          at $n.request (C:\DevOps\Desarrollos\IronLoot\src\api\node_modules\@prisma\client\runtime\library.js:121:6307)
+          at l (C:\DevOps\Desarrollos\IronLoot\src\api\node_modules\@prisma\client\runtime\library.js:130:9633)
+          at AuthHelper.cleanup (C:\DevOps\Desarrollos\IronLoot\src\api\test\core\auth-helper.ts:77:7)
+          at Object.<anonymous> (C:\DevOps\Desarrollos\IronLoot\src\api\test\e2e\watchlist.e2e-spec.ts:49:19) {
+        code: 'P2003',
+        clientVersion: '5.22.0',
+        meta: { modelName: 'User', field_name: 'auctions_seller_id_fkey (index)' }
+      }
+
+      79 |       });
+      80 |     } catch (e) {
+    > 81 |       console.error('Cleanup failed', e);
+         |               ^
+      82 |     }
+      83 |   }
+      84 | }
+
+      at AuthHelper.cleanup (core/auth-helper.ts:81:15)
+      at Object.<anonymous> (e2e/watchlist.e2e-spec.ts:49:19)
+
+PASS test/e2e/notifications.e2e-spec.ts
+  ● Console
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.913Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Error persistence connected","context":"AuditPersistence"}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+          at Function.from (<anonymous>)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.914Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Audit persistence connected","context":"AuditPersistence"}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+          at Function.from (<anonymous>)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:37.967Z","level":"debug","service":"ironloot-api","env":"test","traceId":"268e31e2-fe85-4845-8e49-c257f7cac30e","message":"AuthController.register() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:37.968Z","level":"info","service":"ironloot-api","env":"test","traceId":"268e31e2-fe85-4845-8e49-c257f7cac30e","message":"Attempting user registration","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-k8dkxr@test.com","username":"userk8dkxr"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:37.972Z","level":"debug","service":"ironloot-api","env":"test","traceId":"268e31e2-fe85-4845-8e49-c257f7cac30e","message":"Existing email check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-k8dkxr@test.com","found":false}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:37.974Z","level":"debug","service":"ironloot-api","env":"test","traceId":"268e31e2-fe85-4845-8e49-c257f7cac30e","message":"Existing username check","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"username":"userk8dkxr","found":false}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.167Z","level":"debug","service":"ironloot-api","env":"test","traceId":"268e31e2-fe85-4845-8e49-c257f7cac30e","message":"Creating user in DB","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-k8dkxr@test.com","username":"userk8dkxr"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:38.172Z","level":"info","service":"ironloot-api","env":"test","traceId":"268e31e2-fe85-4845-8e49-c257f7cac30e","message":"User registered successfully","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.172Z","level":"debug","service":"ironloot-api","env":"test","traceId":"268e31e2-fe85-4845-8e49-c257f7cac30e","message":"Created user record","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-k8dkxr@test.com","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.error
+      {"timestamp":"2026-07-28T03:37:38.199Z","level":"error","service":"ironloot-api","env":"test","traceId":"268e31e2-fe85-4845-8e49-c257f7cac30e","message":"Failed to send verification email","context":"EmailService","http":{"method":"POST","path":"/"},"error":{}}
+
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+    > 164 |         console.error(json);
+          |                 ^
+      165 |         break;
+      166 |     }
+      167 |   }
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:164:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.error (../src/common/observability/logger.service.ts:65:10)
+      at ChildLogger.error (../src/common/observability/logger.service.ts:247:17)
+      at EmailService.sendVerificationEmail (../src/modules/notifications/email.service.ts:39:16)
+      at AuthService.register (../src/modules/auth/auth.service.ts:219:5)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.200Z","level":"debug","service":"ironloot-api","env":"test","traceId":"268e31e2-fe85-4845-8e49-c257f7cac30e","message":"AuthController.register() completed","context":"AuthController","duration":233,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.217Z","level":"debug","service":"ironloot-api","env":"test","traceId":"382a3c48-a2ba-4346-89c0-f5a0a268a021","message":"AuthController.login() called","context":"AuthController","http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:38.218Z","level":"info","service":"ironloot-api","env":"test","traceId":"382a3c48-a2ba-4346-89c0-f5a0a268a021","message":"Login attempt","context":"AuthService","http":{"method":"POST","path":"/"},"data":{"email":"test-k8dkxr@test.com"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:38.410Z","level":"info","service":"ironloot-api","env":"test","traceId":"382a3c48-a2ba-4346-89c0-f5a0a268a021","message":"User logged in successfully","context":"AuthService","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","http":{"method":"POST","path":"/"},"data":{"userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.418Z","level":"debug","service":"ironloot-api","env":"test","traceId":"382a3c48-a2ba-4346-89c0-f5a0a268a021","message":"AuthController.login() completed","context":"AuthController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","duration":201,"http":{"method":"POST","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.428Z","level":"debug","service":"ironloot-api","env":"test","traceId":"c9ab1cf0-c289-4dd4-a274-a58e0fe37824","message":"NotificationsController.findAll() called","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.431Z","level":"debug","service":"ironloot-api","env":"test","traceId":"c9ab1cf0-c289-4dd4-a274-a58e0fe37824","message":"NotificationsController.findAll() completed","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","duration":3,"http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:38.436Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Notification created for User [TOKEN]","context":"NotificationsService","data":{"notificationId":"29375a53-5739-4496-8fbb-122ce6aacd8c","type":"SYSTEM"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.446Z","level":"debug","service":"ironloot-api","env":"test","traceId":"17f070be-d066-43f9-8889-c848973e4b88","message":"NotificationsController.findAll() called","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.449Z","level":"debug","service":"ironloot-api","env":"test","traceId":"17f070be-d066-43f9-8889-c848973e4b88","message":"NotificationsController.findAll() completed","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","duration":3,"http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.456Z","level":"debug","service":"ironloot-api","env":"test","traceId":"c60fda6f-6998-4fa9-bd0c-b43531240871","message":"NotificationsController.getUnreadCount() called","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.458Z","level":"debug","service":"ironloot-api","env":"test","traceId":"c60fda6f-6998-4fa9-bd0c-b43531240871","message":"NotificationsController.getUnreadCount() completed","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","duration":2,"http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.465Z","level":"debug","service":"ironloot-api","env":"test","traceId":"6bcfb016-84ff-45f9-8f11-abd145a6a8aa","message":"NotificationsController.findAll() called","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.466Z","level":"debug","service":"ironloot-api","env":"test","traceId":"6bcfb016-84ff-45f9-8f11-abd145a6a8aa","message":"NotificationsController.findAll() completed","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","duration":1,"http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.474Z","level":"debug","service":"ironloot-api","env":"test","traceId":"cf67b0e3-1d53-4814-ba65-1933afa694a8","message":"NotificationsController.markAsRead() called","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","http":{"method":"PATCH","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.479Z","level":"debug","service":"ironloot-api","env":"test","traceId":"cf67b0e3-1d53-4814-ba65-1933afa694a8","message":"NotificationsController.markAsRead() completed","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","duration":5,"http":{"method":"PATCH","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.485Z","level":"debug","service":"ironloot-api","env":"test","traceId":"ebf5568a-8c9a-4a2f-8afd-beff7d7d5dc5","message":"NotificationsController.getUnreadCount() called","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.486Z","level":"debug","service":"ironloot-api","env":"test","traceId":"ebf5568a-8c9a-4a2f-8afd-beff7d7d5dc5","message":"NotificationsController.getUnreadCount() completed","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","duration":1,"http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:38.490Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Notification created for User [TOKEN]","context":"NotificationsService","data":{"notificationId":"aea7896b-2d0d-4959-bfb9-aa0949fc2e00","type":"SYSTEM"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.495Z","level":"debug","service":"ironloot-api","env":"test","traceId":"f35fd87b-f62b-45d0-a0ff-7f0c670489ff","message":"NotificationsController.markAllAsRead() called","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","http":{"method":"PATCH","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.499Z","level":"debug","service":"ironloot-api","env":"test","traceId":"f35fd87b-f62b-45d0-a0ff-7f0c670489ff","message":"NotificationsController.markAllAsRead() completed","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","duration":4,"http":{"method":"PATCH","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.505Z","level":"debug","service":"ironloot-api","env":"test","traceId":"d1ee4cbd-1d6d-4659-9e13-45ccbb6ab6f7","message":"NotificationsController.getUnreadCount() called","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.debug
+      {"timestamp":"2026-07-28T03:37:38.507Z","level":"debug","service":"ironloot-api","env":"test","traceId":"d1ee4cbd-1d6d-4659-9e13-45ccbb6ab6f7","message":"NotificationsController.getUnreadCount() completed","context":"NotificationsController","userId":"5a4bc114-8a6b-45de-8790-cb3170b1da4c","duration":2,"http":{"method":"GET","path":"/"}}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:155:17)
+
+    console.log
+      prisma:error 
+      Invalid `this.prisma.user.deleteMany()` invocation in
+      C:\DevOps\Desarrollos\IronLoot\src\api\test\core\auth-helper.ts:77:30
+      
+        74 // Be careful not to delete real users if running on dev db
+        75 // Ideally we run on test db
+        76 try {
+      → 77   await this.prisma.user.deleteMany(
+      Foreign key constraint violated: `notifications_user_id_fkey (index)`
+
+      at Object.mc (../node_modules/@prisma/client/runtime/library.js:21:432)
+
+    console.error
+      Cleanup failed PrismaClientKnownRequestError: 
+      Invalid `this.prisma.user.deleteMany()` invocation in
+      C:\DevOps\Desarrollos\IronLoot\src\api\test\core\auth-helper.ts:77:30
+      
+        74 // Be careful not to delete real users if running on dev db
+        75 // Ideally we run on test db
+        76 try {
+      → 77   await this.prisma.user.deleteMany(
+      Foreign key constraint violated: `notifications_user_id_fkey (index)`
+          at $n.handleRequestError (C:\DevOps\Desarrollos\IronLoot\src\api\node_modules\@prisma\client\runtime\library.js:121:7315)
+          at $n.handleAndLogRequestError (C:\DevOps\Desarrollos\IronLoot\src\api\node_modules\@prisma\client\runtime\library.js:121:6623)
+          at $n.request (C:\DevOps\Desarrollos\IronLoot\src\api\node_modules\@prisma\client\runtime\library.js:121:6307)
+          at l (C:\DevOps\Desarrollos\IronLoot\src\api\node_modules\@prisma\client\runtime\library.js:130:9633)
+          at AuthHelper.cleanup (C:\DevOps\Desarrollos\IronLoot\src\api\test\core\auth-helper.ts:77:7)
+          at Object.<anonymous> (C:\DevOps\Desarrollos\IronLoot\src\api\test\e2e\notifications.e2e-spec.ts:24:17) {
+        code: 'P2003',
+        clientVersion: '5.22.0',
+        meta: {
+          modelName: 'User',
+          field_name: 'notifications_user_id_fkey (index)'
+        }
+      }
+
+      79 |       });
+      80 |     } catch (e) {
+    > 81 |       console.error('Cleanup failed', e);
+         |               ^
+      82 |     }
+      83 |   }
+      84 | }
+
+      at AuthHelper.cleanup (core/auth-helper.ts:81:15)
+      at Object.<anonymous> (e2e/notifications.e2e-spec.ts:24:17)
+
+PASS test/e2e/admin-auth.e2e-spec.ts
+  ● Console
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:39.246Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Error persistence connected","context":"AuditPersistence"}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+          at Function.from (<anonymous>)
+
+    console.info
+      {"timestamp":"2026-07-28T03:37:39.246Z","level":"info","service":"ironloot-api","env":"test","traceId":"no-context","message":"Audit persistence connected","context":"AuditPersistence"}
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:158:17)
+          at Function.from (<anonymous>)
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:39.305Z","level":"warn","service":"ironloot-api","env":"test","traceId":"d1db2561-8c04-48b6-8bec-9c34ac3da295","message":"Invalid credentials","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"UNAUTHORIZED","message":"Invalid credentials","stack":"UnauthorizedException: Invalid credentials\n    at AdminAuthController.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\admin\\admin-auth.controller.ts:78:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:39.314Z","level":"warn","service":"ironloot-api","env":"test","traceId":"dfd68334-8420-4ef6-b988-39dc79d5b676","message":"Invalid credentials","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"UNAUTHORIZED","message":"Invalid credentials","stack":"UnauthorizedException: Invalid credentials\n    at AdminAuthController.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\admin\\admin-auth.controller.ts:78:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:39.320Z","level":"warn","service":"ironloot-api","env":"test","traceId":"c40e0c28-465b-4e0a-a3d5-4aaf76b9929e","message":"Invalid credentials","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"UNAUTHORIZED","message":"Invalid credentials","stack":"UnauthorizedException: Invalid credentials\n    at AdminAuthController.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\admin\\admin-auth.controller.ts:78:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:39.327Z","level":"warn","service":"ironloot-api","env":"test","traceId":"7343a839-b7f8-45b8-9e42-ac11fb9d27b8","message":"Invalid credentials","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"UNAUTHORIZED","message":"Invalid credentials","stack":"UnauthorizedException: Invalid credentials\n    at AdminAuthController.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\admin\\admin-auth.controller.ts:78:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:39.333Z","level":"warn","service":"ironloot-api","env":"test","traceId":"1b04f8a2-0ff9-46ff-b78b-c66705b1f586","message":"Invalid credentials","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"UNAUTHORIZED","message":"Invalid credentials","stack":"UnauthorizedException: Invalid credentials\n    at AdminAuthController.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\admin\\admin-auth.controller.ts:78:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:39.339Z","level":"warn","service":"ironloot-api","env":"test","traceId":"2c87d032-3067-4d02-a066-6423615977aa","message":"Invalid credentials","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"UNAUTHORIZED","message":"Invalid credentials","stack":"UnauthorizedException: Invalid credentials\n    at AdminAuthController.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\admin\\admin-auth.controller.ts:78:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:39.349Z","level":"warn","service":"ironloot-api","env":"test","traceId":"13078e15-e61c-44df-be4c-b25fc6f730f4","message":"Invalid credentials","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"UNAUTHORIZED","message":"Invalid credentials","stack":"UnauthorizedException: Invalid credentials\n    at AdminAuthController.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\admin\\admin-auth.controller.ts:78:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:39.356Z","level":"warn","service":"ironloot-api","env":"test","traceId":"f04a7ae2-1612-45e1-8cdd-ce9322d67d31","message":"Invalid credentials","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"UNAUTHORIZED","message":"Invalid credentials","stack":"UnauthorizedException: Invalid credentials\n    at AdminAuthController.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\admin\\admin-auth.controller.ts:78:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:39.364Z","level":"warn","service":"ironloot-api","env":"test","traceId":"f9617d6b-0fd6-4e2a-bee2-b4767b387cd0","message":"Invalid credentials","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"UNAUTHORIZED","message":"Invalid credentials","stack":"UnauthorizedException: Invalid credentials\n    at AdminAuthController.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\admin\\admin-auth.controller.ts:78:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:39.370Z","level":"warn","service":"ironloot-api","env":"test","traceId":"2dcaa45d-4c3f-46be-b2a2-42e81e18ece8","message":"Invalid credentials","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":401,"isBusinessError":true},"error":{"code":"UNAUTHORIZED","message":"Invalid credentials","stack":"UnauthorizedException: Invalid credentials\n    at AdminAuthController.login (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\src\\modules\\admin\\admin-auth.controller.ts:78:13)"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+    console.warn
+      {"timestamp":"2026-07-28T03:37:39.377Z","level":"warn","service":"ironloot-api","env":"test","traceId":"f63e2251-346f-43e2-9371-6d2f346201a6","message":"ThrottlerException: Too Many Requests","context":"ExceptionFilter","http":{"method":"POST","path":"/"},"data":{"httpStatus":429,"isBusinessError":true},"error":{"code":"RATE_LIMIT_EXCEEDED","message":"ThrottlerException: Too Many Requests","stack":"ThrottlerException: ThrottlerException: Too Many Requests\n    at ThrottlerGuard.throwThrottlingException (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\throttler\\src\\throttler.guard.ts:242:11)\n    at processTicksAndRejections (node:internal/process/task_queues:105:5)\n    at ThrottlerGuard.handleRequest (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\throttler\\src\\throttler.guard.ts:184:7)\n    at ThrottlerGuard.canActivate (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\throttler\\src\\throttler.guard.ts:132:9)\n    at GuardsConsumer.tryActivate (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\core\\guards\\guards-consumer.js:22:17)\n    at canActivateFn (C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:138:33)\n    at C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\core\\router\\router-execution-context.js:42:31\n    at C:\\DevOps\\Desarrollos\\IronLoot\\src\\api\\node_modules\\@nestjs\\core\\router\\router-proxy.js:9:17"}}
+
+      159 |         break;
+      160 |       case LogLevel.WARN:
+    > 161 |         console.warn(json);
+          |                 ^
+      162 |         break;
+      163 |       case LogLevel.ERROR:
+      164 |         console.error(json);
+
+      at StructuredLogger.output (../src/common/observability/logger.service.ts:161:17)
+      at StructuredLogger.write (../src/common/observability/logger.service.ts:109:10)
+      at StructuredLogger.logWithLevel (../src/common/observability/logger.service.ts:72:10)
+      at GlobalExceptionFilter.catch (../src/common/observability/exception.filter.ts:108:17)
+      at ExceptionsHandler.invokeCustomFilters (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:30:26)
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+
+Test Suites: 4 passed, 4 total
+Tests:       23 passed, 23 total
+Snapshots:   0 total
+Time:        11.945 s, estimated 17 s
+Ran all test suites matching /auth|watchlist|notifications/i.

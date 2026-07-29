@@ -1,0 +1,12 @@
+=== PT-090 — el registro resuelve a codigo real ===
+-- TD-003 dice ahora:
+### TD-003 — Un retiro se paga a una CLABE que nadie ha verificado
+**Status:** ✅ **CERRADA 2026-07-27 por PT-092.** Reescrita antes por PT-090 (su descripcion
+era falsa). Se comprueba leyendo `src/api/src/modules/wallet/account-verification.service.ts`
+y `withdrawals.service.ts:50`, que rechaza el retiro con «Esta cuenta aun no esta verificada».
+-- la cita se comprueba:
+src/api/src/modules/wallet/account-verification.service.ts
+50:        'Esta cuenta aún no está verificada. Verifícala antes de retirar: te enviaremos un ' +
+
+-- lo que PT-090 nego que existiera (debe seguir vacio):
+1

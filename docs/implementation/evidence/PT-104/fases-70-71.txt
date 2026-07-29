@@ -1,0 +1,13 @@
+Fase 70 (Mercado Pago + traza) — ANTES de PT-104:
+  total=4 PASS=3 FAIL=1   (abortaba en QA-TR-03 con status=processing)
+
+Fase 70 — DESPUES:
+  [PASS] QA-TR-03  Cobro real aprobado :: status=processed
+  [PASS] QA-TR-06  Wallet acreditado :: asientos=1 importe=137.4 movio=137.4 monedero=true
+  total=16 PASS=16 FAIL=0
+
+Fase 71 (PayPal via garantizada) — DESPUES:
+  [PASS] QA-PP-09  El monedero se acredita :: asientos=1 importe=321.5 movio=321.5 monedero=true
+  total=17 PASS=17 FAIL=0
+
+Doce comprobaciones de traza que no se ejecutaban nunca ahora corren.

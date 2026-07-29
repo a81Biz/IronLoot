@@ -1,0 +1,103 @@
+=== PT-135 — Las dos guardas, vistas fallar antes de servir de algo (RULE-14) ===
+
+Una guarda que nadie ha visto fallar no es un control. Las dos se escribieron ANTES de la
+correccion y se ejecutaron contra el estado roto de `master`.
+
+
+────────────────────────────────────────────────────────────────────────────────
+G1 — lock-declara-plataformas.spec.ts  ·  EN ROJO contra el lock de master
+────────────────────────────────────────────────────────────────────────────────
+
+  ● su arbol trae las variantes de Linux x64 que sus paquetes declaran
+
+    - Array []
+    +   "@css-inline/css-inline -> falta @css-inline/css-inline-linux-x64-gnu,
+    +                                    @css-inline/css-inline-linux-x64-musl",
+    +   "msgpackr-extract -> falta @msgpackr-extract/msgpackr-extract-linux-x64",
+
+  Tests: 1 failed, 11 passed, 12 total
+
+El mensaje nombra el paquete: quien lo lea en CI sabe que regenerar.
+
+EN VERDE tras regenerar el lock:
+
+  Tests: 12 passed, 12 total
+
+Cinco casos de control, y dos merecen mencion:
+  C1 — reproduce el estado EXACTO de master (padre declara, arbol solo con win32).
+  C5 — una variante ANIDADA cuenta como presente. Sin este caso la guarda acusaria un lock
+       correcto, y un falso positivo mata un control igual que un falso negativo.
+
+
+────────────────────────────────────────────────────────────────────────────────
+G2 — solo-en-contenedor.spec.ts  ·  EN ROJO en sus ocho pruebas
+────────────────────────────────────────────────────────────────────────────────
+
+  ✕ la guarda existe donde los tres package.json la invocan
+  ✕ linux pasa — es el contenedor, y tambien CI
+  ✕ C1: win32 aborta — es el caso que produjo el defecto
+  ✕ C2: darwin aborta — la invariante no es «no Windows», es «solo el contenedor»
+  ✕ el mensaje dice QUE ejecutar, no solo que esta prohibido
+  ✕ package.json declara preinstall
+  ✕ src/api/package.json declara preinstall
+  ✕ src/admin/package.json declara preinstall
+
+  Tests: 8 failed, 8 total
+
+EN VERDE tras escribir la guarda y cablearla:
+
+  Tests: 8 passed, 8 total
+
+
+────────────────────────────────────────────────────────────────────────────────
+Y el criterio que de verdad importa: un `npm install` REAL en el host, en Windows
+────────────────────────────────────────────────────────────────────────────────
+
+$ npm --prefix ./src/api install
+
+  npm error   npm no se ejecuta en el host (plataforma detectada: win32).
+  npm error   Este proyecto se desarrolla en Docker, y el lock se genera en el contenedor.
+  npm error
+  npm error   Si querias instalar dependencias:
+  npm error       docker compose build api
+  npm error
+  npm error   Si querias regenerar un package-lock.json:
+  npm error       npm run lock:api
+  npm error
+  npm error   Por que: un npm install en Windows deja el lock sin los binarios nativos de Linux.
+  npm error   El contenedor instala menos de lo que necesita y muere al arrancar, no al instalar.
+  npm error   Paso en PT-126 y costo cinco contenedores caidos. Ver PT-135.
+
+  exit code: 1
+
+$ git status --porcelain -- src/api/package-lock.json
+  (vacio)     <- la guarda aborto ANTES de tocar nada
+
+
+────────────────────────────────────────────────────────────────────────────────
+Por que la senal es process.platform y no /.dockerenv — medido antes de elegir
+────────────────────────────────────────────────────────────────────────────────
+
+$ docker exec ironloot-api ls -la /.dockerenv
+  -rwxr-xr-x 1 root root 0 Jul 28 20:50 /.dockerenv        <- existe en el contenedor
+
+$ grep -n "runs-on\|container:" .github/workflows/ci.yml
+  18: runs-on: ubuntu-latest     (x8, y NINGUN `container:`)
+
+Los siete jobs corren directamente sobre la VM, donde /.dockerenv NO existe. Exigirlo habria
+bloqueado la instalacion en CI entero. Se midio, y por eso la guarda mira la plataforma.
+
+
+────────────────────────────────────────────────────────────────────────────────
+G3 (bonus) — la guarda documental de PT-130 se acuso a si misma, funcionando
+────────────────────────────────────────────────────────────────────────────────
+
+Anadir UNA linea a src/api/package.json desplazo las cinco citas de la tabla de stack del TRD:
+
+  ● cada cita apunta a una linea que contiene el paquete que dice
+    +   "NestJS: src/api/package.json:47 -> \"@nestjs/config\": \"^4.0.0\",",
+    +   "Prisma: src/api/package.json:58 -> \"@nestjs/websockets\": \"^11.0.0\",",
+    +   "TypeScript: src/api/package.json:110 -> \"tsconfig-paths\": \"^4.2.0\",",
+
+Es exactamente para lo que PT-130 la escribio. Al corregirlas aparecieron TRES citas de la
+PROSA rotas desde antes, que esa guarda no cubria — y ahora si.

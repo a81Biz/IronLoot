@@ -1,0 +1,33 @@
+=== PT-135 — DESPUES: la imagen reconstruida --no-cache y volumen anonimo eliminado ===
+
+--- ls node_modules/@css-inline y @msgpackr-extract en ironloot-api:latest ---
+css-inline
+css-inline-linux-x64-gnu
+css-inline-linux-x64-musl
+msgpackr-extract-linux-x64
+--- compilado desde fuente? ---
+no hay build/Release: usa prebuild
+
+--- docker compose ps ---
+NAME               STATUS
+ironloot-admin     Up 38 minutes (healthy)
+ironloot-api       Up About a minute (healthy)
+ironloot-base      Up 53 minutes (healthy)
+ironloot-client    Up 53 minutes (healthy)
+ironloot-db        Up 2 hours (healthy)
+ironloot-mailhog   Up 2 hours
+ironloot-nginx     Up 53 minutes
+ironloot-redis     Up 2 hours (healthy)
+
+--- las cuatro imagenes de PRODUCCION, construidas con npm ci y arrancadas ---
+NAMES          STATUS
+pt135-api      Up 26 minutes (healthy)
+pt135-admin    Up 30 minutes (healthy)
+pt135-client   Up 30 minutes (healthy)
+pt135-base     Up 30 minutes (healthy)
+
+--- volumenes NOMBRADOS: intactos, no se uso down -v ---
+
+ironloot_postgres_data
+ironloot_redis_data
+

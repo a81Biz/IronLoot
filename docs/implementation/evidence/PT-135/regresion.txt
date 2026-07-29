@@ -1,0 +1,66 @@
+=== PT-135 — Regresion completa ===
+
+--- Unitarias: 944/944 (base 920 + 24 nuevas; el 919 documentado estaba desfasado en uno) ---
+API     93 suites   691 tests   PASS
+CLIENT   8 suites   103 tests   PASS
+CORE     8 suites   134 tests   PASS
+ADMIN    2 suites    13 tests   PASS
+BASE     1 suite      3 tests   PASS
+
+--- e2e: 77/77 ---
+Test Suites: 16 passed, 16 total
+Tests:       77 passed, 77 total
+
+Corridas en un contenedor desechable sobre la red del stack, y con la IMAGEN DEL API — no con
+`node:20-slim` pelado: sin el binario `openssl` Prisma pide el motor de OpenSSL 1.1 y no arranca. Es
+el bloqueo 6 de PT-129, reapareciendo en otro contenedor.
+
+En el host fallan las 77: la suite necesita resolver `db` y `redis`, que son nombres de la red de
+Docker, y el host mapea Postgres al 5433. Dentro del contenedor `ironloot-api` no caben: exit 137,
+lo mata el limite de 1 GB del servicio.
+
+--- lint ---
+0 errores en los cinco proyectos. Avisos preexistentes (809+557+39+57+1), ninguno nuevo.
+
+--- Seguridad ---
+npm audit --omit=dev  ->  found 0 vulnerabilities   (raiz + workspaces, api, admin)
+audit:check           ->  OK, sin novedades respecto a la linea base de 2026-07-27
+
+Con una regresion propia en medio, corregida dentro del PT: regenerar el lock trajo 2 avisos altos
+donde habia 0 — `minimatch` 9.0.3 (pinchado EXACTO por @typescript-eslint/typescript-estree, y el
+rango 9.0.0-9.0.6 tiene tres ReDoS) y `brace-expansion` 1.1.16 bajo glob. Arreglado como manda
+audit:check: override ACOTADO a minimatch 9.0.9 —no global, que forzaria un salto de mayor a eslint
+(^3.1.2) y glob (^10.2.2)— y `audit fix` sin `--force`, que en un servidor de pagos no se usa.
+Las tres variantes de plataforma siguen presentes despues del arreglo.
+
+--- Por navegador (Playwright sobre el stack real): 176/176 ---
+smoke 57/57 · bootstrap 13/13 · authed 41/41 · e2e 5/5 · puja-en-vivo 8/8
+extras 19/19 · admin-writes 4/4 · withdrawal 13/13 · payment-trace 16/16
+Salida completa: qa-out/20260728-154222
+
+Con una excepcion que NO se declara pasada: la fase `71-paypal-guaranteed.js` termino con
+TimeoutError de Playwright al pulsar DENTRO del contenedor de registro de PayPal
+(«<div class="loginSignUpSeparator"> ... intercepts pointer events»). Esa fase conduce el checkout
+REAL del sandbox de PayPal: es UI externa, y la suite la tolera por diseno («continuo»). No ejerce
+nada que PT-135 haya tocado — este PT no modifica ni un fichero de `src/api/src/`.
+
+AVISO: `run-all.sh` TRUNCA la base de datos. Se hizo copia antes con `pg_dump` (230 KB, 23 users /
+8 auctions) y la base queda con la salida de la suite QA, que es el resultado normal de ejecutarla.
+
+--- Las cuatro imagenes de PRODUCCION, construidas con npm ci ---
+pt135-api · pt135-admin · pt135-base · pt135-client   ->   las cuatro healthy
+
+Dos intentos previos del API fallaron por configuracion MIA, no por la imagen, y los dos son sintomas
+de guardas haciendo su trabajo:
+  1. `Error: MERCADO_PAGO_ACCESS_TOKEN not configured`
+  2. `STARTUP CONFIGURATION ERRORS: ADMIN_API_KEY placeholder · SESSION_SECRET < 32 chars`
+
+Y un tercero que SI es un hallazgo (F-135-A): con `REDIS_URL` puesto, dos de los tres clientes de
+Redis leen `REDIS_HOST`/`REDIS_PORT` y caian a `localhost` -> `/api/v1/health` 500 con un mensaje
+sobre `maxRetriesPerRequest` que no menciona Redis ni configuracion. La aplicacion habia arrancado
+bien: «Nest application successfully started».
+
+--- Contexto de la verificacion, declarado ---
+Volumen anonimo de `node_modules` ELIMINADO (`docker compose rm -fsv api`) y `build --no-cache`.
+Volumenes NOMBRADOS intactos: `ironloot_postgres_data`, `ironloot_redis_data`. El plan decia
+`down -v`, que los habria borrado; fue un error del plan, corregido antes de ejecutar.

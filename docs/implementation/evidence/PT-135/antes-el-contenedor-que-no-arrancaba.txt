@@ -1,0 +1,91 @@
+=== PT-135 — ANTES: el estado que motivo el PT (2026-07-28, antes de tocar nada) ===
+
+--- docker ps -a: un defecto, cinco contenedores caidos ---
+
+NAMES              STATUS                     PORTS
+ironloot-nginx     Created
+ironloot-admin     Created
+ironloot-client    Created
+ironloot-base      Created
+ironloot-api       Up 3 minutes (unhealthy)   0.0.0.0:3000->3000/tcp
+ironloot-db        Up 3 minutes (healthy)     0.0.0.0:5433->5432/tcp
+ironloot-mailhog   Up 3 minutes
+ironloot-redis     Up 3 minutes (healthy)
+
+Los cuatro en `Created` no tienen defecto: declaran `depends_on: api: service_healthy`
+(docker-compose.yml:18-19, 61-62, 258-259, 302-303) y el API nunca llega a healthy.
+
+
+--- docker logs ironloot-api: el entrypoint completa sus cuatro pasos SIN error ---
+
+🔄 Waiting for database...        -> ✅ Database is ready!
+🔄 Linking @ironloot/core...      -> ✅ @ironloot/core linked!
+🔄 Generating Prisma client...    -> ✔ Generated Prisma Client (v5.22.0)
+🔄 Applying database schema (migrations)...
+    Applying migration `20260727000000_initial_schema`
+    All migrations have been successfully applied.     <- LA MIGRACION VA BIEN. No es H-014.
+🚀 Starting NestJS...
+[8:06:17 PM] Found 0 errors. Watching for file changes.   <- COMPILA SIN ERRORES
+
+/app/node_modules/@css-inline/css-inline/index.js:253
+      throw loadError;
+      ^
+Error: Cannot find module '@css-inline/css-inline-linux-x64-gnu'
+Require stack:
+- /app/node_modules/@css-inline/css-inline/index.js
+- /app/node_modules/@nestjs-modules/mailer/dist/adapters/handlebars.adapter.js
+- /app/dist/modules/notifications/notifications.module.js
+- /app/dist/modules/scheduler/scheduler.module.js
+- /app/dist/app.module.js
+- /app/dist/main.js
+  code: 'MODULE_NOT_FOUND'
+
+Node.js v20.20.2
+
+
+--- docker inspect: el healthcheck NO esta roto; falla porque no hay nadie escuchando ---
+
+Status: unhealthy   FailingStreak: 6   ExitCode: 1  (seis sondas seguidas)
+
+
+--- La imagen no tenia el binario ---
+
+$ docker run --rm --entrypoint sh ironloot-api:latest -c 'ls node_modules/@css-inline'
+css-inline                        <- y nada mas
+
+
+--- La causa: el lock, medida en git ---
+
+$ git show 6d1b4ef^:src/api/package-lock.json | grep '"node_modules/@css-inline/'
+  css-inline · android-arm-eabi · android-arm64 · darwin-arm64 · darwin-x64
+  linux-arm-gnueabihf · linux-arm64-gnu · linux-arm64-musl
+  linux-x64-gnu     <- el que pide el contenedor de desarrollo (Debian, glibc)
+  linux-x64-musl    <- el que pide la imagen de produccion (alpine)
+  win32-arm64-msvc · win32-x64-msvc                        [12 entradas]
+
+$ git show 6d1b4ef:src/api/package-lock.json | grep '"node_modules/@css-inline/'
+  css-inline
+  win32-x64-msvc    <- solo la maquina de quien lo genero                [2 entradas]
+
+6d1b4ef = «refactor: PT-126/F-42 los cuatro servicios a NestJS 11...» (2026-07-27)
+17 paquetes de plataforma -> 2. Ocho de Linux desaparecidos.
+
+
+--- Por que estuvo un dia invisible: el volumen anonimo hacia de cache ---
+
+Trece volumenes abandonados conservaban el arbol de ANTES de PT-126, con los binarios dentro:
+
+1b4b190d… => css-inline  css-inline-linux-x64-gnu  css-inline-linux-x64-musl
+73c5c8d1… => css-inline  css-inline-linux-x64-gnu  css-inline-linux-x64-musl
+92bc7610… => css-inline  css-inline-linux-x64-gnu  css-inline-linux-x64-musl
+        (…13 en total)
+
+Reconstruir la imagen no causo el defecto: lo destapo.
+
+
+--- Y msgpackr no estaba degradado (hipotesis R3, descartada por medicion) ---
+
+$ docker exec ironloot-api node -e "require('msgpackr-extract')"
+msgpackr-extract: CARGA
+$ find node_modules/msgpackr-extract -name "*.node"
+node_modules/msgpackr-extract/build/Release/extract.node   <- compilo desde fuente con node-gyp

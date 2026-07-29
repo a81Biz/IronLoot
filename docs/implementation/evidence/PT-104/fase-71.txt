@@ -1,0 +1,3 @@
+[PASS] QA-PP-16     El saldo no cambia tras el intento fabricado :: saldo=100563.1
+
+=== PAYPAL VIA GARANTIZADA === total=17 PASS=17 FAIL=0 SKIP=0

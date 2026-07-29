@@ -1,0 +1,13 @@
+[1;36m==== RESUMEN FINAL ====[0m
+   smoke: 57/57 PASS
+   bootstrap: 13/13 PASS
+   authed: 41/41 PASS
+   e2e: 5/5 PASS
+   puja-en-vivo: 8/8 PASS
+   extras: 19/19 PASS
+   admin-writes: 4/4 PASS
+   withdrawal: 13/13 PASS
+   payment-trace: 3/4 PASS
+   paypal-guaranteed: 16/17 PASS
+
+Salida completa: C:/DevOps/Desarrollos/IronLoot/qa-out/20260727-022054

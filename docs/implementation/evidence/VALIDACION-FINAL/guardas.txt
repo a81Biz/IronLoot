@@ -1,0 +1,21 @@
+=== PT-102 · PT-103 — las guardas nuevas ===
+-- PT-102: orden de scripts
+    √ OS-03: ninguna plantilla de CLIENT usa un global antes de cargarlo (4 ms)
+    √ OS-01: en el detalle de subasta, socket.io se carga antes que la puja
+    √ OS-02: ambos scripts del detalle llevan `defer` (1 ms)
+    √ OS-04: el SRI de socket.io sigue en su sitio (PT-089) (1 ms)
+    √ OS-05: el análisis RECHAZA el orden invertido (caso de control)
+    √ OS-06: el análisis ACEPTA el orden correcto con `defer` (caso de control)
+Tests:       6 passed, 6 total
+
+-- PT-103: coherencia del registro de deuda
+    √ CD-01: ninguna deuda cerrada en HISTORY.log sigue abierta en el registro (4 ms)
+    √ CD-05: se salta limpiamente cuando los documentos no estan (1 ms)
+    √ CD-02: RECHAZA una deuda cerrada en la historia y abierta en el registro (1 ms)
+    √ CD-03: ACEPTA un registro coherente
+    √ CD-04: NO acusa ante una redaccion que no encaja en ninguna lista (1 ms)
+    √ CD-06: una deuda del registro que la historia no menciona es irrelevante
+Tests:       6 passed, 6 total
+
+-- PT-096: sin JS inline en las plantillas
+Tests:       12 passed, 12 total
