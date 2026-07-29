@@ -312,3 +312,44 @@ invariantes no se violan en el camino observado; **no** que sean inviolables baj
 ```
 
 Sin cambio respecto a DS-008. H-010, H-011 y H-012 están CERRADA y no penalizan.
+
+---
+
+## Update U-007 — 2026-07-29 (S-004-M, medicion dirigida)
+
+**El Domain Acid Test, por fin sobre salida real y no sobre una base vacia.**
+
+`run-all.sh` genero la salida (3 usuarios, 1 subasta, 3 pujas, 1 pago, 3 ciclos de pago, 12 asientos del
+ledger, 19 eventos de traza, 2 retiros) y **D1 se midio en la misma sesion** — la ventana se habia cerrado
+dos veces antes (S-002 y S-003), porque `run-all.sh` trunca la base al empezar.
+
+**12 de las 14 reglas medidas, las 12 CUMPLEN.** En S-004 solo se pudo medir 1.
+
+```
+  rubric_compliance_score = 100
+  Sin datos (fuera del denominador): R-5.1a, R-5.1d
+```
+
+Y las que miden dinero de verdad cumplen **sobre salida real**, no sobre un test:
+
+| Regla | Peso | Que garantiza |
+|---|---:|---|
+| `CR-003` | 25 | El ultimo `balance_after` del ledger coincide con el saldo del monedero |
+| `CR-004` | 20 | El deposito acreditado coincide con el pago del proveedor |
+| `R-5.1b` | 25 | Todo pago `COMPLETED` tiene su asiento de deposito |
+| `R-5.1c` | 25 | Ningun deposito se acredito dos veces |
+| `R-5.3b` | 15 | Ningun vendedor habilitado sin KYC aprobado |
+
+`CR-003` es la que cierra el circulo de **RULE-24**: los siete caminos que mueven saldo leen bloqueando la
+fila, y el invariante ledger-vs-saldo se cumple sobre 12 asientos reales.
+
+**Las dos `n/d` son legitimas y se comprobo antes de concluir**: `R-5.1a` («toda subasta cerrada con pujas
+genera pedido») y `R-5.1d` («toda venta liquidada registra su comision») salen sin datos porque hay **0
+subastas en `CLOSED`** — la unica subasta sigue abierta, y la suite no espera los 120 s de la ventana de
+cierre. **No es una violacion de dominio**; es un flujo que la suite no llega a completar.
+
+**Consecuencia para la proxima medicion:** para cubrir esas dos reglas —y con ellas el pedido, la comision
+y la liquidacion— hace falta una corrida que **cierre** una subasta. Es el unico hueco que queda en D1, y
+es de la suite, no del producto.
+
+Evidencia: **E-032**.

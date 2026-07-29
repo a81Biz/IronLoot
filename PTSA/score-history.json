@@ -789,6 +789,61 @@
         "IDENTIFICADO": 1
       },
       "nota": "D4 vuelve a 100: la tanda PT-168..PT-172 cerro cinco defectos de registro que ningun hallazgo PTSA cubria y que no trajo ningun mecanismo — los trajo la revision de coherencia que pidio el humano. El codigo estaba bien; lo que mentia era lo que el repositorio decia de si mismo. En sentido contrario, H-025 es la SEXTA aparicion del patron de la casa y la mas incomoda: el veredicto de coherencia sale `verificado` sobre una base vacia porque las cinco consultas devuelven 0 incoherencias cuando no hay filas que comparar; PT-149 corrigio el caso «no pude conectar» y dejo el caso «no habia datos», y el docstring declara la proteccion que el codigo no implementa. Es lo que esta corrida habria concluido sin cruzar el conteo de filas de E-030. Se descarto ademas un hallazgo falso: `ledger_entries` no existe porque la tabla se llama `ledger`."
+    },
+    {
+      "session": "S-004-M",
+      "date": "2026-07-29",
+      "type": "medicion_dirigida",
+      "scores": {
+        "D1": 85,
+        "D2": 85,
+        "D3": 90,
+        "D4": 100,
+        "health": 88.0,
+        "risk": 100,
+        "confidence": 97.9
+      },
+      "classification": "B",
+      "classification_without_cap": "B",
+      "cap_reason": null,
+      "cap_note": "Sin cap. §15.6 YA NO ATA: Confidence 97.9 supera el >=90 que exige para A. Lo que falta son 2 puntos de Health, y los tienen los cuatro hallazgos activos. Primera vez que la clase depende solo de defectos y no de lo que la auditoria no pudo mirar.",
+      "score_freshness": {
+        "last_verified": "2026-07-29",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "risk_detail": {
+        "risk_bruto": 34,
+        "detalle": "H-005 (2x3=6) + H-025 (3x4=12) + H-026 (2x4=8) + H-027 (2x4=8). Saturado. Lo empuja la CERTEZA: los cuatro son deterministas. Dos ALTA, dos MEDIA, NINGUNO CRITICA."
+      },
+      "coverage_detail": {
+        "D1": 86,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "D5": 100,
+        "motivo": "run-all.sh genero salida real (3 usuarios, 1 subasta, 3 pujas, 1 pago, 3 ciclos, 12 asientos, 19 eventos de traza, 2 retiros) y se midio EN LA MISMA SESION. D1: 12 de 14 reglas, las 12 CUMPLEN; faltan R-5.1a y R-5.1d, que exigen una subasta CLOSED y hay 0 porque la suite no espera los 120s de la ventana. D5 MEDIDO por primera vez, muestra de 3 ciclos (1 resuelto) — fina, y se declara. trace_completeness 100%."
+      },
+      "trigger": "Peticion explicita del humano: «correr ya run-all.sh y medir D1/D5 en la misma sesion». La ventana se habia cerrado dos veces (S-002, S-003) porque run-all.sh trunca la base al empezar.",
+      "findings_changes": {
+        "nuevos": [
+          "H-027"
+        ],
+        "revisados": [
+          "H-025 -> REFORZADO: con la base POBLADA el veredicto sigue diciendo `verificado · 5 de 5 medidas` y cuatro de las cinco comprobaciones compararon CERO filas. Evidencia mas fuerte que la de la base vacia."
+        ],
+        "cerrados": []
+      },
+      "evidencias_nuevas": [
+        "E-032"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "IDENTIFICADO": 1
+      },
+      "nota": "La medicion hizo su trabajo y a la vez encontro un defecto: Confidence 83.6 -> 97.9 (se cerro el hueco de cobertura) y Health 89.5 -> 88.0 (H-027). Es la auditoria funcionando, no una regresion del sistema. D5 deja de ser SIN_DATOS por primera vez en la historia de esta auditoria. Lo que el metodo demuestra: medir en la misma sesion que genera los datos vale 14.3 puntos de Confianza; las dos veces anteriores se midio en la sesion siguiente y la salida ya no estaba."
     }
   ]
 }

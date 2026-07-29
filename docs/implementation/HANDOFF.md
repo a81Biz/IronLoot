@@ -50,9 +50,31 @@ en 85 y `P-012` en `IDENTIFICADO`. Los tres modelos, con sus consecuencias técn
 - **H-026 (D3, MEDIA)** — `/health/detailed` dice `degraded` siempre y **una caída real de Redis diría lo
   mismo**. RULE-17 protegió el arranque; la degradación en caliente quedó sin cubrir.
 
-**Y la Confianza bajó 3.4 sin que se rompiera nada:** otro reseteo dejó la base a **cero usuarios**, así
-que D1 sólo pudo medir **1 de 14** reglas (en S-003 fueron 7). Lo único que la sube es una corrida
-`run-all.sh` **y medir D1/D5 en la misma sesión** — la ventana ya se cerró dos veces.
+**Y después se cerró el hueco de cobertura — S-004-M.** `run-all.sh` generó salida real y **se midió en la
+misma sesión**, sin cortar:
+
+| | S-004 | **S-004-M** |
+|---|---|---|
+| Reglas de dominio medidas | 1 de 14 | **12 de 14, las 12 cumplen** |
+| D5 (Success / Retry / Failure) | `SIN_DATOS` | **medido**: 100 % / 0 % / 0 % |
+| `trace_completeness` | SIN CICLOS | **100 %** |
+| Confidence | 83.6 | **97.9** |
+| Health | 89.5 | **88.0** |
+
+**Health 88.0 y Confidence 97.9.** La Confianza sube 14.3 porque se cerró la cobertura; el Health baja 1.5
+porque la propia medición encontró **H-027**. Es la auditoría funcionando, no una regresión.
+
+**Y por primera vez §15.6 no ata:** la Confianza supera el ≥ 90 que exige para clasificar A. Lo que faltan
+son **2 puntos de Health**, y los tienen los cuatro hallazgos. La clase ya depende sólo de defectos, no de
+lo que la auditoría no pudo mirar.
+
+- **H-027 (D3, MEDIA)** — el `RESUMEN FINAL` de la suite QA **omite la fase que falla**. La fase 71 (vía
+  garantizada de PayPal) se cayó y el resumen listó nueve fases «todas PASS». Séptima aparición del patrón
+  de la casa, por **omisión**: no miente, calla.
+
+**Lo que la sesión demuestra sobre el método:** medir en la misma sesión que genera los datos vale 14.3
+puntos de Confianza y permitió evaluar D5 por primera vez. Las dos veces anteriores se midió en la
+siguiente y la salida ya no estaba.
 
 **D4 vuelve a 100**: es lo que confirma que la tanda PT-168…PT-172 sirvió.
 

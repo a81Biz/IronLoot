@@ -739,3 +739,66 @@ cerro esa tanda no los trajo ningun PT ni ningun mecanismo: los trajo la revisio
 pidio el humano. El codigo estaba bien; lo que mentia era lo que el repositorio decia de si mismo.
 
 **Estado de la corrida:** CERRADA_CON_HALLAZGOS.
+
+---
+
+## S-004-M — Medicion dirigida D1 + D5 — 2026-07-29
+
+**Disparador:** peticion explicita del humano — *«correr ya run-all.sh y medir D1/D5 en la misma sesion»*.
+No es un delta sync nuevo: es **cerrar el hueco de cobertura** que S-004 declaro, sobre el mismo HEAD.
+
+**Por que la misma sesion, y no la siguiente.** `run-all.sh` **trunca la base al empezar**. La salida real
+de S-002 y la de S-003 se perdieron por medir despues; **dos veces es un patron, no un accidente**. Esta
+vez se midio a continuacion, sin cortar. No hizo falta copia previa: la base estaba a cero usuarios
+(E-030), asi que el TRUNCATE no se llevo nada.
+
+**La corrida:** 176 checks PASS en nueve fases — incluidas la puja en vivo en dos navegadores (F-34), el
+retiro real del vendedor y **un pago real por Mercado Pago con su traza completa de siete eventos**.
+
+**Salida generada:** 3 usuarios · 1 subasta · 3 pujas · 1 pago · **3 ciclos de pago** · **12 asientos del
+ledger** · 19 eventos de traza · 2 retiros. Pedidos: 0.
+
+**D1 — de 1 regla medida a 12.** Las **12 CUMPLEN**, `rubric_compliance_score = 100`. Y las que miden
+dinero de verdad cumplen **sobre salida real**: el invariante ledger-vs-saldo (`CR-003`, peso 25), el
+deposito contra el pago del proveedor (`CR-004`), la no-duplicacion (`R-5.1c`, peso 25) y la puerta de KYC
+(`R-5.3b`).
+
+Las dos `n/d` son **legitimas y comprobadas**: `R-5.1a` y `R-5.1d` exigen una subasta en `CLOSED` y hay
+**0** —la suite no espera los 120 s de la ventana de cierre—. **No es una violacion de dominio**; es un
+flujo que la suite no completa. Se verifico antes de concluir.
+
+**D5 — MEDIDO POR PRIMERA VEZ en la historia de esta auditoria.** Success 100 % · Retry 0 % · Failure 0 %.
+`health_unstable = false`, ahora **por datos y no por ausencia de ellos**. **Muestra: 3 ciclos, 1
+resuelto** — se declara porque un 100 % sobre 1 caso no es una serie.
+
+**D3 — `trace_completeness = 100 %`** (1 de 1 ciclos liquidados). `silent_failure_count = 25`, igual que la
+linea base: veinticinco PT y ningun `catch` mudo nuevo.
+
+**Hallazgo nuevo: H-027 (D3 MEDIA).** El `RESUMEN FINAL` de la suite **omite la fase que falla**. La
+`Fase 71 — via garantizada de PayPal` se cayo con `TimeoutError` y el resumen listo **nueve fases, todas
+PASS**, sin mencionarla: `run-all.sh:73-76` usa `[ -f "$f" ] && echo …`, asi que una fase sin `.json`
+desaparece. El fallo lo causa la UI de sandbox de PayPal —un tercero, declarado como limite de cobertura—;
+**el hallazgo es que el resumen no lo dice**. Septima aparicion del patron de la casa, esta vez por
+**omision**: no miente, calla. Familia de H-015.
+
+Lo que quedo sin ejercer es **la via garantizada de PayPal**, y es donde mas importa: en Orders v2 aprobar
+**no mueve el dinero**, asi que su via garantizada **captura**.
+
+**H-025 reforzado, no debilitado.** Con la base **poblada**, el veredicto sigue diciendo
+`verificado · 5 de 5 medidas` y **cuatro de las cinco comprobaciones compararon CERO filas** (0 pedidos, 0
+comisiones, 0 disputas; solo el tipo de aviso tenia 2). Es evidencia mas fuerte que la de E-029: alli la
+base estaba vacia y podia parecer un limite del entorno.
+
+**Evidencias nuevas:** E-032 (+ `E-032-salida-cruda.txt`).
+
+**Scores:** Health 89.5 -> **88.0** · Risk **100** (bruto 34) · Confidence 83.6 -> **97.9** · Clase **B**.
+
+**Las dos direcciones, dichas juntas porque asi se entiende:** la Confianza sube **14.3** porque se cerro
+el hueco de cobertura, y el Health baja **1.5** porque la propia medicion encontro un defecto. **Es la
+auditoria funcionando, no una regresion del sistema.**
+
+**Y por primera vez §15.6 no ata:** Confidence 97.9 supera el >= 90 que exige para clasificar A. Lo que
+falta son **2 puntos de Health**, y los tienen los cuatro hallazgos activos. **La clase ya depende solo de
+defectos, no de lo que la auditoria no pudo mirar.**
+
+**Estado de la corrida:** CERRADA_CON_HALLAZGOS.

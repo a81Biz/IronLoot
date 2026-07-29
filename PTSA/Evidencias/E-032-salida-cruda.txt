@@ -1,0 +1,101 @@
+=== 0) VOLUMEN DE DATOS REAL, antes de medir nada
+ usuarios: 3 | subastas: 1 | pujas: 3 | pedidos: 0 | pagos: 1 | ciclos: 3 | asientos: 12 | comisiones: 0 | eventos traza: 19 | retiros: 2
+
+
+=== 1) D1.N1 — audit:domain (14 reglas de dominio sobre SALIDA REAL)
+
+> iron-loot-api@0.5.1 audit:domain
+> ts-node scripts/domain-rules.ts
+
+=== D1.N1 — Reglas de dominio (F-1) sobre la salida real ===
+
+  [OK  ] CR-001   (peso 20)  El balance del monedero nunca es negativo
+  [OK  ] CR-002   (peso 20)  Los fondos retenidos no superan el balance
+  [OK  ] CR-003   (peso 25)  El ultimo balance_after del ledger coincide con el balance del monedero
+  [OK  ] CR-004   (peso 20)  El deposito acreditado coincide con el pago del proveedor
+  [OK  ] CR-005   (peso 15)  Ninguna puja es sobre la subasta propia
+  [OK  ] CR-006   (peso 15)  Ninguna puja iguala o baja de la anterior
+  [OK  ] CR-010   (peso 10)  La moneda es MXN exclusivamente
+  [OK  ] CR-015   (peso 15)  Los importes financieros son Decimal, nunca Float
+  [n/d ] R-5.1a   (peso 20)  Toda subasta cerrada con pujas genera pedido
+            sin productos que evaluar
+  [OK  ] R-5.1b   (peso 25)  Todo pago COMPLETED tiene su asiento de deposito
+  [OK  ] R-5.1c   (peso 25)  Ningun deposito se acredito dos veces
+  [n/d ] R-5.1d   (peso 20)  Toda venta liquidada registra su comision (H-010 / PT-114)
+            sin productos que evaluar
+  [OK  ] R-5.2b   (peso  5)  Cada asiento del ledger tiene tipo del catalogo
+  [OK  ] R-5.3b   (peso 15)  Ningun vendedor habilitado sin KYC aprobado
+
+  rubric_compliance_score = 100
+  Todas las reglas aplicables se cumplen
+  Sin datos (fuera del denominador): R-5.1a, R-5.1d
+
+=== Nivel 3 — Coherencia inter-producto (aparte del score) ===
+
+  [OK  ] P-002 → P-003    El importe del pedido coincide con el precio final  (0)
+  [OK  ] P-003 → P-010    La comision es el porcentaje aplicado al importe del pedido  (0)
+  [OK  ] P-010 → P-009    El registro de comision coincide con el asiento FEE_PLATFORM  (0)
+  [OK  ] P-003 → P-006    Toda disputa cuelga de un pedido existente  (0)
+  [OK  ] P-002 → P-007    El tipo del aviso corresponde al evento (H-012 / PT-117)  (0)
+
+  cross_coherence_verified = verificado
+  5 de 5 medidas · 0 incoherente(s) · 0 sin poder mirar
+EXIT_D1=0
+
+=== 2) D5 — audit:reliability (Success / Retry / Failure)
+
+> iron-loot-api@0.5.1 audit:reliability
+> ts-node scripts/reliability-check.ts
+
+=== D5 — Fiabilidad operacional (metrica de delta sync, NO de CI) ===
+
+  Success Rate        100%   VERDE
+                 1 de 1 ciclos resueltos sin necesitar la via garantizada
+  Retry Rate            0%   VERDE
+                 0 de 1 ciclos RESUELTOS necesitaron al menos un POLL_ATTEMPT · 1 ciclo(s) abierto(s) en sondeo (no cuentan)
+  Failure Rate          0%   VERDE
+                 0 de 3 ciclos EXPIRED o FAILED
+
+  Hallucination Rate = NO_APLICA (sistema determinista, sin LLM)
+  Output Drift       = NO_APLICA
+
+  COMO LEER EL RETRY RATE: un POLL_ATTEMPT no es un fallo. Es la via garantizada
+  haciendo lo que PT-087 diseño — encontrar un pago que la notificacion no trajo.
+  Un Retry Rate alto significa «las pasarelas no notifican», no «el sistema falla».
+  Sigue valiendo medirlo: si sube, algo cambio en las pasarelas.
+
+  health_unstable = false
+EXIT_D5=0
+
+=== 3) D3 — audit:observability (trace_completeness ahora SI tiene ciclos)
+
+> iron-loot-api@0.5.1 audit:observability
+> ts-node scripts/observability-check.ts
+
+=== D3 — Observabilidad y recuperacion ===
+
+  silent_failure_count = 25   (linea base: 25)
+
+  trace_completeness = 100%
+    1 de 1 ciclos liquidados con la traza completa
+
+  prompt_provenance  = NO_APLICA (sistema determinista, sin LLM)
+  fallback_quality   = evaluacion documentada (no automatizable, [R57])
+
+  OK — sin silencios nuevos.
+
+=== 4) H-025 — el veredicto de coherencia, ahora CON filas que comparar
+    (si sigue diciendo 'verificado' pero ahora sobre filas reales, el hallazgo se sostiene
+     igual: el defecto es que no distingue. Se anota lo que se observe.)
+[1;36m==== RESUMEN FINAL ====[0m
+   smoke: 57/57 PASS
+   bootstrap: 13/13 PASS
+   authed: 41/41 PASS
+   e2e: 5/5 PASS
+   puja-en-vivo: 8/8 PASS
+   extras: 19/19 PASS
+   admin-writes: 4/4 PASS
+   withdrawal: 13/13 PASS
+   payment-trace: 16/16 PASS
+
+Salida completa: C:/DevOps/Desarrollos/IronLoot/qa-out/20260729-162506

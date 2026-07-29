@@ -1,6 +1,6 @@
 # PENDIENTES.md — Bloqueantes y preguntas abiertas
 
-**PTSA V3** · **Última actualización:** 2026-07-29 (S-004 — delta sync)
+**PTSA V3** · **Última actualización:** 2026-07-29 (S-004-M — medición dirigida)
 
 > **Este fichero es ESTADO, no log.** Llegó a tener siete bloques de sesión apilados —DS-004 …
 > S-002-G—, ninguno podado, con el mismo pendiente repetido **cinco veces** y sin que nada dijera cuál
@@ -22,17 +22,23 @@
 
 | # | Pendiente | Responsable |
 |---|---|---|
-| 1 | **H-025 — el veredicto de coherencia sale verde sobre una base vacía.** `cross_coherence_verified = verificado` con cero pedidos, pagos, comisiones y asientos: las cinco consultas devuelven «0 incoherencias» porque no hay nada que comparar. Sexta aparición del patrón; el docstring declara la protección que el código no implementa. ALTA, D2 | Agente, bajo FDGE |
+| 1 | **H-025 — el veredicto de coherencia se declara `verificado` sin comparar filas.** Confirmado **con la base poblada**: sigue diciendo «5 de 5 medidas» y **cuatro de las cinco comparan cero filas**. Sexta aparición del patrón; el docstring declara la protección que el código no implementa. ALTA, D2 | Agente, bajo FDGE |
 | 2 | **H-026 — Redis no se puede observar.** `/health/detailed` dice `degraded` siempre, y una caída real de Redis diría lo mismo. MEDIA, D3 | Agente, bajo FDGE |
-| 3 | **H-005 — quién emite la factura.** Tres opciones en `F-1 § U-005`, con sus consecuencias técnicas medidas en `evidence/PT-155/hallazgos.md`. Mantiene D1 en 85 y bloquea P-012. **Ningún PT puede resolverlo** | Humano (negocio + fiscal) |
-| 4 | **Una corrida `run-all.sh` y medir D1 y D5 inmediatamente después.** Es lo único que sube la Confianza (83.6). La ventana es estrecha: `run-all.sh` trunca la base al empezar, y ya se llevó la salida de S-002 **y** la de S-003 | Humano decide cuándo; el agente mide |
+| 3 | **H-027 — el `RESUMEN FINAL` de la suite QA omite la fase que falla.** La fase 71 (vía garantizada de PayPal) se cayó y el resumen listó nueve fases «todas PASS». Séptima aparición del patrón, por omisión. MEDIA, D3 | Agente, bajo FDGE |
+| 4 | **Ampliar la suite QA para que CIERRE una subasta.** Es el único hueco que queda en D1 (`R-5.1a`, `R-5.1d`) y daría filas reales a las cuatro comprobaciones de coherencia que hoy comparan cero — la mitad de lo que hace grave a H-025 | Agente, bajo FDGE |
+| 5 | **H-005 — quién emite la factura.** Tres opciones en `F-1 § U-005`, con sus consecuencias técnicas medidas en `evidence/PT-155/hallazgos.md`. Mantiene D1 en 85 y bloquea P-012. **Ningún PT puede resolverlo** | Humano (negocio + fiscal) |
 
 ---
 
 ## Lo que se podó, y por qué se deja dicho
 
-**S-004 retiró la fila del `resume PTSA`: se ejecutó.** Es esta corrida. Los scores están recalculados y
-emitidos, `freshness = FRESH`, `commits_since_audit = 0`.
+**S-004 retiró la fila del `resume PTSA`: se ejecutó.** Los scores están recalculados y emitidos,
+`freshness = FRESH`, `commits_since_audit = 0`.
+
+**Y S-004-M retiró la de «medir D1 y D5»: también se hizo.** `run-all.sh` generó salida real y se midió
+**en la misma sesión**, sin cortar. Resultado: **D1 al 86 %** (12 de 14 reglas, las 12 cumplen), **D5
+medido por primera vez** y la Confianza de **83.6 a 97.9**. Las dos veces anteriores se midió en la sesión
+siguiente y la salida ya no estaba — el patrón se rompió midiendo a continuación.
 
 **PT-168 quitó cuatro filas que estaban hechas.** Este fichero listaba H-021, H-022, H-023 y H-024
 como abiertos con responsable «Agente, bajo FDGE». Los cuatro están `CERRADA` desde el 2026-07-29,
@@ -50,8 +56,8 @@ es el síntoma que abrió PT-140. Lo vigila ahora `estado-de-hallazgos-coherente
 **Ninguno.** `PT-166 … PT-172` se cerraron con VoBo humano explícito el 2026-07-29, junto con la tanda
 del 28/29. Detalle en `docs/implementation/HISTORY.log`.
 
-Lo que espera ahora **no es validación, es corrección**: H-025 y H-026, arriba. `[R44]` prohíbe al agente
-cerrarlos, así que cuando estén corregidos volverán aquí como `CORREGIDA` esperando tu palabra.
+Lo que espera ahora **no es validación, es corrección**: H-025, H-026 y H-027, arriba. `[R44]` prohíbe al
+agente cerrarlos, así que cuando estén corregidos volverán aquí como `CORREGIDA` esperando tu palabra.
 
 ---
 
@@ -64,13 +70,17 @@ cerrarlos, así que cuando estén corregidos volverán aquí como `CORREGIDA` es
 | 3 | La suite QA corre sobre **HTTP** | Cuando haya TLS local |
 | 4 | ¿Más servicios que mezclen un DTO transformado contra un JSON almacenado? (patrón de H-019) | Barrido |
 | 5 | `/api/v1/users/:id/ratings` exige sesión | Humano decide |
-| 6 | **D1 completo** — **13 de 14** reglas sin datos que mirar (en S-003 eran 7) | La base está **vacía**: 0 usuarios. **El impedimento técnico ya no existe**: PT-153 cerró H-022 y los checkpoints corren donde vive npm. Lo que falta son datos |
-| 7 | **D5 completo** — Success / Retry / Failure | Cero ciclos de pago. Mismo bloqueo que #6 |
+| 6 | **D1: dos reglas** — `R-5.1a` y `R-5.1d` | **Resuelto al 86 %.** Faltan las dos que exigen una subasta en `CLOSED`, y hay 0: la suite no espera los 120 s de la ventana de cierre |
+| 7 | **D5 — MEDIDO** ✔ | Success 100 % · Retry 0 % · Failure 0 %, sobre 3 ciclos (1 resuelto). Muestra fina, pero es la primera medición real |
+| 8 | **La vía garantizada de PayPal, sin ejercer** | Su fase falló por la UI de sandbox de un tercero — y el resumen no lo dijo (**H-027**) |
 
-> **Los tres bloqueos de arriba se resuelven igual:** una corrida `run-all.sh` genera salida real.
-> **Medir D1 y D5 justo después**, antes de que otro reseteo se la lleve — `run-all.sh` trunca la
-> base al empezar, y es lo que se llevó la salida de S-002 **y la de S-003**. Dos veces es un patrón:
-> la medición hay que hacerla en la misma sesión que genera los datos, no en la siguiente.
+> **La lección de la ventana, ya aplicada y con resultado medido.** `run-all.sh` trunca la base al
+> empezar, así que la salida que genera hay que medirla **en la misma sesión**. Se hizo el 2026-07-29 y
+> valió **14.3 puntos de Confianza** (83.6 → 97.9) más la primera medición de D5 de toda la auditoría. Las
+> dos veces anteriores se midió en la sesión siguiente y la salida ya no estaba.
+>
+> Lo que queda de las filas 6 y 8 **no se resuelve con otra corrida igual**: hace falta que la suite cierre
+> una subasta (fila 4) y que la fase de PayPal deje de depender de una UI ajena.
 
 ---
 

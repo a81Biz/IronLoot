@@ -246,3 +246,50 @@ aparicion del patron: PT-149 corrigio el caso «no pude conectar» y dejo el cas
 docstring de `veredictoCoherencia()` declara la proteccion que el codigo no implementa.
 
 Evidencia: **E-029**, **E-031**.
+
+---
+
+## Update U-009 — 2026-07-29 (S-004-M, medicion dirigida)
+
+**D5 medido por primera vez en la historia de esta auditoria.**
+
+```
+  Success Rate   100%   VERDE   1 de 1 ciclos resueltos sin necesitar la via garantizada
+  Retry Rate       0%   VERDE   0 de 1 ciclos RESUELTOS necesitaron un POLL_ATTEMPT
+                                 · 1 ciclo abierto en sondeo (no cuenta)
+  Failure Rate     0%   VERDE   0 de 3 ciclos EXPIRED o FAILED
+  health_unstable = false
+```
+
+**La muestra es de 3 ciclos, 1 resuelto.** Se dice explicitamente para que nadie lea «Success Rate 100 %»
+como una estadistica robusta: es la primera medicion, no una serie. `[A8]` obliga a declarar la cobertura,
+y una muestra de 3 es cobertura declarada, no cobertura amplia.
+
+**`trace_completeness` = 100 %** — 1 de 1 ciclos liquidados con la traza completa. Confirmado ademas por la
+suite, que lo comprobo de punta a punta sobre un pago real de Mercado Pago:
+
+```
+DEPOSIT_REQUESTED → PROVIDER_CREATE → NOTIFICATION_RECEIVED → SIGNATURE_OK →
+PROVIDER_CONFIRM → CYCLE_DECISION → WALLET_CREDITED
+```
+
+**`silent_failure_count` = 25**, igual que la linea base: veinticinco PT y ningun `catch` mudo nuevo.
+
+### H-027 — el resumen de la suite omite la fase que falla
+
+La `Fase 71 — PAGO REAL POR PAYPAL VIA GARANTIZADA` fallo con `TimeoutError` (la UI de sandbox de PayPal
+intercepta el click) y **el `RESUMEN FINAL` no la menciona**: `run-all.sh:73-76` usa
+`[ -f "$f" ] && echo …`, asi que una fase sin `.json` desaparece. Se leen **nueve fases, todas PASS**, y el
+runner ejecuta diez.
+
+Lo que quedo sin verificar es **la via garantizada de PayPal**, que es donde mas importa: en Orders v2
+aprobar **no mueve el dinero**, asi que su via garantizada **captura**. Septima aparicion del patron de la
+casa, esta vez por omision: no miente, calla.
+
+### H-025, reforzado con la base poblada
+
+Con salida real dentro, el veredicto sigue diciendo `verificado · 5 de 5 medidas`, y **cuatro de las cinco
+comprobaciones compararon CERO filas** (0 pedidos, 0 comisiones, 0 disputas). Es evidencia mas fuerte que
+la de `E-029`: alli la base estaba vacia y podia parecer un limite del entorno.
+
+Evidencia: **E-032**.
