@@ -99,10 +99,14 @@ usuarios, cancela subastas. Protegerlo solo con contrasena en produccion es desp
 **Status:** ✅ **CERRADA DEL TODO 2026-07-27.** `script-src` por PT-096 y `style-src` por
 PT-105 (que cerro TD-014). La CSP de los tres sitios ya no lleva `'unsafe-inline'` en ninguna
 directiva. Se comprueba en
-`src/apps/{base,client}/src/main.ts` y `src/admin/src/main.ts`: `scriptSrc` ya no lleva
-`'unsafe-inline'`. **Queda `styleSrc`**, que sigue llevandolo por los estilos inline de las
-plantillas: registrado aparte como **TD-014**. Declararla cerrada sin esa salvedad seria la
-misma imprecision que causo F-33.  
+`src/apps/{base,client}/src/main.ts` y `src/admin/src/main.ts`: ni `scriptSrc` ni `styleSrc`
+llevan ya `'unsafe-inline'`.
+
+> **PT-141 —** Este bloque se contradecia a si mismo: abria con *«CERRADA DEL TODO … en ninguna
+> directiva»* y tres lineas despues afirmaba *«Queda `styleSrc`, que sigue llevandolo»*. La segunda
+> frase era **prosa de antes de PT-105** que sobrevivio a la actualizacion del estado. Un lector que
+> se quedara en ella creeria abierta una deuda cerrada, y —peor— creeria que aun se puede escribir un
+> `style=` inline. Es la forma exacta de F-33: el estado se actualizo y la explicacion no.  
 **Evidence:** ninguno de los tres `main.ts` lleva ya `'unsafe-inline'`; las dos guardas
 (`plantillas-sin-js-inline.spec.ts` y `estilos-fuera-de-plantillas.spec.ts`) lo vigilan, cada una
 con casos de control que demuestran que saben fallar.  

@@ -79,7 +79,17 @@ export function lineaDe(ruta: string, n: number): string | null {
   return n >= 1 && n <= lineas.length ? lineas[n - 1] : null;
 }
 
-const TRD = join(RAIZ, 'docs/enterprise-documentation/03-TRD.md');
+/**
+ * PT-141 — El TRD se archivo (ADR-049) y esta guarda lo sigue hasta `archive/`.
+ *
+ * **Archivar no lo hace menos verificable.** Sus nueve citas `fichero:linea` siguen siendo ciertas o
+ * falsas exactamente igual; lo que cambia es su estatus, no su exactitud. Dejar de comprobarlas al
+ * moverlo habria devuelto H-016 con aval: un documento con citas precisas que ya nadie verifica es
+ * la definicion del hallazgo.
+ *
+ * Si algun dia `docs-v2` incorpora una tabla de stack con citas, la guarda la sigue alli.
+ */
+const TRD = join(RAIZ, 'docs/enterprise-documentation/archive/03-TRD.md');
 const CLAUDE = join(RAIZ, 'CLAUDE.md');
 
 describe('La documentacion coincide con el codigo que cita (PT-130)', () => {

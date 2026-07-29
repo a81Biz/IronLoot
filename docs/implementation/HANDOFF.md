@@ -1,151 +1,86 @@
 # HANDOFF — estado actual
 
-**Fecha**: 2026-07-28
-**Rama**: `master` — **PT-135 fusionado** (443f757, merge sin fast-forward de 11 commits).
-**Cero ramas sin fusionar**, árbol limpio. `origin/master` sigue en 7f091c3: **falta empujar**.
+**FDGE V3** · **2026-07-29** · Este fichero se **sobrescribe**: es el estado de ahora, no la
+historia. La historia está en `HISTORY.log`, que es append-only.
 
-**Pruebas**: **944/944** unitarias (API 691 · CORE 134 · CLIENT 103 · ADMIN 13 · BASE 3) ·
-**77/77 e2e** · **176/176 por navegador** · `lint` 0 errores · `npm audit --omit=dev` **0** en los
-cinco · `audit:check` **OK** contra la línea base.
+**Rama**: `master`. Once PT fusionados el 2026-07-28/29 — **PT-136, 137, 138, 139, 140, 141, 142,
+143, 145, 146, 147**. Cero ramas sin fusionar.
 
-> El total anterior de este documento (**919**) estaba desfasado en uno: el API tenía **667**, no 666.
-> PT-135 añade **24** casos. Inventario vivo: `docs-v2/5-qa/Master-Test-Plan.md`.
+**Pruebas**: **1039** unitarias en verde — API **786** (102 suites) · CORE **134** · CLIENT **103** ·
+ADMIN **13** · BASE **3**. Medidas una a una el 2026-07-29, no arrastradas.
+
+> El total anterior era **944**. Los 95 nuevos son las guardas de esta tanda: RULE-16, RULE-17,
+> RULE-19, RULE-20, RULE-22, RULE-23, RULE-26, RULE-27 y las tres e2e de concurrencia.
 
 **Plataforma**: NestJS **11.1.28** · Express **5.2.1** en los cuatro servicios.
 
-**PTSA**: Clase **A** · Health **95.5** · un solo hallazgo activo: **H-005**.
-*(Los scores no se recalculan aquí: PT-135 no cerró ningún hallazgo PTSA.)*
-
 ---
 
-## Lo último: el contenedor que no arrancaba, y el lock que llevaba un día roto en silencio
+## Estado del sistema
 
-**PT-135 — `VALIDATION_PENDING`. Es un BUG: lo cierra el humano.**
-
-El API arrancaba, aplicaba migraciones, compilaba con 0 errores **y moría** al cargar el árbol de
-módulos: faltaba `@css-inline/css-inline-linux-x64-gnu`. Con el API `unhealthy`, nginx, admin, base y
-client **no arrancaron nunca** — los cuatro dependen de su `service_healthy`. **Un defecto, cinco
-contenedores caídos.**
-
-**La causa**: PT-126 regeneró `src/api/package-lock.json` **en Windows** y el lock cayó de **17
-paquetes de plataforma a 2**. Era la **tercera** vez que este repositorio se encuentra el mismo
-defecto; las dos anteriores se cerraron con un parche en un Dockerfile.
-
-| Pieza | Mecanismo que deja |
+| | |
 |---|---|
-| El lock regenerado **en el contenedor** | `npm run lock:api` — encapsula las tres cosas que hubo que medir |
-| **G1** `lock-declara-plataformas.spec.ts` | El lock debe declarar `linux-x64-gnu` y `linux-x64-musl` |
-| **G2** `scripts/solo-en-contenedor.js` | `preinstall` que **impide** instalar fuera del contenedor. **Sin puerta de escape** |
-| Alternativa **C** resuelta | `.gitignore:40` retirado · los tres locks seguidos · `src/admin` por primera vez · **ADR-048** |
-| **`npm ci`** | Imágenes de api y admin, los **ocho** jobs, y el `postinstall` de la raíz |
-| **RULE-15** · **TD-017** cerrada | La segunda escritura, hecha |
+| CI | **8 jobs, todos verdes, y se ejecuta.** Hasta PT-136 la tubería **no se había ejecutado nunca** |
+| Imágenes Docker | Las cuatro se construyen **y se arrancan** en CI (PT-147) |
+| Documentación oficial | **`docs-v2/`** (ADR-049). `docs/enterprise-documentation/` queda acotado al contrato de agente |
+| Reglas duras | **24** `RULE-NN`, y una guarda que impide citar una que no exista (RULE-27) |
+| Registros de trabajo | Con tabla de precedencia y guarda (PT-140). Antes: doce sitios, ninguno declarando cuál mandaba |
 
-**G1 caza el síntoma en CI. G2 impide producirlo** — y es la única pieza que actúa sobre la cuarta vez.
+## De qué trataba esta tanda
 
----
+La pregunta que la abrió fue *«se han realizado ya varias fases y al parecer siempre quedan cosas por
+hacer y nunca se cierran completo»*. La respuesta resultó ser **estructural, no de disciplina**:
 
-## Lo que falta para cerrar PT-135
+1. **Un pendiente podía vivir en doce registros y ninguno declaraba cuál mandaba.** De los doce, uno
+   solo tenía guarda. Lo cierra PT-140, que escribió además la tabla de precedencia.
+2. **FPGE no se había vuelto a ejecutar desde S-001.** El bucle `FDGE → PTSA → FPGE → FDGE` estaba
+   roto en su tercer eslabón: nadie decidía qué venía después, así que todo seguía «pendiente».
 
-1. ~~**Empujar `master`.**~~ **Hecho.** `master == origin/master == 0731161`;
-   `git rev-list --left-right --count master...origin/master` → `0 0`. Este documento pedía empujar
-   algo que ya estaba empujado.
-2. **Ver los ocho jobs en verde en un push real** (criterio 10). **Era inalcanzable, y no por falta de
-   push**: `ci.yml` disparaba en `dev/qa/prep/prod` y la única rama que existe es `master`, así que el
-   pipeline no se había ejecutado **ni una sola vez** en toda la historia del repositorio
-   (`actions/runs → total_count: 0`). Lo desbloquea **PT-136**.
-3. **El VoBo humano** sobre lo demás. Es un BUG: el agente no cierra bugs.
+Y por debajo, un patrón que apareció **cuatro veces**:
 
-> Y son **ocho** jobs, no siete: `lint` · `security-audit` · `schema-drift` · `test-unit` ·
-> `test-integration` · `observabilidad` · `build` · `docker`. La cifra se copió mal de documento en
-> documento sin que nadie la contara — la familia de H-016.
+> **Un mecanismo que no se ejecuta no avisa de nada.**
 
-## Los scores PTSA están desfasados y NO se han tocado
+La tubería que nunca corrió (PT-136) · el job saltado que contaba como éxito (PT-147) · `SIN_DATOS`
+saliendo con código 0 (PT-138) · el job de observabilidad aprobando sin base de datos que medir
+(PT-137). Es ahora RULE-26.
 
-`PTSA/ESTADO_ACTUAL.md` cita **666 (API) + 134 (CORE)** unitarias; hoy son 691 y 944 en total. No se
-ha corregido a mano **a propósito**: los artefactos PTSA los gobiernan sus fases, y PTSA sólo se activa
-cuando se le invoca. La vía correcta es un **delta sync** (`resume PTSA`), que además recalculará
-freshness. Anotarlo aquí es lo que evita que el registro mienta mientras tanto.
+**Lo más grave que se encontró**: seis depósitos simultáneos dejaban el saldo en **100 de 600**, con
+los seis asientos escritos y ninguno cuadrando (PT-146). Se midieron **cero** descuadres
+preexistentes en la base de datos real.
 
----
+## Pendiente de validación humana
 
-## Dos hallazgos nuevos, ajenos a PT-135 y sin PT asignado
+**El agente no cierra bugs.** Los once PT de esta tanda están en `VALIDATION_PENDING`, con evidencia
+en `docs/implementation/evidence/PT-XXX/` (`medicion.md` y `self-review.md`). La lista completa,
+incluidos los de sesiones anteriores, está en `PENDING_TASKS.md` § 2.
 
-Están en `DISCOVERY.md` § Revisión U-002 con su medición. **No son deuda diferida**: son defectos
-preexistentes que aparecieron al recorrer el camino entero.
+## Qué falta, y por qué no se hizo
 
-### F-135-A — `REDIS_URL` parece la palanca y no lo es
-
-Dos de los tres clientes de Redis (`app.module.ts:61`, `throttler-redis.module.ts:31`) leen
-**`REDIS_HOST`/`REDIS_PORT`** con reserva `localhost`; sólo `distributed-lock.service.ts` lee
-`REDIS_URL`. Y `docker-compose.yml` declara **sólo `REDIS_URL`**: lo que hace funcionar el contenedor
-de desarrollo es `REDIS_HOST=redis` dentro de `src/api/.env`, **un fichero que no está en git**.
-
-Al arrancar la imagen de producción con lo que el compose sugiere, la aplicación arranca bien y el
-healthcheck la marca `unhealthy` con un mensaje sobre `maxRetriesPerRequest` **que no menciona Redis**.
-Familia de PT-111/F-39. Necesita decisión: unificar en `REDIS_URL`, o declarar
-`REDIS_HOST`/`REDIS_PORT` como el contrato y llevarlos al compose y al `.env.example`.
-
-### F-135-B — ocho guardas no pueden correr dentro del contenedor de desarrollo
-
-Leen el árbol del monorepo y `docker-compose` **no lo monta**, así que `RAIZ` resuelve a `/`. La de
-PT-129 falla ahí con `ENOENT` y **0 pruebas ejecutadas**. Pasan en CI y en el host. Choca con la
-invariante de PT-135: si npm se ejecuta en el contenedor, esta familia no puede correr ahí.
-
-Menor, de la misma familia: **`security-baseline.json` no viaja al contenedor**, así que `audit:check`
-ejecutado dentro falla con «No hay línea base» aunque el fichero exista y esté en git.
-
----
-
-## Riesgos y deuda abiertos
-
-| | Qué |
+| Trabajo | Estado |
 |---|---|
-| **H-005** | Quién emite la factura. Mantiene D1 en 85 y bloquea P-012. **Ningún PT puede resolverlo**: es decisión de negocio y fiscal |
-| **TD-016** | **Nada comprueba las vulnerabilidades de la imagen base.** `audit:check` mira npm; los avisos de `node:20-slim`/`alpine` no los recoge ningún control |
-| | La guarda del contrato SSR↔API cubre **sólo el CLIENT**; faltan ADMIN y BASE |
-| | La suite QA corre sobre **HTTP**: lo que dependa de origen seguro no queda ejercido |
-| | `ironloot_db` es base de desarrollo **y** dato que sostiene validaciones PTSA — y `run-all.sh` la trunca |
-| | ADMIN sin `favicon.ico` |
-| | **«Conciliación» de ADMIN sin JavaScript**: `reconciliation.html:2` mete el `<script>` en `{% block title %}`, que el layout no declara. El botón «Conciliar» está muerto |
-| | **El modal «+ Crear reembolso» de ADMIN no abre**: usa `data-bs-*` y no hay Bootstrap en ADMIN |
+| **PT-141.B** — `[START FOUNDATION]` | Desbloqueado: los cuatro prerrequisitos cerrados y el protocolo ya acotado a lo que debe generar. **Decisión del humano cuándo ejecutarlo** |
+| **TD-016** — escáner de la imagen base | Abierta. Más barata ahora que las imágenes se construyen en CI |
+| **F-136-A** — evidencia no seguida por git | 79 de 162 ficheros. Documentos que citan lo que no está en el repositorio |
+| **H-005** — quién emite la factura | **Decisión de negocio.** Ningún PT la resuelve |
+| **PT-035** — `T-035.12` | Validación **visual**, no automatizable |
 
----
+## Riesgos vivos
 
-## Lo que hay que saber antes de tocar nada
+- **Once validaciones acumuladas.** Es mucha superficie sin confirmar por una persona; si se sigue
+  construyendo encima, un defecto de esta tanda aparecería con varias capas por delante.
+- **`archive/` es citado por registros históricos** (`PTSA/Evidencias/`, `changes/`). Se archivó en
+  vez de borrarse justamente por eso —la inmutabilidad auditable `[A6]` no permite dejar una
+  evidencia sin fuente—, pero quien siga una cita antigua tiene que saber bajar un directorio. Está
+  dicho en los dos README.
+- **Un `[START FOUNDATION]` descuidado deshace ADR-049.** El protocolo lo advierte en su propio texto
+  y en el README, pero es prosa: **nada mecánico lo impide**.
+- **La suite del API no cabe en el contenedor con los workers por defecto.** Tres suites mueren por
+  SIGKILL (OOM) con `--maxWorkers=2`; con `--runInBand` pasa entera. En CI no ocurre. No es un
+  defecto del código, pero sí una trampa para quien la ejecute en local y lea «4 failed».
 
-1. **`npm` no se ejecuta en el host.** Se ejecuta en el contenedor, y el lock se regenera con
-   `npm run lock:api`. Lo **impide** `preinstall`; lo vigila `lock-declara-plataformas.spec.ts`.
-   → **RULE-15**, ADR-048
-2. **`docker compose down -v` borra la base de datos.** Los volúmenes nombrados
-   (`ironloot_postgres_data`) caen con ella. Para recrear sólo el `node_modules` de un servicio:
-   `docker compose rm -fsv api`. El plan de PT-135 decía `down -v` y era un error.
-3. **El volumen anónimo de `node_modules` tapa los defectos de instalación.** Cualquier verificación
-   de arranque tiene que declarar con qué volumen se hizo, o no prueba nada.
-4. **Editar `schema.prisma` exige generar migración.** → RULE-10
-5. **`src/api/scripts/` no está montado como volumen**: cambiar el entrypoint exige
-   `docker-compose build api`.
-6. **Antes de tocar un endpoint, buscar sus llamantes en todo `src/`**, incluido el JS de navegador.
-   → RULE-13
-7. **Toda guarda se prueba en los dos sentidos.** → RULE-14
-8. **`run-all.sh` trunca la base de datos.** Copia antes (`pg_dump`) si contiene salida real.
-9. **Añadir una línea a un `package.json` desplaza las citas del TRD**, y la guarda documental lo caza.
-   Es una molestia con una razón: una cita precisa se lee con confianza, y por eso una cita falsa es
-   peor que ninguna (H-016).
-10. **Consultar `docs-v2/` ANTES de diagnosticar.** En PT-135 el log invitaba a mirar la migración
-    —el recuerdo de H-014 tira hacia ahí— y la migración estaba bien.
+## Siguiente acción recomendada
 
----
-
-## Próximas acciones recomendadas
-
-1. **Ver los ocho jobs con `npm ci` en un push real** — lo único que falta del criterio 10, y la
-   primera vez que el lock gobierna de verdad en CI. Ya no depende de empujar (`master` lo está):
-   dependía de que el disparador nombrara una rama que existe, y eso lo arregla **PT-136**.
-2. **Decidir F-135-A**: es un defecto de despliegue con un síntoma que engaña, y hoy sólo funciona por
-   un fichero que no está en git.
-3. **Decidir H-005.** Sigue siendo lo único que separa al sistema de cero hallazgos abiertos.
-4. **F-135-B**: montar la raíz en el servicio `api` o dar un comando que envuelva el contenedor
-   desechable. Hoy la invariante y la forma de correr las pruebas no encajan.
-5. **TD-016** — escáner de imagen, **contra línea base y no contra umbral** (lección de PT-118).
-6. **Los dos defectos de ADMIN** de `PENDIENTES.md` § S-002-G, filas 9 y 10, con la guarda que los
-   caza de raíz: **todo `{% block %}` de una plantilla tiene que existir en su layout**.
+**Ejecutar FPGE** (`[START FPGE]`). Es el eslabón que llevaba roto desde S-001, y ahora tiene con qué
+trabajar: `HISTORY.log` al día, `PENDING_TASKS.md` con guarda, once PT con evidencia y los hallazgos
+PTSA que quedan abiertos. Sin él, la siguiente sesión vuelve a decidir por intuición qué toca — que
+es exactamente cómo se llegó aquí.

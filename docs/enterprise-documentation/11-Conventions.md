@@ -534,6 +534,61 @@ invariant, the crossed-capture deadlock case, and **BLQ-02**, which checks that 
 wallets do not wait on each other. That last one matters: a global lock would also make the burst
 pass, and would be the expensive cure.
 
+### RULE-25: A partial invariant that does not fit in an index is serialised by locking the row that delimits it
+**What:** when the rule is *"at most one X in state A or B per Y"* — a **partial** uniqueness — do not
+try to express it as a constraint. Open a transaction, take `SELECT ... FOR UPDATE` on **the row that
+delimits the invariant's scope** (the payment method, the auction, the order), and check-and-create
+inside it.
+**Why:** in PostgreSQL that would be a unique index with `WHERE`, and **Prisma cannot declare it in
+the schema**. Writing it raw inside a migration would diverge from `schema.prisma` and turn
+`audit:schema` red — the very checkpoint PT-127 built to prevent that divergence. The compromise
+constraints are worse than useless: `@@unique([paymentMethodId, status])` would allow one `PENDING`
+**and** one `SENT` at once — two verifications in flight, two SMS — and `@@unique([paymentMethodId])`
+would forbid ever verifying the same method twice, which breaks the product.
+**Relation to RULE-24:** it is the same technique applied to a *check* instead of to a *balance*. They
+are separate rules because the trigger differs: RULE-24 fires on "read → compute → write an absolute";
+RULE-25 fires on "the invariant is partial and no index can hold it".
+incorrect: a lock that is released before the `create` — the gap between them is exactly where the
+duplicate is born. Check and write share one transaction or the lock is decoration (the first PT-145
+attempt did precisely this).
+**Enforced by:** `creacion-perezosa-atomica.spec.ts`, which accepts `FOR UPDATE` as a declared way out
+alongside a caught `P2002`. That second exit was added when the guard accused PT-145's own locked
+code: **teaching the guard the legitimate exception beats listing the file as an exception** — an
+exception excuses one file, a rule serves the next one.
+
+### RULE-26: A workflow does not cite files that do not exist
+**What:** every `file:` / `context:` a CI workflow names must exist in the repository, and every
+`npm run` it invokes must exist in the corresponding `package.json`.
+**Why:** the `docker` job cited a `Dockerfile` that had never existed. It did not fail — it was
+**skipped**, because it hung off a `needs:` that could not finish, and a skipped job reports success
+to the branch. Nothing was built for months and the pipeline was green (PT-147, H-015). This is the
+repository's most repeated pattern, and it deserves reading twice: **a mechanism that does not run
+warns about nothing.** It has appeared four times — the pipeline that never ran (PT-136), the skipped
+job that counted as success (PT-147), `SIN_DATOS` exiting 0 (PT-138), and the `observabilidad` job
+that approved without a database to measure (PT-137).
+**Enforced by:** `dockerfiles-citados-existen.spec.ts`.
+
+### RULE-27: Every `RULE-NN` the code cites exists in this document
+**What:** a `RULE-NN` named in a comment, a service or a guard must have its own section here. New
+rules are written **into the contract**, not only into the code that obeys them.
+**Why:** ADR-049 narrows `enterprise-documentation/` to the agent contract — these rules, the
+`TD-XXX` register and the inventories. Raising a document to sole contract requires checking that it
+says what the code believes it says, and it did not: **RULE-25 and RULE-26 were cited in production
+code, in guards and in evidence, and neither existed here.** An agent following the citation to the
+contract would have found nothing — which is worse than not citing at all. It is H-016's family
+(*a precise citation that leads nowhere is read with confidence and is false*) applied to the
+document that governs whoever touches this repository.
+**Direction:** code → document only. A rule may live in the contract without any comment naming it
+(RULE-01..RULE-06 are like that), and demanding the reverse would scatter references through the code
+to satisfy a test. The useful direction is the one where the citation lies.
+**Numbering gaps are legitimate:** RULE-18 and RULE-21 were reserved in proposal packages (`b361970`)
+and their rules ended up folded into others. They do not exist and **must not** be invented — filling
+a number to please a checker is writing for the linter.
+**Enforced by:** `reglas-citadas-existen.spec.ts`, whose control block builds counter-examples naming
+rules that do not exist. The guard accused itself on its first run for exactly that; it was taught
+that a control block constructs rather than cites — **an exception excuses one file, a rule serves the
+next one.**
+
 ### RULE-17: No connection variable has a default, and everything the code reads is declared
 **What:** `REDIS_URL` is the single Redis contract — queues, rate limiting, the distributed lock and
 ADMIN's session store all read it. Connection variables have **no fallback**: if one is missing the

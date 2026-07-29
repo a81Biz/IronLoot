@@ -381,8 +381,10 @@ nombrándola. → **RULE-17**
 # Part 2 — Foundation Protocol: Reverse-Engineering Prerequisite
 
 Foundation Protocol is the **mandatory prerequisite** for the full methodology suite. It reverse-engineers
-the repository into verified documentation (`docs/enterprise-documentation/`) so that FDGE, PTSA and FPGE
-have architecture, conventions and domain context to operate on instead of assumptions.
+the repository into the **agent contract** (`docs/enterprise-documentation/`) so that FDGE, PTSA and FPGE
+have conventions and inventories to operate on instead of assumptions. The product documentation —
+architecture, PRD, TRD, domain — is **`docs-v2/`**, which is written and maintained by people and which
+Foundation neither generates nor overwrites (ADR-049).
 
 ## Authority
 
@@ -409,18 +411,26 @@ When triggered, the agent:
 2. Generates `docs/enterprise-documentation/` with the following documents:
 
    **Always:**
-   01-Platform-Overview.md · 02-PRD.md · 03-TRD.md · 04-App-Flow.md · 06-Backend-Architecture.md ·
-   09-Security-Architecture.md · 10-Technical-Debt.md · 11-Conventions.md
-
-   **Conditional:**
-   05-UIUX-Brief.md (if frontend exists) · 07-Database-Architecture.md (if database exists) ·
-   08-API-Catalog.md (if HTTP API exists)
+   `11-Conventions.md` — the `RULE-NN` contract. Foundation Protocol's own words: *the most critical
+   output*. It tells every future agent how to operate on this codebase without breaking it.
+   `10-Technical-Debt.md` — the `TD-XXX` register, including every fact that could not be cited.
 
    **Inventory (always):**
    `inventory/routes.md` · `inventory/endpoints.md` · `inventory/entities.md` ·
    `inventory/components.md` · `inventory/services.md` · `inventory/integrations.md`
 
    **README:** `docs/enterprise-documentation/README.md` — index with generation date and scope.
+
+   > **ADR-049 (PT-141) — lo que Foundation ya NO genera.** Hasta PT-141 esta lista incluia nueve
+   > documentos mas (`01-Platform-Overview`, `02-PRD`, `03-TRD`, `04-App-Flow`, `05-UIUX-Brief`,
+   > `06-Backend-Architecture`, `07-Database-Architecture`, `08-API-Catalog`,
+   > `09-Security-Architecture`). Esa documentacion **existe y es oficial en `docs-v2/`**, mantenida
+   > por personas y mas rica. Generar ambas hacia que cada PT pagase la escritura dos veces y
+   > garantizaba la divergencia. Los nueve estan en `archive/`, con un mapa documento a documento.
+   >
+   > Foundation Protocol conserva **lo que `docs-v2` no tiene y no deberia tener**: el contrato que
+   > un agente no puede romper. Si una futura ejecucion volviera a emitirlos, estaria deshaciendo
+   > ADR-049 — **no lo hagas sin retirar antes la ADR**.
 
 3. Stops and waits for human validation.
 
@@ -431,8 +441,9 @@ If a fact cannot be cited, it is not documented — it is registered as "Not det
 
 ## Re-execution (overwrite, no merge)
 
-If `docs/enterprise-documentation/` already exists, a new run **overwrites** all documents completely.
-Re-execution is a fresh snapshot. It is required when: the main architecture changes (new service, new DB,
+If `docs/enterprise-documentation/` already exists, a new run **overwrites** the documents it generates
+(see the ADR-049 note above for which those are). Re-execution is a fresh snapshot. It never touches
+`docs-v2/` and never resurrects `archive/`. It is required when: the main architecture changes (new service, new DB,
 new pattern), a major module is added, or more than 3 months of active development pass without re-execution.
 
 ## Human ACK requirement
@@ -480,7 +491,7 @@ When detail is missing here, those documents prevail.
 When uncertainty exists:
 
 1. Consult `docs/methodology/Framework-FDGE.md`.
-2. Consult `docs/enterprise-documentation/` (architecture, PRD, TRD, Conventions).
+2. Consult `docs-v2/` (architecture, PRD, TRD) and `docs/enterprise-documentation/11-Conventions.md` (the `RULE-NN`).
 3. Consult Graphify.
 4. Consult `docs/implementation/HISTORY.log`.
 5. Consult `docs/implementation/HANDOFF.md`.
@@ -539,7 +550,7 @@ Actions:
 3. Expand the request: What / Where / When / How / Why (if known).
 4. Document reproduction steps, expected behavior, actual behavior.
 5. Identify affected users, business impact.
-6. Consult `docs/enterprise-documentation/` (architecture, PRD, TRD, Conventions, Graphify).
+6. Consult `docs-v2/` (architecture, PRD, TRD), `docs/enterprise-documentation/11-Conventions.md` (`RULE-NN`), Graphify.
 7. Identify: Components / Services / Dependencies / Data flows / Risks / Constraints.
 8. Record Root Cause Confidence (%), Architecture Confidence (%), Solution Confidence (%).
 
@@ -565,7 +576,7 @@ Actions:
    - Test Scenarios: concrete cases (happy path + edge cases + failure cases).
    - NFRs: performance, security, accessibility constraints.
    - Out-of-scope: explicit list of what this feature does NOT cover.
-4. Consult `docs/enterprise-documentation/` (architecture, PRD, TRD, Conventions, Graphify).
+4. Consult `docs-v2/` (architecture, PRD, TRD), `docs/enterprise-documentation/11-Conventions.md` (`RULE-NN`), Graphify.
 5. Identify: affected components, integration points, data model impact, risks.
 6. Document Architecture Confidence (%), Implementation Confidence (%).
 
@@ -588,7 +599,7 @@ Actions:
    - What changes and what does NOT change (explicit boundary).
    - Quality bar: the measurable threshold that proves the refactor is complete.
    - Regression risk: which behaviors must be preserved exactly.
-4. Consult `docs/enterprise-documentation/` (architecture, PRD, TRD, Conventions, Graphify).
+4. Consult `docs-v2/` (architecture, PRD, TRD), `docs/enterprise-documentation/11-Conventions.md` (`RULE-NN`), Graphify.
 5. Identify: coupling, test coverage gaps, breaking change risk, rollback strategy.
 
 Output: Create or overwrite `docs/implementation/REFACTOR_SCOPE.md`.
@@ -743,7 +754,13 @@ Lo vigila `coherencia-de-registros.spec.ts`.
 
 Before strategy or implementation, consult all relevant sources:
 
-* `docs/enterprise-documentation/` (Platform Overview, PRD, TRD, Conventions, Backend Architecture)
+* `docs-v2/` — **la documentacion oficial del producto** (ADR-049): negocio, producto, arquitectura,
+  ingenieria. El **Registro Maestro de ADR** (`docs-v2/transversal/Registro-Maestro-de-ADR.md`) es de
+  lectura obligada antes de proponer una decision: cuarenta y nueve ya estan tomadas y razonadas.
+* `docs/enterprise-documentation/` — **el contrato de agente**, y solo eso:
+  `11-Conventions.md` (las `RULE-NN`: que NO puedes romper) · `10-Technical-Debt.md` (registro
+  `TD-XXX`) · `inventory/`. Los otros nueve documentos estan en `archive/` con un mapa a su
+  equivalente en `docs-v2/`.
 * Graphify (`graphify-out/`)
 * `docs/implementation/HISTORY.log`
 * `docs/implementation/HANDOFF.md`
@@ -755,14 +772,18 @@ The agent must never design solutions without first consulting the architecture 
 ## Absolute Constraints
 
 ### No Foundation Skip
-If `docs/enterprise-documentation/` does not exist, issue `[START FOUNDATION]` before any FDGE work.
+If `docs-v2/` does not exist, or `docs/enterprise-documentation/11-Conventions.md` does not exist,
+issue `[START FOUNDATION]` before any FDGE work.
 FDGE State 2 (Architecture) requires verified documentation — not assumptions.
 
 ### No Solution First
 Never design before understanding.
 
 ### No Architecture Blindness
-Never modify code before consulting architecture documentation, Conventions (11-Conventions.md), Graphify.
+Never modify code before consulting the architecture documentation (`docs-v2/3-arquitectura/` and
+`docs-v2/4-ingenieria/`), the ADR register (`docs-v2/transversal/Registro-Maestro-de-ADR.md`), the
+Conventions (`docs/enterprise-documentation/11-Conventions.md`) and Graphify. **ADR-049 moved where
+these live; it did not relax the obligation.**
 
 ### No Phase Collapse
 Never skip FDGE states. Condensing (TRIVIAL) is not collapsing. Every state still happens and is recorded.
@@ -814,7 +835,14 @@ PTSA never bypasses FDGE and FDGE never bypasses PTSA.
 
 The canonical, normative specification lives in `docs/methodology/PTSA/PTSA-V3-Especificacion-Oficial.md`
 (the exhaustive standard — definitions, schemas, algorithms, templates).
-The operational agent manual lives in `PTSA/Motor-PTSA.md`; the working protocol in `PTSA/PTSA.md`.
+The operational detail lives in the same specification: it is the only PTSA authority that exists.
+
+> **PT-141 —** Estas dos líneas citaban `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`. **Ninguno de los dos
+> ha existido nunca.** Era un pendiente desde **DS-004**, repetido en cinco bloques de
+> `PTSA/PENDIENTES.md` a lo largo de cuatro sesiones, siempre como «responsable: humano».
+> Se retira la cita en vez de escribir dos documentos para justificarla: la especificación oficial
+> existe, está completa, y crear ficheros para que una referencia deje de estar rota es hacerlo al
+> revés. Es la familia de H-016 — **un documento con citas rotas se lee con confianza y es falso**.
 This section is the binding ruleset (rules in force). When detail is missing here, the official specification prevails.
 
 ## Trigger Rule
@@ -919,7 +947,8 @@ Stop and report a blocking state ONLY if: (1) the environment explicitly denies 
 (2) access credentials/parameters cannot be resolved from local files; (3) the user issued an explicit manual breakpoint.
 On halt: record blockers in `PENDIENTES.md`, set `BLOQUEADA`, append to `AUDIT_LOG.md`, show a hard-stop report.
 
-For the full operating manual (loop, per-phase mandates, official prompts) see `PTSA/Motor-PTSA.md`.
+For the full operating manual (loop, per-phase mandates, official prompts) see
+`docs/methodology/PTSA/PTSA-V3-Especificacion-Oficial.md` — Part IV.
 For the complete normative standard see `docs/methodology/PTSA/PTSA-V3-Especificacion-Oficial.md`.
 
 ---

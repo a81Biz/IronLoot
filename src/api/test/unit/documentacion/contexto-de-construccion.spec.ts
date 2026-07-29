@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, readdirSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * F-42 (PT-126) — Un `COPY . .` sin `.dockerignore` mete en la imagen cosas del disco de quien
@@ -20,7 +21,17 @@ import { join } from 'path';
  * imagen lo que hubiera en la carpeta del ultimo que construyo.
  */
 describe('El contexto de construccion de Docker esta acotado (F-42)', () => {
-  const raiz = join(__dirname, '../../../../..');
+  /**
+   * PT-141 — Esto era `join(__dirname, '../../../../..')`, y **la guarda no podia ejecutarse dentro
+   * del contenedor**: el API vive en `/app` y el repositorio se monta en `/repo`, asi que contar
+   * cinco `..` daba `/` y el `readdirSync` moria con `ENOENT` antes del primer `it`. Una suite que
+   * no arranca no acusa nada — el patron mas repetido de este repositorio (RULE-26).
+   *
+   * `raizDelMonorepo()` (PT-137) resuelve la raiz **comprobandola**, y lanza si no la encuentra en
+   * vez de devolver una ruta parcial. Contar `..` funciona hasta que alguien mueve el fichero o lo
+   * ejecuta desde otro sitio, y entonces falla en silencio o donde nadie mira.
+   */
+  const raiz = raizDelMonorepo();
 
   /** Servicios con Dockerfile propio, descubiertos — no una lista escrita a mano. */
   const servicios = ['src/api', 'src/apps/base', 'src/apps/client', 'src/admin'].filter((s) =>

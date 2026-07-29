@@ -1,7 +1,7 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-29 (PT-140 — reconstruido contra el código y contra
-`HISTORY.log`, y ahora con guarda)
+**FDGE V3** · **Última actualización**: 2026-07-29 (PT-141 — `.A` fusionado)
+Reconstruido en PT-140 contra el código y contra `HISTORY.log`, y con guarda desde entonces.
 
 > **Por qué se reconstruyó, otra vez.** PT-090 ya lo reconstruyó una vez y F-33 encontró que había
 > vuelto a mentir **tres PT después**. La diferencia esta vez no es el barrido: es que
@@ -34,7 +34,7 @@
 
 | Trabajo | Qué | Estado |
 |---|---|---|
-| **PT-141** | La documentación oficial única. `.A` (ADR-049, `CLAUDE.md`, las dos citas rotas a `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`) y `.B` (`[START FOUNDATION]`, ya desbloqueado) | Paquete escrito, sin empezar |
+| **PT-141.B** | `[START FOUNDATION]`. Sus cuatro prerrequisitos están cerrados y el protocolo ya está acotado a lo que debe generar (ADR-049). **Decisión del humano cuándo ejecutarlo** | Desbloqueado |
 | **TD-016** | Nada comprueba vulnerabilidades de la **imagen base**. `audit:check` sólo mira npm. Ahora que las imágenes se construyen en CI (PT-147) es más barato de cerrar | Abierta |
 | **F-136-A** | Documentos que citan evidencia que **no está en el repositorio**: de 162 ficheros de `evidence/`, 83 seguidos. `PENDING_TASKS` llegó a mandar leer `regresion.txt`, ausente | Sin PT |
 
@@ -80,6 +80,7 @@ De la tanda del 2026-07-28/29, con evidencia en `evidence/PT-XXX/medicion.md` y 
 | **PT-145** | Dos duplicados sin restricción |
 | **PT-146** | Dos depósitos simultáneos, uno perdido |
 | **PT-147** | Las imágenes, construidas y arrancadas |
+| **PT-141** | Una sola documentación oficial (`.A`); ADR-049 |
 
 `PT-035` espera además **validación visual**, que no es automatizable: su tarea `T-035.12` sigue en
 `VALIDATION_PENDING` por eso.

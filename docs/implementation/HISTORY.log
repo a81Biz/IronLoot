@@ -2169,3 +2169,38 @@ Delta (real vs planned): dos cosas que el plan no preveia. El analizador acusaba
   Ademas la guarda cazo al propio PT-140 en CI, por no haber escrito ESTA entrada. Es la decima vez en
   la tanda que una guarda caza al agente, y la mas literal de todas.
 PTSA reference: ninguno; es refactor de registro, no correccion de hallazgo.
+
+## PT-141 — REFACTOR: una sola documentacion oficial, y un contrato de agente acotado
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: refactor/PT-141-documentacion-oficial-unica
+Objective: cerrar la duplicidad entre `docs/enterprise-documentation/` y `docs-v2/`, que se
+  declaraban mutuamente sustitutos mientras cada PT escribia en los dos.
+Root cause: no habia decision registrada. `CLAUDE.md` citaba al primero diez veces y al segundo una,
+  asi que todo agente reforzaba el arbol que el propio arbol decia que habia que regenerar.
+Solution: ADR-049 separa dos funciones que estaban mezcladas — `docs-v2/` describe el producto para
+  personas; `enterprise-documentation/` se acota al contrato de agente (las `RULE-NN`, el registro
+  `TD-XXX` y los inventarios). Los nueve restantes se archivan con `git mv` y **mapa documento a
+  documento**. Foundation Protocol deja de generarlos, para que un `[START FOUNDATION]` no deshaga la
+  decision. Las diez citas de `CLAUDE.md` se reapuntan sin relajar ninguna obligacion.
+  Hallazgos no planificados, corregidos en el mismo PT:
+   - **RULE-25 y RULE-26 estaban citadas en codigo y ausentes del contrato.** Se escriben, y RULE-27
+     + `reglas-citadas-existen.spec.ts` impide que vuelva a pasar.
+   - `contexto-de-construccion.spec.ts` no podia ejecutarse en contenedor (raiz contando `..`).
+   - TD-005 se contradecia dentro del mismo bloque: prosa de antes de PT-105 sobre un estado ya
+     actualizado.
+   - Las citas a `PTSA/Motor-PTSA.md` y `PTSA/PTSA.md`, **que nunca han existido**, se retiran.
+     Pendiente desde DS-004, en cinco bloques a lo largo de cuatro sesiones.
+Modified files: CLAUDE.md, docs-v2/transversal/Registro-Maestro-de-ADR.md,
+  docs/enterprise-documentation/{README.md,10-Technical-Debt.md,11-Conventions.md},
+  docs/enterprise-documentation/archive/ (9 documentos + README),
+  src/api/test/unit/documentacion/{reglas-citadas-existen,coherencia-documentacion-codigo,
+  contexto-de-construccion}.spec.ts
+Evidence: docs/implementation/evidence/PT-141/
+Delta (real vs planned): el paquete preveia nueve tareas de reapuntado y archivado. Aparecieron
+  tres defectos no previstos, los tres de la misma familia —un mecanismo que no corre, o una cita
+  que no lleva a ninguna parte— y se corrigieron aqui en vez de abrir PT nuevos, porque los tres
+  vivian en los ficheros que este PT ya estaba tocando. El orden tests-first se cumplio para
+  RULE-27 pero no limpiamente: las dos reglas se escribieron antes que la guarda, y esta se vio
+  fallar por sus propias citas y no por la ausencia que motivo el trabajo.
+PTSA reference: cierra el pendiente DS-004 sobre las dos citas inexistentes.
