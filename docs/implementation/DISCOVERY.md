@@ -4982,3 +4982,106 @@ suite que sigue sin poder correr en paralelo, y este PT existe porque algo verde
 - Root Cause Confidence: **90%** — la violación de clave ajena es clara; falta medir **cuántas** de
   las 16 suites dependen del orden.
 - Solution Confidence: **65%** — depende de esa medición y de la decisión entre [B] y [C].
+
+---
+
+## PT-146 — BUG (seguridad financiera): dos depósitos simultáneos y uno se pierde en silencio
+
+Date: 2026-07-28
+Type: BUG
+Complexity: **STANDARD**
+Origen: lo destapó la prueba concurrente de **PT-142**, al desaparecer el `P2002` que lo tapaba.
+Declarado fuera de alcance en `changes/PT-142-creacion-perezosa-atomica/out-of-scope.md` **antes** de
+medirlo — no después.
+
+### What — qué pasa
+
+**Dos acreditaciones simultáneas al mismo monedero: las dos responden con éxito y una desaparece.**
+
+Medido, con el `P2002` ya corregido por PT-142:
+
+```
+2 depositos simultaneos: 100 y 250, a un usuario sin monedero previo
+  estados devueltos:  fulfilled | fulfilled     <- ninguno falla
+  saldo esperado:     350
+  saldo real:         250   (y 100 en otra corrida)
+```
+
+**No determinista**: gana el que escriba el último. El otro no deja error, no deja aviso y no deja
+rastro para quien mire la respuesta.
+
+### Where — dónde
+
+`src/api/src/modules/wallet/wallet.service.ts` — el cuerpo de la transacción de `deposit()`:
+
+```
+const wallet    = await tx.wallet.findUniqueOrThrow({ where: { userId } });   // lee saldo
+const newBalance = new Decimal(wallet.balance).plus(amountDecimal);           // suma en memoria
+await tx.ledger.create({ ... balanceBefore: wallet.balance, balanceAfter: newBalance ... });
+await tx.wallet.update({ where: { id: wallet.id }, data: { balance: newBalance } });  // escribe ABSOLUTO
+```
+
+El mismo patrón está en `withdraw()`, `refundWithdrawal()`, `releaseSettlement()` y
+`captureHeldFunds()`. **Hay que barrer los cinco**, no sólo el depósito.
+
+### Why — por qué es distinto de PT-142, y peor
+
+PT-142 era *crear una fila que no existe*. Esto es **leer-modificar-escribir**: dos transacciones
+leen el mismo saldo, cada una le suma lo suyo, y la segunda escribe un absoluto calculado sobre un
+saldo ya obsoleto. *Read committed* lo permite: `UPDATE ... SET balance = 350` no entra en conflicto
+con nada.
+
+Y la diferencia que importa: **PT-142 fallaba ruidosamente** —`P2002`, el ciclo se reabre, PT-087
+reintenta y el dinero llega—. **Esto no falla.** Devuelve 200, el asiento del perdedor queda escrito
+en `ledger` con un `balanceAfter` que no coincide con el saldo real, y nadie se entera.
+
+Que el asiento exista y el saldo no cuadre es lo peor de los dos mundos: **la contabilidad se
+contradice a sí misma** y sólo se ve sumando el ledger y comparándolo con `wallets.balance`.
+
+### Cuándo es alcanzable en producción
+
+`Payment.reference @unique` impide acreditar **el mismo** pago dos veces, así que no protege de esto:
+aquí son **dos pagos distintos** llegando a la vez. Caminos reales:
+
+- Un webhook de Mercado Pago y la **vía garantizada** (cron, PT-087) resolviendo dos depósitos
+  distintos del mismo usuario en el mismo instante.
+- Dos notificaciones de pasarelas distintas.
+- Un abono de venta (`captureHeldFunds`) coincidiendo con un depósito.
+
+Con una sola instancia del API es improbable pero **no imposible** —basta con que dos peticiones se
+solapen—. Con varias instancias, deja de ser improbable.
+
+### Impacto
+
+- **Financiero directo**: dinero cobrado que no llega al monedero, sin error y sin reintento. Es
+  exactamente lo que PT-087 construyó el ciclo de pago para impedir, por una puerta que el ciclo no
+  vigila.
+- **Contable**: `ledger` y `wallets.balance` pueden discrepar. Ninguna prueba lo comprueba hoy.
+
+### Vías
+
+- **[A] Actualización relativa**: `data: { balance: { increment: amount } }`. Postgres resuelve la
+  suma sobre la fila bloqueada; no hay lectura previa que quede obsoleta. Es lo más simple y lo que
+  la base ya sabe hacer. Complicación: `balanceBefore`/`balanceAfter` del asiento se calculan sobre
+  la lectura previa, así que el asiento habría que escribirlo con el valor devuelto por el `update`.
+- **[B] `SELECT ... FOR UPDATE`** sobre el monedero al principio de la transacción. Serializa por
+  usuario, conserva el código tal cual, y cuesta un bloqueo.
+- **[C] Aislamiento `serializable`** en las transacciones de dinero, con reintento.
+
+**Recomendación: [B]**, porque los cinco caminos calculan `balanceBefore`/`balanceAfter` para el
+asiento y con [A] hay que rehacer esa parte en los cinco. [B] los arregla sin tocar la lógica
+contable — y el bloqueo es por usuario, no global.
+
+### Lo que hay que exigirle a la corrección
+
+1. Una prueba concurrente que **falle antes**: N acreditaciones simultáneas, saldo final = suma.
+2. **La invariante contable, comprobada**: `sum(ledger.amount) == wallets.balance` tras la ráfaga.
+3. Los **cinco** caminos, no sólo `deposit()`.
+4. Un depósito real, en la base.
+
+### Confianza
+
+- Root Cause Confidence: **100%** — patrón leído y consecuencia medida dos veces con resultados
+  distintos (250 y 100), que es la firma de una carrera.
+- Solution Confidence: **80%** — la vía está clara; el 20% es cuántos de los cinco caminos tienen
+  particularidades (el holdback de PT-071, el `pendingBalance`) que obliguen a matizar.
