@@ -5085,3 +5085,61 @@ contable — y el bloqueo es por usuario, no global.
   distintos (250 y 100), que es la firma de una carrera.
 - Solution Confidence: **80%** — la vía está clara; el 20% es cuántos de los cinco caminos tienen
   particularidades (el holdback de PT-071, el `pendingBalance`) que obliguen a matizar.
+
+---
+
+## F-142-A — La línea base de observabilidad se indexa por número de línea, y por eso envejece
+
+Date: 2026-07-28 · Tipo: **hallazgo**, sin PT asignado
+Origen: lo produjo PT-142 al hacer atómico el `seed()` de `system-config`.
+
+### Qué pasa
+
+`src/api/observability-baseline.json` declara sus 26 silencios aceptados como `fichero:línea`:
+
+```
+"src/api/src/modules/system-config/system-config.service.ts:211"
+```
+
+Al crecer `seed()` en doce líneas, **ese mismo `catch`** —`catch { // Fall through to ENV }`— pasó a
+la línea 223. El checkpoint D3 lo leyó como un silencio **nuevo** y puso el job en rojo:
+
+```
+NUEVOS catch que no registran ni relanzan:
+  src/api/src/modules/system-config/system-config.service.ts:223
+FALLA — hay `catch` nuevos que no dejan rastro.
+```
+
+No había ningún `catch` nuevo. Había una edición **por encima** de uno declarado.
+
+### Por qué importa
+
+Es exactamente la forma de **H-016**: un registro que cita por número de línea se desplaza cuando el
+fichero crece, y entonces afirma algo falso con toda la apariencia de precisión. Allí eran las citas
+del TRD; aquí es la línea base de un control.
+
+La consecuencia práctica: **cualquier PT que edite un fichero por encima de un silencio declarado
+pondrá D3 en rojo sin haber añadido ningún silencio**, y quien lo vea tendrá que decidir entre
+investigar o mover el número. La segunda opción es la fácil, y hace que la línea base deje de
+significar nada.
+
+Y hay un agravante medido en este mismo PT: **no se puede comprobar en local**. Dentro del contenedor
+`audit:observability` dice `silent_failure_count = 0 (línea base: 0)` porque no ve el fichero —es
+F-135-B— así que el único sitio donde este control da un veredicto real es CI.
+
+### Vías
+
+- **[A] Indexar por huella del `catch`** (fichero + una firma del bloque) en vez de por línea. Es lo
+  que hace que un desplazamiento no cuente como cambio.
+- **[B] Indexar por fichero + símbolo contenedor** (`system-config.service.ts::get`). Más legible,
+  resistente a desplazamientos dentro de la función.
+- **[C] Dejarlo como está** y aceptar el mantenimiento manual.
+
+**Recomendación: [B].** [A] es más exacto y menos legible; una línea base se lee tanto como se
+ejecuta. [C] es lo que hay hoy y ya ha costado una corrida roja.
+
+### Lo que hice aquí
+
+Mover el número, `211 → 223`, dejando escrito **en el propio fichero** que es el mismo `catch` y por
+qué cambió. Es lo mínimo honesto: corregir sin registrar la causa habría convertido esto en el
+mantenimiento manual invisible que la vía [C] normaliza.
