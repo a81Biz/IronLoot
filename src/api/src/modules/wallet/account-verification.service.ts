@@ -70,6 +70,24 @@ export class AccountVerificationService {
    *
    * Es **idempotente**: si ya hay una verificación en curso devuelve la misma. Volver a llamar no
    * puede provocar un segundo movimiento de dinero.
+   *
+   * PT-145 — Esa idempotencia era un `findFirst` seguido de un `create`, y entre los dos cabía otra
+   * petición. **Cinco solicitudes simultáneas creaban cinco verificaciones**, y cada verificación
+   * envía dinero a la cuenta del vendedor descontándolo de su saldo: cinco envíos donde debía haber
+   * uno. No era un código HTTP equivocado.
+   *
+   * La invariante es *«como máximo una con estado `PENDING` o `SENT` por método»* — **parcial**. En
+   * Postgres eso sería un índice único con `WHERE`, y **Prisma no puede declararlo en el esquema**:
+   * escribirlo en crudo dentro de una migración divergiría de `schema.prisma` y pondría rojo
+   * `audit:schema`, el checkpoint que PT-127 construyó para impedir esa divergencia.
+   *
+   * Las salidas de compromiso tampoco valían: `@@unique([paymentMethodId, status])` permitiría una
+   * `PENDING` **y** una `SENT` a la vez —dos en curso, dos envíos— y `@@unique([paymentMethodId])`
+   * prohibiría verificar dos veces en la vida del método, que rompe el producto.
+   *
+   * Se resuelve **bloqueando la fila del método de pago**: es la técnica de RULE-24 aplicada a una
+   * comprobación en vez de a un saldo, serializa exactamente el ámbito de la invariante, y no
+   * necesita migración. → **RULE-25**
    */
   async start(userId: string, paymentMethodId: string) {
     const metodo = await this.prisma.userPaymentMethod.findUnique({
@@ -85,11 +103,6 @@ export class AccountVerificationService {
       throw new BadRequestException('Esta cuenta ya está verificada');
     }
 
-    const enCurso = await this.prisma.accountVerification.findFirst({
-      where: { paymentMethodId, status: { in: ['PENDING', 'SENT'] } },
-    });
-    if (enCurso) return enCurso;
-
     // El importe sale del vendedor. Sin saldo no hay verificación — y por eso ocurre de forma
     // natural tras la primera venta, que es cuando tiene sentido preguntarse a dónde cobra.
     const saldo = await this.wallet.getBalance(userId);
@@ -100,18 +113,39 @@ export class AccountVerificationService {
       );
     }
 
-    const token = this.generarToken();
-    const verificacion = await this.prisma.accountVerification.create({
-      data: {
-        paymentMethodId,
-        userId,
-        token,
-        amount: AccountVerificationService.IMPORTE_MXN,
-        currency: 'MXN',
-        status: 'PENDING',
-        expiresAt: new Date(Date.now() + AccountVerificationService.VIGENCIA_DIAS * 24 * 3600_000),
-      },
+    // PT-145 — **La comprobación y la creación van en la MISMA transacción**, que empieza bloqueando
+    // la fila del método de pago. Ese detalle es el que importa: un bloqueo que se libera antes del
+    // `create` no sirve de nada, porque la ventana vuelve a abrirse justo donde estaba.
+    //
+    // Dos peticiones sobre el mismo método se serializan y la segunda ve lo que hizo la primera.
+    // Métodos distintos no se esperan — lo comprueba `VER-04`.
+    const { verificacion, yaExistia } = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM user_payment_methods WHERE id = ${paymentMethodId}::uuid FOR UPDATE`;
+
+      const enCurso = await tx.accountVerification.findFirst({
+        where: { paymentMethodId, status: { in: ['PENDING', 'SENT'] } },
+      });
+      if (enCurso) return { verificacion: enCurso, yaExistia: true };
+
+      const creada = await tx.accountVerification.create({
+        data: {
+          paymentMethodId,
+          userId,
+          token: this.generarToken(),
+          amount: AccountVerificationService.IMPORTE_MXN,
+          currency: 'MXN',
+          status: 'PENDING',
+          expiresAt: new Date(
+            Date.now() + AccountVerificationService.VIGENCIA_DIAS * 24 * 3600_000,
+          ),
+        },
+      });
+      return { verificacion: creada, yaExistia: false };
     });
+
+    // La idempotencia se conserva: si ya habia una en curso se devuelve esa, y **no se deja traza ni
+    // se mueve dinero**, que es lo que la hacia idempotente antes de este PT.
+    if (yaExistia) return verificacion;
 
     // El token NO se registra: es el secreto que prueba la titularidad, y en la traza sería
     // regalárselo a quien la lea.
@@ -137,7 +171,7 @@ export class AccountVerificationService {
         const cobro = await this.paypal.createVerificationCharge(
           `VER-${paymentMethodId}`,
           AccountVerificationService.IMPORTE_MXN,
-          token,
+          verificacion.token,
         );
         const conCobro = await this.prisma.accountVerification.update({
           where: { id: verificacion.id },

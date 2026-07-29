@@ -1,0 +1,11 @@
+-- PT-145 — Una valoracion por (pedido, autor).
+--
+-- La guarda «You have already rated this order» era un `findFirst` seguido de un `create`, y entre
+-- los dos cabia otra peticion: dos valoraciones simultaneas del mismo autor sobre el mismo pedido
+-- creaban DOS filas, sin error. La reputacion es lo que un comprador mira antes de pujar.
+--
+-- Es por (pedido, autor) y no por pedido: comprador y vendedor SI valoran el mismo pedido, cada uno
+-- al otro.
+--
+-- Duplicados existentes medidos antes de escribir esto: 0.
+CREATE UNIQUE INDEX "ratings_order_id_author_id_key" ON "ratings"("order_id", "author_id");

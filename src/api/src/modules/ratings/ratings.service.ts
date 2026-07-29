@@ -54,15 +54,36 @@ export class RatingsService {
 
     const targetId = isBuyer ? order.sellerId : order.buyerId;
 
-    const rating = await this.prisma.rating.create({
-      data: {
-        orderId: dto.orderId,
-        authorId: userId,
-        targetId,
-        score: dto.score,
-        comment: dto.comment,
-      },
-    });
+    // PT-145 — La guarda de arriba se queda: el 400 es la respuesta util. Pero entre ella y este
+    // `create` cabe otra peticion, y hasta ahora `Rating` no tenia restriccion unica, asi que la
+    // carrera no daba error — dejaba DOS valoraciones del mismo autor sobre el mismo pedido.
+    // Ahora existe `@@unique([orderId, authorId])`, y el choque se traduce al MISMO 400: la
+    // respuesta no debe depender de si alguien mas estaba pulsando el boton a la vez.
+    let rating;
+    try {
+      rating = await this.prisma.rating.create({
+        data: {
+          orderId: dto.orderId,
+          authorId: userId,
+          targetId,
+          score: dto.score,
+          comment: dto.comment,
+        },
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        // Con rastro: llegar aqui significa que la carrera ocurrio de verdad, y eso es un dato que
+        // no se recupera despues (lo exigio el checkpoint D3 en PT-142).
+        this.logger.warn(
+          'Valoracion duplicada detectada por la restriccion unica, no por la guarda',
+          {
+            data: { orderId: dto.orderId, authorId: userId },
+          },
+        );
+        throw new BadRequestException('You have already rated this order');
+      }
+      throw error;
+    }
 
     this.logger.info(`Rating created for Order ${order.id}`, {
       ratingId: rating.id,

@@ -518,6 +518,14 @@ model Rating {
   targetId String @map("target_id") @db.Uuid
   target   User   @relation("RatingTarget", fields: [targetId], references: [id])
 
+  /// PT-145 — La guarda «You have already rated this order» era un `findFirst` seguido de un
+  /// `create`, y entre los dos cabia otra peticion: dos valoraciones simultaneas del mismo autor
+  /// sobre el mismo pedido creaban DOS filas, en silencio. La reputacion es lo que un comprador
+  /// mira antes de pujar.
+  ///
+  /// Es por (pedido, autor), no por pedido: dos personas distintas SI valoran el mismo pedido —el
+  /// comprador al vendedor y el vendedor al comprador—. Lo comprueba `RAT-03`.
+  @@unique([orderId, authorId])
   @@index([orderId], name: "idx_ratings_order")
   @@index([authorId], name: "idx_ratings_author")
   @@index([targetId], name: "idx_ratings_target")
