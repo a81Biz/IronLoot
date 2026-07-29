@@ -100,14 +100,50 @@ export class AuthHelper {
     };
   }
 
+  /**
+   * PT-143 — Esto decia «cascade deletes profile, auctions, etc» y **no cascadea**: fallaba con
+   *
+   *     Foreign key constraint violated: `auctions_seller_id_fkey`
+   *
+   * en cuanto el usuario tenia una subasta. Un comentario que afirma un comportamiento que el
+   * esquema no da es peor que no tener comentario: se lee y se cree.
+   *
+   * Y llevaba otro aviso —«Be careful not to delete real users if running on dev db. Ideally we run
+   * on test db»— que era una preocupacion legitima escrita donde hacia falta un mecanismo. Ahora el
+   * borrado va en orden de dependencias y acotado a los ids que resuelve el filtro; lo que no puede
+   * hacer esta funcion es adivinar contra que base apunta `DATABASE_URL`, asi que el aviso sigue
+   * valiendo para quien pase un `emailSubstring` ancho.
+   */
   async cleanup(emailSubstring: string = '@test.com'): Promise<void> {
-    // Delete test users (cascade deletes profile, auctions, etc)
-    // Be careful not to delete real users if running on dev db
-    // Ideally we run on test db
     try {
-      await this.prisma.user.deleteMany({
+      const usuarios = await this.prisma.user.findMany({
         where: { email: { contains: emailSubstring } },
+        select: { id: true },
       });
+      if (usuarios.length === 0) return;
+
+      const userIds = usuarios.map((u) => u.id);
+
+      const subastas = await this.prisma.auction.findMany({
+        where: { sellerId: { in: userIds } },
+        select: { id: true },
+      });
+      const auctionIds = subastas.map((a) => a.id);
+
+      const monederos = await this.prisma.wallet.findMany({
+        where: { userId: { in: userIds } },
+        select: { id: true },
+      });
+      const walletIds = monederos.map((w) => w.id);
+
+      // De las hojas a la raiz, igual que en `orders-flow`.
+      await this.prisma.ledger.deleteMany({ where: { walletId: { in: walletIds } } });
+      await this.prisma.bid.deleteMany({ where: { auctionId: { in: auctionIds } } });
+      await this.prisma.auction.deleteMany({ where: { id: { in: auctionIds } } });
+      await this.prisma.notification.deleteMany({ where: { userId: { in: userIds } } });
+      await this.prisma.wallet.deleteMany({ where: { id: { in: walletIds } } });
+      await this.prisma.session.deleteMany({ where: { userId: { in: userIds } } });
+      await this.prisma.user.deleteMany({ where: { id: { in: userIds } } });
     } catch (e) {
       console.error('Cleanup failed', e);
     }

@@ -489,6 +489,27 @@ rejecting the duplicate is the useful answer (a business guard returning 400).
 the create target the **same model** — reading an order and creating a shipment is normal and has no
 race. Its exception list requires a PT reference and fails if an exception is no longer needed.
 
+### RULE-23: No test deletes without a filter
+**What:** test cleanup deletes only the rows that test created — filtered by ids resolved from its
+own fixtures, in dependency order. `deleteMany()` and `deleteMany({})` are forbidden; they are the
+same truncation, one of them wearing two braces as a disguise.
+**Why:** `orders-flow.e2e-spec.ts` truncated **eleven tables** in its `beforeAll`, and Jest runs
+suites in parallel: while `ratings.e2e` was setting up its order, `orders-flow` deleted it. Hence
+`expected 201, got 404` in a suite that had nothing wrong with it, a violated
+`auctions_seller_id_fkey` in `auth-helper`, and — the real tell — **failures that moved between runs**
+(PT-143).
+The second reason is worse than parallelism: **an unfiltered `deleteMany()` deletes against whatever
+`DATABASE_URL` points at**. `auth-helper` had written that fear down — *"Be careful not to delete real
+users if running on dev db. Ideally we run on test db"* — without knowing that `TestApp` assigned
+`process.env.DATABASE_URL` to the **development** database, the one that holds PTSA validation data.
+A comment where a mechanism was needed.
+**Correct:** resolve your fixtures' ids, delete their dependents leaf-to-root, then them.
+**Incorrect:** `deleteMany()`, `deleteMany({})`, and `--runInBand` as a "fix" — serialising hides that
+the suite cannot run in parallel, and this repository has paid for green-that-hides-things enough
+times.
+**Enforced by:** `limpieza-de-tests-acotada.spec.ts`, with six control cases. It excludes itself: its
+control cases must contain the forbidden pattern to prove it can detect it.
+
 ---
 
 ## 5. Files Requiring Extra Care Before Modification

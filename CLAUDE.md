@@ -73,6 +73,16 @@ node 90-validacion-hallazgos.js    # validación dirigida de hallazgos PTSA corr
 `run-all.sh` **trunca la base de datos**. Hacer copia antes si contiene salida real que sostenga
 una validación PTSA.
 
+**Y ninguna prueba borra sin filtro** (RULE-23). `orders-flow.e2e-spec.ts` truncaba once tablas en su
+`beforeAll`, y como Jest corre las suites en paralelo, borraba los datos de las demás mientras las
+demás los usaban: de ahí `404` en suites que no tenían nada roto, y fallos que **cambiaban de sitio
+entre corridas**. Peor aún, `TestApp` **imponía** `DATABASE_URL` a `ironloot_db` —la base de
+desarrollo, la que sostiene las validaciones PTSA— pisando lo que dijera el entorno (PT-143). Las dos
+cosas están corregidas y hay guarda, pero conviene saberlo antes de escribir una limpieza nueva.
+
+**La suite e2e completa no cabe en el contenedor**: sus workers mueren por `SIGKILL` contra el límite
+de 1 GB. Se verifica en CI.
+
 ### BASE — Sitio público (`cd src/apps/base`)
 
 ```bash

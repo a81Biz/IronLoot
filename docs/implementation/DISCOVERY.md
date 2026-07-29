@@ -5143,3 +5143,56 @@ ejecuta. [C] es lo que hay hoy y ya ha costado una corrida roja.
 Mover el número, `211 → 223`, dejando escrito **en el propio fichero** que es el mismo `catch` y por
 qué cambió. Es lo mínimo honesto: corregir sin registrar la causa habría convertido esto en el
 mantenimiento manual invisible que la vía [C] normaliza.
+
+---
+
+## PT-147 — BUG: el job `docker` apunta a un `Dockerfile` que no existe
+
+Date: 2026-07-28
+Type: BUG · Complexity: **STANDARD**
+Origen: **PT-143.7**. Apareció al conseguir que `build` se ejecutara por primera vez.
+
+### What
+
+```
+.github/workflows/ci.yml — job `docker`
+    file: ./Dockerfile          <- NO EXISTE en la raiz del repositorio
+```
+
+Los `Dockerfile` de producción los creó **PT-129** y viven en `src/api/`, `src/admin/`,
+`src/apps/base/` y `src/apps/client/`. En la raíz no hay ninguno, y no lo ha habido nunca.
+
+### Por qué no se había visto: **dos capas, y la segunda es la interesante**
+
+1. El job estaba condicionado a `refs/heads/prod || refs/heads/prep` — dos ramas que **nunca han
+   existido**. Quedaba `skipped` siempre.
+2. **Un job saltado no cuenta como fallo.** El workflow se declaraba `success` con `docker` sin
+   ejecutar. Es un escalón peor que H-015: allí `build` y `docker` no corrían porque colgaban de un
+   job que no terminaba, y al menos eso se veía. Aquí el pipeline decía *verde*.
+
+Y es la **segunda aparición** de las ramas fantasma de PT-136, en otro sitio del mismo fichero. PT-136
+corrigió el `on:` y su guarda sólo miraba ahí; PT-143 la amplió a las condiciones `if:` porque
+corregir el caso y no la clase es literalmente lo que a PT-129 le costó dos repeticiones.
+
+### Impacto
+
+**Ninguna imagen se ha construido nunca en CI.** PT-129 verificó las cuatro a mano —arrancan y llegan
+a `healthy`— y esa evidencia sigue siendo válida; lo que no existe es la comprobación continua. Una
+imagen que sólo se ha construido una vez, a mano, es la situación exacta que produjo H-017.
+
+### Lo que hay que hacer
+
+1. Construir **las cuatro** imágenes de producción, no una inventada en la raíz.
+2. **Arrancarlas** y esperar su healthcheck, que es lo que H-017 enseñó: construir no es arrancar.
+3. Decidir si `nginx` (`src/nginx/Dockerfile`) entra también.
+
+### Estado
+
+El `if:` fantasma ya está corregido (PT-143) y el job **se ejecutará y fallará** hasta que PT-147 lo
+resuelva. Es deliberado: rojo y visible por encima de saltado y oculto.
+
+### Confianza
+
+- Root Cause Confidence: **100%** — `ls Dockerfile` en la raíz no devuelve nada.
+- Solution Confidence: **75%** — construir cuatro imágenes es directo; arrancarlas en CI con sus
+  dependencias (base de datos, Redis) exige decidir cuánto entorno se levanta.

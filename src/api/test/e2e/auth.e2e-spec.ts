@@ -48,10 +48,15 @@ describe('Auth (e2e)', () => {
     // Cleanup test data
     if (prisma) {
       try {
-        await prisma.session?.deleteMany({});
-        await prisma.user?.deleteMany({
+        // PT-143 — Esto borraba TODAS las sesiones, tambien las de los otros workers. Se acota a
+        // los usuarios de esta suite, que ya estaban identificados por su dominio.
+        const mios = await prisma.user.findMany({
           where: { email: { contains: '@test-e2e.com' } },
+          select: { id: true },
         });
+        const ids = mios.map((u) => u.id);
+        await prisma.session?.deleteMany({ where: { userId: { in: ids } } });
+        await prisma.user?.deleteMany({ where: { id: { in: ids } } });
       } catch (e) {
         // Ignore cleanup errors
       }
