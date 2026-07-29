@@ -2239,3 +2239,48 @@ corrido despues, abrio cuatro hallazgos nuevos (H-021..H-024), y uno de ellos �
 PT-141 al archivar nueve documentos sin seguir la cita de `audit-scope.yaml`. Cerrar los PT es
 correcto: hicieron lo que declararon. Lo que la auditoria encontro despues es trabajo nuevo, y esta
 en su registro, no escondido en este.
+
+## PT-149 / PT-153 — BUG + REFACTOR: los checkpoints de auditoria miden, y avisan cuando no pueden
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-153-149-checkpoints-que-miden
+Objective: cerrar H-021 y H-022, los dos hallazgos D2 del delta sync S-003.
+Root cause: H-021 cabia en una linea — `if (!ok && n !== 'ERR') incoherentes++`. Un error NO contaba
+  como incoherencia, y el veredicto era `incoherentes === 0`: cuantos menos datos, mas verde. H-022:
+  los dos scripts consultaban con `docker exec psql` y dentro del contenedor no hay `docker`.
+Solution: el veredicto se DERIVA del resultado con tres estados (`verificado` / `sin_datos` /
+  `incoherente`), que es el mismo criterio que `puntuar()` ya aplicaba al `rubric_compliance_score`
+  veinte lineas mas arriba y que nadie habia trasladado. Las consultas pasan a `PrismaClient`, como
+  PT-138 ya hizo con `observability-check.ts`. Y `verificado` es el unico estado que sale con 0.
+  Tercer defecto encontrado al mirar: `reliability-check` capturaba el error de consulta y hacia
+  `return` desde `main()` — que sale con codigo 0. No poder consultar se reportaba como corrida OK.
+Modified files: src/api/scripts/{domain-rules,reliability-check}.ts,
+  src/api/test/unit/dominio/veredicto-de-coherencia.spec.ts
+Evidence: docs/implementation/evidence/PT-149/
+Delta (real vs planned): el paquete preveia dos PT separados y se hicieron en una sola rama, como el
+  propio paquete recomendaba. Aparecio el tercer defecto (`return` desde main), no previsto.
+PTSA reference: H-021 y H-022 -> CORREGIDA (no CERRADA: `[R44]`)
+
+## PT-148 — REFACTOR: la guarda del contrato SSR-API cubre los tres sitios
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: refactor/PT-148-contrato-ssr-api-los-tres
+Objective: que H-020 no pueda repetirse en BASE ni en ADMIN, no solo en CLIENT.
+Root cause: la guarda de PT-132 nacio mirando un sitio y asi se quedo. Anotado desde S-002 como
+  «ampliacion barata»; FPGE-003 lo saco primero de quince.
+Solution: la guarda recorre los TRES sitios, cada uno con sus dos mitades (SSR en `.ts` y navegador
+  en `.js`), y exige haber leido al menos un fichero por sitio — sin eso, un sitio cuya ruta cambiara
+  pasaria en vacio.
+  **Ninguna ruta de produccion estaba rota.** Lo que aparecieron fueron TRES defectos de la propia
+  guarda: (1) un fichero con dos `@Controller` solo registraba el primero, y por eso acusaba en falso
+  a `bids-view.ts` de invocar `my-active` y `my-history`, **que existen**; (2) una constante de base
+  (`const API = '/api/v1/admin'`) se acusaba como ruta mientras las llamadas reales, interpoladas,
+  no se veian — resolverlas es lo que hace que ADMIN quede cubierto de verdad; (3) no recorria
+  subdirectorios, asi que `common/bff/bids-view.ts` no se habia mirado nunca.
+  Los tres se corrigieron ENSEÑANDO a la guarda, no exceptuando ficheros.
+Modified files: src/api/test/unit/web-views/rutas-que-los-ssr-invocan.spec.ts (renombrado desde
+  `rutas-que-el-client-invoca.spec.ts` con `git mv`)
+Evidence: docs/implementation/evidence/PT-148/
+Delta (real vs planned): el paquete anticipaba que la guarda «va a acusar rutas que hoy nadie mira».
+  Acuso, pero **en falso**: el defecto estaba en ella. Estuve a punto de corregir codigo sano por
+  creerle; lo evito abrir el controlador antes de tocar el llamante.
