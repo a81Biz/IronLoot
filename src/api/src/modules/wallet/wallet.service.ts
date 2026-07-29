@@ -21,23 +21,43 @@ export class WalletService {
   }
 
   /**
-   * Get or create a user's wallet
+   * Crea el monedero si no existe, y devuelve el que haya. **Es el unico sitio que lo crea.**
+   *
+   * PT-142 — Los tres caminos que creaban monedero usaban `findUnique` + `create`, y entre la
+   * lectura y la escritura cabe otro proceso: ocho llamadas simultaneas dejaban siete con
+   * `P2002 — Unique constraint failed on the fields: (user_id)`.
+   *
+   * Dos cosas que hubo que **medir**, porque las dos salidas evidentes no funcionan:
+   *
+   *   1. `upsert` **dentro** de una transaccion interactiva no es atomico: Prisma no lo compila a
+   *      `INSERT ... ON CONFLICT`, hace `SELECT` y luego `INSERT`. Se probo: seguia lanzando P2002.
+   *   2. `upsert` **fuera** de la transaccion tampoco lo garantiza — tambien lanzo P2002 con dos
+   *      acreditaciones simultaneas. Que una prueba de 8 llamadas pasara con `upsert` fue suerte,
+   *      no correccion, y por eso hay una prueba concurrente y no una lectura del codigo.
+   *
+   * Lo que si es atomico es `createMany` con `skipDuplicates`: compila a
+   * `INSERT ... ON CONFLICT DO NOTHING`, **no lanza**, y deja que el indice unico —que existe:
+   * `schema.prisma:761`— resuelva la carrera. Despues se lee, y la lectura ve la fila propia o la
+   * ajena, indistintamente.
+   *
+   * `isActive` es parametro porque los caminos no coincidian: la creacion perezosa al consultar
+   * nacia inactiva y la del deposito activa. Se conserva esa diferencia en vez de unificarla de
+   * paso — seria un cambio de comportamiento colado dentro de una correccion de concurrencia.
+   */
+  private async asegurarMonedero(userId: string, isActive: boolean): Promise<Wallet> {
+    await this.prisma.wallet.createMany({
+      data: [{ userId, balance: 0, heldFunds: 0, isActive }],
+      skipDuplicates: true,
+    });
+
+    return this.prisma.wallet.findUniqueOrThrow({ where: { userId } });
+  }
+
+  /**
+   * Get or create a user's wallet.
    */
   async getWallet(userId: string): Promise<Wallet> {
-    const wallet = await this.prisma.wallet.findUnique({
-      where: { userId },
-    });
-
-    if (wallet) return wallet;
-
-    return this.prisma.wallet.create({
-      data: {
-        userId,
-        balance: 0,
-        heldFunds: 0,
-        isActive: false,
-      },
-    });
+    return this.asegurarMonedero(userId, false);
   }
 
   /**
@@ -136,22 +156,30 @@ export class WalletService {
   ): Promise<{ wallet: Wallet; ledger: Ledger }> {
     if (amount <= 0) throw new BadRequestException('Amount must be positive');
 
+    // PT-087 (F-10) — El monedero tiene que existir para poder acreditar. Se creaba de forma
+    // perezosa al consultarlo, de modo que un usuario que nunca abrió el suyo no podía recibir un
+    // depósito: se capturaron 321.50 MXN reales en PayPal y la acreditación murió con «Wallet not
+    // found». Es peor por la vía garantizada, que corre en un cron: allí no hay nadie navegando que
+    // provoque la creación perezosa.
+    //
+    // PT-142 — La creación estaba **dentro** de la transacción, y eso no la hacía segura. Dos cosas
+    // que hubo que medir para saberlo:
+    //
+    //   1. Estar en una transacción no da exclusión sobre una fila que **aún no existe**: Prisma usa
+    //      *read committed*, así que dos transacciones leen las dos su ausencia e intentan crearla.
+    //   2. **`upsert` sobre `tx` tampoco basta.** Dentro de una transacción interactiva Prisma no lo
+    //      compila a `INSERT ... ON CONFLICT`: hace `SELECT` y luego `INSERT`, así que la carrera
+    //      sigue intacta. Se comprobó — `tx.wallet.upsert()` seguía lanzando `P2002`.
+    //
+    // Por eso la creación sale de la transacción, a `asegurarMonedero()`, que sí es atómico.
+    // **No se pierde ninguna garantía**: lo que tiene que ser atómico es el asiento con el saldo, y
+    // eso sigue dentro. Un monedero recién creado con saldo cero y sin asiento no es un estado
+    // inconsistente — es exactamente lo que deja cualquier visita a la página del monedero.
+    await this.asegurarMonedero(userId, true);
+
     return this.prisma.$transaction(async (tx) => {
-      // 1. Get current wallet
-      //
-      // PT-087 (F-10) — Si no existe, se crea aquí. El monedero se creaba de forma perezosa
-      // al consultarlo, de modo que un usuario que nunca abrió su monedero no podía recibir
-      // un depósito: se capturaron 321.50 MXN reales en PayPal y la acreditación murió con
-      // «Wallet not found». Es peor por la vía garantizada, que corre en un cron: allí no hay
-      // nadie navegando que provoque la creación perezosa.
-      //
-      // Un depósito **es** el momento en que un monedero debe existir. Va dentro de la misma
-      // transacción que el asiento, así que o se crea y acredita, o no ocurre ninguna de las dos.
-      const wallet =
-        (await tx.wallet.findUnique({ where: { userId } })) ??
-        (await tx.wallet.create({
-          data: { userId, balance: 0, heldFunds: 0, isActive: true },
-        }));
+      // 1. Get current wallet — existe con seguridad; la línea de arriba se ha encargado.
+      const wallet = await tx.wallet.findUniqueOrThrow({ where: { userId } });
 
       const amountDecimal = new Decimal(amount);
       const newBalance = new Decimal(wallet.balance).plus(amountDecimal);
@@ -365,6 +393,11 @@ export class WalletService {
     // admin-configured rate so the actual charge is no longer a hardcoded magic number.
     feePercent = 10,
   ): Promise<void> {
+    // PT-142 — El monedero del vendedor se creaba dentro de la transacción, con el mismo defecto
+    // que el depósito. Se crea aquí fuera, con el único camino atómico que hay.
+    // Un monedero vacío creado de más no rompe nada; perder el abono de una venta, sí.
+    await this.asegurarMonedero(sellerId, true);
+
     const execute = async (tx: Prisma.TransactionClient) => {
       const amountDecimal = new Decimal(amount);
       const feePercentage = new Decimal(feePercent).div(100); // configurable platform fee
@@ -408,14 +441,8 @@ export class WalletService {
       });
 
       // --- 2. SELLER SIDE (Credit) ---
-      // Ensure seller wallet exists
-      let sellerWallet = await tx.wallet.findUnique({ where: { userId: sellerId } });
-      if (!sellerWallet) {
-        // Auto-create wallet for seller if not exists (should explicitly exist, but safe fallback)
-        sellerWallet = await tx.wallet.create({
-          data: { userId: sellerId, balance: 0, isActive: true },
-        });
-      }
+      // Existe con seguridad: el `upsert` atómico del principio del método se ha encargado.
+      const sellerWallet = await tx.wallet.findUniqueOrThrow({ where: { userId: sellerId } });
 
       // PT-071 — Holdback: el ingreso de venta NO va a disponible; entra a pendingBalance
       // hasta que se libere (confirmación de recepción o vencimiento de la ventana de disputa).

@@ -39,6 +39,7 @@ export class ShipmentsService {
       throw new BadRequestException('Order must be PAID before shipping');
     }
 
+    // La guarda se queda: rechazar con 400 es la respuesta util, y es la que el llamante espera.
     const existingShipment = await this.prisma.shipment.findUnique({
       where: { orderId: dto.orderId },
     });
@@ -47,14 +48,27 @@ export class ShipmentsService {
       throw new BadRequestException('Shipment already exists for this order');
     }
 
-    const shipment = await this.prisma.shipment.create({
-      data: {
-        orderId: dto.orderId,
-        provider: dto.provider,
-        trackingNumber: dto.trackingNumber,
-        status: ShipmentStatus.PENDING,
-      },
-    });
+    // PT-142 — Pero entre la guarda y el `create` cabe otra peticion: las dos pasan la
+    // comprobacion, una crea y la otra recibe `P2002`. El usuario veria **500 donde le
+    // corresponde 400**, y solo si tiene la mala suerte de coincidir con otro.
+    // Se traduce al mismo error que la guarda: la respuesta no debe depender de si alguien mas
+    // estaba pulsando el boton a la vez.
+    let shipment;
+    try {
+      shipment = await this.prisma.shipment.create({
+        data: {
+          orderId: dto.orderId,
+          provider: dto.provider,
+          trackingNumber: dto.trackingNumber,
+          status: ShipmentStatus.PENDING,
+        },
+      });
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        throw new BadRequestException('Shipment already exists for this order');
+      }
+      throw error;
+    }
 
     this.logger.info(`Shipment created for Order ${order.id}`, {
       shipmentId: shipment.id,

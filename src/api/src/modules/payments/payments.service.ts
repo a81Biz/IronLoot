@@ -64,6 +64,23 @@ export class PaymentsService {
     if (existing) {
       throw new BadRequestException('Esta CLABE ya está registrada');
     }
+    // PT-142 — Entre la guarda y el `create` cabe otra petición: `@@unique([userId, referenceId])`
+    // hace que la perdedora reciba `P2002`, y el vendedor vería un 500 al registrar su CLABE
+    // —justo en el flujo del que depende cobrar— en vez del 400 que le corresponde.
+    try {
+      return await this.crearMetodoClabe(userId, dto);
+    } catch (error) {
+      if ((error as { code?: string }).code === 'P2002') {
+        throw new BadRequestException('Esta CLABE ya está registrada');
+      }
+      throw error;
+    }
+  }
+
+  private crearMetodoClabe(
+    userId: string,
+    dto: { bankName?: string; clabe: string; holderName: string; alias?: string },
+  ) {
     return this.prisma.userPaymentMethod.create({
       data: {
         userId,
