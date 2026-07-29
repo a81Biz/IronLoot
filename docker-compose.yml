@@ -27,6 +27,44 @@ services:
       - ironloot-network
     restart: unless-stopped
 
+  # PT-167 — El nginx con TLS, que PT-158 documento y no existia.
+  #
+  # `src/nginx/tls/README.md` decia `docker compose --profile tls up -d nginx`, y **ese perfil no
+  # estaba declarado en ninguna parte**. Docker Compose no protesta ante un perfil desconocido: monta
+  # el `nginx` de siempre, sin TLS, y todo parece funcionar. Es peor que un error — es el comando que
+  # promete una cosa y hace otra, en silencio.
+  #
+  # Lo encontro el grafo de conocimiento al cruzar el guion con `docker-compose.yml`, no una prueba.
+  # Y lo escribi yo mismo unas horas antes: documente un comando sin ejecutarlo.
+  #
+  # Servicio aparte y no un perfil sobre el `nginx` normal, porque los dos no pueden convivir en el
+  # puerto 80.
+  nginx-tls:
+    build:
+      context: ./src/nginx
+      dockerfile: Dockerfile
+    container_name: ironloot-nginx-tls
+    profiles:
+      - tls
+    ports:
+      - "${NGINX_HTTP_PORT:-80}:80"
+      - "${NGINX_HTTPS_PORT:-443}:443"
+    volumes:
+      - ./src/nginx/nginx-tls.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./src/nginx/tls:/etc/nginx/tls:ro
+    depends_on:
+      api:
+        condition: service_healthy
+      admin:
+        condition: service_started
+      base:
+        condition: service_started
+      client:
+        condition: service_started
+    networks:
+      - ironloot-network
+    restart: unless-stopped
+
   # ===========================================
   # Iron Loot Admin Panel (NestJS SSR)
   # ===========================================

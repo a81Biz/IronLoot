@@ -32,7 +32,7 @@ la que PT-161 se revirtió: **entregar algo que aparenta funcionar es peor que e
 ```bash
 bash src/nginx/tls/generar-certificado.sh     # genera el par, e imprime el paso manual
 # … confiar el certificado (el guion dice cómo en cada SO) …
-docker compose --profile tls up -d nginx
+docker compose --profile tls up -d nginx-tls
 QA_BASE_URL=https://ironloot.local bash tests/qa-browser-suite/run-all.sh
 ```
 
@@ -41,6 +41,17 @@ QA_BASE_URL=https://ironloot.local bash tests/qa-browser-suite/run-all.sh
 **No se usa.** Saltarse la validación daría una sensación falsa de cobertura: el transporte sería
 HTTPS pero nadie estaría comprobando que el certificado sirve. Si hay que confiar el certificado,
 que se confíe — y si no se confía, que la suite falle diciéndolo.
+
+## Lo que ya se corrigió, porque lo encontró el grafo
+
+**PT-158 documentó `docker compose --profile tls up -d nginx` y ese perfil no existía.** Docker
+Compose no protesta ante un perfil desconocido: monta el `nginx` de siempre, sin TLS, y todo parece
+funcionar. **Es peor que un error** — es el comando que promete una cosa y hace otra, en silencio.
+
+Lo detectó el grafo de conocimiento al cruzar este guion con `docker-compose.yml`; ninguna prueba lo
+miraba. **PT-167** declara el servicio `nginx-tls` con su perfil, y el comando de arriba ya apunta a
+él. Servicio aparte y no un perfil sobre el `nginx` normal, porque los dos no pueden convivir en el
+puerto 80.
 
 ## Riesgo residual
 

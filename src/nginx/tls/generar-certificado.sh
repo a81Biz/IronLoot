@@ -61,7 +61,7 @@ cat <<FIN
                   -k /Library/Keychains/System.keychain $DESTINO/ironloot.local.crt
       Linux:    sudo cp $DESTINO/ironloot.local.crt /usr/local/share/ca-certificates/ && sudo update-ca-certificates
 
-[tls] Despues:  docker compose --profile tls up -d nginx
+[tls] Despues:  docker compose --profile tls up -d nginx-tls
                 QA_BASE_URL=https://ironloot.local bash tests/qa-browser-suite/run-all.sh
 
 FIN
