@@ -2284,3 +2284,27 @@ Evidence: docs/implementation/evidence/PT-148/
 Delta (real vs planned): el paquete anticipaba que la guarda «va a acusar rutas que hoy nadie mira».
   Acuso, pero **en falso**: el defecto estaba en ella. Estuve a punto de corregir codigo sano por
   creerle; lo evito abrir el controlador antes de tocar el llamante.
+
+## PT-154 / PT-157 — REFACTOR + BUG: la documentacion de gobierno deja de mentir, y con mecanismo
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-154-157-coherencia-documental
+Objective: cerrar H-024 (el alcance de auditoria cita documentos archivados) y dar a ADR-049 el
+  mecanismo que no tenia.
+Root cause: PT-141 archivo nueve documentos bajo ADR-049 y siguio las citas de `CLAUDE.md` y la
+  guarda del TRD, pero no la de `audit-scope.yaml`. Y el comentario de migraciones habia congelado
+  el estado de H-014 en el momento de detectarlo, sin revisarlo al cerrarlo.
+Solution: las rutas se reapuntan a `docs-v2/` segun el mapa de ADR-049, el comentario dice la cifra
+  real (2, las dos aplicadas), y **RULE-28** lo vigila. **RULE-29** impide que los nueve archivados
+  reaparezcan, comprobando ademas que sigan EN `archive/` y que el contrato de agente siga en la
+  raiz: la decision podia deshacerse por los dos lados.
+  Lo que justifica el mecanismo: al corregir el bloque `docs:` la guarda siguio en ROJO — habia una
+  **segunda lista** en `auditable_patterns` con las mismas tres rutas. Corregir a mano sin escribir
+  antes la guarda habria dejado el fichero mintiendo en otro sitio, y yo lo habria dado por cerrado.
+Modified files: PTSA/audit-scope.yaml, docs/enterprise-documentation/11-Conventions.md,
+  src/api/test/unit/documentacion/alcance-de-auditoria-existe.spec.ts
+Evidence: docs/implementation/evidence/PT-157/
+Delta (real vs planned): el paquete preveia «reapuntar cuatro rutas + guarda». Fueron **siete**
+  rutas en **dos** listas. Y RULE-27, escrita en PT-141, acuso a este PT por citar RULE-28/29 antes
+  de escribirlas en el contrato: la guarda de ayer atrapo el trabajo de hoy.
+PTSA reference: H-024 -> CORREGIDA (no CERRADA: `[R44]`)
