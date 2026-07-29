@@ -366,6 +366,33 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
 
+    # PT-147 — El API no arranca sin base de datos ni Redis. Los tres SSR si: sirven paginas, y su
+    # HEALTHCHECK pide `/`, lo que ademas demuestra que `views/` y `public/` viajaron a la imagen.
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: ironloot
+          POSTGRES_PASSWORD: ironloot_test
+          POSTGRES_DB: ironloot_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -373,12 +400,140 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build Docker image
+      # LOS CONTEXTOS NO SON UNIFORMES, y no es un descuido.
+      #
+      # El API construye desde LA RAIZ del monorepo: su `package.json` declara
+      # `"@ironloot/core": "file:../packages/core"`, y con el contexto en `src/api` no hay forma de
+      # copiarlo. El propio `src/api/Dockerfile` lo avisa en su cabecera.
+      #
+      # Los tres SSR construyen desde su carpeta: copian solo lo suyo.
+      #
+      # Igualarlos —el arreglo natural que alguien intentara— rompe el del API.
+      - name: Construir la imagen del API
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ./Dockerfile
+          file: src/api/Dockerfile
           push: false
-          tags: ironloot-api:${{ github.sha }}
+          load: true
+          tags: ironloot-api:ci
+          # Sin cache a proposito: es la unica que se construye en frio. En PT-135 un volumen de
+          # `node_modules` reutilizado tapo un lock roto durante un dia, y la cache de buildx puede
+          # hacer lo mismo con una instalacion.
+          no-cache: true
+
+      - name: Construir la imagen de ADMIN
+        uses: docker/build-push-action@v5
+        with:
+          context: src/admin
+          file: src/admin/Dockerfile
+          push: false
+          load: true
+          tags: ironloot-admin:ci
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Construir la imagen de BASE
+        uses: docker/build-push-action@v5
+        with:
+          context: src/apps/base
+          file: src/apps/base/Dockerfile
+          push: false
+          load: true
+          tags: ironloot-base:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Construir la imagen de CLIENT
+        uses: docker/build-push-action@v5
+        with:
+          context: src/apps/client
+          file: src/apps/client/Dockerfile
+          push: false
+          load: true
+          tags: ironloot-client:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # H-017 — CONSTRUIR NO ES ARRANCAR. Aquel healthcheck pedia `/health` cuando la ruta real era
+      # `/api/v1/health`: la imagen se construia perfecta y el contenedor quedaba `unhealthy` para
+      # siempre. Una imagen que solo se ha construido no esta probada.
+      - name: Arrancar las cuatro y esperar su healthcheck
+        run: |
+          set -euo pipefail
+
+          arrancar() {
+            local nombre="$1" imagen="$2"; shift 2
+            echo "::group::$nombre"
+            docker run -d --name "$nombre" --network host "$@" "$imagen"
+          }
+
+          esperar_healthy() {
+            local nombre="$1"
+            for _ in $(seq 1 30); do
+              estado=$(docker inspect -f '{{.State.Health.Status}}' "$nombre" 2>/dev/null || echo sin-healthcheck)
+              [ "$estado" = healthy ] && { echo "$nombre -> healthy"; echo '::endgroup::'; return 0; }
+              [ "$estado" = sin-healthcheck ] && { echo "$nombre NO declara HEALTHCHECK"; echo '::endgroup::'; return 1; }
+              sleep 5
+            done
+            # Volcar el log ANTES de fallar: un job que muere sin decir por que obliga a
+            # reproducirlo a mano, que es exactamente lo que este pipeline existe para evitar.
+            echo "$nombre no llego a healthy. Log:"
+            docker logs "$nombre" 2>&1 | tail -60
+            echo '::endgroup::'
+            return 1
+          }
+
+          # ADMIN necesita Redis para su almacen de sesiones, y su RESERVA es `redis://redis:6379`
+          # — el nombre del contenedor de `docker-compose`, no una direccion que sirva fuera de esa
+          # red. Sin `REDIS_URL` se queda reintentando y nunca termina de arrancar: la primera
+          # corrida de este job murio exactamente asi.
+          #
+          # Es la familia de F-135-A: una reserva escrita para un entorno concreto que parece un
+          # valor por defecto razonable y no lo es. PT-137 se ocupa del contrato de Redis; aqui solo
+          # se le da lo que necesita.
+          arrancar ironloot-admin-ci ironloot-admin:ci             -e NODE_ENV=production             -e ADMIN_PORT=3001             -e REDIS_URL=redis://localhost:6379             -e ADMIN_SESSION_SECRET=ci-session-secret-solo-para-verificar-que-la-imagen-arranca
+
+          arrancar ironloot-base-ci ironloot-base:ci             -e NODE_ENV=production             -e BASE_PORT=5174             -e API_URL=http://localhost:3000
+
+          arrancar ironloot-client-ci ironloot-client:ci             -e NODE_ENV=production             -e CLIENT_PORT=5175             -e API_URL=http://localhost:3000
+
+          # El esquema, ANTES de arrancar el API.
+          #
+          # La imagen de produccion **no aplica migraciones al arrancar**: su `CMD` es
+          # `node dist/main` y nada mas. Es lo correcto —migrar es un paso de despliegue deliberado,
+          # no un efecto colateral de levantar un contenedor— pero significa que arrancarla exige
+          # una base preparada. La corrida anterior lo dijo sin rodeos:
+          #
+          #     P2021 — The table `public.system_config` does not exist in the current database
+          #
+          # Se migra CON LA PROPIA IMAGEN, que lleva `prisma/` dentro (`src/api/Dockerfile:163`).
+          # Asi se comprueba de paso que puede migrar por si misma, que es lo que un despliegue real
+          # le va a pedir. Hacerlo desde el runner con un `npm ci` aparte probaria otra cosa.
+          echo '::group::migraciones'
+          docker run --rm --network host -e DATABASE_URL=postgresql://ironloot:ironloot_test@localhost:5432/ironloot_test ironloot-api:ci npx prisma migrate deploy
+          echo '::endgroup::'
+
+          arrancar ironloot-api-ci ironloot-api:ci             -e NODE_ENV=production             -e PORT=3000             -e DATABASE_URL=postgresql://ironloot:ironloot_test@localhost:5432/ironloot_test             -e REDIS_URL=redis://localhost:6379             -e REDIS_HOST=localhost             -e REDIS_PORT=6379             -e JWT_SECRET=ci-jwt-secret-solo-para-verificar-que-la-imagen-arranca             -e SESSION_SECRET=ci-session-secret-solo-para-verificar-que-la-imagen-arranca             -e MERCADO_PAGO_ACCESS_TOKEN=TEST-ci-no-es-un-token-real             -e MERCADO_PAGO_WEBHOOK_SECRET=TEST-ci-no-es-un-secreto-real             -e PAYPAL_CLIENT_ID=TEST-ci-no-es-real             -e PAYPAL_CLIENT_SECRET=TEST-ci-no-es-real             -e PAYPAL_WEBHOOK_ID=TEST-ci-no-es-real             -e ALLOWED_ORIGINS=http://localhost:5174,http://localhost:5175             -e ADMIN_API_KEY=ci-admin-api-key-no-usar-fuera-de-este-job             -e ADMIN_USERNAME=ci-verificador-de-imagen             -e ADMIN_PASSWORD=ci-password-larga-y-no-por-defecto-solo-para-este-job             -e ADMIN_TOTP_SECRET=CIVERIFICADORDEIMAGEN234567
+
+          # NOTA — Estas cinco ultimas no estaban, y el API se nego a arrancar por ellas:
+          #
+          #   STARTUP CONFIGURATION ERRORS:
+          #     - ADMIN_API_KEY must not be a placeholder value in production
+          #     - ADMIN_USERNAME must be set to a non-default value (not "admin")
+          #     - ADMIN_TOTP_SECRET must be set (>=16 chars) ... must not rely on a password alone
+          #     - ADMIN_PASSWORD must be set to a strong non-default value
+          #     - ALLOWED_ORIGINS must be explicitly set in production
+          #
+          # **No era un defecto: era el control funcionando.** `validateStartupConfig` (PT-036,
+          # PT-093) solo actua con NODE_ENV=production, y esta es la primera vez que alguien lo
+          # ejerce DENTRO DE UNA IMAGEN. Que abortara con los cinco motivos nombrados es exactamente
+          # lo que se le pidio cuando se escribio.
+          #
+          # Los valores son evidentes a proposito: si alguno acabara en un despliegue real, tiene
+          # que cantar en el primer vistazo.
+
+          esperar_healthy ironloot-admin-ci
+          esperar_healthy ironloot-base-ci
+          esperar_healthy ironloot-client-ci
+          esperar_healthy ironloot-api-ci
