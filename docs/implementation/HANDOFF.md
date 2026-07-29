@@ -30,12 +30,34 @@ factura**. Sin proveedor no hay nada que implementar. Es el **único hallazgo PT
 en 85 y `P-012` en `IDENTIFICADO`. Los tres modelos, con sus consecuencias técnicas medidas, están en
 `evidence/PT-155/hallazgos.md`.
 
-### Sólo lo dispara el humano
+### El `resume PTSA` — ejecutado, y encontró dos cosas
 
-**`resume PTSA`.** Los scores de S-003 (Health 88.9, Clase B) **están superados**: se midieron con cinco
-hallazgos activos y hoy hay uno. `freshness = STALE`, **25 commits** desde `d260c80`. PT-168 dejó el
-cálculo a la vista —daría D2 = 100, D4 = 100, `Risk_bruto` = 6— y **no lo emitió a propósito**: PTSA no
-se auto-activa, y afirmar un score que ningún instrumento emitió es H-021 otra vez.
+**S-004 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
+
+| Métrica | S-003 | **S-004** |
+|---|---|---|
+| Health | 88.9 | **89.5** |
+| Risk | 100 | **100** — saturado por un punto (`Risk_bruto` = 26) |
+| Confidence | 87.0 | **83.6** |
+| Clase | B | **B** |
+
+**El Health apenas se movió aunque se cerraron cuatro hallazgos**, porque aparecieron dos:
+
+- **H-025 (D2, ALTA)** — `cross_coherence_verified = verificado` **sobre una base con cero filas**. Las
+  cinco comprobaciones cubren dinero y devuelven «0 incoherencias» porque no hay nada que comparar. Es
+  H-021 con otra ropa: PT-149 arregló el caso «no pude conectar» y dejó el caso «no había datos», y el
+  docstring **declara la protección que el código no implementa**.
+- **H-026 (D3, MEDIA)** — `/health/detailed` dice `degraded` siempre y **una caída real de Redis diría lo
+  mismo**. RULE-17 protegió el arranque; la degradación en caliente quedó sin cubrir.
+
+**Y la Confianza bajó 3.4 sin que se rompiera nada:** otro reseteo dejó la base a **cero usuarios**, así
+que D1 sólo pudo medir **1 de 14** reglas (en S-003 fueron 7). Lo único que la sube es una corrida
+`run-all.sh` **y medir D1/D5 en la misma sesión** — la ventana ya se cerró dos veces.
+
+**D4 vuelve a 100**: es lo que confirma que la tanda PT-168…PT-172 sirvió.
+
+Los dos hallazgos nuevos **no los cierra el agente** (`[R44]`) y **no están corregidos**: son trabajo para
+el próximo ciclo FDGE.
 
 ---
 

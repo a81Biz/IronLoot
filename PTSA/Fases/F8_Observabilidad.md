@@ -203,3 +203,46 @@ catalogo OpenAPI, con aviso en cada arranque de que en la proxima version mayor 
 
 **Nuevo, detectado aqui:** H-021 y H-022 salieron al ejecutar los checkpoints de delta sync (D1.N1 y
 D5), que es trabajo de F8 aunque penalicen D2.
+
+---
+
+## Update U-008 — 2026-07-29 (S-004, delta sync)
+
+**Logs leidos, no supuestos.** 537 `request_logs` persistidos, 545 en las ultimas 24 h.
+`silent_failure_count = 25`, **igual que la linea base**: veinticinco PT y ningun `catch` mudo nuevo.
+
+`trace_completeness` = **SIN CICLOS** · `prompt_provenance` = `NO_APLICA` · D5 = `SIN_DATOS`.
+`health_unstable = false`.
+
+### H-026 — Redis no se puede observar
+
+`GET /api/v1/health/detailed` devuelve `degraded` **siempre**:
+
+```json
+{"status":"degraded","dependencies":{
+  "database":{"status":"up","latency":0},
+  "redis":{"status":"unknown","message":"Redis check not implemented"}}}
+```
+
+`health.service.ts:89` devuelve `unknown` fijo, y `:65` calcula `allUp ? 'healthy' : 'degraded'`. `redis`
+**nunca** puede valer `up`, asi que el endpoint **no puede** devolver `healthy`.
+
+Dos consecuencias, y la segunda es la que lo hace hallazgo: reporta un problema inexistente en cada
+consulta —ruido que enseña a descartar la fuente— y **si Redis se cayera de verdad diria exactamente lo
+mismo**. Una caida real es indistinguible del funcionamiento normal en el unico endpoint que existe para
+diagnosticarla.
+
+MEDIA y no ALTA porque nada depende de ese endpoint: el `healthcheck` de Docker usa `/api/v1/health`, que
+responde 200, y `database` si se comprueba de verdad. El sistema esta sano; lo que no se puede **observar**
+es Redis.
+
+### H-025 — el veredicto de coherencia, verde sobre cero filas
+
+Detectado aqui, imputado a **D2** (integridad del instrumento), igual que H-021.
+
+`cross_coherence_verified = verificado`, «5 de 5 medidas, 0 incoherentes», **con la base vacia**. Las cinco
+consultas corren limpias y devuelven «0 incoherencias» porque no hay una sola fila que comparar. Sexta
+aparicion del patron: PT-149 corrigio el caso «no pude conectar» y dejo el caso «no habia datos», y el
+docstring de `veredictoCoherencia()` declara la proteccion que el codigo no implementa.
+
+Evidencia: **E-029**, **E-031**.

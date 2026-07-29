@@ -673,3 +673,69 @@ pensado; no se habia trasladado.
 **Pendiente de medir, sin cambios:** D1 al 50 % y D5 al 0 %. Siguen exigiendo una base **con
 historia**. PT-153 quita el impedimento tecnico —los checkpoints ya corren donde toca— pero la
 ventana sigue estrecha: `run-all.sh` genera la salida real y trunca la base al empezar.
+
+---
+
+## S-004 — Delta sync (`resume PTSA`) — 2026-07-29
+
+**Disparador:** peticion explicita del humano tras dar VoBo a PT-166…PT-172. **32 commits** y
+**veinticinco PT** (PT-148…PT-172) desde el ultimo delta sync (`d260c80`).
+
+**Los cinco checkpoints, ejecutados dentro del contenedor** (posible desde PT-153):
+
+| Checkpoint | Resultado |
+|---|---|
+| `audit:check` (D2) | **0** avisos. Linea base vacia, sin novedades |
+| `audit:schema` (D2) | **FALLA** con P1003 (base sombra inexistente) → creada a mano → **OK: las migraciones reproducen `schema.prisma`** |
+| `audit:observability` (D3) | `silent_failure_count = 25` == linea base. **Sin silencios nuevos tras 25 PT** |
+| `audit:domain` (D1.N1) | `rubric = 100` con **1 de 14** reglas medidas · `cross_coherence_verified = verificado` **sobre cero filas** |
+| `audit:reliability` (D5) | `SIN_DATOS` — cero ciclos de pago |
+
+Ademas, por consulta directa: esquema real (33 tablas + `_prisma_migrations`, 2 migraciones aplicadas sin
+rollback), volumen de datos, endpoints de salud en vivo y logs persistidos (537 `request_logs`).
+
+**Evidencias nuevas:** E-029 (los cinco checkpoints), E-030 (la base real contada), E-031 (la salud leida
+en vivo).
+
+**Hallazgos nuevos:** **H-025** (D2 ALTA) y **H-026** (D3 MEDIA). Ninguno cerrado por el agente —
+`[R44]`.
+
+**Los cuatro de S-003 verificados en fuente real, no por testimonio.** H-021: el veredicto da
+`verificado` con 5/5 y **sale con 1** con la base inalcanzable. H-022: los dos checkpoints corren dentro
+del contenedor. H-023: **0** ocurrencias del `warn` de DTO duplicado. H-024: RULE-28 en verde. Y **H-014
+gana una garantia**: `audit:schema` confirma que las dos migraciones **reproducen** el modelo, no solo
+que estan aplicadas.
+
+**H-025 es la sexta aparicion del patron de la casa, y la mas incomoda:** el veredicto de coherencia sale
+`verificado` con la base **vacia**, porque las cinco consultas corren limpias y devuelven «0
+incoherencias» cuando no hay una sola fila que comparar. PT-149 arreglo el caso «no pude conectar» y dejo
+el caso «no habia datos» — corregir el caso y no la clase. Y el propio docstring de
+`veredictoCoherencia()` **declara la proteccion que el codigo no implementa**. Las cinco comprobaciones
+cubren dinero: **es lo que esta corrida habria concluido** si no se hubiera cruzado con el conteo de
+filas de E-030. Agravante: cuanto mas vacia esta la base, mas verde sale.
+
+**Un hallazgo falso, descartado antes de escribirlo.** `relation "ledger_entries" does not exist` — la
+tabla se llama `ledger`. Sobre una tabla de contabilidad eso tiene la forma exacta de un hallazgo grave;
+se comprobo en `information_schema` antes de concluir nada. Es la disciplina con la que S-003 descarto
+los doce eventos de traza «huerfanos».
+
+**Un fallo de checkpoint que NO es hallazgo, y se dice por que.** `audit:schema` fallo con P1003 y **se
+comporto bien**: no dijo OK, nombro la causa y salio con 1. El job `schema-drift` de CI **crea la base
+sombra explicitamente** (lo descubrio PT-136 ejecutando, tras un comentario que afirmaba lo contrario).
+El checkpoint funciona donde esta declarado; falta esa base en el entorno local.
+
+**Scores:** Health 88.9 -> **89.5** · Risk 100 -> **100** (saturado **por un punto**: `Risk_bruto = 26`)
+· Confidence 87.0 -> **83.6** · Clase **B** -> **B**.
+
+**Por que no es Clase A con 89.5 de Health:** §15.6 exige Health >= 90 **y** Confidence >= 90. Falta
+medio punto de Health y 6.4 de Confianza.
+
+**Cobertura declarada PARCIAL** (`[A8]`): D2/D3/D4 al 100 %, **D1 al 7 %** (1 de 14 reglas) y D5 al 0 %.
+**D1 empeoro respecto a S-003** —eran 7 de 14— y la causa no es el codigo: **otro reseteo dejo la base a
+cero usuarios**. Es la unica razon de que la Confianza baje en una corrida que cerro cuatro hallazgos.
+
+**Lo que S-004 confirma sobre la tanda PT-168…PT-172:** D4 vuelve a **100**. Los cinco defectos que
+cerro esa tanda no los trajo ningun PT ni ningun mecanismo: los trajo la revision de coherencia que
+pidio el humano. El codigo estaba bien; lo que mentia era lo que el repositorio decia de si mismo.
+
+**Estado de la corrida:** CERRADA_CON_HALLAZGOS.

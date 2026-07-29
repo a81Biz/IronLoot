@@ -218,3 +218,37 @@ FK es `ON DELETE SET NULL` sobre columna opcional: es diseño, la traza sobreviv
 
 **Nuevo en D2:** H-021 (ALTA) y H-022 (MEDIA), los dos en `src/api/scripts/**`, que esta dentro de
 `auditable_patterns` desde S-002.
+
+---
+
+## Update U-008 — 2026-07-29 (S-004, delta sync)
+
+**Esquema verificado en la base real, y por primera vez tambien contra el modelo.**
+
+```
+tablas en public (sin _prisma_migrations): 33
+migraciones aplicadas (finished_at NOT NULL, rolled_back_at NULL): 2
+  20260727000000_initial_schema
+  20260729020000_pt145_rating_unico_por_pedido_y_autor
+```
+
+`audit:schema` → **OK: las migraciones reproducen `schema.prisma`.** Es un paso mas alla de lo que S-003
+pudo afirmar: alli se verifico que `_prisma_migrations` existia y que las dos estaban aplicadas; ahora se
+verifica que **producen el modelo declarado**. La garantia de H-014 queda cerrada por los dos extremos.
+
+**Con un matiz que hay que dejar escrito:** la primera ejecucion **fallo** con `P1003` — la base sombra
+`ironloot_db_shadow_check` no existe en el entorno local. El instrumento **se comporto bien**: no dijo OK,
+nombro la causa y salio con 1. El job `schema-drift` de CI crea esa base explicitamente (PT-136 lo
+descubrio ejecutando). **No es hallazgo**: es un prerrequisito del entorno local que nadie satisface.
+
+**Vulnerabilidades:** `audit:check` → 0 avisos, sin novedades respecto a la linea base vacia.
+
+**Datos: cero.** 0 usuarios, subastas, pujas, pedidos, pagos, ciclos, asientos, comisiones y eventos de
+traza. 537 `request_logs`. Es la causa de que D1 caiga al 7 % de cobertura (ver `F6`) y de que D5 siga sin
+medirse.
+
+**Un falso hallazgo descartado:** `ledger_entries` no existe porque la tabla se llama `ledger`. Se
+comprobo en `information_schema` antes de concluir nada; sobre una tabla de contabilidad, un
+`relation does not exist` tiene la forma exacta de un hallazgo grave.
+
+Evidencia: **E-029**, **E-030**.

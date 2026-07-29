@@ -1,204 +1,181 @@
 # PTSA V3 — RESUMEN DE AUDITORÍA
 ## IronLoot Auction Platform v1.0.0
 
-**Sesión**: S-003 — **delta sync** (`resume PTSA`) | **Fecha**: 2026-07-29
-**Disparador**: once PT fusionados (PT-136…PT-147) y 91 commits sin auditar
+**Sesión**: S-004 — **delta sync** (`resume PTSA`) | **Fecha**: 2026-07-29
+**Disparador**: petición explícita del humano tras cerrar con VoBo PT-166…PT-172. 32 commits y
+veinticinco PT (PT-148…PT-172) desde el último delta sync (`d260c80`).
 **auditoria_estado**: CERRADA_CON_HALLAZGOS
-
-> ## ⚠ Los scores de abajo están SUPERADOS — corregido por PT-168
->
-> Los **cuatro hallazgos que esta corrida abrió** (H-021, H-022, H-023, H-024) se corrigieron el mismo
-> día (PT-149, PT-153, PT-157, PT-162) y el humano los cerró con VoBo. PT-168 lo verificó
-> **ejecutando**, no leyendo: detalle en `ESTADO_ACTUAL.md` § «Los cuatro de S-003, verificados en
-> fuente real».
->
-> **Queda un solo hallazgo activo en el sistema: H-005** (CFDI/PAC, decisión de negocio y fiscal).
->
-> Con eso, la aritmética daría D2 = 100, D4 = 100 y `Risk_bruto = 6`. **Ese número no se escribe aquí**:
-> recalcular es una *emisión* de PTSA y PTSA no se auto-activa — `resume PTSA` lo dispara el humano.
-> Afirmar un score que ningún instrumento emitió sería **H-021 otra vez**, dentro del documento que
-> H-021 enseñó a desconfiar. `freshness` pasa a **`STALE`**: 25 commits desde `d260c80`.
->
-> Lo de abajo se conserva porque es **el registro de lo que S-003 midió**, y `[A6]` lo protege. Se lee
-> como historia, no como estado.
 
 ---
 
-## SCORES — CLASE B *(medidos en S-003; superados, ver aviso)*
+## SCORES — CLASE B
 
-| Métrica | S-002-V (28-jul) | **S-003 (29-jul)** | Cambio |
+| Métrica | S-003 (29-jul) | **S-004 (29-jul)** | Cambio |
 |---|---|---|---|
-| **Health Score** | 95.5 | **88.9 / 100** | −6.6 |
-| **Risk Score** | 24 | **100 / 100** | +76 — saturado |
-| **Confidence** | 95.0 | **87.0 / 100** | −8.0 |
-| **Clasificación** | A | **B** | Bajada |
+| **Health Score** | 88.9 | **89.5 / 100** | +0.6 |
+| **Risk Score** | 100 | **100 / 100** | = — saturado |
+| **Confidence** | 87.0 | **83.6 / 100** | −3.4 |
+| **Clasificación** | B | **B** | = |
 
 ```
-Health = (85×0.30) + (80×0.30) + (100×0.30) + (94×0.10) = 88.9
-Risk   = min(100, 35 × 4) = 100         Risk_bruto = 6+9+8+4+8 = 35
-Conf   = 70×0.40 + 100×0.25 + 95×0.20 + 100×0.15 = 87.0
+Health = (85×0.30) + (85×0.30) + (95×0.30) + (100×0.10) = 89.5
+Risk   = min(100, 26 × 4) = 100         Risk_bruto = 6 + 12 + 8 = 26
+Conf   = 61×0.40 + 100×0.25 + 95×0.20 + 100×0.15 = 83.6
 ```
 
-**Regla del Agua Potable: NO activada.** D1 = 85 ≥ 60. Se dice explícitamente porque `[A4]` lo
-exige: el dominio no está capando nada.
+**Regla del Agua Potable: NO activada.** D1 = 85 ≥ 60. Se dice explícitamente porque `[A4]` lo exige:
+el dominio no está capando nada.
 
-**§15.6 no ataba en S-003**: exige Confidence ≥ 90 para clasificar A, y el Health ya caía en B por sí
-mismo. `health_unstable = false` → sin cap por D5. **Hoy sí ata la frescura**: `STALE` capa la
-clasificación hasta el próximo delta sync.
+**§15.6 ata por dos vías esta vez.** Para clasificar A hacen falta Health ≥ 90 **y** Confidence ≥ 90;
+el Health se queda en **89.5** —a medio punto— y la Confianza en **83.6**. `freshness = FRESH` → sin cap
+por frescura. `health_unstable = false` → sin cap por D5.
 
 ---
 
 ## SCORES POR DIMENSIÓN
 
-| Dimensión | S-002-V | **S-003** | Penaliza hoy |
+| Dimensión | S-003 | **S-004** | Penaliza hoy |
 |---|---|---|---|
 | D1 Alineación de Dominio | 85 | **85** | H-005 (ALTA) — CFDI sin decidir |
-| D2 Integridad Arquitectónica | 100 | **80** | — penalización retirada |
-| D3 Observabilidad y Recuperación | 100 | **100** | — |
-| D4 Fidelidad Documental | 100 | **94** | — penalización retirada |
+| D2 Integridad Arquitectónica | 80 | **85** | H-025 (ALTA) — el veredicto de coherencia sobre cero filas |
+| D3 Observabilidad y Recuperación | 100 | **95** | H-026 (MEDIA) — Redis no se puede observar |
+| D4 Fidelidad Documental | 94 | **100** | — |
 
-**De dónde venían las dos regresiones, y por qué ya no penalizan.** El −20 de D2 lo causaron H-021
-(ALTA) y H-022 (MEDIA); el −6 de D4, H-024 (MEDIA) y H-023 (BAJA). Los cuatro están `CERRADA`, así que
-sus penalizaciones no cuentan: la columna dice «retirada» y no el hallazgo, porque **nombrar un
-hallazgo cerrado en una columna de penalización vigente es la contradicción que PT-168 vino a quitar.**
-La atribución histórica se conserva aquí, en prosa, que es su sitio.
+**D5**: `SIN_DATOS` — cero ciclos de pago en la base. Alucinación y drift `NO_APLICA` (sistema
+determinista). `health_unstable: false`.
 
-**D5**: `SIN_DATOS` — no hay un solo ciclo de pago en la base. Alucinación y drift `NO_APLICA`
-(sistema determinista). `health_unstable: false`.
+---
+
+## LO QUE PASÓ ENTRE S-003 Y S-004
+
+**Los cuatro hallazgos de S-003 están corregidos y cerrados**, y se verificaron **ejecutando**, no
+leyendo: `audit:domain` da `verificado` con 5/5 y **sale con 1** cuando no puede conectar (H-021);
+los dos checkpoints de delta sync corren dentro del contenedor (H-022); el `warn` del DTO duplicado da
+**0** ocurrencias (H-023); las rutas del alcance existen y RULE-28 lo vigila (H-024).
+
+**Y aparecieron cinco defectos que ningún hallazgo PTSA cubría** — los encontró la revisión de coherencia
+que pidió el humano, no un mecanismo. Los cerró la tanda PT-168…PT-172, con tres reglas nuevas
+(RULE-33, 34, 35) y una guarda ampliada (RULE-31). El resumen honesto de esa tanda: **el código estaba
+bien; lo que mentía era lo que el repositorio decía de sí mismo.**
+
+D4 vuelve a **100** por eso.
 
 ---
 
 ## LO QUE ENCONTRÓ ESTA CORRIDA
 
-Los cuatro hallazgos nuevos **no los trajeron los once PT**: los trajo *mirar*. Tres llevaban tiempo
-ahí sin que ningún mecanismo los señalara. El cuarto lo introdujo la sesión anterior.
+Dos hallazgos nuevos, los dos de la misma familia: **instrumentos que no distinguen «comprobé» de «no
+pude comprobar»**.
 
-### El instrumento afirmaba haber medido lo que no miró (H-021, ALTA, D2)
+### H-025 (ALTA, D2) — el veredicto de coherencia, verde sobre una base vacía
 
-`npm run audit:domain` cierra imprimiendo `cross_coherence_verified = true`. Ejecutado en el
-contenedor, **las cinco comprobaciones devuelven `(ERR)`** y la línea sigue diciendo `true`. El
-proceso sale con **código 0**.
+`audit:domain` cierra su Nivel 3 con `cross_coherence_verified = verificado`, «5 de 5 medidas, 0
+incoherentes». **La base tiene cero pedidos, cero pagos, cero comisiones y cero asientos.** Las cinco
+consultas corrieron limpias y devolvieron «0 incoherencias» porque **no había una sola fila que
+comparar**.
 
-Las cinco cubren dinero: importe del pedido contra precio final, comisión contra importe, registro de
-comisión contra el asiento del ledger.
+Es **H-021 con otra ropa, y la sexta aparición del patrón de la casa.** PT-149 arregló el caso «no pude
+conectar» y dejó el caso «no había datos». Y el propio docstring de `veredictoCoherencia()` **declara la
+protección que el código no implementa**: *«un catálogo vacío da `sin_datos`, no `verificado`»*.
 
-Lo grave no es que falle: es que **afirma sin haber medido**, dentro del instrumento que esta
-auditoría usa para medir, y contra `[A1]`. Y escuece más porque el mismo script hace lo correcto tres
-líneas antes: devuelve `rubric_compliance_score = null` y escribe *«Esto NO es un 100: es una
-auditoria que no ha podido mirar»*. Alguien pensó este problema para el score y no lo aplicó a la
-línea de al lado.
+Las cinco comprobaciones cubren dinero. Un delta sync que lea esa línea concluye que el dinero es
+coherente sin que se haya comparado un peso — **y es lo que esta corrida habría concluido** si no se
+hubiera cruzado con el conteo de filas.
 
-**Quinta aparición del patrón de la casa** —*un mecanismo que no se ejecuta no avisa de nada*—, aquí
-agravada: no calla, **dice que sí**.
+Agravante: **cuanto más vacía está la base, más verde sale.** Es la propiedad inversa de la que debe
+tener un instrumento de auditoría.
 
-### Se corrigió uno de tres y nadie notó los otros dos (H-022, MEDIA, D2)
+### H-026 (MEDIA, D3) — Redis no se puede observar
 
-`audit:domain` y `audit:reliability` consultan con `execSync('docker exec … psql')`. Dentro del
-contenedor no hay `docker`. PT-138 corrigió **exactamente esto** en el tercer script pasándolo a
-`PrismaClient`; los otros dos se quedaron con la forma vieja. Desde el host funcionan — o sea que
-quien siga la convención de CLAUDE.md («npm se ejecuta en el contenedor») obtiene `SIN_DATOS` y
-ninguna pista de por qué. Los dos salen con **código 0**.
+`/api/v1/health/detailed` devuelve `degraded` **siempre**: `redis` vale `unknown` con el mensaje *«Redis
+check not implemented»*, y como `allUp` nunca es cierto, el endpoint **no puede** devolver `healthy`.
 
-### El fichero que declara el alcance cita cuatro documentos que ya no están (H-024, MEDIA, D4)
+Reporta un problema que no existe en cada consulta —ruido que enseña a descartar la fuente— y, lo que
+importa, **si Redis se cayera de verdad diría exactamente lo mismo**. Una caída real es indistinguible
+del funcionamiento normal en el único endpoint que existe para diagnosticarla.
 
-`audit-scope.yaml` apunta a `02-PRD.md`, `03-TRD.md`, `09-Security-Architecture.md` y
-`06-Backend-Architecture.md` bajo `docs/enterprise-documentation/`. **Los cuatro los archivó PT-141**
-ayer, y ese PT no siguió esta cita — sí siguió las de `CLAUDE.md` y la guarda del TRD. Y el comentario
-`# 23 migraciones — ninguna se ha ejecutado nunca` es falso por partida doble: son **2** y **las dos
-están aplicadas**.
+De Redis dependen las colas, el rate limiting, el cerrojo distribuido y las sesiones de ADMIN. RULE-17
+protegió el **arranque**; la degradación **en caliente** quedó sin cubrir.
 
-Se registra sin atenuantes. PTSA audita lo que FDGE produce, también cuando FDGE es el trabajo de
-ayer y también cuando todo lo demás salió bien. Una auditoría que declara cubrir cuatro documentos
-inexistentes declara una cobertura que no tiene, y `[A8]` hace de eso un requisito del score.
+MEDIA y no ALTA porque **nada depende del endpoint roto**: el `healthcheck` de Docker usa
+`/api/v1/health`, que responde 200, y `database` sí se comprueba de verdad.
 
-### El catálogo publica dos esquemas con un solo nombre (H-023, BAJA, D4)
+### Un falso hallazgo, descartado antes de escribirlo
 
-`UserResponseDto`, definido dos veces con formas distintas. Sale como `warn` **en cada arranque**, con
-su propia fecha de caducidad puesta: *«will throw an error in the next major version»*. Pequeño hoy;
-el día que alguien suba de mayor será «se rompió al actualizar» en vez de «lo sabíamos».
+`ledger_entries` no existe — la tabla se llama `ledger`. La primera consulta falló con
+`relation does not exist`, que sobre una tabla de contabilidad tiene la forma exacta de un hallazgo
+grave. Se comprobó en `information_schema` antes de concluir nada. Queda constancia porque el hallazgo
+habría sido **falso**, igual que los doce eventos de traza «huérfanos» que S-003 descartó.
 
----
+### Y un fallo de checkpoint que NO es hallazgo
 
-## LO QUE SE VERIFICÓ Y ESTÁ BIEN
-
-`[A1]` obliga a sostener también lo que se afirma en verde.
-
-**H-014 queda verificado en la fuente real.** Fue el CRÍTICO de S-002: la base se construía con
-`db push` y `_prisma_migrations` **no existía**. Hoy:
-
-```
-20260727000000_initial_schema                        | aplicada | sin rollback
-20260729020000_pt145_rating_unico_por_pedido_y_autor | aplicada | sin rollback
-```
-
-Dos en disco, dos aplicadas. Ya no es el testimonio del PT que lo corrigió: es observación directa.
-
-**La invariante contable se cumple.** Dos monederos a 100.00 con un asiento cada uno,
-`balance_before 0.00 → balance_after 100.00`. Saldo y asiento dicen lo mismo — la comprobación
-pequeña pero directa de lo que arregló PT-146.
-
-**D3 sigue en 100 con logs vivos detrás.** 4 780 líneas en 24 h, estructuradas, con `traceId` y
-`isBusinessError`. 84 `error_events`, y **los 84 son de negocio**: 60 credenciales inválidas, 22
-rate-limit, 2 no autorizado. **Cero no-de-negocio.** Los 22 × `429` demuestran que el rate limiting
-*actúa*, no que está configurado.
-
-**Un hallazgo falso, descartado antes de escribirlo.** La primera consulta dio 12 eventos de traza sin
-ciclo, con `payment_cycles` a cero: parecía integridad rota. Los doce tienen `cycle_id` **nulo**, y la
-FK es `ON DELETE SET NULL` sobre columna opcional — es **diseño**: la traza sobrevive al ciclo.
-Huérfanos reales: **0**. Queda escrito porque el `LEFT JOIN … IS NULL` inicial habría producido un
-hallazgo grave y falso.
+`audit:schema` falló con `P1003`: la base sombra `ironloot_db_shadow_check` no existe. **El instrumento se
+comporta bien** —no dice OK, nombra la causa y sale con 1— y el job `schema-drift` de CI **crea la base
+explícitamente** (lo descubrió PT-136 ejecutando). El checkpoint funciona donde está declarado; lo que
+falta es esa base en el entorno local. Creada a mano, el veredicto real: **las migraciones reproducen
+`schema.prisma`.**
 
 ---
 
-## COBERTURA DECLARADA — por qué Confidence baja a 87
+## COBERTURA DECLARADA — `[A8]`
 
-`[A8]`: ningún score vale sin cobertura declarada. **Ésta no es completa, y decirlo es el punto.**
-
-| Dimensión | Cobertura | Cómo se midió |
+| Dimensión | Cobertura | Por qué |
 |---|---:|---|
-| D2 | 100 % | `audit:schema` + `audit:check` + esquema real por shell |
-| D3 | 100 % | `audit:observability` + logs vivos + tablas de auditoría |
-| D4 | 100 % | Rutas citadas comprobadas una a una |
-| **D1** | **50 %** | 7 de 14 reglas. Las otras 7 no tienen datos que mirar |
-| **D5** | **0 %** | No hay un solo ciclo de pago en la base |
+| D2 Integridad | 100 % | Esquema verificado en la base, vulnerabilidades contra línea base, CI leído |
+| D3 Observabilidad | 100 % | Logs vivos, checkpoint de silencios, endpoints consultados |
+| D4 Documental | 100 % | 12 guardas de documentación, 134 pruebas |
+| **D1 Dominio** | **7 %** | **1 de 14 reglas medidas.** En S-003 fueron 7 de 14 |
+| **D5 Fiabilidad** | **0 %** | Cero ciclos de pago que evaluar |
 
-**La causa es que la base está casi vacía**: 4 usuarios, 4 monederos, 2 asientos, y **cero** subastas,
-pujas, pedidos, pagos y ciclos. La salida real que sostenía las validaciones de S-002 la consumió un
-reseteo — `run-all.sh` trunca, y CLAUDE.md avisa de ello. No es un defecto: es la razón por la que D1
-se mide a medias y D5 no se mide.
+**La cobertura de D1 empeoró a la mitad de la mitad, y no es por el código: la base se quedó
+completamente vacía** — 0 usuarios, donde S-003 contaba 4. Otro reseteo. Es la única razón de que la
+Confianza baje 3.4 puntos en una corrida que cerró cuatro hallazgos.
 
-Las 7 reglas de D1 que **sí** se midieron pasaron todas: `rubric_compliance_score = 100` sobre ese
-denominador reducido, que es lo que significa y no más.
-
-Los 11 productos `VALIDADO` **conservan su estado**: `[A6]` y `[R39]` los validaron con evidencia
-observada en su momento (E-025). No se revalidan ni se degradan por falta de datos hoy — pero tampoco
-se cuentan como cobertura de esta corrida.
+**Los tres bloqueos se resuelven igual:** una corrida `run-all.sh` genera salida real, y **hay que medir
+D1 y D5 inmediatamente después**, antes de que otro reseteo se la lleve. `run-all.sh` trunca la base al
+empezar, y es lo que se llevó la salida de S-002 y la de S-003.
 
 ---
 
-## SOBRE EL RISK 100
+## HALLAZGOS
 
-Es la salida honesta de la fórmula, y es engañosa si se lee sola. `Risk = min(100, 35 × 4)`: se
-satura en 25 de riesgo bruto, y aquí hay 35.
+**Activos: 3** — H-005 (D1, ALTA) · H-025 (D2, ALTA) · H-026 (D3, MEDIA).
+**Cerrados: 23** — H-001 … H-004, H-006 … H-024.
 
-**Lo que lo empuja es la certeza, no la gravedad.** Cuatro de los cinco hallazgos activos llevan
-`probabilidad = 4` porque son deterministas: la ruta rota está rota siempre, el `warn` sale en cada
-arranque, el checkpoint falla cada vez que se invoca desde el contenedor. Sólo uno es ALTA. Un Risk
-saturado por tres MEDIA/BAJA ciertas no es el mismo Risk que uno saturado por dos CRÍTICAS.
+**Ninguno de los dos nuevos lo cierra el agente** — `[R44]`. Los dos son de tipo BUG/OBSERVABILITY y
+requieren corrección bajo FDGE y validación humana.
 
-Se reporta 100 porque es lo que dice la fórmula. Se explica porque reportarlo sin explicarlo sería tan
-inútil como maquillarlo.
+### Por qué el Risk marca 100
+
+`Risk = min(100, Risk_bruto × 4)`, con `Risk_bruto = 26`. Se satura a partir de 25, así que lo hace **por
+un punto**.
+
+**Lo empuja la certeza, no la gravedad**: los tres activos tienen probabilidad alta porque son
+deterministas —el veredicto sale verde en cada corrida sobre la base vacía, el endpoint dice `degraded`
+en cada consulta, y el CFDI no se emite nunca—. Sólo dos son ALTA además de ciertos, y ninguno es
+CRÍTICA. Se reporta como sale y se explica al lado.
 
 ---
 
-## CRITERIO DE COMPLECIÓN
+## PRODUCTOS: 12
 
-La corrida está **cerrada**. Lo que queda abierto son los hallazgos, y los cierra quien corresponde:
+`VALIDADO` **11** · `IDENTIFICADO` **1** (P-012 `CfdiRecord`, bloqueado por H-005).
 
-- **H-021, H-022, H-023, H-024** — `ABIERTA`. `[R44]`: el agente no cierra hallazgos.
-- **H-005** — sigue `ABIERTA`. Decisión de negocio y fiscal; ningún PT la resuelve.
-- **D1 y D5 completos** — requieren un entorno **con historia**. La próxima corrida por navegador
-  (`run-all.sh`) genera salida real: **medir antes de que otro reseteo se la lleve.**
+**Ninguno cambia de estado.** Se validaron con evidencia observada (E-025) y `[A6]` los protege; que hoy
+no haya datos para revalidarlos no los degrada — pero tampoco cuenta como cobertura de S-004.
 
-`audit_due` de los nuevos: ALTA a 60 días → **2026-09-27** (H-021). MEDIA a 90 → **2026-10-27**
-(H-022, H-024). BAJA a 180 → **2027-01-25** (H-023). H-005 conserva el suyo: **2026-08-22**.
+---
+
+## EVIDENCIAS NUEVAS
+
+**E-029** — los cinco checkpoints ejecutados · **E-030** — la base real contada · **E-031** — la salud
+leída en vivo.
+
+---
+
+## SIGUIENTE
+
+1. **H-025 y H-026 a FDGE.** Los dos son corregibles y ninguno depende de terceros.
+2. **Una corrida `run-all.sh` y medir D1 y D5 justo después.** Es lo único que puede subir la Confianza,
+   y la ventana es estrecha.
+3. **H-005** — decisión de negocio y fiscal. Sigue siendo el único hallazgo que ningún PT puede cerrar.

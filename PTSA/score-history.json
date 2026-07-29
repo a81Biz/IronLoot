@@ -722,6 +722,73 @@
         "IDENTIFICADO": 1
       },
       "nota": "Los cuatro hallazgos nuevos no los trajeron los once PT: los trajo mirar. Tres llevaban tiempo ahi sin que ningun mecanismo los señalara; H-024 lo introdujo PT-141 al archivar nueve documentos sin seguir la cita de audit-scope.yaml, y se registra sin atenuantes. El mas grave (H-021) es un instrumento de auditoria que imprime cross_coherence_verified=true con las cinco comprobaciones en error y sale con codigo 0: quinta aparicion del patron de la casa, agravada porque no calla, dice que si. Se descarto ademas un hallazgo falso (12 eventos de traza aparentemente huerfanos que resultaron ser cycle_id NULL por diseño)."
+    },
+    {
+      "session": "S-004",
+      "date": "2026-07-29",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 85,
+        "D2": 85,
+        "D3": 95,
+        "D4": 100,
+        "health": 89.5,
+        "risk": 100,
+        "confidence": 83.6
+      },
+      "classification": "B",
+      "classification_without_cap": "B",
+      "cap_reason": null,
+      "cap_note": "Sin cap aplicado: la clase B sale del propio Health (89.5 < 90). §15.6 la ata tambien por Confidence (83.6 < 90), asi que A era inalcanzable por dos vias. freshness=FRESH y health_unstable=false no capan.",
+      "score_freshness": {
+        "last_verified": "2026-07-29",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "risk_detail": {
+        "risk_bruto": 26,
+        "detalle": "H-005 (2x3=6) + H-025 (3x4=12) + H-026 (2x4=8). Saturado POR UN PUNTO: el umbral es 25. Lo empuja la CERTEZA, no la gravedad: los tres son deterministas. Dos son ALTA y NINGUNO es CRITICA."
+      },
+      "coverage_detail": {
+        "D1": 7,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "D5": 0,
+        "motivo": "La base esta VACIA (0 usuarios, 0 subastas/pedidos/pagos/ciclos): otro reseteo, y en S-003 aun quedaban 4 usuarios. D1 midio 1 de 14 reglas (en S-003 fueron 7); D5 ninguna. La caida de Confidence 87.0 -> 83.6 es enteramente esto: no se rompio nada."
+      },
+      "trigger": "resume PTSA — peticion explicita del humano tras dar VoBo a PT-166..PT-172. 32 commits y 25 PT (PT-148..PT-172) sin auditar.",
+      "findings_changes": {
+        "nuevos": [
+          "H-025",
+          "H-026"
+        ],
+        "revisados": [
+          "H-021 -> verificado ejecutando: veredicto de tres estados, `verificado` con 5/5 y exit 1 con la base inalcanzable",
+          "H-022 -> verificado: los dos checkpoints corren DENTRO del contenedor",
+          "H-023 -> verificado: 0 ocurrencias del warn de DTO duplicado en los logs",
+          "H-024 -> verificado: RULE-28 en verde, las rutas del alcance existen",
+          "H-014 -> gana garantia: audit:schema confirma que las migraciones REPRODUCEN schema.prisma, no solo que estan aplicadas"
+        ],
+        "cerrados": [
+          "H-021",
+          "H-022",
+          "H-023",
+          "H-024"
+        ]
+      },
+      "evidencias_nuevas": [
+        "E-029",
+        "E-030",
+        "E-031"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "IDENTIFICADO": 1
+      },
+      "nota": "D4 vuelve a 100: la tanda PT-168..PT-172 cerro cinco defectos de registro que ningun hallazgo PTSA cubria y que no trajo ningun mecanismo — los trajo la revision de coherencia que pidio el humano. El codigo estaba bien; lo que mentia era lo que el repositorio decia de si mismo. En sentido contrario, H-025 es la SEXTA aparicion del patron de la casa y la mas incomoda: el veredicto de coherencia sale `verificado` sobre una base vacia porque las cinco consultas devuelven 0 incoherencias cuando no hay filas que comparar; PT-149 corrigio el caso «no pude conectar» y dejo el caso «no habia datos», y el docstring declara la proteccion que el codigo no implementa. Es lo que esta corrida habria concluido sin cruzar el conteo de filas de E-030. Se descarto ademas un hallazgo falso: `ledger_entries` no existe porque la tabla se llama `ledger`."
     }
   ]
 }

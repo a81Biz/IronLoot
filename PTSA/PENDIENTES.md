@@ -1,6 +1,6 @@
 # PENDIENTES.md — Bloqueantes y preguntas abiertas
 
-**PTSA V3** · **Última actualización:** 2026-07-29 (S-003 — delta sync)
+**PTSA V3** · **Última actualización:** 2026-07-29 (S-004 — delta sync)
 
 > **Este fichero es ESTADO, no log.** Llegó a tener siete bloques de sesión apilados —DS-004 …
 > S-002-G—, ninguno podado, con el mismo pendiente repetido **cinco veces** y sin que nada dijera cuál
@@ -22,12 +22,17 @@
 
 | # | Pendiente | Responsable |
 |---|---|---|
-| 1 | **H-005 — quién emite la factura.** Tres opciones en `F-1 § U-005`, con sus consecuencias técnicas medidas en `evidence/PT-155/hallazgos.md`. Mantiene D1 en 85 y bloquea P-012. **Ningún PT puede resolverlo** | Humano (negocio + fiscal) |
-| 2 | **Un `resume PTSA` que recalcule y emita.** Los scores de S-003 están superados: se midieron con cinco hallazgos activos y hoy hay uno. `freshness = STALE`, 25 commits desde `d260c80`. Sólo lo dispara el humano | Humano (disparador PTSA) |
+| 1 | **H-025 — el veredicto de coherencia sale verde sobre una base vacía.** `cross_coherence_verified = verificado` con cero pedidos, pagos, comisiones y asientos: las cinco consultas devuelven «0 incoherencias» porque no hay nada que comparar. Sexta aparición del patrón; el docstring declara la protección que el código no implementa. ALTA, D2 | Agente, bajo FDGE |
+| 2 | **H-026 — Redis no se puede observar.** `/health/detailed` dice `degraded` siempre, y una caída real de Redis diría lo mismo. MEDIA, D3 | Agente, bajo FDGE |
+| 3 | **H-005 — quién emite la factura.** Tres opciones en `F-1 § U-005`, con sus consecuencias técnicas medidas en `evidence/PT-155/hallazgos.md`. Mantiene D1 en 85 y bloquea P-012. **Ningún PT puede resolverlo** | Humano (negocio + fiscal) |
+| 4 | **Una corrida `run-all.sh` y medir D1 y D5 inmediatamente después.** Es lo único que sube la Confianza (83.6). La ventana es estrecha: `run-all.sh` trunca la base al empezar, y ya se llevó la salida de S-002 **y** la de S-003 | Humano decide cuándo; el agente mide |
 
 ---
 
 ## Lo que se podó, y por qué se deja dicho
+
+**S-004 retiró la fila del `resume PTSA`: se ejecutó.** Es esta corrida. Los scores están recalculados y
+emitidos, `freshness = FRESH`, `commits_since_audit = 0`.
 
 **PT-168 quitó cuatro filas que estaban hechas.** Este fichero listaba H-021, H-022, H-023 y H-024
 como abiertos con responsable «Agente, bajo FDGE». Los cuatro están `CERRADA` desde el 2026-07-29,
@@ -42,12 +47,11 @@ es el síntoma que abrió PT-140. Lo vigila ahora `estado-de-hallazgos-coherente
 
 ## Pendiente de VoBo humano
 
-`[R44]` prohíbe al agente cerrar hallazgos, y STATE 6 le prohíbe cerrar bugs. **Dos PT esperan
-validación**: `PT-166` (el techo de memoria de la suite) y `PT-167` (el comando inexistente del README
-de TLS). Ninguno tiene hallazgo PTSA asociado — son defectos nuevos, no correcciones de auditoría.
-Detalle en `docs/implementation/PENDING_TASKS.md`.
+**Ninguno.** `PT-166 … PT-172` se cerraron con VoBo humano explícito el 2026-07-29, junto con la tanda
+del 28/29. Detalle en `docs/implementation/HISTORY.log`.
 
-Los de la tanda del 2026-07-28/29 ya se cerraron con VoBo humano el 2026-07-29.
+Lo que espera ahora **no es validación, es corrección**: H-025 y H-026, arriba. `[R44]` prohíbe al agente
+cerrarlos, así que cuando estén corregidos volverán aquí como `CORREGIDA` esperando tu palabra.
 
 ---
 
@@ -60,12 +64,13 @@ Los de la tanda del 2026-07-28/29 ya se cerraron con VoBo humano el 2026-07-29.
 | 3 | La suite QA corre sobre **HTTP** | Cuando haya TLS local |
 | 4 | ¿Más servicios que mezclen un DTO transformado contra un JSON almacenado? (patrón de H-019) | Barrido |
 | 5 | `/api/v1/users/:id/ratings` exige sesión | Humano decide |
-| 6 | **D1 completo** — 7 de 14 reglas sin datos que mirar | La base está casi vacía. **El impedimento técnico ya no existe**: PT-153 cerró H-022 y los checkpoints corren donde vive npm. Lo que falta son datos |
+| 6 | **D1 completo** — **13 de 14** reglas sin datos que mirar (en S-003 eran 7) | La base está **vacía**: 0 usuarios. **El impedimento técnico ya no existe**: PT-153 cerró H-022 y los checkpoints corren donde vive npm. Lo que falta son datos |
 | 7 | **D5 completo** — Success / Retry / Failure | Cero ciclos de pago. Mismo bloqueo que #6 |
 
 > **Los tres bloqueos de arriba se resuelven igual:** una corrida `run-all.sh` genera salida real.
 > **Medir D1 y D5 justo después**, antes de que otro reseteo se la lleve — `run-all.sh` trunca la
-> base al empezar, y es lo que se llevó la salida de S-002.
+> base al empezar, y es lo que se llevó la salida de S-002 **y la de S-003**. Dos veces es un patrón:
+> la medición hay que hacerla en la misma sesión que genera los datos, no en la siguiente.
 
 ---
 

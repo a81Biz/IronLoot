@@ -15,7 +15,17 @@ en bloque anterior y PT-167 no tenía ni entrada en `HISTORY.log`— y ése fue 
 PT-169 no habría habido nada que validar, porque nada los nombraba. Lo vigila ahora
 `rastro-de-trabajo-completo.spec.ts` (**RULE-34**).
 
-Lo que queda abajo **no es trabajo del repositorio**: es un tercero y una decisión de negocio.
+**Cero PT abiertos.** Pero el delta sync S-004, ejecutado justo después, **abrió dos hallazgos** que sí
+son trabajo de este repositorio y que todavía **no tienen PT**:
+
+| Hallazgo | Dim | Sev | Qué |
+|---|:--:|---|---|
+| **H-025** | D2 | ALTA | `cross_coherence_verified = verificado` sobre una base con cero filas — el instrumento de auditoría afirma sin comparar |
+| **H-026** | D3 | MEDIA | `/health/detailed` dice `degraded` siempre; una caída real de Redis diría lo mismo |
+
+Manda `PTSA/Hallazgos/H-XXX.md`. **Convertirlos en PT es una decisión tuya** — vía FPGE
+(`promote FPGE`) o pidiéndolo directamente. No se anotan aquí como tarea porque **todavía no son
+trabajo aprobado**, y esa distinción es la que este fichero perdió una vez (PT-140).
 
 ---
 
