@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-103 (F-33) — El registro de deuda no puede contradecir a la historia.
@@ -27,7 +28,7 @@ import { join } from 'path';
  *    quien puede desincronizarlos.
  */
 
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 const HISTORIA = join(RAIZ, 'docs', 'implementation', 'HISTORY.log');
 const REGISTRO = join(RAIZ, 'docs', 'enterprise-documentation', '10-Technical-Debt.md');
 

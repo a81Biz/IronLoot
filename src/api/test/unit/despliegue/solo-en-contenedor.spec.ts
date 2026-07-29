@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-135 — `npm` no se ejecuta en el host. Se ejecuta en el contenedor.
@@ -30,7 +31,7 @@ import { join } from 'path';
  * **Sin puerta de escape por variable de entorno.** Una invariante con `--force` es una costumbre
  * otra vez, y este PT existe porque una costumbre no basto.
  */
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 const RUTA_GUARDA = join(RAIZ, 'scripts', 'solo-en-contenedor.js');
 
 interface Guarda {

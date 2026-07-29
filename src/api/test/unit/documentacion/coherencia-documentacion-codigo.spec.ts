@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-130 (PTSA H-016) — La documentacion no puede mentir en silencio.
@@ -44,7 +45,7 @@ import { join } from 'path';
  * Corolario, dicho porque es una limitacion real: **una afirmacion sin cita no es verificable y
  * esta guarda no la mira.** Quien quiera que un dato quede protegido, tiene que citarlo.
  */
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 
 export interface FilaDeStack {
   paquete: string;

@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-135 — Un `package-lock.json` generado en un sistema operativo y consumido en otro deja de ser
@@ -37,7 +38,7 @@ import { join } from 'path';
  * La otra mitad del contrato la sostiene `scripts/solo-en-contenedor.js` (PT-135.4), que impide
  * generar el lock donde no debe. Esta guarda caza el sintoma en CI; aquella impide producirlo.
  */
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 
 /**
  * Los tres lock del repositorio.

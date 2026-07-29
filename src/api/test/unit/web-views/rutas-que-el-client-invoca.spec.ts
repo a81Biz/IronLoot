@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-132 (PTSA H-020) — Toda ruta del API que el CLIENT invoca tiene que existir en el API.
@@ -19,7 +20,7 @@ import { join } from 'path';
  * proposito: compara **rutas literales**, no construidas dinamicamente. Un falso positivo haria
  * que alguien la borrara, y con ella lo que si protege (la leccion de PT-103).
  */
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 const CLIENT = join(RAIZ, 'src/apps/client/src');
 // El JavaScript de NAVEGADOR invoca el API directamente, y ahi vive la otra mitad del contrato:
 // el deposito del portal llama a `/api/v1/payments/initiate` desde aqui, no desde el SSR. La
