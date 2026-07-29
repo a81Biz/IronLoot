@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-129 (PTSA H-017) — El healthcheck de una imagen tiene que apuntar a una ruta que existe.
@@ -21,7 +22,7 @@ import { join } from 'path';
  * `HEALTHCHECK` empieza por el prefijo global real. Que el contenedor llegue a `healthy` se
  * comprueba arrancandolo (PT-129.6), y eso vive en la evidencia, no aqui.
  */
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 
 /** El prefijo global, leido de `main.ts` — no escrito a mano aqui. */
 export function prefijoGlobal(mainTs: string): string {

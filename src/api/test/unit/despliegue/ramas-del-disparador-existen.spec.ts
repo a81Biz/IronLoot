@@ -1,6 +1,7 @@
 import { execFileSync } from 'child_process';
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-136 — Toda rama nombrada en el disparador de un workflow tiene que existir en el remoto.
@@ -26,7 +27,7 @@ import { join } from 'path';
  * `Dockerfile` y el mismo defecto volvio dos veces mas. Un `ci.yml` corregido a mano hoy se vuelve
  * a desalinear el dia que alguien anada un workflow copiando el disparador del anterior.
  */
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 const WORKFLOWS = join(RAIZ, '.github', 'workflows');
 
 /**

@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-147 (RULE-26) — Un workflow no cita ficheros que no existen.
@@ -20,7 +21,7 @@ import { join } from 'path';
  * fichero real y cada `context:` a un directorio real. Que la imagen **arranque** se comprueba
  * arrancandola, y eso vive en el job y en la evidencia — es la leccion de H-017.
  */
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 const WORKFLOWS = join(RAIZ, '.github', 'workflows');
 
 export interface Cita {

@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-142 (RULE-22) — Una fila con restriccion de unicidad no se crea con `findX` + `create`.
@@ -21,7 +22,7 @@ import { join } from 'path';
  * carrera — y hace falta, porque las dos salidas evidentes no valian: `upsert` dentro de una
  * transaccion interactiva no es atomico, y fuera tampoco lo garantiza.
  */
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 const SRC = join(RAIZ, 'src/api/src');
 
 /** Cada `.ts` de un arbol, recursivamente. */

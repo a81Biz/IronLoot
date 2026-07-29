@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-137 (RULE-17) — Toda variable de entorno que el API lee esta declarada en un `.env.example`.
@@ -26,7 +27,7 @@ import { join } from 'path';
  * Lo que la guarda impide es que una variable se lea **sin estar en ninguna parte**: ahi es donde
  * vive el defecto de que el sistema funcione por un fichero que nadie mas tiene.
  */
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 const SRC = join(RAIZ, 'src/api/src');
 
 /** Los `.env.example` que declaran lo que el API puede leer. */

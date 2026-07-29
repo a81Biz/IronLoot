@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-133 — Los endpoints de pago legados quedan retirados, y no vuelven.
@@ -28,7 +29,7 @@ import { join } from 'path';
  * alguien las reintroduce, lo dice; y si hace falta reintroducirlas de verdad, hay que borrar esta
  * prueba a conciencia, que es justo lo que se quiere que ocurra.
  */
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 
 const leer = (p: string): string => readFileSync(join(RAIZ, p), 'utf8');
 

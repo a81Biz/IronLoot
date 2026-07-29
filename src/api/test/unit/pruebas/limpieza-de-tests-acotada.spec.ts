@@ -1,5 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-143 (RULE-23) — Ninguna prueba borra sin filtro.
@@ -19,7 +20,7 @@ import { join } from 'path';
  * Lo que NO vale como arreglo: `--runInBand`. Serializar hace verde una suite que sigue sin poder
  * correr en paralelo, y este PT existe porque algo verde tapaba un defecto.
  */
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 const TESTS = join(RAIZ, 'src/api/test');
 
 /** `deleteMany()` y `deleteMany({})` son lo mismo: el segundo lleva dos llaves de disfraz. */

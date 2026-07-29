@@ -1,5 +1,6 @@
 import { existsSync, readFileSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-128 (PTSA H-015) — El job «Integration Tests» tiene que verificar algo.
@@ -25,7 +26,7 @@ import { join } from 'path';
  * Es estrecha a proposito: mira el job por nombre y solo esas tres condiciones. Una guarda con
  * falsos positivos acaba borrada, y con ella lo que si protegia (la leccion de PT-103).
  */
-const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+const RAIZ = raizDelMonorepo();
 const CI = join(RAIZ, '.github', 'workflows', 'ci.yml');
 
 /**

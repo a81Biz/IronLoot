@@ -1,5 +1,6 @@
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-106 — Las capturas de la suite van a la carpeta de su corrida.
@@ -16,7 +17,7 @@ import { join } from 'path';
  * Esta guarda mira el sintoma directamente, que es lo unico que no se puede fingir.
  */
 describe('Las capturas de la suite van a su sitio (PT-106)', () => {
-  const RAIZ = join(__dirname, '..', '..', '..', '..', '..');
+  const RAIZ = raizDelMonorepo();
   const SUITE = join(RAIZ, 'tests', 'qa-browser-suite');
 
   /** Todos los ficheros bajo `dir`, recursivamente. */

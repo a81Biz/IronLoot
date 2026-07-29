@@ -31,9 +31,9 @@
  *
  * Uso:  npm run audit:observability
  */
-import { execSync } from 'child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'fs';
 import { join } from 'path';
+import { raizDelMonorepo } from './raiz-monorepo';
 
 export interface CatchMudo {
   fichero: string;
@@ -142,40 +142,75 @@ export function comparar(observados: CatchMudo[], base: string[]): Comparacion {
   return { falla: nuevos.length > 0, nuevos, total: observados.length, base: base.length };
 }
 
-const CONTENEDOR = process.env.PTSA_DB_CONTAINER ?? 'ironloot-db';
 const PASOS_ESPERADOS = ['DEPOSIT_REQUESTED', 'PROVIDER_CREATE', 'CYCLE_DECISION'];
 
-/** `trace_completeness`: % de ciclos SETTLED con todos los pasos esperados en su traza. */
-export function trazaCompleta(): { pct: number | null; detalle: string } {
-  try {
-    const q = (sql: string): string =>
-      execSync(`docker exec ${CONTENEDOR} psql -U ironloot -d ironloot_db -t -A -c "${sql}"`, {
-        encoding: 'utf8',
-      }).trim();
+/**
+ * Tres estados, y distinguirlos es la mitad de este control.
+ *
+ * PT-138 — Antes habia dos —`pct` o `null`— y `null` significaba las dos cosas: «no hay ciclos que
+ * evaluar» y «no pude consultar». El script imprimia `SIN_DATOS` y **salia con codigo 0**, o sea
+ * que un checkpoint que no habia podido medir nada se leia como aprobado.
+ *
+ * Es exactamente lo que PT-122 dejo escrito al reclasificar `audit:domain` y `audit:reliability`:
+ * *en CI la base nace vacia y devolverian `SIN_DATOS` siempre, que alguien acabaria leyendo como
+ * verde*. La leccion estaba escrita, y la metrica de al lado la incumplia.
+ *
+ * - `medido`     — hay ciclos y se contaron. Es el unico que da porcentaje.
+ * - `sin_ciclos` — no hay nada que evaluar. **No es un fallo**: una base recien creada es un estado
+ *                  legitimo, y hacerlo fallar dejaria CI rojo para siempre sin decir nada util.
+ * - `no_medible` — la consulta no se pudo hacer. **Si es un fallo**: no haber podido mirar no es un
+ *                  aprobado, que es la regla que `audit:schema` ya aplicaba.
+ */
+export type EstadoTraza =
+  | { estado: 'medido'; pct: number; detalle: string }
+  | { estado: 'sin_ciclos'; detalle: string }
+  | { estado: 'no_medible'; detalle: string };
 
-    const total = Number(q("SELECT count(*) FROM payment_cycles WHERE status='SETTLED'"));
-    if (!total) {
-      return { pct: null, detalle: 'SIN DATOS: no hay ciclos liquidados que evaluar' };
-    }
-    const pasos = PASOS_ESPERADOS.map((p) => `'${p}'`).join(',');
-    const completos = Number(
-      q(
-        "SELECT count(*) FROM payment_cycles c WHERE c.status='SETTLED' AND (" +
-          `SELECT count(DISTINCT e.step) FROM payment_cycle_events e ` +
-          `WHERE e.reference = c.reference AND e.step IN (${pasos})) = ${PASOS_ESPERADOS.length}`,
-      ),
+/**
+ * `trace_completeness`: % de ciclos SETTLED con todos los pasos esperados en su traza.
+ *
+ * PT-138 — Esto consultaba con `docker exec ironloot-db psql`, asi que **solo funcionaba desde
+ * fuera del contenedor**. Dentro —que es donde RULE-15 dice que se ejecuta npm— daba
+ * `/bin/sh: 1: docker: not found` y de ahi el `SIN_DATOS`. Ahora habla con la base por
+ * `DATABASE_URL`, como el resto del repositorio, y funciona igual en el host, en el contenedor y en
+ * CI.
+ */
+export async function trazaCompleta(): Promise<EstadoTraza> {
+  const { PrismaClient } = await import('@prisma/client');
+  const prisma = new PrismaClient();
+
+  try {
+    const [{ total }] = await prisma.$queryRawUnsafe<{ total: bigint }[]>(
+      "SELECT count(*)::bigint AS total FROM payment_cycles WHERE status='SETTLED'",
     );
+
+    if (Number(total) === 0) {
+      return { estado: 'sin_ciclos', detalle: 'no hay ciclos liquidados que evaluar' };
+    }
+
+    const pasos = PASOS_ESPERADOS.map((p) => `'${p}'`).join(',');
+    const [{ completos }] = await prisma.$queryRawUnsafe<{ completos: bigint }[]>(
+      "SELECT count(*)::bigint AS completos FROM payment_cycles c WHERE c.status='SETTLED' AND (" +
+        'SELECT count(DISTINCT e.step) FROM payment_cycle_events e ' +
+        `WHERE e.reference = c.reference AND e.step IN (${pasos})) = ${PASOS_ESPERADOS.length}`,
+    );
+
     return {
-      pct: Math.round((100 * completos) / total),
+      estado: 'medido',
+      pct: Math.round((100 * Number(completos)) / Number(total)),
       detalle: `${completos} de ${total} ciclos liquidados con la traza completa`,
     };
   } catch (e) {
-    return { pct: null, detalle: `SIN DATOS: ${(e as Error).message.slice(0, 60)}` };
+    return { estado: 'no_medible', detalle: (e as Error).message.slice(0, 120) };
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
-function main(): void {
-  const raiz = join(__dirname, '..', '..', '..');
+async function main(): Promise<void> {
+  // PT-138 — Esto resolvia a `/` dentro del contenedor, y el checkpoint contaba **0 silencios
+  // contra una linea base de 25**: un numero plausible y mas bajo, que nadie lee como averia.
+  const raiz = raizDelMonorepo();
   const rutaBase = join(__dirname, '..', 'observability-baseline.json');
 
   console.log('=== D3 — Observabilidad y recuperacion ===\n');
@@ -194,12 +229,25 @@ function main(): void {
     for (const n of c.nuevos) console.log(`    ${clave(n)}    (linea ${n.linea})`);
   }
 
-  const t = trazaCompleta();
-  console.log(`\n  trace_completeness = ${t.pct === null ? 'SIN_DATOS' : t.pct + '%'}`);
+  const t = await trazaCompleta();
+  const etiqueta =
+    t.estado === 'medido' ? `${t.pct}%` : t.estado === 'sin_ciclos' ? 'SIN CICLOS' : 'NO MEDIBLE';
+  console.log(`\n  trace_completeness = ${etiqueta}`);
   console.log(`    ${t.detalle}`);
 
   console.log('\n  prompt_provenance  = NO_APLICA (sistema determinista, sin LLM)');
   console.log('  fallback_quality   = evaluacion documentada (no automatizable, [R57])');
+
+  // NO MEDIBLE es un fallo, y se dice antes que nada: un checkpoint que no pudo mirar no aprueba.
+  if (t.estado === 'no_medible') {
+    console.error(
+      '\n  FALLA — no se pudo medir `trace_completeness`.\n' +
+        '  No haber podido mirar NO es un aprobado. Revisa `DATABASE_URL` y que la base responda.\n' +
+        '  Esta salida devolvia codigo 0 hasta PT-138, de modo que un checkpoint ciego se leia\n' +
+        '  como verde — la trampa que PT-122 ya habia descrito para las metricas de delta sync.\n',
+    );
+    process.exit(1);
+  }
 
   if (c.falla) {
     console.error(
@@ -214,5 +262,9 @@ function main(): void {
 }
 
 if (require.main === module) {
-  main();
+  main().catch((e) => {
+    // Ni siquiera un fallo inesperado puede salir con 0.
+    console.error('\n  FALLA — el checkpoint no pudo completarse:', e);
+    process.exit(1);
+  });
 }

@@ -111,6 +111,16 @@ services:
       - ./src/api/package.json:/app/package.json
       - ./src/api/tsconfig.json:/app/tsconfig.json
       - ./src/api/nest-cli.json:/app/nest-cli.json
+      # PT-138 — Los scripts de auditoria NO estaban montados, asi que el contenedor ejecutaba una
+      # copia congelada en la imagen: editar `observability-check.ts` y volver a lanzarlo daba el
+      # resultado ANTERIOR, sin avisar. Es la peor forma de un fallo de entorno — no falla, miente.
+      - ./src/api/scripts:/app/scripts
+      - ./src/api/security-baseline.json:/app/security-baseline.json
+      - ./src/api/observability-baseline.json:/app/observability-baseline.json
+      # PT-138 — Y la raiz del monorepo, en solo lectura: ocho guardas resuelven `RAIZ` subiendo
+      # cinco niveles y dentro del contenedor eso era `/`, asi que fallaban con ENOENT y **0 pruebas
+      # ejecutadas**. Pasaban en el host y en CI; no aqui, que es donde RULE-15 dice que vive npm.
+      - .:/repo:ro
       # @ironloot/core workspace package — mounted so the entrypoint can symlink it
       - ./src/packages/core:/packages/core
       # Exclude node_modules to use container's version
