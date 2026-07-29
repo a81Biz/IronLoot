@@ -404,7 +404,21 @@ demostrarla seria opinion.
 ---
 
 ### TD-016 — Nada comprueba las vulnerabilidades de la imagen base
-**Status: ABIERTA — registrada 2026-07-28 (S-002-V).**
+**Status:** ✅ **CERRADA 2026-07-29 por PT-150.** El job `docker` de CI escanea la imagen del API con
+Trivy (`CRITICAL`/`HIGH` con corrección publicada) y compara contra `src/api/base-image-baseline.json`
+mediante `src/api/scripts/base-image-audit.js`. Se hace en ese job porque **ya tiene las imágenes
+construidas** desde PT-147, y **después** de arrancarlas, para que un fallo del escáner no se confunda
+con un fallo de arranque. El inventario se guarda como artefacto 30 días.
+**Evidence:** verificado en las tres direcciones (`docs/implementation/evidence/PT-150/medicion.md`):
+vulnerabilidad nueva → exit 1 · la misma triada → exit 0 · **sin fichero de línea base → aborta**
+nombrándolo, en vez de aprobar por defecto.
+**Línea base:** nace **vacía a propósito** — se declara el mecanismo antes de conocer lo que mide. Cada
+entrada exige `id`, `fecha` y `motivo`: llenarla sin justificar cada línea es cómo este control dejaría
+de valer.
+**Riesgo residual:** el aviso del IDE (2 críticas y 23 altas en `node:20-alpine`) **no está triado
+todavía** — la primera corrida en CI producirá el inventario real y ése es el trabajo siguiente. Este
+PT construye el instrumento; corregir lo que mida es trabajo posterior con su propia evidencia.
+
 
 `npm run audit:check` (PT-118) vigila las dependencias **de npm** y hoy da cero avisos. **No mira la
 imagen base.** El IDE reporta que `node:20-alpine` arrastra **2 críticas y 23 altas**, y ese aviso

@@ -572,3 +572,40 @@ jobs:
           esperar_healthy ironloot-base-ci
           esperar_healthy ironloot-client-ci
           esperar_healthy ironloot-api-ci
+
+      # ── TD-016 (PT-150) — Vulnerabilidades de la IMAGEN BASE ────────────────
+      #
+      # `npm run audit:check` mira los paquetes npm contra `security-baseline.json`. **La imagen base
+      # no la miraba nadie**: `node:20-alpine` trae su propio sistema de ficheros, sus librerias de
+      # sistema y su OpenSSL, y ninguna de esas cosas aparece en un `npm audit`.
+      #
+      # No es que saliera verde: es que no se miraba. Y es superficie de PRODUCCION.
+      #
+      # Se hace aqui y no en un job propio porque **este job ya tiene las imagenes construidas**: un
+      # job aparte volveria a construirlas para mirar lo mismo. Corre despues de arrancarlas, de modo
+      # que un fallo del escaner no puede confundirse con un fallo de arranque.
+      #
+      # `exit-code: 0` a proposito en el paso de inventario: **primero se ve lo que hay** y se decide
+      # el triaje. El paso siguiente es el que falla, y falla solo contra la linea base — igual que
+      # `audit:check`, y por la misma razon: un control que rompe el pipeline el primer dia acaba
+      # desactivado, y con el todo lo que protegia (la leccion de PT-103).
+      - name: Inventario de vulnerabilidades de la imagen base
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ironloot-api:ci
+          format: json
+          output: trivy-api.json
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: '0'
+
+      - name: Comparar contra la linea base
+        run: node src/api/scripts/base-image-audit.js trivy-api.json
+
+      - name: Guardar el inventario como evidencia
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vulnerabilidades-imagen-base
+          path: trivy-api.json
+          retention-days: 30

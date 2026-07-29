@@ -2366,3 +2366,37 @@ Modified files: .gitignore, docs/enterprise-documentation/11-Conventions.md,
 Evidence: docs/implementation/evidence/PT-151/hallazgos.md
 Delta (real vs planned): el paquete decia que PT-152 «lleva una decision dentro» — que evidencia
   pertenece al repositorio. Se tomo: entra lo que prueba, no lo que se guardo por si acaso.
+
+## PT-150 / PT-161 — FEATURE + REFACTOR: la imagen base, medida; y la de produccion, medida y no tocada
+Date: 2026-07-29
+Status: VALIDATION_PENDING (PT-150) · CLOSED (PT-161)
+Branch: feature/PT-150-161-imagen-medida-y-recortada
+Objective: cerrar TD-016 y evaluar el recorte de la imagen de produccion.
+Root cause (PT-150): `audit:check` mira los paquetes npm. La imagen base —su sistema de ficheros, sus
+  librerias de sistema, su OpenSSL— no la miraba nadie. No es que saliera verde: es que no se miraba,
+  en superficie de produccion.
+Solution (PT-150): paso en el job `docker` de CI, que ya tiene las imagenes construidas desde PT-147,
+  y **despues** de arrancarlas para que un fallo del escaner no se confunda con uno de arranque.
+  `base-image-audit.js` compara contra una linea base declarada, verificado en TRES direcciones:
+  nueva -> exit 1 · triada -> exit 0 · **sin fichero de linea base -> aborta nombrandolo**, que es lo
+  que impide que un control se apruebe a si mismo cuando le falta la configuracion. TD-016 CERRADA
+  con las dos escrituras (RULE-08).
+Findings (PT-161): **la premisa era correcta en la causa y equivocada en la magnitud, y el cambio se
+  revierte.** La imagen si se lleva dependencias de desarrollo. Se encontro una tercera via que
+  PT-129 no habia contemplado —`npm ci --omit=dev --ignore-scripts` en etapa aparte MAS
+  `prisma generate` explicito— y **funciona**: la imagen construye. Pero el ahorro es 548 -> 531 MB,
+  **17 MB, 3.1 %**. Las capas dicen por que: 304 MB son los `node_modules` de PRODUCCION, dominados
+  por los motores de Prisma. Las dependencias de desarrollo eran 17 MB de 548.
+  Se revierte: 3.1 % no justifica tocar una zona que ha tirado cinco contenedores en tres PT, cuyo
+  modo de fallo es «construye y no arranca, dias despues y en otra maquina». La decision de PT-129
+  sigue siendo correcta. **Hallazgo nuevo**: los 304 MB de produccion son la palanca real, y son otra
+  investigacion.
+  Nota de verificacion: la imagen recortada no completo el arranque en mi prueba
+  (`MERCADO_PAGO_ACCESS_TOKEN`). Antes de concluir, arranque **la imagen actual con el mismo
+  comando**: falla identico. Era mi entorno, no una regresion — sin ese control habria reportado una
+  regresion falsa.
+Modified files: .github/workflows/ci.yml, src/api/scripts/base-image-audit.js,
+  src/api/base-image-baseline.json, docs/enterprise-documentation/10-Technical-Debt.md
+Evidence: docs/implementation/evidence/PT-150/ y PT-161/
+Delta (real vs planned): el paquete ordenaba «PT-150 antes que PT-161: mide antes de recortar». Se
+  respeto, y es lo que evito el recorte: medir dijo que no valia la pena.

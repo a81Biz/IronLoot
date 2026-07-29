@@ -1,0 +1,7 @@
+{
+  "_comentario": "PT-150 (TD-016) — Vulnerabilidades de la IMAGEN BASE triadas. Distinto de `security-baseline.json`, que cubre paquetes npm: `node:20-alpine` trae su propio sistema de ficheros, sus librerias de sistema y su OpenSSL, y nada de eso aparece en un `npm audit`. Cada entrada lleva id, fecha y MOTIVO. Una entrada sin motivo convierte esto en una lista de excusas, que es como el control dejaria de valer.",
+  "fecha": "2026-07-29",
+  "nota": "Nace VACIA a proposito: se declara el mecanismo antes de conocer lo que mide. La primera corrida en CI producira el inventario real (artefacto `vulnerabilidades-imagen-base`), y lo que aparezca se corrige subiendo la imagen base o se tria aqui, una a una y con motivo.",
+  "alcance": "CRITICAL y HIGH con correccion publicada (`ignore-unfixed: true`). Una vulnerabilidad sin parche disponible no es accionable hoy y romperia el pipeline sin darle a nadie una salida.",
+  "triadas": []
+}
