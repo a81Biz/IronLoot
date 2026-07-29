@@ -74,8 +74,23 @@ export function buscarPatron(codigo: string, fichero = ''): Hallazgo[] {
       if (!escritura) continue;
       if (escritura[1] !== lectura[1]) break;
 
-      const entorno = lineas.slice(i, Math.min(j + VENTANA, lineas.length)).join('\n');
-      if (entorno.includes('P2002')) break;
+      // La ventana mira **hacia atras tambien**: un `FOR UPDATE` va al principio de la transaccion,
+      // antes de la lectura. Mirando solo hacia delante, la guarda acusaba codigo correctamente
+      // bloqueado — lo demostro C5b al escribirlo.
+      const entorno = lineas
+        .slice(Math.max(0, i - VENTANA), Math.min(j + VENTANA, lineas.length))
+        .join('\n');
+
+      // Dos salidas declaradas, y las dos quedan VISIBLES en el codigo:
+      //
+      //  1. `P2002` capturado y traducido — cuando rechazar el duplicado es la respuesta util.
+      //  2. `FOR UPDATE` — cuando la invariante es PARCIAL y no cabe en un indice, asi que se
+      //     serializa por la fila que delimita su ambito (RULE-25, PT-145).
+      //
+      // La segunda se añadio cuando esta guarda acuso al codigo de PT-145. Enseñarle la salida es
+      // mejor que apuntar el fichero como excepcion: una excepcion exime a uno, una regla vale para
+      // el siguiente.
+      if (entorno.includes('P2002') || entorno.includes('FOR UPDATE')) break;
 
       hallazgos.push({ fichero, modelo: lectura[1], lineaLectura: i + 1, lineaCreate: j + 1 });
       break;
@@ -89,26 +104,13 @@ export function buscarPatron(codigo: string, fichero = ''): Hallazgo[] {
  * Excepciones **declaradas**, con su motivo. Una lista sin razones se convierte en un cajon, y el
  * cajon es donde vivieron estos nueve sitios durante meses.
  *
- * Estas dos son distintas de las otras siete: **no tienen restriccion de unicidad**, asi que la
- * carrera no produce un error sino una fila duplicada en silencio — en `ratings`, dos valoraciones
- * del mismo autor sobre el mismo pedido; en `account-verification`, dos verificaciones **y cada una
- * envia dinero**. Corregirlas exige una migracion de esquema (RULE-10), que PT-142 no tenia en su
- * alcance aprobado.
+ * **Esta vacia, y llego a estarlo sola.** PT-142 declaro dos —`ratings` y `account-verification`,
+ * que no tenian restriccion unica— y PT-145 las corrigio. La prueba de caducidad de mas abajo
+ * —«ninguna excepcion sobra»— se puso roja en cuanto los dos sitios quedaron limpios, que es
+ * exactamente para lo que se escribio: una excepcion que ya no hace falta es una mentira que
+ * envejece.
  */
-const EXCEPCIONES_DECLARADAS: { fichero: string; motivo: string }[] = [
-  {
-    fichero: 'src/modules/ratings/ratings.service.ts',
-    motivo:
-      'PT-145 — `Rating` no declara `@@unique([orderId, authorId])`: la carrera duplica la ' +
-      'valoracion en vez de fallar. Exige migracion.',
-  },
-  {
-    fichero: 'src/modules/wallet/account-verification.service.ts',
-    motivo:
-      'PT-145 — `AccountVerification` solo tiene indices: la carrera crea dos verificaciones y ' +
-      'CADA UNA ENVIA DINERO. Exige migracion.',
-  },
-];
+const EXCEPCIONES_DECLARADAS: { fichero: string; motivo: string }[] = [];
 
 describe('Creacion perezosa atomica — RULE-22 (PT-142)', () => {
   const ficheros = ficherosTs(SRC);
@@ -207,6 +209,19 @@ describe('Creacion perezosa atomica — RULE-22 (PT-142)', () => {
       ].join('\n');
 
       expect(buscarPatron(declarado)).toEqual([]);
+    });
+
+    it('C5b: la otra salida declarada —bloquear la fila— tampoco se acusa', () => {
+      const bloqueado = [
+        'const x = await this.prisma.$transaction(async (tx) => {',
+        '  await tx.$queryRaw`SELECT id FROM metodos WHERE id = ${id}::uuid FOR UPDATE`;',
+        '  const enCurso = await tx.verificacion.findFirst({ where: { id } });',
+        '  if (enCurso) return enCurso;',
+        '  return tx.verificacion.create({ data: { id } });',
+        '});',
+      ].join('\n');
+
+      expect(buscarPatron(bloqueado)).toEqual([]);
     });
 
     it('C6: el patron sobre `tx` tambien se acusa', () => {

@@ -72,15 +72,25 @@ describe('AccountVerificationService (PT-092)', () => {
     trace = jest.fn().mockResolvedValue(undefined);
 
     service = new AccountVerificationService(
-      {
-        userPaymentMethod: { findUnique: metodoFind, update: metodoUpdate },
-        accountVerification: {
-          create: verifCreate,
-          findFirst: verifFind,
-          update: verifUpdate,
-          findMany: jest.fn().mockResolvedValue([]),
-        },
-      } as never,
+      (() => {
+        // PT-145 — `start()` comprueba y crea dentro de una transaccion que bloquea el metodo de
+        // pago. El doble ejecuta el callback con un `tx` que expone lo mismo, mas `$queryRaw` para
+        // el `FOR UPDATE`. Lo que las pruebas afirman no cambia; cambia por donde pasa.
+        const modelos = {
+          userPaymentMethod: { findUnique: metodoFind, update: metodoUpdate },
+          accountVerification: {
+            create: verifCreate,
+            findFirst: verifFind,
+            update: verifUpdate,
+            findMany: jest.fn().mockResolvedValue([]),
+          },
+        };
+        return {
+          ...modelos,
+          $transaction: (cb: (tx: unknown) => unknown) =>
+            cb({ ...modelos, $queryRaw: jest.fn().mockResolvedValue([{ id: 'pm-1' }]) }),
+        };
+      })() as never,
       { getBalance: saldo } as never,
       { record: trace } as never,
       {
@@ -305,6 +315,17 @@ describe('AccountVerificationService (PT-092)', () => {
       {
         userPaymentMethod: { findUnique: metodoFind, update: metodoUpdate },
         accountVerification: { create: verifCreate, findFirst: verifFind, update: verifUpdate },
+        // PT-145 — `start()` comprueba y crea dentro de una transaccion que bloquea el metodo.
+        $transaction: (cb: (tx: unknown) => unknown) =>
+          cb({
+            userPaymentMethod: { findUnique: metodoFind, update: metodoUpdate },
+            accountVerification: {
+              create: verifCreate,
+              findFirst: verifFind,
+              update: verifUpdate,
+            },
+            $queryRaw: jest.fn().mockResolvedValue([{ id: 'pm-1' }]),
+          }),
       } as never,
       { getBalance: saldo } as never,
       { record: trace } as never,
@@ -331,6 +352,17 @@ describe('AccountVerificationService (PT-092)', () => {
       {
         userPaymentMethod: { findUnique: metodoFind, update: metodoUpdate },
         accountVerification: { create: verifCreate, findFirst: verifFind, update: verifUpdate },
+        // PT-145 — `start()` comprueba y crea dentro de una transaccion que bloquea el metodo.
+        $transaction: (cb: (tx: unknown) => unknown) =>
+          cb({
+            userPaymentMethod: { findUnique: metodoFind, update: metodoUpdate },
+            accountVerification: {
+              create: verifCreate,
+              findFirst: verifFind,
+              update: verifUpdate,
+            },
+            $queryRaw: jest.fn().mockResolvedValue([{ id: 'pm-1' }]),
+          }),
       } as never,
       { getBalance: saldo } as never,
       { record: trace } as never,
@@ -355,6 +387,17 @@ describe('AccountVerificationService (PT-092)', () => {
       {
         userPaymentMethod: { findUnique: metodoFind, update: metodoUpdate },
         accountVerification: { create: verifCreate, findFirst: verifFind, update: verifUpdate },
+        // PT-145 — `start()` comprueba y crea dentro de una transaccion que bloquea el metodo.
+        $transaction: (cb: (tx: unknown) => unknown) =>
+          cb({
+            userPaymentMethod: { findUnique: metodoFind, update: metodoUpdate },
+            accountVerification: {
+              create: verifCreate,
+              findFirst: verifFind,
+              update: verifUpdate,
+            },
+            $queryRaw: jest.fn().mockResolvedValue([{ id: 'pm-1' }]),
+          }),
       } as never,
       { getBalance: saldo } as never,
       { record: trace } as never,
