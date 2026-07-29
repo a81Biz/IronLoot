@@ -137,6 +137,14 @@ services:
       # `workerIdleMemoryLimit` se probo y NO sirve: emite un aviso de validacion y tumba seis
       # suites. La palanca era el techo, no el reciclado.
       - NODE_OPTIONS=--max-old-space-size=1536
+      # PT-174/PT-175 — Horas que el neto de una venta espera en `pending_balance` tras la confirmacion
+      # del comprador. En produccion son 72 (ver `.env.example`); **aqui 0** para que la fase 35 de QA
+      # recorra la cadena completa sin esperar tres dias.
+      #
+      # Es CONFIGURAR, no falsear: se ejecuta el mismo codigo y solo se adelanta el reloj. Sembrar el
+      # resultado con un `INSERT` —lo que hace `60-withdrawal.js`— es afirmar que ocurrio algo que nunca
+      # paso por ahi.
+      - SETTLEMENT_HOLDBACK_HOURS=${SETTLEMENT_HOLDBACK_HOURS:-0}
       - DATABASE_URL=postgresql://${DB_USER:-ironloot}:${DB_PASSWORD:-ironloot_dev}@db:5432/${DB_NAME:-ironloot_db}
       - REDIS_URL=redis://redis:6379
       - LOG_LEVEL=${LOG_LEVEL:-debug}

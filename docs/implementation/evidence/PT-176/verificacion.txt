@@ -1,0 +1,16 @@
+=== PT-175/PT-176 — comprobaciones estaticas, 2026-07-29
+node --check 35-cierre-y-liquidacion.js  -> OK
+bash -n run-all.sh                       -> OK
+
+--- La fase 35 no escribe en la base (es su premisa):
+0
+0 escrituras
+
+--- Contraste con la fase 60, que si siembra:
+6
+
+--- El resumen ya no omite una fase caida:
+    echo "   $j: *** FALLO / NO EJECUTADA — sin $j.json ***"
+    FALLOS=$((FALLOS+1))
+  fi
+done

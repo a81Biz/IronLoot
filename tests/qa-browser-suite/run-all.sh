@@ -56,6 +56,12 @@ run_phase "6) Fase 30 — E2E puja + bloqueo + outbid + liberación (incluye E2E
 # PT-102 — Fase 32: la puja llega al OTRO navegador. La suite probaba la puja por HTTP y pasaba
 #          con el producto roto (F-34); nadie comprobaba que el segundo navegador se enterase.
 run_phase "6b) Fase 32 — PUJA EN VIVO en dos navegadores (PT-102/F-34)" 32-puja-en-vivo.js
+# PT-175 — La cadena completa SIN SEMBRAR: cierre -> envio -> RECEPCION CONFIRMADA POR EL COMPRADOR ->
+#          liberacion -> retiro. Es lo que `60-withdrawal.js` reproduce con un `INSERT` y esta recorre.
+#          Solo es posible desde PT-174, que le dio al comprador la accion de confirmar.
+#          Espera el cierre de verdad (cron de 1 min) y adelanta la liberacion por CONFIGURACION
+#          (`SETTLEMENT_HOLDBACK_HOURS=0` en el entorno de QA), no por `UPDATE` a la base.
+run_phase "6c) Fase 35 — CIERRE, RECEPCION Y LIQUIDACION, sin sembrar (PT-175)" 35-cierre-y-liquidacion.js
 run_phase "7) Fase 40 — Extras (auth/responsive/CSP/cross-browser)" 40-extras.js
 run_phase "8) Fase 50 — Escrituras admin" 50-admin-writes.js
 run_phase "9) Fase 60 — RETIRO REAL DEL VENDEDOR (KYC→CLABE→holdback→solicitud→admin)" 60-withdrawal.js
@@ -70,8 +76,33 @@ node -e "const fs=require('fs');const out=fs.readFileSync('C:/DevOps/Desarrollos
 node hist-check.js || echo "   (hist-check con error)"
 
 log "RESUMEN FINAL"
-for j in smoke bootstrap authed e2e puja-en-vivo extras admin-writes withdrawal payment-trace paypal-guaranteed; do
+# PT-176 (H-027) — Una fase que muere NO desaparece del resumen.
+#
+# Esto era `[ -f "$f" ] && echo …`, asi que una fase sin `.json` **se saltaba sin decir nada**. El
+# 2026-07-29 la fase 71 (via garantizada de PayPal) se cayo y el resumen listo **nueve fases, todas
+# PASS** de las diez que el runner ejecuta. «La fase no existe», «la fase paso» y «la fase se cayo» se
+# veian identicas: una ausencia.
+#
+# El error si estaba en el log —`(fase 71-… termino con error, continuo)`— sesenta lineas antes,
+# enterrado en una traza de Playwright. Nadie lo lee.
+#
+# Es la familia de H-015 —el job de CI que no podia pasar y contaba como exito— en su variante por
+# **omision**: no miente, calla. Y aqui costo que la via garantizada de PayPal quedara sin ejercer sin
+# que el resumen lo insinuara.
+FALLOS=0
+for j in smoke bootstrap authed e2e puja-en-vivo cierre-y-liquidacion extras admin-writes withdrawal payment-trace paypal-guaranteed; do
   f="$OUT/$j.json"
-  [ -f "$f" ] && echo "   $j: $(node -e "const a=require('$f');const p=a.filter(x=>x.status==='PASS').length;const t=a.length;console.log(p+'/'+t+' PASS')" 2>/dev/null)"
+  if [ -f "$f" ]; then
+    echo "   $j: $(node -e "const a=require('$f');const p=a.filter(x=>x.status==='PASS').length;const t=a.length;console.log(p+'/'+t+' PASS')" 2>/dev/null)"
+  else
+    echo "   $j: *** FALLO / NO EJECUTADA — sin $j.json ***"
+    FALLOS=$((FALLOS+1))
+  fi
 done
 echo -e "\nSalida completa: $OUT"
+
+if [ "$FALLOS" -gt 0 ]; then
+  echo -e "\n\033[1;31m$FALLOS fase(s) declarada(s) no produjeron salida. La corrida NO esta completa.\033[0m"
+  # Sale distinto de 0: un fallo que sale con 0 no es un fallo para nada que lo automatice.
+  exit 1
+fi

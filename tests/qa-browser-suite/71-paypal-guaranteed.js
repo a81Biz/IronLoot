@@ -73,9 +73,35 @@ async function aprobarEnNavegador(url, sandbox) {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 90000 });
     await page.waitForTimeout(6000);
 
+    // PT-176 — Este click se rompio, y no por nuestro lado.
+    //
+    // Medido el 2026-07-29: `#btnLogin` esta visible y habilitado, y un
+    // `<div class="loginSignUpSeparator">` de la propia pagina de PayPal **se le superpone**.
+    // Playwright reintenta el click 57 veces y agota los 30 s:
+    //
+    //     <div class="loginSignUpSeparator ">…</div> from <div id="signupContainer" …>
+    //       subtree intercepts pointer events
+    //
+    // **Es deriva de la UI de un tercero, no una regresion de IronLoot.** El ciclo completo de PayPal
+    // —aprobacion en su checkout real y captura por la via garantizada— esta probado en PT-087:
+    // `QA-PP-05` aprueba (`APPROVED`), `QA-PP-08` el sondeo **captura** (`COMPLETED`), y el saldo paso
+    // de 321.50 a 643.00 sin un solo webhook.
+    //
+    // Se usa `force: true` en vez de un selector mas fino: el problema no es la especificidad, es un
+    // overlay. Un selector mas preciso se rompe igual la proxima vez que PayPal mueva su maquetado.
+    //
+    // Y se registra lo que pasa, porque **volvera a romperse**: conducir la UI de un tercero con
+    // selectores fijos es una dependencia que envejece sola.
     const loginBtn = page.locator('#btnLogin, [data-testid="login-button"]').first();
     if (await loginBtn.isVisible().catch(() => false)) {
-      await loginBtn.click();
+      try {
+        await loginBtn.click({ force: true, timeout: 15000 });
+      } catch (e) {
+        // Segunda via: el formulario de PayPal responde a Enter. Si tampoco, se dice en claro en vez de
+        // dejar la fase muriendo con una traza de Playwright de cuarenta lineas.
+        console.log(`[71] el click en #btnLogin no paso (${e.name}); probando con Enter`);
+        await page.keyboard.press('Enter').catch(() => {});
+      }
       await page.waitForTimeout(4000);
     }
 

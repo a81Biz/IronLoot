@@ -2828,3 +2828,44 @@ Delta (real vs planificado): tres desviaciones, y las tres por lo mismo — leer
   (3) El disparador iba a vivir en `diagnostics`; se puso en `scheduler` para no cablear modulos
   cruzados, con el mismo guard.
 PTSA reference: ninguno — es un defecto nuevo, no un hallazgo de auditoria. F-172-A.
+
+## PT-175 / PT-176 — La cadena completa sin sembrar, y el resumen que la delataria
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-176-click-de-paypal
+Objective: recorrer cierre -> envio -> recepcion -> liberacion -> retiro sin un solo `INSERT`, y que una
+  fase caida no desaparezca del resumen.
+
+**PT-175 — fase 35 `35-cierre-y-liquidacion.js`, quince casos.**
+`60-withdrawal.js` prueba el subsistema de retiro **de verdad** pero **siembra el origen del dinero**:
+lo dice su propia cabecera —*«el ORIGEN del dinero (venta cerrada + cron de liberacion) se SIEMBRA en
+BD»*—. Asi que la cadena nunca se recorria: se reproducia a mano. Y el eslabon que faltaba no era de la
+suite: **el comprador no tenia forma de confirmar** hasta PT-174.
+La fase espera el cierre **de verdad** (cron de un minuto) y adelanta la liberacion **por
+configuracion** (`SETTLEMENT_HOLDBACK_HOURS=0` en el compose de desarrollo) mas el disparador
+solo-desarrollo de PT-174. Configurar no es falsear: se recorre el mismo codigo y solo se adelanta el
+reloj.
+Incluye **QA-CL-07**, que comprueba que el vendedor recibe **403** al intentar confirmar la recepcion —
+antes de PT-174 devolvia 200 y con eso liberaba su propio holdback. Y **QA-CL-15**, que se lee a si
+misma y falla si aparece un `INSERT`: medido, **0 escrituras** frente a las **6** de la fase 60.
+
+**PT-176 — el click de PayPal, y la razon de que su fallo fuera invisible.**
+`71-paypal-guaranteed.js:78`: `#btnLogin` esta visible y habilitado, y un
+`<div class="loginSignUpSeparator">` de la propia pagina de PayPal **se le superpone**; Playwright
+reintenta 57 veces y agota los 30 s. Es **deriva de la UI de un tercero, no una regresion de IronLoot**:
+el ciclo completo de PayPal, con aprobacion en su checkout real y **captura** por la via garantizada,
+esta probado en PT-087 (saldo 321.50 -> 643.00 sin un solo webhook). Se pasa a `click({ force: true })`
+—el problema es un overlay, no la especificidad del selector— con `Enter` como segunda via y un mensaje
+en claro si ninguna pasa.
+**Y se arregla la causa de que nadie lo viera (H-027):** el `RESUMEN FINAL` usaba
+`[ -f "$f" ] && echo …`, asi que una fase sin `.json` **se saltaba sin decir nada**. Se leyeron nueve
+fases «todas PASS» de las diez que el runner ejecuta. Ahora imprime `*** FALLO / NO EJECUTADA ***` y el
+runner **sale con 1**: un fallo que sale con 0 no es un fallo para nada que lo automatice.
+Modified files: tests/qa-browser-suite/{35-cierre-y-liquidacion.js,71-paypal-guaranteed.js,run-all.sh},
+  docker-compose.yml, src/api/test/unit/scheduler/liberacion-de-liquidacion.spec.ts
+Evidence: docs/implementation/evidence/PT-175/ y PT-176/
+Delta (real vs planificado): una desviacion, y la encontro la propia suite. Al fijar
+  `SETTLEMENT_HOLDBACK_HOURS=0` en el compose, **la prueba del valor por defecto empezo a fallar**: leia
+  la variable del contenedor en vez de comprobar el defecto. Una prueba que cambia de resultado segun
+  donde corra no mide lo que cree medir. Se limpia la variable en cada caso y se restaura al final.
+PTSA reference: **H-027** -> CORREGIDA (el resumen ya no omite la fase caida). No se cierra: `[R44]`.

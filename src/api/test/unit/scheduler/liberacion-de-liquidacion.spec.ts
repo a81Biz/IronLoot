@@ -65,7 +65,18 @@ describe('releaseMaturedSettlements — la espera cuelga de la confirmación (PT
     { provide: EventEmitter2, useValue: { emit: jest.fn() } },
   ];
 
+  // **La prueba no depende del entorno ambiente, y eso hay que forzarlo.**
+  //
+  // `docker-compose` fija `SETTLEMENT_HOLDBACK_HOURS=0` para que la fase 35 de QA no espere tres días.
+  // Con eso, un caso que comprueba «el valor por defecto son 72 h» leía el 0 del contenedor y fallaba —
+  // no por un defecto del código, sino porque la prueba heredaba la configuración de al lado.
+  //
+  // Una prueba que cambia de resultado según dónde corra no mide lo que cree medir. Se limpia la
+  // variable antes de cada caso y se restaura al final: cada uno declara el valor que necesita.
+  const envOriginal = process.env.SETTLEMENT_HOLDBACK_HOURS;
+
   beforeEach(async () => {
+    delete process.env.SETTLEMENT_HOLDBACK_HOURS;
     const module: TestingModule = await Test.createTestingModule({ providers }).compile();
     service = module.get(AuctionSchedulerService);
     jest.clearAllMocks();
@@ -73,6 +84,11 @@ describe('releaseMaturedSettlements — la espera cuelga de la confirmación (PT
     mockPrismaService.$transaction.mockImplementation((cb: (tx: unknown) => unknown) =>
       cb(mockPrismaService),
     );
+  });
+
+  afterAll(() => {
+    if (envOriginal === undefined) delete process.env.SETTLEMENT_HOLDBACK_HOURS;
+    else process.env.SETTLEMENT_HOLDBACK_HOURS = envOriginal;
   });
 
   /** El `where` con el que el cron elige qué liberar. Es donde vive la regla. */
@@ -154,9 +170,11 @@ describe('releaseMaturedSettlements — la espera cuelga de la confirmación (PT
 
   describe('casos de control', () => {
     it('AC-01: `SETTLEMENT_HOLDBACK_HOURS=0` libera en el primer tic', async () => {
-      // Es lo que permite que la fase de QA no espere 72 h — **configurando, no falseando**. La
+      // Es lo que permite que la fase 35 de QA no espere 72 h — **configurando, no falseando**. La
       // diferencia con el `UPDATE` a la base que hace hoy `60-withdrawal.js`.
-      const previo = process.env.SETTLEMENT_HOLDBACK_HOURS;
+      //
+      // Y es el valor que `docker-compose` fija de verdad para el contenedor de desarrollo, así que este
+      // caso comprueba la configuración real de QA, no una hipotética.
       process.env.SETTLEMENT_HOLDBACK_HOURS = '0';
 
       await service.releaseMaturedSettlements();
@@ -165,9 +183,6 @@ describe('releaseMaturedSettlements — la espera cuelga de la confirmación (PT
         .shipment.deliveredAt.lte;
 
       expect(Math.abs(Date.now() - corte.getTime())).toBeLessThan(2_000);
-
-      if (previo === undefined) delete process.env.SETTLEMENT_HOLDBACK_HOURS;
-      else process.env.SETTLEMENT_HOLDBACK_HOURS = previo;
     });
 
     it('AC-02: sin pedidos maduros no se libera nada', async () => {
