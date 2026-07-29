@@ -534,6 +534,34 @@ invariant, the crossed-capture deadlock case, and **BLQ-02**, which checks that 
 wallets do not wait on each other. That last one matters: a global lock would also make the burst
 pass, and would be the expensive cure.
 
+### RULE-17: No connection variable has a default, and everything the code reads is declared
+**What:** `REDIS_URL` is the single Redis contract — queues, rate limiting, the distributed lock and
+ADMIN's session store all read it. Connection variables have **no fallback**: if one is missing the
+process refuses to start, naming it. And every variable the code reads appears in a `.env.example`,
+commented if optional.
+**Why:** four clients had three ways of configuring themselves — two read `REDIS_HOST`/`REDIS_PORT`
+with a `localhost` fallback, one read `REDIS_URL`, and ADMIN read `REDIS_URL` with a
+`redis://redis:6379` fallback. `docker-compose.yml` declared **only** `REDIS_URL`, so what actually
+made the dev container work was `REDIS_HOST=redis` inside `src/api/.env` — **a file not in git**
+(F-135-A, PT-137).
+**The fallback was the problem, not the variable.** `config.get('REDIS_HOST', 'localhost')` turns
+"misconfigured" into "configured toward nowhere", and the process starts. In the production image
+that produced `Nest application successfully started` followed by a 500 saying
+`Reached the max retries per request limit` — a message that **never mentions Redis**. PT-147 showed
+the same thing from the other side: ADMIN's image retried against `redis://redis:6379`, a hostname
+written for the compose network, and never reached `healthy`.
+Twenty-five further variables — mail, HeyBanco, CFDI, reCAPTCHA, Stripe, JWT expiries, withdrawal
+limit — were read and declared **nowhere**.
+**Correct:** a function that throws, naming the variable, as PT-126 established for `JWT_SECRET`.
+Where a client needs host and port separately (BullMQ does), **derive them from the same URL** — the
+URL stays the contract.
+**Incorrect:** any `get('X', 'default')` on a connection setting, and a hostname fallback borrowed
+from one environment's network.
+**Enforced by:** `variables-de-entorno-declaradas.spec.ts`. A commented declaration counts — that is
+how "optional" is written, and demanding an active value would mean inventing third-party
+credentials. Its exception list requires a written reason per entry, and it strips comments before
+scanning: it accused its own explanation of the defect the first time it ran.
+
 ---
 
 ## 5. Files Requiring Extra Care Before Modification

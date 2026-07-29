@@ -355,11 +355,24 @@ Copy `.env.example` to `.env`. Critical variables:
 
 ```
 DATABASE_URL          # PostgreSQL connection string
+REDIS_URL             # Única fuente para Redis — sin ella el proceso NO arranca, a propósito
 JWT_SECRET            # Min 32 chars — must be set for auth to work
 SESSION_SECRET        # CSRF / session signing
 MERCADO_PAGO_ACCESS_TOKEN
 PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET
 ```
+
+**`REDIS_URL` es el único contrato de Redis** (PT-137). Lo usan las colas, el rate limiting, el
+cerrojo distribuido y las sesiones de ADMIN. Antes había **tres formas** conviviendo: dos clientes
+leían `REDIS_HOST`/`REDIS_PORT` con reserva `localhost` mientras el compose declaraba sólo la URL,
+así que lo que hacía funcionar el sistema era `REDIS_HOST=redis` dentro de `src/api/.env` — **un
+fichero que no está en git**.
+
+**La reserva era el problema, no la variable**: un valor por defecto convierte «mal configurado» en
+«configurado hacia ninguna parte», y el proceso arranca. En la imagen de producción eso daba *«Nest
+application successfully started»* seguido de un 500 sobre `maxRetriesPerRequest`, un mensaje que **no
+menciona Redis**. Ninguna variable de conexión lleva valor por defecto; si falta, se aborta
+nombrándola. → **RULE-17**
 
 `AUCTION_SOFT_CLOSE_WINDOW_SEC`, `PAYMENT_EXPIRATION_HOURS`, and `DISPUTE_WINDOW_DAYS` control core business rules.
 
