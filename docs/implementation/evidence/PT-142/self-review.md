@@ -82,6 +82,25 @@ mueven saldo, no sólo el depósito.
 - [x] Documentación: `CLAUDE.md` (§ monedero, con el aviso de PT-146), `11-Conventions.md`
 - [x] Sin `console.log` ni código comentado
 
+## Dos veces que un control me cazó a mí
+
+**1. El checkpoint D3 y mis dos `catch`.** Traducían `P2002` a un 400 sin dejar rastro, y puso el job
+en rojo. Tenía razón: llegar a ese `catch` significa que dos peticiones pasaron la guarda a la vez, y
+saber que la carrera ocurre de verdad —y con qué frecuencia— no se recupera después. Ahora dejan un
+`warn` con el dato.
+
+**2. Y luego el mismo D3 se equivocó, y eso también es un hallazgo.** Acusó
+`system-config.service.ts:223` como silencio nuevo. No lo era: es el mismo `catch` que la línea base
+declara como `:211`, **desplazado doce líneas** porque `seed()` creció.
+
+`observability-baseline.json` se indexa por `fichero:línea`, así que envejece igual que una cita del
+TRD — **es H-016 aplicado a un control**. Cualquier PT que edite por encima de un silencio declarado
+pondrá D3 en rojo sin haber añadido ninguno. Registrado como **F-142-A**.
+
+Con un agravante que este PT midió: **no se puede verificar antes de empujar.** Dentro del contenedor,
+`audit:observability` dice `0 (línea base: 0)` porque no ve el fichero (F-135-B). El único sitio donde
+este control da un veredicto real es CI, y eso obliga a un ciclo empujar-mirar-corregir.
+
 ## Lo que falta para cerrarlo
 
 1. **La corrida de CI** con `test-integration` en verde → `build` y `docker` ejecutándose por primera
