@@ -63,7 +63,15 @@
 
 ## PT-145.9 — Regresión, evidencia, registro
 
-- **Salida**: 728 unitarias + las nuevas · e2e en CI · `evidence/PT-145/` en `.md` ·
+- **Salida**: 728 unitarias + las nuevas · e2e en CI · carpeta de evidencia propia ·
   `HISTORY.log` + `HANDOFF.md`.
+
+  > **Anotado por PT-170: esa carpeta nunca se creó.** La tarea la declaraba como salida y la entrada
+  > de `HISTORY.log` la cita, pero `docs/implementation/evidence/PT-145/` no existe. El hueco está
+  > **declarado y contado** en `docs/implementation/evidence-baseline.json`, que sólo puede bajar
+  > (RULE-34). No se crea una carpeta ahora para que la cita cuadre: escribirla sin haber ejecutado
+  > nada sería inventar evidencia, y FDGE dice que la evidencia **es** la ejecución. El trabajo de
+  > PT-145 sí está verificado — su migración está aplicada en `_prisma_migrations`
+  > (`20260729020000_pt145_rating_unico_por_pedido_y_autor`) y su prueba vive en la suite.
 - **Validación**: STATE 5. BUG → `VALIDATION_PENDING`.
 - **Status**: PENDING

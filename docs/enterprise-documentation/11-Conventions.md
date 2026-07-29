@@ -615,6 +615,22 @@ the ratio was getting worse with every PT. `PENDING_TASKS` once told a reader to
 **What it does not demand:** that everything be cited (there is legitimate evidence no document
 names, and forcing citations produces documents written for the linter), nor that everything be
 tracked (the `.sql` backups are the copy taken *before* running something, not its result).
+
+**Widened by PT-170 — a citation to a FOLDER is checked too.** This rule's control case AC-02 used to
+declare that *"a folder without a file is not a checkable citation"*. That was **true for "is tracked by
+git"** — git does not track directories — and **false for "exists"**. The cost of the distinction,
+measured 2026-07-29: **`H-023` cited `evidence/PT-162/`, which does not exist** (the group's evidence
+lives in `evidence/PT-160/`), and **`H-001` cited `evidence/PT-026/`, which never existed**. Both are
+**closed** findings: anyone following the citation to verify the closure found nothing. H-016 inside the
+findings themselves, with the guard green in front of both.
+AC-02 was **corrected, not deleted** — retiring a control case without saying why weakens the guard in
+silence.
+**Citing is not commenting:** blockquote lines (`>`) are skipped, because a document explaining that a
+citation is broken must be able to write the broken path. The alternative — detecting negations in prose
+— teaches writing for the linter, which is worse than the gap. Exclusions are **declared with a
+reason** (`HISTORY.log` is append-only; `DISCOVERY.md`/`PLAN_ACTUAL.md`/`self-review.md` exist to quote
+what is broken), and a control case asserts every exclusion carries one, so it cannot become an escape
+hatch.
 **Enforced by:** `evidencia-citada-esta-en-git.spec.ts`, which checks both directions — tracked *and*
 present on disk.
 

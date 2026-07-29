@@ -2635,3 +2635,41 @@ Delta (real vs planificado): **dos desviaciones, y las dos corrigen el hallazgo 
   en `evidence-baseline.json` con el criterio de `security-baseline.json`: **la lista solo baja**.
   C3/C4/C5 vigilan la propia linea base — que no crezca, que no tape a PT-166/167, y que no envejezca.
 PTSA reference: ninguno. F-167-C, F-167-E, F-167-F.
+
+## PT-170 — BUG: dos hallazgos cerrados citaban evidencia que no existe
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-170-citas-a-evidencia-inexistente
+Objective: que ninguna cita a evidencia —fichero o carpeta— lleve a la nada.
+Root cause: `H-023` citaba `evidence/PT-162/` y `H-001` citaba `evidence/PT-026/`. **Ninguna de las dos
+  existe**: la evidencia de PT-162 vive en `evidence/PT-160/` porque la historia agrupa el trabajo en
+  `## PT-159 / PT-160 / PT-162`, y la de PT-026 **nunca existio** —la carpeta mas antigua es PT-029, asi
+  que precede a la convencion—.
+  Los dos son hallazgos **cerrados**: quien siguiera la cita para comprobar el cierre no encontraba
+  nada. Es **H-016 dentro de los propios hallazgos**.
+  Y la guarda que existe para esto —RULE-31— **no las veia por diseño**: su caso de control AC-02
+  declaraba que «una carpeta sin fichero no es una cita comprobable». Era cierto para «esta seguida por
+  git» —git no sigue directorios— y **falso para «existe»**. La guarda pasaba en verde con las dos
+  delante.
+Solution: `H-023` reapunta a `evidence/PT-160/self-review.md`, donde su propio texto dice «PT-162 sin
+  cruces: `auth/` no importa el DTO de `users/`, comprobado». `H-001` apunta a lo que **si** existe y es
+  verificable: su entrada de `HISTORY.log` y el codigo vivo (`bids.service.ts:113` lee
+  `AUCTION_SOFT_CLOSE_WINDOW_SEC`) con su prueba. Y una tercera, en `changes/PT-145-.../tasks.md`, queda
+  anotada: esa carpeta nunca se creo y el hueco esta declarado en `evidence-baseline.json`.
+  **No se ha creado ninguna carpeta para que una cita cuadre.** Es hacerlo al reves, y es la leccion de
+  PT-141 con `PTSA/Motor-PTSA.md`. Tampoco se toca `HISTORY.log`, que cita las mismas rutas: es
+  append-only, y reescribirlo es falsificar el registro.
+  RULE-31 se **amplia**: una cita a carpeta exige que el directorio exista. AC-02 se **corrige, no se
+  borra** —retirar un caso de control sin decir por que debilita la guarda en silencio—. Se descartan
+  las lineas de blockquote, porque un documento que explica que una cita esta rota tiene que poder
+  escribir la ruta rota; la alternativa, detectar negaciones en la prosa, enseña a escribir para el
+  linter. Las exclusiones (`HISTORY.log`, `DISCOVERY.md`, `PLAN_ACTUAL.md`, `self-review.md`) declaran
+  su motivo, y un control (C5) exige que lo lleven: una exclusion sin motivo es una puerta de escape.
+Modified files: PTSA/Hallazgos/H-001.md, PTSA/Hallazgos/H-023.md,
+  changes/PT-145-duplicados-sin-restriccion/tasks.md, docs/enterprise-documentation/11-Conventions.md,
+  src/api/test/unit/documentacion/evidencia-citada-esta-en-git.spec.ts
+Evidence: docs/implementation/evidence/PT-170/
+Delta (real vs planificado): la ampliacion acuso, al medirla, **tres** citas rotas y no dos — la
+  tercera en el paquete de PT-145, que ninguna revision habia mirado. Medicion final: **44 citas a
+  carpeta comprobadas, 0 rotas**.
+PTSA reference: no cierra hallazgo — corrige las citas DE dos hallazgos cerrados (H-001, H-023). F-167-D.

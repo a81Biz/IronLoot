@@ -1,0 +1,40 @@
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+PASS test/unit/documentacion/evidencia-citada-esta-en-git.spec.ts (6.605 s)
+  La evidencia citada esta en git — RULE-31 (PT-152)
+    ✓ git responde y hay evidencia seguida — si no, la guarda no compara nada (2 ms)
+    ✓ C1: toda evidencia citada esta seguida por git
+    ✓ C2: toda evidencia citada existe en disco (20 ms)
+    ✓ C3: se han encontrado citas — si no, C1 y C2 pasan en vacio
+    C4 (PT-170): una cita a CARPETA tambien existe
+      ✓ se han encontrado citas a carpeta — si no, C4 pasa en vacio
+      ✓ C4: ninguna cita a carpeta apunta a un directorio inexistente (36 ms)
+      ✓ C5: cada exclusion declara su motivo — una exclusion sin motivo es una puerta de escape (1 ms)
+    casos de control
+      ✓ AC-01: una cita a evidencia se reconoce
+      ✓ AC-02: una carpeta no es una cita a FICHERO — pero si es una cita (PT-170) (1 ms)
+      ✓ AC-05 (PT-170): una cita a fichero no se cuenta ademas como cita a carpeta
+      ✓ AC-06 (PT-170): una ruta rota dentro de un blockquote NO se acusa (1 ms)
+      ✓ AC-07 (PT-170): la misma ruta FUERA del blockquote si se acusa
+      ✓ AC-03: se reconocen los formatos de volcado, no solo `.md`
+      ✓ AC-04: el directorio de evidencia existe y tiene contenido (5 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       14 passed, 14 total
+Snapshots:   0 total
+Time:        6.823 s, estimated 7 s
+Ran all test suites matching /evidencia-citada/i.

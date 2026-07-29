@@ -15,8 +15,11 @@
 | **PT-168** | Los derivados de PTSA declaraban activos cuatro hallazgos cerrados | `evidence/PT-168/` |
 | **PT-169** | El rastro de trabajo tenía huecos: PT-167 sin entrada, PT-166 sin evidencia | `evidence/PT-169/` |
 | **PT-170** | Dos hallazgos citaban carpetas de evidencia inexistentes | `evidence/PT-170/` |
-| **PT-171** | `ND-002` y `ND-003` contradecían al código | `evidence/PT-171/` |
-| **PT-172** | La clave `_comentario_maxWorkers` producía un aviso de Jest en cada corrida | `evidence/PT-172/` |
+
+Los de la misma tanda que aún no han aterrizado —**PT-171** (`ND-002`/`ND-003` contradicen al código) y
+**PT-172** (el aviso de Jest en cada corrida)— **añaden aquí su fila al cerrar, con su evidencia**. No se
+cita por adelantado: una cita a evidencia que todavía no existe es exactamente lo que PT-170 vino a
+quitar, y la guarda de RULE-31 la caza — como hizo con esta tabla.
 
 **PT-166 y PT-167 estuvieron fuera de esta lista, y ése fue el defecto F-167-F.** El cierre en bloque
 con VoBo enumeraba PT-148…165; PT-166 entró después y PT-167 no tenía ni entrada, mientras este fichero
