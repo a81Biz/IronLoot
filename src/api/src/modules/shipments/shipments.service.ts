@@ -4,10 +4,11 @@ import {
   ForbiddenException,
   BadRequestException,
 } from '@nestjs/common';
-import { Shipment, ShipmentStatus } from '@prisma/client';
+import { Shipment, ShipmentStatus, NotificationType } from '@prisma/client';
 import { OrderStateMachine, OrderStatus as CoreOrderStatus } from '@ironloot/core';
 import { PrismaService } from '../../database/prisma.service';
 import { OrdersService } from '../orders/orders.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { CreateShipmentDto, UpdateShipmentStatusDto } from './dto';
 import { StructuredLogger, ChildLogger } from '../../common/observability';
 
@@ -23,6 +24,21 @@ const ESTADO_PEDIDO_POR_ENVIO: Partial<Record<ShipmentStatus, 'SHIPPED' | 'DELIV
   [ShipmentStatus.DELIVERED]: 'DELIVERED',
 };
 
+/**
+ * PT-174 — Quién declara cada estado del envío.
+ *
+ * **Quien envía declara el envío; quien recibe confirma la recepción.** Antes todo era del vendedor, y
+ * con eso liberaba su propio holdback.
+ *
+ * Lo que no está aquí lo declara el vendedor por defecto — es el actor natural de la logística. Se
+ * expresa así, y no con una lista de los dos casos, porque **añadir un estado nuevo debe caer del lado
+ * restrictivo**: si mañana aparece `RETURNED` y nadie piensa en quién lo declara, que sea el vendedor y
+ * no «cualquiera».
+ */
+const ACTOR_POR_ESTADO_DE_ENVIO: Partial<Record<ShipmentStatus, 'buyer' | 'seller'>> = {
+  [ShipmentStatus.DELIVERED]: 'buyer',
+};
+
 @Injectable()
 export class ShipmentsService {
   private readonly logger: ChildLogger;
@@ -30,6 +46,7 @@ export class ShipmentsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly ordersService: OrdersService,
+    private readonly notifications: NotificationsService,
     logger: StructuredLogger,
   ) {
     this.logger = logger.child('ShipmentsService');
@@ -124,7 +141,23 @@ export class ShipmentsService {
       throw new NotFoundException('Shipment not found');
     }
 
-    if (shipment.order.sellerId !== userId) {
+    // PT-174 — **La llave se parte por transicion, no por rol global.** Antes esto era
+    // `if (order.sellerId !== userId) throw` para cualquier estado, incluido `DELIVERED`: el vendedor
+    // marcaba entregado su propio envio y, con `releaseMaturedSettlements` liberando por estado,
+    // **liberaba su propio holdback**. El holdback protege al comprador durante la ventana de disputa,
+    // y lo podia desactivar la unica parte de la que protege.
+    //
+    // Se comprueba ANTES de la transicion a proposito: si se mirara despues, el vendedor recibiria un
+    // 400 por el estado y aprenderia que el problema es la secuencia, no el permiso.
+    const quienDebe = ACTOR_POR_ESTADO_DE_ENVIO[dto.status];
+
+    if (quienDebe === 'buyer' && shipment.order.buyerId !== userId) {
+      throw new ForbiddenException(
+        'Only the buyer can confirm delivery — the seller cannot mark their own shipment as received',
+      );
+    }
+
+    if (quienDebe !== 'buyer' && shipment.order.sellerId !== userId) {
       throw new ForbiddenException('Only the seller can update shipment status');
     }
 
@@ -179,6 +212,30 @@ export class ShipmentsService {
 
       return envio;
     });
+
+    // PT-174 — El comprador tiene que saber que puede confirmar. Sin aviso, la confirmacion depende de
+    // que entre a mirar, y de ella cuelga el pago al vendedor.
+    //
+    // El tipo es `ORDER_SHIPPED` y el destinatario el **comprador**: es la leccion de H-012, donde el
+    // aviso al vendedor reutilizaba el tipo del comprador y los dos significaban cosas distintas.
+    //
+    // No lanza: un aviso no puede costarle al vendedor la declaracion de su envio. Se registra el fallo
+    // — **no es un `catch` mudo**, que es lo que vigila el checkpoint D3.
+    if (dto.status === ShipmentStatus.SHIPPED) {
+      try {
+        await this.notifications.create(
+          shipment.order.buyerId,
+          NotificationType.ORDER_SHIPPED,
+          'Tu compra va en camino',
+          'El vendedor declaro el envio. Cuando lo recibas, confirmalo desde el detalle del pedido.',
+          { orderId: shipment.orderId, shipmentId: id },
+        );
+      } catch (e) {
+        this.logger.error('No se pudo notificar el envio al comprador', e as Error, {
+          orderId: shipment.orderId,
+        });
+      }
+    }
 
     this.logger.info(`Shipment ${id} status updated to ${dto.status}`, {
       userId,

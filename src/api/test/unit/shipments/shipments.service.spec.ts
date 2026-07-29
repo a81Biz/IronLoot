@@ -4,6 +4,7 @@ import { OrderStateMachine, OrderStatus as CoreOrderStatus } from '@ironloot/cor
 import { ShipmentsService } from '../../../src/modules/shipments/shipments.service';
 import { PrismaService } from '../../../src/database/prisma.service';
 import { OrdersService } from '../../../src/modules/orders/orders.service';
+import { NotificationsService } from '../../../src/modules/notifications/notifications.service';
 import { StructuredLogger } from '../../../src/common/observability';
 import { ShipmentStatus, ShipmentProvider } from '@prisma/client';
 
@@ -29,9 +30,13 @@ mockPrismaService.$transaction.mockImplementation((cb: (tx: unknown) => unknown)
 
 const mockOrdersService = {};
 
+// PT-174 — El aviso al comprador cuando el vendedor declara el envio.
+const mockNotificationsService = { create: jest.fn().mockResolvedValue(undefined) };
+
 const mockLogger = {
   child: jest.fn().mockReturnThis(),
   info: jest.fn(),
+  warn: jest.fn(),
   error: jest.fn(),
 };
 
@@ -44,6 +49,7 @@ describe('ShipmentsService', () => {
         ShipmentsService,
         { provide: PrismaService, useValue: mockPrismaService },
         { provide: OrdersService, useValue: mockOrdersService },
+        { provide: NotificationsService, useValue: mockNotificationsService },
         { provide: StructuredLogger, useValue: mockLogger },
       ],
     }).compile();
@@ -134,16 +140,21 @@ describe('ShipmentsService', () => {
   });
 
   describe('updateStatus', () => {
-    // PT-173 — Este caso pasaba `order: { sellerId }` sin estado, asi que no habia transicion que
-    // validar: **la prueba fijaba el defecto**. Ahora el pedido llega en `SHIPPED`, que es el unico
-    // estado desde el que `DELIVERED` es legal. Una prueba que afirma lo incorrecto es peor que no
-    // tenerla, porque convierte el arreglo en una regresion aparente.
+    // Corregido dos veces, y las dos por un motivo distinto:
+    //
+    //   - **PT-173**: pasaba `order: { sellerId }` **sin estado**, asi que no habia transicion que
+    //     validar. La prueba fijaba el defecto.
+    //   - **PT-174**: pasaba el **vendedor** como actor de `DELIVERED`, que es exactamente la vulneracion
+    //     que PT-174 cierra. Ahora lo confirma el **comprador**.
+    //
+    // Una prueba que afirma lo incorrecto es peor que no tenerla: convierte el arreglo en una regresion
+    // aparente y presiona para revertirlo.
     it('should update status and set deliveredAt', async () => {
       mockPrismaService.shipment.findUnique.mockResolvedValue({
         id: 'shipment-id',
         orderId: 'order-id',
         deliveredAt: null,
-        order: { id: 'order-id', sellerId: 'seller-id', status: 'SHIPPED' },
+        order: { id: 'order-id', sellerId: 'seller-id', buyerId: 'buyer-id', status: 'SHIPPED' },
       });
       mockPrismaService.shipment.update.mockResolvedValue({
         id: 'shipment-id',
@@ -151,7 +162,7 @@ describe('ShipmentsService', () => {
         deliveredAt: new Date(),
       });
 
-      const result = await service.updateStatus('seller-id', 'shipment-id', {
+      const result = await service.updateStatus('buyer-id', 'shipment-id', {
         status: ShipmentStatus.DELIVERED,
       });
 
@@ -191,10 +202,13 @@ describe('ShipmentsService', () => {
 
     it('C1: un pedido PAID no puede saltar a DELIVERED sin pasar por SHIPPED', async () => {
       // El defecto exacto: `PAID -> DELIVERED` no esta en la maquina, y se aceptaba.
+      //
+      // El actor es el **comprador** desde PT-174: con el vendedor no se llegaria a comprobar la
+      // transicion, porque el 403 salta antes. Se deja dicho para que nadie lo "arregle" al reves.
       mockPrismaService.shipment.findUnique.mockResolvedValue(envioPendiente('PAID'));
 
       await expect(
-        service.updateStatus('seller-id', 'shipment-id', { status: ShipmentStatus.DELIVERED }),
+        service.updateStatus('buyer-id', 'shipment-id', { status: ShipmentStatus.DELIVERED }),
       ).rejects.toThrow(BadRequestException);
     });
 
@@ -204,7 +218,7 @@ describe('ShipmentsService', () => {
       mockPrismaService.shipment.findUnique.mockResolvedValue(envioPendiente('PAID'));
 
       await expect(
-        service.updateStatus('seller-id', 'shipment-id', { status: ShipmentStatus.DELIVERED }),
+        service.updateStatus('buyer-id', 'shipment-id', { status: ShipmentStatus.DELIVERED }),
       ).rejects.toThrow();
 
       expect(mockPrismaService.shipment.update).not.toHaveBeenCalled();
@@ -248,6 +262,171 @@ describe('ShipmentsService', () => {
         await expect(
           service.updateStatus('seller-id', 'nope', { status: ShipmentStatus.SHIPPED }),
         ).rejects.toThrow(NotFoundException);
+      });
+    });
+  });
+
+  /**
+   * PT-174 — La recepcion la confirma quien recibe.
+   *
+   * Hasta aqui **todo** cambio de estado era del vendedor (`shipments.service.ts:114`), incluido
+   * `DELIVERED`. Encadenado con `releaseMaturedSettlements`, que liberaba en cuanto el pedido estaba
+   * `DELIVERED`, eso significaba que **el vendedor liberaba su propio holdback**: marcaba entregado su
+   * propio envio y cobraba, sin que nadie confirmara nada.
+   *
+   * **El holdback existe para proteger al comprador durante la ventana de disputa, y lo podia desactivar
+   * la unica parte de la que protege.**
+   *
+   * La llave se parte por transicion, no por rol global:
+   *
+   *   - `PENDING -> SHIPPED`   -> el **vendedor**, que es quien envia.
+   *   - `SHIPPED -> DELIVERED` -> el **comprador**, que es quien recibe.
+   */
+  describe('PT-174 — la llave se parte por transicion', () => {
+    const envio = (estadoPedido: string) => ({
+      id: 'shipment-id',
+      orderId: 'order-id',
+      status: estadoPedido === 'SHIPPED' ? ShipmentStatus.SHIPPED : ShipmentStatus.PENDING,
+      shippedAt: estadoPedido === 'SHIPPED' ? new Date() : null,
+      deliveredAt: null,
+      order: { id: 'order-id', sellerId: 'seller-id', buyerId: 'buyer-id', status: estadoPedido },
+    });
+
+    beforeEach(() => {
+      mockPrismaService.shipment.update.mockResolvedValue({
+        id: 'shipment-id',
+        status: ShipmentStatus.DELIVERED,
+        deliveredAt: new Date(),
+      });
+    });
+
+    it('C1: el VENDEDOR no puede marcar DELIVERED — es el defecto que cierra este PT', async () => {
+      mockPrismaService.shipment.findUnique.mockResolvedValue(envio('SHIPPED'));
+
+      await expect(
+        service.updateStatus('seller-id', 'shipment-id', { status: ShipmentStatus.DELIVERED }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('C2: el COMPRADOR si puede marcar DELIVERED', async () => {
+      mockPrismaService.shipment.findUnique.mockResolvedValue(envio('SHIPPED'));
+
+      const r = await service.updateStatus('buyer-id', 'shipment-id', {
+        status: ShipmentStatus.DELIVERED,
+      });
+
+      expect(r.status).toBe(ShipmentStatus.DELIVERED);
+    });
+
+    it('C3: el COMPRADOR no puede marcar SHIPPED — no es quien envia', async () => {
+      mockPrismaService.shipment.findUnique.mockResolvedValue(envio('PAID'));
+
+      await expect(
+        service.updateStatus('buyer-id', 'shipment-id', { status: ShipmentStatus.SHIPPED }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('C4: el VENDEDOR si puede marcar SHIPPED', async () => {
+      mockPrismaService.shipment.findUnique.mockResolvedValue(envio('PAID'));
+      mockPrismaService.shipment.update.mockResolvedValue({
+        id: 'shipment-id',
+        status: ShipmentStatus.SHIPPED,
+        shippedAt: new Date(),
+      });
+
+      const r = await service.updateStatus('seller-id', 'shipment-id', {
+        status: ShipmentStatus.SHIPPED,
+      });
+
+      expect(r.status).toBe(ShipmentStatus.SHIPPED);
+    });
+
+    it('C5: un tercero no puede ninguna de las dos', async () => {
+      mockPrismaService.shipment.findUnique.mockResolvedValue(envio('SHIPPED'));
+      await expect(
+        service.updateStatus('otro', 'shipment-id', { status: ShipmentStatus.DELIVERED }),
+      ).rejects.toThrow(ForbiddenException);
+
+      mockPrismaService.shipment.findUnique.mockResolvedValue(envio('PAID'));
+      await expect(
+        service.updateStatus('otro', 'shipment-id', { status: ShipmentStatus.SHIPPED }),
+      ).rejects.toThrow(ForbiddenException);
+    });
+
+    it('C6: la confirmacion del comprador sella `deliveredAt`', async () => {
+      // Es la fecha de la que cuelga la espera de 72 h. Si no se sella, la liberacion no tiene reloj
+      // — y es el defecto que H-011 encontro al medir la ventana de disputa desde `updatedAt`.
+      mockPrismaService.shipment.findUnique.mockResolvedValue(envio('SHIPPED'));
+
+      await service.updateStatus('buyer-id', 'shipment-id', {
+        status: ShipmentStatus.DELIVERED,
+      });
+
+      expect(mockPrismaService.shipment.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ deliveredAt: expect.any(Date) }),
+        }),
+      );
+    });
+
+    describe('casos de control', () => {
+      it('AC-01: el mensaje del 403 dice QUIEN debe hacerlo, no solo que no puedes', async () => {
+        // Un 403 que no dice quien deja al vendedor pensando que es un fallo del sistema.
+        mockPrismaService.shipment.findUnique.mockResolvedValue(envio('SHIPPED'));
+
+        await expect(
+          service.updateStatus('seller-id', 'shipment-id', { status: ShipmentStatus.DELIVERED }),
+        ).rejects.toThrow(/buyer/i);
+      });
+
+      it('AC-03: al declarar el envio se avisa al COMPRADOR, con el tipo del evento', async () => {
+        // Leccion de H-012: el aviso al vendedor reutilizaba el tipo del comprador, y los dos
+        // significaban cosas distintas. Aqui se comprueba destinatario Y tipo.
+        mockPrismaService.shipment.findUnique.mockResolvedValue(envio('PAID'));
+        mockPrismaService.shipment.update.mockResolvedValue({
+          id: 'shipment-id',
+          status: ShipmentStatus.SHIPPED,
+        });
+
+        await service.updateStatus('seller-id', 'shipment-id', {
+          status: ShipmentStatus.SHIPPED,
+        });
+
+        expect(mockNotificationsService.create).toHaveBeenCalledWith(
+          'buyer-id',
+          'ORDER_SHIPPED',
+          expect.any(String),
+          expect.any(String),
+          expect.objectContaining({ orderId: 'order-id' }),
+        );
+      });
+
+      it('AC-04: si el aviso falla, el envio se declara igual — y NO en silencio', async () => {
+        // Un apunte de notificacion no puede costarle al vendedor la declaracion de su envio. Pero el
+        // fallo se registra: un `catch` mudo es lo que vigila el checkpoint D3.
+        mockPrismaService.shipment.findUnique.mockResolvedValue(envio('PAID'));
+        mockPrismaService.shipment.update.mockResolvedValue({
+          id: 'shipment-id',
+          status: ShipmentStatus.SHIPPED,
+        });
+        mockNotificationsService.create.mockRejectedValueOnce(new Error('sin correo'));
+
+        const r = await service.updateStatus('seller-id', 'shipment-id', {
+          status: ShipmentStatus.SHIPPED,
+        });
+
+        expect(r.status).toBe(ShipmentStatus.SHIPPED);
+        expect(mockLogger.error).toHaveBeenCalled();
+      });
+
+      it('AC-02: la autorizacion se mira ANTES de la transicion', async () => {
+        // Si se mirara despues, un vendedor con una transicion invalida recibiria 400 en vez de 403 y
+        // aprenderia que el problema es el estado, no el permiso.
+        mockPrismaService.shipment.findUnique.mockResolvedValue(envio('PAID'));
+
+        await expect(
+          service.updateStatus('seller-id', 'shipment-id', { status: ShipmentStatus.DELIVERED }),
+        ).rejects.toThrow(ForbiddenException);
       });
     });
   });

@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ScheduleModule } from '@nestjs/schedule';
 import { AuctionSchedulerService } from './auction-scheduler.service';
+import { SchedulerController } from './scheduler.controller';
+import { DevelopmentOnlyGuard } from '../../common/guards/development-only.guard';
 import { SystemCleanupService } from './system-cleanup.service';
 import { AuctionsModule } from '../auctions/auctions.module';
 import { OrdersModule } from '../orders/orders.module';
@@ -20,7 +22,15 @@ import { CommissionsModule } from '../commissions/commissions.module';
     SystemConfigModule,
     CommissionsModule,
   ],
-  providers: [AuctionSchedulerService, SystemCleanupService, DistributedLockService],
+  // PT-174 — El controlador expone UN disparador, y sólo en desarrollo: `DevelopmentOnlyGuard` aborta
+  // con 403 si `NODE_ENV=production`.
+  controllers: [SchedulerController],
+  providers: [
+    AuctionSchedulerService,
+    SystemCleanupService,
+    DistributedLockService,
+    DevelopmentOnlyGuard,
+  ],
   exports: [AuctionSchedulerService],
 })
 export class SchedulerModule {}

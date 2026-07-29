@@ -1,0 +1,122 @@
+FAIL test/unit/shipments/shipments.service.spec.ts (6.326 s)
+  ShipmentsService
+    create
+      ✓ should create a shipment for a valid paid order by the seller (10 ms)
+      ✓ should throw ForbiddenException if user is not the seller (10 ms)
+      ✓ should throw BadRequestException if order is not PAID (2 ms)
+    findOne
+      ✓ should return shipment for buyer (1 ms)
+      ✓ should throw ForbiddenException for unrelated user (1 ms)
+    updateStatus
+      ✓ should update status and set deliveredAt (3 ms)
+    PT-173 — la transicion del pedido pasa por la maquina de estados
+      ✓ C1: un pedido PAID no puede saltar a DELIVERED sin pasar por SHIPPED (1 ms)
+      ✓ C2: y con la transicion rechazada NO se toca el envio (1 ms)
+      ✓ C3: PAID -> SHIPPED si es valida, y mueve el pedido (2 ms)
+      casos de control
+        ✓ AC-01: la maquina de core es la que decide, y dice lo que creemos (2 ms)
+        ✓ AC-02: un envio que no existe sigue dando 404 antes de mirar transiciones (1 ms)
+    PT-174 — la llave se parte por transicion
+      ✕ C1: el VENDEDOR no puede marcar DELIVERED — es el defecto que cierra este PT (2 ms)
+      ✕ C2: el COMPRADOR si puede marcar DELIVERED (1 ms)
+      ✓ C3: el COMPRADOR no puede marcar SHIPPED — no es quien envia (2 ms)
+      ✓ C4: el VENDEDOR si puede marcar SHIPPED (1 ms)
+      ✓ C5: un tercero no puede ninguna de las dos (1 ms)
+      ✕ C6: la confirmacion del comprador sella `deliveredAt` (1 ms)
+      casos de control
+        ✕ AC-01: el mensaje del 403 dice QUIEN debe hacerlo, no solo que no puedes (2 ms)
+        ✕ AC-02: la autorizacion se mira ANTES de la transicion (10 ms)
+
+  ● ShipmentsService › PT-174 — la llave se parte por transicion › C1: el VENDEDOR no puede marcar DELIVERED — es el defecto que cierra este PT
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"deliveredAt": 2026-07-29T23:31:42.635Z, "id": "shipment-id", "status": "DELIVERED"}
+
+      290 |       mockPrismaService.shipment.findUnique.mockResolvedValue(envio('SHIPPED'));
+      291 |
+    > 292 |       await expect(
+          |             ^
+      293 |         service.updateStatus('seller-id', 'shipment-id', { status: ShipmentStatus.DELIVERED }),
+      294 |       ).rejects.toThrow(ForbiddenException);
+      295 |     });
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (test/unit/shipments/shipments.service.spec.ts:292:13)
+
+  ● ShipmentsService › PT-174 — la llave se parte por transicion › C2: el COMPRADOR si puede marcar DELIVERED
+
+    ForbiddenException: Only the seller can update shipment status
+
+      126 |
+      127 |     if (shipment.order.sellerId !== userId) {
+    > 128 |       throw new ForbiddenException('Only the seller can update shipment status');
+          |             ^
+      129 |     }
+      130 |
+      131 |     // PT-173 — El estado del pedido que corresponde a este estado de envio. Si el envio no mueve el
+
+      at ShipmentsService.updateStatus (src/modules/shipments/shipments.service.ts:128:13)
+      at Object.<anonymous> (test/unit/shipments/shipments.service.spec.ts:300:17)
+
+  ● ShipmentsService › PT-174 — la llave se parte por transicion › C6: la confirmacion del comprador sella `deliveredAt`
+
+    ForbiddenException: Only the seller can update shipment status
+
+      126 |
+      127 |     if (shipment.order.sellerId !== userId) {
+    > 128 |       throw new ForbiddenException('Only the seller can update shipment status');
+          |             ^
+      129 |     }
+      130 |
+      131 |     // PT-173 — El estado del pedido que corresponde a este estado de envio. Si el envio no mueve el
+
+      at ShipmentsService.updateStatus (src/modules/shipments/shipments.service.ts:128:13)
+      at Object.<anonymous> (test/unit/shipments/shipments.service.spec.ts:347:7)
+
+  ● ShipmentsService › PT-174 — la llave se parte por transicion › casos de control › AC-01: el mensaje del 403 dice QUIEN debe hacerlo, no solo que no puedes
+
+    expect(received).rejects.toThrow()
+
+    Received promise resolved instead of rejected
+    Resolved to value: {"deliveredAt": 2026-07-29T23:31:42.644Z, "id": "shipment-id", "status": "DELIVERED"}
+
+      361 |         mockPrismaService.shipment.findUnique.mockResolvedValue(envio('SHIPPED'));
+      362 |
+    > 363 |         await expect(
+          |               ^
+      364 |           service.updateStatus('seller-id', 'shipment-id', { status: ShipmentStatus.DELIVERED }),
+      365 |         ).rejects.toThrow(/buyer/i);
+      366 |       });
+
+      at expect (node_modules/expect/build/index.js:113:15)
+      at Object.<anonymous> (test/unit/shipments/shipments.service.spec.ts:363:15)
+
+  ● ShipmentsService › PT-174 — la llave se parte por transicion › casos de control › AC-02: la autorizacion se mira ANTES de la transicion
+
+    expect(received).rejects.toThrow(expected)
+
+    Expected constructor: ForbiddenException
+    Received constructor: BadRequestException
+
+    Received message: "Cannot move order order-id from PAID to DELIVERED"
+
+          149 |         )
+          150 |       ) {
+        > 151 |         throw new BadRequestException(
+              |               ^
+          152 |           `Cannot move order ${shipment.orderId} from ${shipment.order.status} to ${estadoPedido}`,
+          153 |         );
+          154 |       }
+
+      at ShipmentsService.updateStatus (src/modules/shipments/shipments.service.ts:151:15)
+      at Object.<anonymous> (test/unit/shipments/shipments.service.spec.ts:373:9)
+      at Object.toThrow (node_modules/expect/build/index.js:218:22)
+      at Object.<anonymous> (test/unit/shipments/shipments.service.spec.ts:375:19)
+
+Test Suites: 1 failed, 1 total
+Tests:       5 failed, 14 passed, 19 total
+Snapshots:   0 total
+Time:        6.535 s, estimated 7 s
+Ran all test suites matching /shipments.service/i.

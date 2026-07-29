@@ -228,8 +228,28 @@ export class AppController {
   @Get("/orders/:id")
   @Render("pages/orders/detail.html")
   async orderDetail(@Req() req: Request, @Param("id") id: string) {
-    const order = await apiGet(getToken(req), `/api/v1/orders/${id}`);
-    return { order };
+    // PT-174 — La plantilla necesita saber si quien mira es el comprador o el vendedor, porque cada uno
+    // declara una cosa distinta: el vendedor envia, el comprador confirma que recibio.
+    //
+    // Se resuelve **en el servidor**, comparando contra `/users/me`, y no con un dato que venga del
+    // navegador. La autorizacion de verdad esta en el servicio del API (PT-174); esto solo decide **que
+    // se pinta**, y aun asi no se deduce del cliente: una interfaz que se fia del navegador para saber
+    // quien eres acaba ensenando el boton equivocado a la persona equivocada.
+    const token = getToken(req);
+    const [order, me] = await Promise.all([
+      apiGet<Record<string, unknown>>(token, `/api/v1/orders/${id}`),
+      apiGet<{ id?: string }>(token, "/api/v1/users/me").catch(
+        () => ({}) as { id?: string },
+      ),
+    ]);
+
+    const yo = me?.id;
+
+    return {
+      order,
+      esComprador: Boolean(yo && order?.buyerId === yo),
+      esVendedor: Boolean(yo && order?.sellerId === yo),
+    };
   }
 
   @Get("/notifications")

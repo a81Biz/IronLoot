@@ -287,11 +287,34 @@ export class AuctionSchedulerService {
     const disputeDays = Number(process.env.DISPUTE_WINDOW_DAYS || 14);
     const cutoff = new Date(Date.now() - disputeDays * 24 * 60 * 60 * 1000);
 
+    // PT-174 — La espera cuelga de la CONFIRMACION del comprador, no del estado del pedido.
+    //
+    // Antes esta consulta llevaba `{ status: OrderStatus.DELIVERED }`: liberaba **en cuanto** el pedido
+    // estaba entregado. Y hasta PT-174 el unico que podia marcarlo entregado era el vendedor, asi que
+    // **el vendedor liberaba su propio holdback**. El holdback protege al comprador durante la ventana
+    // de disputa, y lo desactivaba la parte de la que protege.
+    //
+    // Decision de negocio (opcion B): **72 h desde la confirmacion**. Es un parametro, no una politica
+    // incrustada — se puede revocar cambiando la variable.
+    //
+    // Se lee de `shipment.deliveredAt` y **no** de `order.updatedAt`: es la leccion de H-011, que medi­a
+    // la ventana de disputa desde la ultima modificacion en vez de desde la entrega. El reloj cuelga del
+    // hecho, no de la ultima vez que alguien toco la fila.
+    const holdbackHours = Number(process.env.SETTLEMENT_HOLDBACK_HOURS ?? 72);
+    const confirmCutoff = new Date(Date.now() - holdbackHours * 60 * 60 * 1000);
+
     const matured = await this.prisma.order.findMany({
       where: {
         sellerSettledAt: null,
         sellerNet: { not: null },
-        OR: [{ status: OrderStatus.DELIVERED }, { createdAt: { lte: cutoff } }],
+        OR: [
+          // Confirmado por el comprador, y ya pasaron las horas de retencion.
+          { shipment: { deliveredAt: { lte: confirmCutoff } } },
+          // **El vencimiento.** La mentira simetrica: un comprador que nunca confirma no puede retener
+          // el dinero del vendedor para siempre. Antes existia como el otro brazo de este `OR`, por
+          // accidente; ahora es una regla declarada y con prueba.
+          { createdAt: { lte: cutoff } },
+        ],
       },
       select: { id: true, sellerId: true, sellerNet: true },
     });

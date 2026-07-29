@@ -2781,3 +2781,50 @@ calculo a la vista sin emitirlo, a proposito, porque PTSA no se auto-activa. Aho
 ellos no estaban en ninguna lista cuando empezo la jornada**: PT-166 entro despues del cierre en bloque
 anterior y PT-167 no tenia ni entrada en `HISTORY.log`. Sin PT-169 no habria habido nada que validar
 aqui, porque nada los nombraba. Es la diferencia entre un registro que se mantiene y uno que se cree.
+
+## PT-174 — FEATURE: el comprador confirma la recepcion; el vendedor declara el envio
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: feature/PT-174-comprador-confirma-recepcion
+Objective: que la recepcion la confirme quien recibe, y que el dinero espere desde esa confirmacion.
+Root cause: `shipments.service.ts:114` restringia **todo** cambio de estado al vendedor, incluido
+  `DELIVERED`. Y `releaseMaturedSettlements` liberaba con `{ status: DELIVERED }`, es decir en cuanto el
+  pedido estaba entregado. Encadenado: **el vendedor marcaba entregado su propio envio y liberaba su
+  propio holdback**, sin haber enviado nada y sin que nadie confirmara.
+  **El holdback protege al comprador durante la ventana de disputa, y lo podia desactivar la unica parte
+  de la que protege.** Ademas el comprador no tenia ninguna via —ni endpoint, ni permiso, ni interfaz—
+  para confirmar: `grep` sobre `src/apps/client/` no devolvia nada.
+Solution: **decision de negocio del humano: opcion B, 72 h** (declarada en `PLAN_ACTUAL.md` como supuesto
+  revocable y confirmada con «adelante»).
+  - **La llave se parte por transicion, no por rol global**: `SHIPPED` el vendedor, `DELIVERED` el
+    comprador. Se comprueba en el servicio y **antes** de la transicion, para que el vendedor reciba 403
+    por permiso y no 400 por secuencia.
+  - **La liberacion cuelga de `shipment.deliveredAt`**, no del estado ni de `updatedAt` — leccion de
+    H-011. `SETTLEMENT_HOLDBACK_HOURS` (72) nueva.
+  - **El vencimiento se conserva y se declara**: `DISPUTE_WINDOW_DAYS` libera igual si el comprador
+    calla. Es la mentira simetrica; antes existia por accidente, como el otro brazo del `OR`.
+  - **Disparador solo-desarrollo** `POST /scheduler/release-settlements` bajo `DevelopmentOnlyGuard`,
+    para que la fase de QA no espere el cron de 30 min. Devuelve cuantos libero, no un `ok: true`.
+  - **Interfaz en CLIENT**: el vendedor declara envio (transportista + guia), el comprador confirma, y su
+    control **solo aparece con el envio `SHIPPED`**. JS en `public/js/`, `classList` en vez de
+    `style.display`, y `confirm()` previo por ser accion con consecuencia economica.
+  - **Aviso al comprador** al declararse el envio, con el tipo del evento (`ORDER_SHIPPED`) y al
+    destinatario correcto — leccion de H-012. No lanza, y **no calla**: registra el fallo.
+Modified files: src/api/src/modules/shipments/{shipments.service.ts,shipments.module.ts},
+  src/api/src/modules/scheduler/{auction-scheduler.service.ts,scheduler.controller.ts,scheduler.module.ts},
+  src/apps/client/src/app.controller.ts,
+  src/apps/client/views/pages/orders/detail.html,
+  src/apps/client/public/js/pages/pages-orders-detail.js, .env.example,
+  src/api/test/unit/shipments/shipments.service.spec.ts,
+  src/api/test/unit/scheduler/liberacion-de-liquidacion.spec.ts
+Evidence: docs/implementation/evidence/PT-174/
+Delta (real vs planificado): tres desviaciones, y las tres por lo mismo — leer antes de escribir.
+  (1) **El cron de liberacion no tenia NINGUNA prueba.** Mueve dinero de `pending_balance` a `balance` y
+  nadie lo vigilaba. Las nueve de `liberacion-de-liquidacion.spec.ts` son las primeras.
+  (2) **Dos pruebas fijaban el defecto.** `should update status and set deliveredAt` pasaba el
+  **vendedor** como actor de `DELIVERED`, que es exactamente la vulneracion; y C1 de PT-173 tambien.
+  Corregidas al comprador. Una prueba que afirma lo incorrecto es peor que no tenerla: convierte el
+  arreglo en una regresion aparente y presiona para revertirlo.
+  (3) El disparador iba a vivir en `diagnostics`; se puso en `scheduler` para no cablear modulos
+  cruzados, con el mismo guard.
+PTSA reference: ninguno — es un defecto nuevo, no un hallazgo de auditoria. F-172-A.

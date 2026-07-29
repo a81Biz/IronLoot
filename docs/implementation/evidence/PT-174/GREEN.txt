@@ -1,0 +1,24 @@
+[31m[Nest] 3653  - [39m07/29/2026, 11:40:45 PM [31m  ERROR[39m [38;5;3m[AuctionSchedulerService] [39m[31mFailed to release settlement for order malo[39m
+[31m[Nest] 3653  - [39m07/29/2026, 11:40:45 PM [31m  ERROR[39m [38;5;3m[AuctionSchedulerService] [39mError: boom
+    at Object.<anonymous> [90m(/app/[39mtest/unit/scheduler/liberacion-de-liquidacion.spec.ts:186:65[90m)[39m
+    at Promise.then.completed [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:298:28[90m)[39m
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:231:10[90m)[39m
+    at _callCircusTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:316:40[90m)[39m
+    at _runTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:252:3[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:126:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at run [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:71:3[90m)[39m
+    at runAndTransformResultsToJestFormat [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21[90m)[39m
+    at jestAdapter [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapter.js:79:19[90m)[39m
+    at runTestInternal [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:367:16[90m)[39m
+    at runTest [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:444:34[90m)[39m
+PASS test/unit/scheduler/liberacion-de-liquidacion.spec.ts (6.221 s)
+PASS test/unit/shipments/shipments.service.spec.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       30 passed, 30 total
+Snapshots:   0 total
+Time:        6.968 s
+Ran all test suites matching /shipments.service|liberacion-de-liquidacion/i.

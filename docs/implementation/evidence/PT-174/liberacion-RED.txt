@@ -1,0 +1,95 @@
+[31m[Nest] 3262  - [39m07/29/2026, 11:34:08 PM [31m  ERROR[39m [38;5;3m[AuctionSchedulerService] [39m[31mFailed to release settlement for order malo[39m
+[31m[Nest] 3262  - [39m07/29/2026, 11:34:08 PM [31m  ERROR[39m [38;5;3m[AuctionSchedulerService] [39mError: boom
+    at Object.<anonymous> [90m(/app/[39mtest/unit/scheduler/liberacion-de-liquidacion.spec.ts:186:65[90m)[39m
+    at Promise.then.completed [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:298:28[90m)[39m
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:231:10[90m)[39m
+    at _callCircusTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:316:40[90m)[39m
+    at _runTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:252:3[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:126:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at run [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:71:3[90m)[39m
+    at runAndTransformResultsToJestFormat [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21[90m)[39m
+    at jestAdapter [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapter.js:79:19[90m)[39m
+    at runTestInternal [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:367:16[90m)[39m
+    at runTest [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:444:34[90m)[39m
+FAIL test/unit/scheduler/liberacion-de-liquidacion.spec.ts (6.351 s)
+  releaseMaturedSettlements — la espera cuelga de la confirmación (PT-174)
+    ✕ C1: NO libera por el estado del pedido — libera por tiempo (10 ms)
+    ✕ C2: una rama cuelga de `shipment.deliveredAt`, no de `updatedAt` (2 ms)
+    ✕ C3: el corte por confirmación son 72 h por defecto (1 ms)
+    ✓ C4: el VENCIMIENTO se conserva — un comprador que calla no retiene el dinero (2 ms)
+    ✓ C5: sólo mira lo no liquidado — la idempotencia sigue en `sellerSettledAt` (2 ms)
+    ✓ C6: libera de verdad lo que la consulta devuelve, y marca el pedido (2 ms)
+    casos de control
+      ✕ AC-01: `SETTLEMENT_HOLDBACK_HOURS=0` libera en el primer tic (1 ms)
+      ✓ AC-02: sin pedidos maduros no se libera nada (1 ms)
+      ✓ AC-03: un fallo al liberar un pedido no impide liberar los demás (8 ms)
+
+  ● releaseMaturedSettlements — la espera cuelga de la confirmación (PT-174) › C1: NO libera por el estado del pedido — libera por tiempo
+
+    expect(received).not.toContain(expected) // indexOf
+
+    Expected substring: not "DELIVERED"
+    Received string:        "[{\"status\":\"DELIVERED\"},{\"createdAt\":{\"lte\":\"2026-07-15T23:34:08.176Z\"}}]"
+
+      86 |     const ramas = JSON.stringify(where.OR);
+      87 |
+    > 88 |     expect(ramas).not.toContain('DELIVERED');
+         |                       ^
+      89 |   });
+      90 |
+      91 |   it('C2: una rama cuelga de `shipment.deliveredAt`, no de `updatedAt`', async () => {
+
+      at Object.<anonymous> (test/unit/scheduler/liberacion-de-liquidacion.spec.ts:88:23)
+
+  ● releaseMaturedSettlements — la espera cuelga de la confirmación (PT-174) › C2: una rama cuelga de `shipment.deliveredAt`, no de `updatedAt`
+
+    expect(received).toBeDefined()
+
+    Received: undefined
+
+       96 |     const porEntrega = where.OR.find((r: Record<string, unknown>) => 'shipment' in r);
+       97 |
+    >  98 |     expect(porEntrega).toBeDefined();
+          |                        ^
+       99 |     expect(porEntrega.shipment.deliveredAt.lte).toBeInstanceOf(Date);
+      100 |   });
+      101 |
+
+      at Object.<anonymous> (test/unit/scheduler/liberacion-de-liquidacion.spec.ts:98:24)
+
+  ● releaseMaturedSettlements — la espera cuelga de la confirmación (PT-174) › C3: el corte por confirmación son 72 h por defecto
+
+    TypeError: Cannot read properties of undefined (reading 'shipment')
+
+      106 |     const corte = whereDeLaConsulta().OR.find(
+      107 |       (r: Record<string, unknown>) => 'shipment' in r,
+    > 108 |     ).shipment.deliveredAt.lte;
+          |      ^
+      109 |     const horas = (antes - corte.getTime()) / 3_600_000;
+      110 |
+      111 |     expect(horas).toBeGreaterThan(71.9);
+
+      at Object.<anonymous> (test/unit/scheduler/liberacion-de-liquidacion.spec.ts:108:6)
+
+  ● releaseMaturedSettlements — la espera cuelga de la confirmación (PT-174) › casos de control › AC-01: `SETTLEMENT_HOLDBACK_HOURS=0` libera en el primer tic
+
+    TypeError: Cannot read properties of undefined (reading 'shipment')
+
+      165 |       const corte = whereDeLaConsulta().OR.find(
+      166 |         (r: Record<string, unknown>) => 'shipment' in r,
+    > 167 |       ).shipment.deliveredAt.lte;
+          |        ^
+      168 |
+      169 |       expect(Math.abs(Date.now() - corte.getTime())).toBeLessThan(2_000);
+      170 |
+
+      at Object.<anonymous> (test/unit/scheduler/liberacion-de-liquidacion.spec.ts:167:8)
+
+Test Suites: 1 failed, 1 total
+Tests:       4 failed, 5 passed, 9 total
+Snapshots:   0 total
+Time:        6.568 s
+Ran all test suites matching /liberacion-de-liquidacion/i.

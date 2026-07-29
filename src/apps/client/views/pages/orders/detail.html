@@ -27,9 +27,55 @@
   <p>Transportista: {{ order.shipment.provider }}</p>
   <p>Tracking: {{ order.shipment.trackingNumber | default('Pendiente') }}</p>
   <p>Estado: {{ order.shipment.status }}</p>
+  {% if order.shipment.shippedAt %}<p class="texto-tenue texto-pequeno">Enviado: {{ order.shipment.shippedAt }}</p>{% endif %}
+  {% if order.shipment.deliveredAt %}<p class="texto-tenue texto-pequeno">Recepción confirmada: {{ order.shipment.deliveredAt }}</p>{% endif %}
+</div>
+{% endif %}
+
+{# PT-174 — El vendedor declara el envío. Sólo él, y sólo mientras no lo haya declarado. #}
+{% if esVendedor and order.status == 'PAID' and not order.shipment %}
+<div class="card">
+  <div class="card-title">Declarar envío</div>
+  <p class="texto-tenue texto-pequeno">
+    Al declararlo, el comprador podrá confirmar que lo recibió. Tu dinero sigue retenido hasta esa
+    confirmación.
+  </p>
+  <form id="formEnvio">
+    <label for="provider">Transportista</label>
+    <select id="provider" required>
+      <option value="DHL">DHL</option>
+      <option value="FEDEX">FedEx</option>
+      <option value="ESTAFETA">Estafeta</option>
+      <option value="UPS">UPS</option>
+      <option value="CUSTOM">Otro</option>
+    </select>
+    <label for="trackingNumber">Número de guía</label>
+    <input id="trackingNumber" type="text" required />
+    <button type="submit" class="btn btn-primary">Declarar envío</button>
+  </form>
+  <div id="msgEnvio" class="alert oculto"></div>
+</div>
+{% endif %}
+
+{# PT-174 — La recepción la confirma quien recibe, y sólo con el envío ya declarado. #}
+{% if esComprador and order.shipment and order.shipment.status == 'SHIPPED' %}
+<div class="card">
+  <div class="card-title">Confirmar recepción</div>
+  <p class="texto-tenue texto-pequeno">
+    Confirma sólo si ya tienes el artículo. Al confirmar empieza a contar el plazo tras el cual se libera
+    el pago al vendedor.
+  </p>
+  <button id="btnConfirmarRecepcion" class="btn btn-primary" data-envio="{{ order.shipment.id }}">
+    Ya lo recibí
+  </button>
+  <div id="msgRecepcion" class="alert oculto"></div>
 </div>
 {% endif %}
 {% else %}
   <p>Orden no encontrada. <a href="/orders">Volver</a></p>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/pages-orders-detail.js" defer></script>
 {% endblock %}
