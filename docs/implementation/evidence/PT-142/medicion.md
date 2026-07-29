@@ -99,3 +99,45 @@ con otro doble.
 *Leer-modificar-escribir* sobre el saldo. **Los dos responden con éxito y uno se pierde en silencio**,
 dejando su asiento en `ledger` con un `balanceAfter` que no cuadra. Estaba declarado fuera de alcance
 en `out-of-scope.md` **antes** de medirlo.
+
+## 7. CI — las tres corridas de este PT
+
+| Job | 1ª (30412680336) | 2ª (30412948367) | 3ª (30413196348) |
+|---|:--:|:--:|:--:|
+| `lint` | ✅ | ✅ | ✅ |
+| `security-audit` (D2) | ✅ | ✅ | ✅ |
+| `schema-drift` (D2) | ✅ | ✅ | ✅ |
+| `observabilidad` (D3) | ❌ | ❌ | **✅** |
+| `test-unit` | ✅ | ✅ | ✅ |
+| `test-integration` | ❌ | ❌ | ❌ |
+| `build` · `docker` | skip | skip | skip |
+
+**D3, corrida 1** — acusó mis dos `catch` por traducir `P2002` sin dejar rastro. Correcto: se añadió
+el `warn`.
+
+**D3, corrida 2** — siguió rojo, y aquí estaba el falso positivo:
+
+```
+NUEVOS catch que no registran ni relanzan:
+  src/api/src/modules/system-config/system-config.service.ts:223
+```
+
+El mismo `catch` que la línea base declara como `:211`, **desplazado doce líneas**. → **F-142-A**.
+
+**D3, corrida 3** — verde tras mover el número. Confirma el diagnóstico: no había ningún `catch`
+nuevo.
+
+### `test-integration`: 75/82, y ninguno de los 7 fallos es de PT-142
+
+```
+Test Suites: 2 failed, 15 passed, 17 total
+Tests:       7 failed, 75 passed, 82 total      (era 66/77 antes de este PT)
+```
+
+| Suite | Fallo | De quién es |
+|---|---|---|
+| `ratings.e2e` | `expected 201, got 404` — el pedido no existe | **PT-143**: los workers comparten base y se borran datos entre sí |
+| `payments.e2e` | `expected 201, got 500` — `POST /payments/initiate` con PayPal | Necesita una **pasarela real**. `PENDIENTES` § S-002 ya lo señaló como candidato a job nocturno |
+
+**Consecuencia honesta: PT-142 NO desbloquea `build` ni `docker`.** Los dos jobs que nunca se han
+ejecutado siguen sin ejecutarse. El criterio 3 de este PT queda **incumplido**, no aproximado.
