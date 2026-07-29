@@ -1,0 +1,24 @@
+PASS test/unit/shipments/shipments.service.spec.ts (6.715 s)
+  ShipmentsService
+    create
+      ✓ should create a shipment for a valid paid order by the seller (10 ms)
+      ✓ should throw ForbiddenException if user is not the seller (10 ms)
+      ✓ should throw BadRequestException if order is not PAID (2 ms)
+    findOne
+      ✓ should return shipment for buyer (4 ms)
+      ✓ should throw ForbiddenException for unrelated user (2 ms)
+    updateStatus
+      ✓ should update status and set deliveredAt (2 ms)
+    PT-173 — la transicion del pedido pasa por la maquina de estados
+      ✓ C1: un pedido PAID no puede saltar a DELIVERED sin pasar por SHIPPED (1 ms)
+      ✓ C2: y con la transicion rechazada NO se toca el envio (2 ms)
+      ✓ C3: PAID -> SHIPPED si es valida, y mueve el pedido (1 ms)
+      casos de control
+        ✓ AC-01: la maquina de core es la que decide, y dice lo que creemos (1 ms)
+        ✓ AC-02: un envio que no existe sigue dando 404 antes de mirar transiciones (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       11 passed, 11 total
+Snapshots:   0 total
+Time:        6.962 s, estimated 7 s
+Ran all test suites matching /shipments.service/i.

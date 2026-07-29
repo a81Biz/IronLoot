@@ -5,10 +5,23 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { Shipment, ShipmentStatus } from '@prisma/client';
+import { OrderStateMachine, OrderStatus as CoreOrderStatus } from '@ironloot/core';
 import { PrismaService } from '../../database/prisma.service';
 import { OrdersService } from '../orders/orders.service';
 import { CreateShipmentDto, UpdateShipmentStatusDto } from './dto';
 import { StructuredLogger, ChildLogger } from '../../common/observability';
+
+/**
+ * PT-173 — Qué estado de pedido implica cada estado de envío.
+ *
+ * Sólo dos de los cuatro mueven el pedido. `PENDING` es el estado inicial del envío y `RETURNED` está
+ * declarado en el enum y **nadie lo usa** — dejarlo fuera es deliberado: darle un destino aquí sería
+ * decidir la política de devoluciones de pasada, y eso está fuera de alcance.
+ */
+const ESTADO_PEDIDO_POR_ENVIO: Partial<Record<ShipmentStatus, 'SHIPPED' | 'DELIVERED'>> = {
+  [ShipmentStatus.SHIPPED]: 'SHIPPED',
+  [ShipmentStatus.DELIVERED]: 'DELIVERED',
+};
 
 @Injectable()
 export class ShipmentsService {
@@ -115,6 +128,32 @@ export class ShipmentsService {
       throw new ForbiddenException('Only the seller can update shipment status');
     }
 
+    // PT-173 — El estado del pedido que corresponde a este estado de envio. Si el envio no mueve el
+    // pedido (`PENDING`, `RETURNED`), no hay transicion que validar.
+    const estadoPedido = ESTADO_PEDIDO_POR_ENVIO[dto.status];
+
+    if (estadoPedido) {
+      // **La cerradura que faltaba.** `OrderStateMachine` vive en `@ironloot/core`, dice
+      // `PAID -> SHIPPED -> DELIVERED` y ya se consulta en `orders.service.ts` y `refunds.service.ts`.
+      // Aqui se escribia `order.status` a mano, asi que habia dos puertas al mismo estado y solo una
+      // con cerradura: un pedido `PAID` saltaba a `DELIVERED` sin pasar por `SHIPPED`, y con eso el
+      // cron liberaba el holdback del vendedor.
+      //
+      // Se comprueba ANTES de tocar el envio: si la transicion no vale, no se mueve nada. Un envio
+      // `DELIVERED` con su pedido en `PAID` seria peor que el fallo original — el sistema
+      // contradiciendose a si mismo.
+      if (
+        !OrderStateMachine.canTransition(
+          shipment.order.status as unknown as CoreOrderStatus,
+          estadoPedido as unknown as CoreOrderStatus,
+        )
+      ) {
+        throw new BadRequestException(
+          `Cannot move order ${shipment.orderId} from ${shipment.order.status} to ${estadoPedido}`,
+        );
+      }
+    }
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const updateData: any = {
       status: dto.status,
@@ -126,23 +165,20 @@ export class ShipmentsService {
       updateData.deliveredAt = new Date();
     }
 
-    const updatedShipment = await this.prisma.shipment.update({
-      where: { id },
-      data: updateData,
-    });
+    // PT-173 — Las dos escrituras van juntas o no van. Antes eran dos `update` sueltos: un fallo entre
+    // ambos dejaba el envio en un estado y el pedido en otro.
+    const updatedShipment = await this.prisma.$transaction(async (tx) => {
+      const envio = await tx.shipment.update({ where: { id }, data: updateData });
 
-    // Update Order status based on Shipment status
-    if (dto.status === ShipmentStatus.SHIPPED) {
-      await this.prisma.order.update({
-        where: { id: shipment.orderId },
-        data: { status: 'SHIPPED' },
-      });
-    } else if (dto.status === ShipmentStatus.DELIVERED) {
-      await this.prisma.order.update({
-        where: { id: shipment.orderId },
-        data: { status: 'DELIVERED' },
-      });
-    }
+      if (estadoPedido) {
+        await tx.order.update({
+          where: { id: shipment.orderId },
+          data: { status: estadoPedido },
+        });
+      }
+
+      return envio;
+    });
 
     this.logger.info(`Shipment ${id} status updated to ${dto.status}`, {
       userId,
