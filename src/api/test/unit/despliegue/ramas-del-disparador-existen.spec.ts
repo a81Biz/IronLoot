@@ -71,6 +71,26 @@ export function esPatron(rama: string): boolean {
   return /[*?[\]!]/.test(rama);
 }
 
+/**
+ * Las ramas nombradas en las condiciones `if:` de los jobs.
+ *
+ * PT-143 — Esta funcion existe porque la guarda original **se quedo corta**. Comprobaba solo el
+ * `on:` del workflow, y el job `docker` estaba condicionado a
+ *
+ *     if: github.ref == 'refs/heads/prod' || github.ref == 'refs/heads/prep'
+ *
+ * es decir a las **mismas dos ramas fantasma** que PT-136 acababa de retirar del disparador, en otro
+ * sitio del mismo fichero. El job quedaba `skipped` en toda corrida y el workflow entero se
+ * declaraba `success`: un job que nunca se ejecuta y que ademas no cuenta como fallo.
+ *
+ * Corregir el disparador y dejar esto habria sido arreglar el caso y no la clase — que es
+ * exactamente lo que PT-129 hizo con su parche y costo dos repeticiones.
+ */
+export function ramasDeCondiciones(yml: string): string[] {
+  const encontradas = [...yml.matchAll(/refs\/heads\/([A-Za-z0-9._\-/]+)/g)].map((m) => m[1]);
+  return [...new Set(encontradas)];
+}
+
 function git(args: string[]): string | null {
   try {
     return execFileSync('git', args, {
@@ -170,6 +190,17 @@ describe('Las ramas del disparador de cada workflow existen (PT-136)', () => {
 
       expect(inexistentes).toEqual([]);
     });
+
+    it('cada rama de una condicion `if:` existe', () => {
+      // PT-143 — El `on:` no es el unico sitio donde un workflow nombra ramas. Un job condicionado
+      // a una rama inexistente queda `skipped` **y el workflow se declara `success`**: no se
+      // ejecuta y ni siquiera cuenta como fallo.
+      const inexistentes = ramasDeCondiciones(yml)
+        .filter((r) => !esPatron(r))
+        .filter((r) => !existe(r, conocidas));
+
+      expect(inexistentes).toEqual([]);
+    });
   });
 
   describe('casos de control', () => {
@@ -213,6 +244,24 @@ describe('Las ramas del disparador de cada workflow existen (PT-136)', () => {
       // `release/**` no es una rama; exigir que "exista" seria acusar a un comodin legitimo.
       expect(esPatron('release/**')).toBe(true);
       expect(esPatron('master')).toBe(false);
+    });
+
+    it('C8: detecta una rama fantasma en una condicion `if:`', () => {
+      const condicion =
+        "    if: github.ref == 'refs/heads/prod' || github.ref == 'refs/heads/prep'";
+
+      expect(ramasDeCondiciones(condicion)).toEqual(['prod', 'prep']);
+    });
+
+    it('C9: una condicion `if:` sobre `master` no se acusa', () => {
+      expect(ramasDeCondiciones("if: github.ref == 'refs/heads/master'")).toEqual(['master']);
+      expect(existe('master', conocidas)).toBe(true);
+    });
+
+    it('C10: un yml sin condiciones de rama no inventa ninguna', () => {
+      const sinRamas = ['jobs:', '  build:', '    runs-on: ubuntu-latest'].join('\n');
+
+      expect(ramasDeCondiciones(sinRamas)).toEqual([]);
     });
 
     it('C7: no se cuelan duplicados', () => {

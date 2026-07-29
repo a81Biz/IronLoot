@@ -347,12 +347,25 @@ jobs:
   # ===========================================
   # Docker Build (on main branches only)
   # ===========================================
+  # PT-143 — Este job tenia DOS motivos para no servir, y ninguno daba error.
+  #
+  # 1. Estaba condicionado a `refs/heads/prod` y `refs/heads/prep`: **las mismas dos ramas fantasma**
+  #    que PT-136 retiro del disparador, en otro sitio del mismo fichero. Quedaba `skipped` en toda
+  #    corrida, y un job saltado no cuenta como fallo: el workflow entero se declaraba `success`.
+  #
+  # 2. Apunta a `./Dockerfile`, **que no existe**. Las imagenes de produccion las creo PT-129 y viven
+  #    en `src/api/`, `src/admin/`, `src/apps/base/` y `src/apps/client/`. Es decir: aunque la
+  #    condicion hubiera sido correcta, el job habria fallado en el primer paso.
+  #
+  # Aqui se corrige (1), que es la clase que la guarda vigila. **(2) NO se corrige aqui**: hacer que
+  # este job construya las cuatro imagenes y las arranque es trabajo con su propia verificacion, y
+  # va en **PT-147**. Hasta entonces el job correra y fallara — rojo y visible, que es lo que este
+  # repositorio ha decidido preferir sobre saltado y oculto.
   docker:
     name: Docker Build
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/prod' || github.ref == 'refs/heads/prep'
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
