@@ -2488,3 +2488,28 @@ Modified files: src/api/src/modules/ratings/ratings.controller.ts, src/api/Docke
   docs/enterprise-documentation/11-Conventions.md,
   src/api/test/unit/documentacion/patrones-de-guardas-casan.spec.ts
 Evidence: docs/implementation/evidence/PT-163/ y PT-164/
+
+## CIERRE CON VoBo HUMANO — toda la validacion pendiente
+Date: 2026-07-29
+Status: CLOSED
+Objective: registrar el VoBo humano sobre todo lo que esperaba validacion, y dejar UN solo pendiente.
+
+**El humano dio por revisados** los quince PT de la tanda FPGE-003 (PT-148…PT-162), los tres del
+cierre (PT-163, PT-164, PT-165) y los cuatro hallazgos de auditoria (H-021, H-022, H-023, H-024).
+FDGE STATE 6 exige confirmacion humana para cerrar un bug y `[R44]` para cerrar un hallazgo; una
+persona lo hizo.
+
+**H-005 sigue ABIERTA y es lo unico que queda.** Requiere contratar un PAC ante el SAT y decidir el
+modelo fiscal. Se mantiene hasta tener proveedor, por decision explicita del humano.
+
+**Correccion de proceso, y es la que mas vale de esta entrada.** El humano señalo que los pendientes
+**aumentaban** en vez de reducirse. Tenia razon: `PENDING_TASKS.md` habia acumulado seis entradas que
+no eran trabajo pendiente sino observaciones, notas de alcance y trabajo de otro marco. Tres se
+cerraron haciendolas (triaje del escaner, los 304 MB, el mecanismo de `test:guardas`), y tres se
+movieron a donde pertenecen (la medicion D1/D5 es PTSA, el TLS es un paso operativo documentado, y el
+alcance de RULE-30 es una nota dentro de la propia regla).
+
+Queda escrita la regla que lo evita: **una observacion no es un pendiente**. Si no tiene dueño,
+alcance y un final reconocible, va a la nota que le corresponde y no a la lista de trabajo. Inflar la
+lista con notas es lo que hacia parecer que nada se cerraba — el mismo sintoma que abrio PT-140, por
+una causa distinta.

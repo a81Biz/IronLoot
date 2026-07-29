@@ -1,87 +1,79 @@
 # HANDOFF — estado actual
 
-**FDGE V3** · **2026-07-29** · Se **sobrescribe**: es el estado de ahora, no la historia. La historia
-está en `HISTORY.log`, que es append-only.
+**FDGE V3** · **2026-07-29** · Se **sobrescribe**: es el estado de ahora, no la historia.
 
-**Rama**: `master`, árbol limpio, cero ramas sin fusionar.
-**Sin subir a `origin`**: unos cuantos commits locales. `git push origin master` cuando quieras.
+**Rama**: `master`, árbol limpio, cero ramas sin fusionar. **Sin subir a `origin`.**
 
-**Pruebas**: **1072** unitarias en verde — API **819** (106 suites) · CORE **134** · CLIENT **103** ·
-ADMIN **13** · BASE **3**. Medidas una a una el 2026-07-29.
+**Pruebas**: **1078** unitarias en verde — API **825** (107 suites) · CORE **134** · CLIENT **103** ·
+ADMIN **13** · BASE **3**.
 
-> Y desde PT-159, `npx jest` **sin flags** pasa la suite del API dentro del contenedor. Antes tres
-> suites morían por SIGKILL y el resumen decía «4 failed» sin que nada estuviera roto — que es como
-> se aprende a ignorar los fallos de una suite.
-
-**Reglas duras**: **28** `RULE-NN`. Las nuevas de hoy: RULE-28 (el alcance de auditoría no cita lo que
-no existe) · RULE-29 (ADR-049 no se deshace sola) · RULE-30 (toda `data-accion` tiene manejador) ·
-RULE-31 (la evidencia citada está en git).
+**Reglas duras**: **30** `RULE-NN`.
 
 ---
 
-## La tanda FPGE-003: quince PT, cerrados
+## Pendiente: una cosa
 
-Doce ejecutados, dos bloqueados por decisión externa, uno **medido y revertido con motivo**.
+**H-005 — la facturación fiscal.** Falta **contratar un PAC** ante el SAT y **decidir quién emite la
+factura**. Sin proveedor no hay nada que implementar, y se mantiene abierta hasta tenerlo.
 
-| Bloque | PT | Qué |
-|---|---|---|
-| Instrumentos | **149 · 153** | `audit:domain` afirmaba `cross_coherence_verified = true` con las cinco comprobaciones en error, y salía con 0. Los dos checkpoints pasan a `PrismaClient` y corren donde vive npm |
-| Guardas | **148** | El contrato SSR↔API cubre los tres sitios. Destapó **tres defectos de la propia guarda**, ninguna ruta rota |
-| Guardas | **154 · 157** | El alcance de auditoría verificado, y ADR-049 con mecanismo |
-| Guardas | **152** | La evidencia citada entra en git: 81 de 189 ficheros estaban fuera |
-| CI | **150** | Escáner de la imagen base. **TD-016 cerrada** |
-| Pequeños | **159 · 160 · 162** | PT-160 no era pequeño: **las tres `data-accion` de ADMIN estaban muertas** |
-| Investigación | **151** | El patrón de H-019 no se repite, **y ahora se sabe por qué** |
-| Medido y revertido | **161** | 3.1 % de ahorro no justifica tocar esa zona |
-| Bloqueados | **155 · 156** | Decisión fiscal y decisión de producto |
+Es el **único hallazgo activo del sistema**. Mantiene D1 en 85 y `P-012` en `IDENTIFICADO`. Los tres
+modelos, con sus consecuencias técnicas medidas, están en `evidence/PT-155/hallazgos.md`.
 
-### Lo que más importa de esta tanda
+**Nada más está pendiente.** Todo lo demás se cerró con VoBo humano el 2026-07-29.
 
-**Tres cosas se descubrieron sólo porque algo las miró, no porque nadie sospechara:**
+---
 
-1. `audit:domain` **afirmaba haber verificado lo que no miró** — dentro del instrumento que la
-   auditoría usa para medir.
-2. **Las tres acciones de ADMIN estaban muertas.** PT-096 movió el JS «tal cual» y «tal cual» perdió
-   los `onclick` que lo cableaban. PT-139 corrigió dos casos **sin escribir el mecanismo**, y por eso
-   quedaban tres.
-3. `audit-scope.yaml` citaba cuatro documentos que **PT-141 archivó el día anterior** — y al
-   corregirlo apareció una **segunda lista** con las mismas rutas. Sin guarda, habría quedado
-   mintiendo en otro sitio y yo lo habría dado por cerrado.
+## Lo que cerró hoy
 
-**Y dos cosas que rompí yo y detectó el mecanismo**: `test:guardas` apuntando al fichero que renombré
-horas antes, y dos líneas nuevas en `package.json` desplazando citas del TRD — esto último lo cazó la
-guarda de PT-130 en la misma corrida. **H-016 detectado en vivo.**
+| | |
+|---|---|
+| **Tanda FPGE-003** | PT-148…PT-162, quince |
+| **Cierre** | PT-163 (reputación pública) · PT-164 (imagen recortada) · PT-165 (patrones de guardas) |
+| **Hallazgos** | H-021, H-022, H-023, H-024 → `CERRADA` |
+| **Deuda** | TD-016 cerrada con triaje real |
 
-## Auditoría — S-003
+### Lo que más vale de la jornada
+
+**Un instrumento que afirmaba sin medir.** `audit:domain` imprimía `cross_coherence_verified = true`
+con las cinco comprobaciones en error, y salía con código 0. Dentro de la herramienta que la auditoría
+usa para medir.
+
+**Tres controles muertos en ADMIN.** Ninguna `data-accion` estaba registrada: el botón «Rechazar» de
+moderación no abría nada. PT-096 movió el JS «tal cual» y «tal cual» perdió los `onclick`. PT-139
+corrigió dos casos sin escribir el mecanismo; por eso quedaban tres.
+
+**Una decisión revisada con dato nuevo.** PT-161 midió tamaño (3.1 %) y decidió no recortar la imagen
+— correcto con lo que se sabía. PT-150 midió **seguridad**: catorce de treinta vulnerabilidades las
+causaban dependencias de desarrollo en producción. PT-164 recortó: **548 → 450 MB** y **14 → 2**.
+El bulto estaba en `packages/core`, que se copiaba entera y **no necesita `node_modules` en
+ejecución**.
+
+> Medí la variable equivocada. «Es más grande de lo necesario» lleva a contar MB; la pregunta útil era
+> *qué mete en producción código que no se ejecuta*.
+
+### Y una corrección de proceso
+
+Señalaste que los pendientes **aumentaban**. Tenías razón: `PENDING_TASKS.md` había acumulado seis
+entradas que no eran trabajo sino observaciones. Tres se cerraron haciéndolas; tres se movieron a
+donde pertenecen.
+
+**Una observación no es un pendiente.** Si no tiene dueño, alcance y un final reconocible, va a su
+nota y no a la lista de trabajo.
+
+---
+
+## Estado de la auditoría
 
 ```
-Health 88.9  ·  Risk 100 (saturado por certeza, no gravedad)  ·  Confidence 87.0  ·  Clase B
+S-003 (delta sync)   Health 88.9  ·  Risk 100  ·  Confidence 87.0  ·  Clase B
 ```
 
-**H-021, H-022, H-023 y H-024 → `CORREGIDA`.** No `CERRADA`: `[R44]` reserva el cierre a una persona
-que haya visto la evidencia, y que me autorizaras a trabajar en autonomía no cambia quién valida.
+Los cuatro hallazgos que la bajaron están **cerrados**, así que el próximo `resume PTSA` debería
+subirla. Sigue pendiente de medir **D1 al 100 % y D5**, que exigen una base **con historia** — es
+trabajo PTSA y vive en `PTSA/PENDIENTES.md`.
 
-**H-005 sigue `ABIERTA`** y mantiene D1 en 85. PT-155 documentó las tres opciones; ningún PT la cierra.
-
-## Lo que queda, en `PENDING_TASKS.md`
-
-Tres decisiones tuyas (PT-156, H-005, PT-141.B) y seis pendientes con dueño claro — entre ellos triar
-el inventario del escáner nuevo, y medir D1/D5 completos, que exigen una base con historia.
-
-## Riesgos vivos
-
-- **Diecinueve PT sin VoBo** (los cuatro de S-003 más los quince de FPGE-003). Es mucha superficie sin
-  confirmar por una persona.
-- **El TLS de PT-158 no lo ha ejercido nadie.** La configuración está escrita y `nginx -t` la valida,
-  pero nadie la ha arrancado. Declarado en su README.
-- **La línea base del escáner nace vacía.** Es correcto —se declara el mecanismo antes de conocer lo
-  que mide— pero significa que hoy **no protege de nada** hasta que se triе la primera corrida.
-- **La ventana de D1/D5 sigue estrecha.** `run-all.sh` genera la salida real y **trunca la base al
-  empezar**. Medir justo después o volver a quedarse sin datos.
-
-## Siguiente acción recomendada
+## Siguiente
 
 1. **`git push origin master`**.
-2. **Las tres decisiones** de `PENDING_TASKS.md` § 1 — son lo único que bloquea trabajo real.
-3. **`run-all.sh` + medir D1/D5** inmediatamente después. Es lo que subiría la cobertura de la
-   auditoría del 50 %/0 % actual.
+2. **`resume PTSA`** cuando quieras — con los cuatro hallazgos cerrados, los scores suben.
+3. **H-005**: cuando haya proveedor.
