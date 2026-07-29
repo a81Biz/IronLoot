@@ -1,0 +1,3 @@
+      × cada cita apunta a una linea que contiene el paquete que dice (3 ms)
+      × cada version declarada coincide con la que dice el package.json citado (1 ms)
+Tests:       2 failed, 7 passed, 9 total

@@ -1,0 +1,11 @@
+pago PAYPAL  ref=DEP-9c5595d2-3a5e-46bc-bbaf-…  importe=321.5
+
+[FALLO] VIEJA  restar saldos: 99049 → 99507.9 = 458.90, esperaba 321.5
+[PASS] NUEVA  por referencia: asientos=1 importe=321.5 movio=321.5 monedero-correcto=true
+
+Creditos a ese monedero, en orden:
+  08:21:41   5000.00  QA-BOOT-CREDIT
+  08:25:00    137.40  DEP-9c5595d2-3a5e-46bc-bbaf-86b906087cf4-1785140611541
+  08:25:02    321.50  DEP-9c5595d2-3a5e-46bc-bbaf-86b906087cf4-1785140615334
+
+VEREDICTO: la vieja FALLA y la nueva PASA sobre los MISMOS datos. El sistema no tiene nada roto.

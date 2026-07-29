@@ -1,0 +1,8 @@
+--- migrate deploy ---
+    └─ migration.sql
+      
+All migrations have been successfully applied.
+
+--- drift contra schema.prisma ---
+Error: Could not load `--to-schema-datasource` from provided path `postgresql:/ironloot:ironloot_dev@db:5432/pt127_verify`: file or directory not found
+EXIT_DIFF=1

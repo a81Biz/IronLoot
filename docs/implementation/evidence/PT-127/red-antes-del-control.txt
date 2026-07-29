@@ -1,0 +1,27 @@
+PT-127.1 — RED confirmado ANTES de escribir el control (2026-07-27)
+
+$ npx jest --testPathPattern="coherencia-migraciones" --no-coverage
+
+FAIL test/unit/esquema/coherencia-migraciones.spec.ts
+  ● Test suite failed to run
+
+    test/unit/esquema/coherencia-migraciones.spec.ts:1:40 - error TS2307:
+      Cannot find module '../../../scripts/schema-drift-check' or its corresponding type declarations.
+
+    1 import { interpretar, type Diff } from '../../../scripts/schema-drift-check';
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+
+--- GREEN, tras escribir scripts/schema-drift-check.ts ---
+
+  AC-01: sin diferencias -> pasa
+  AC-02: hay diferencias -> falla, y las nombra
+  AC-03: la perdida de un indice unico se reporta como diferencia
+  AC-04: un error de ejecucion FALLA, no pasa en silencio
+  AC-05: un codigo inesperado tambien FALLA
+  AC-06: hay diferencias pero la salida viene vacia -> falla igual
+  AC-07: el motivo de un fallo por drift dice que hay que generar migracion
+
+Test Suites: 1 passed, 1 total
+Tests:       7 passed, 7 total

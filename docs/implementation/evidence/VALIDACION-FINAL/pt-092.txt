@@ -1,0 +1,11 @@
+[PASS] V-092-1    CLABE registrada, sin verificar :: isVerified=false
+[PASS] V-092-2    Retiro SIN verificar es rechazado :: HTTP 400 "Esta cuenta aún no está verificada. Verifícal"
+[PASS] V-092-3    Verificacion abierta, importe 20 :: HTTP 201 importe=20
+[PASS] V-092-4    El codigo NO viaja en la respuesta :: ausente
+[PASS] V-092-5    El codigo es transcribible a mano :: C9ECJR
+[PASS] V-092-6    Codigo incorrecto no verifica y cuenta intento :: intentos restantes=4
+[PASS] V-092-7    Codigo correcto EN MINUSCULAS verifica
+[PASS] V-092-8    Retiro con cuenta verificada es aceptado :: HTTP 201
+[PASS] V-092-9    Un solo PayPal, y el rechazo nombra el existente :: "Ya tienes una cuenta de PayPal registrada (uno@ejemplo."
+
+=== PT-092 === total=9 PASS=9 FALLO=0

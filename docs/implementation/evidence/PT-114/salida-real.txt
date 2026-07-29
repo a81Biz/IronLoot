@@ -1,0 +1,24 @@
+PT-114 (H-010) — verificacion sobre salida REAL
+
+Se vencio una subasta ACTIVE con 3 pujas y se dejo que el cron la cerrara solo
+(EVERY_MINUTE). No se invoco nada a mano: es el camino de produccion.
+
+ANTES (DS-006)
+  commission_records     0 filas
+  ledger FEE_PLATFORM    95.00 MXN cobrados
+  -> el informe financiero declaraba CERO ingresos por comision
+
+DESPUES
+  subasta                CLOSED
+  pedidos                1
+  commission_records     1
+  ledger FEE_PLATFORM    95.00 MXN
+
+  registro: 95.00 MXN al 10.00%
+  asiento:  95.00 MXN
+  -> COINCIDEN AL CENTIMO
+
+  ingresos por comision segun commission_records: 95.00 MXN
+
+Suite completa antes del cambio de datos: 193/193, las diez fases.
+npm test: API 477/477.

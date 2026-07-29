@@ -1,0 +1,31 @@
+PT-127.9 — El control probado en los dos sentidos (2026-07-27)
+
+Un control que nadie ha visto fallar no es un control. Es la leccion de PT-118 (el checkpoint
+declarado que no existia) y de H-017 (el healthcheck que nadie vio pasar).
+
+=== SENTIDO 1: cambio de esquema SIN migracion -> DEBE FALLAR ===
+
+Se anadio un campo opcional de control al modelo User de schema.prisma, sin generar migracion.
+
+$ npm run audit:schema
+
+[audit:schema] FALLA — Las migraciones y `schema.prisma` han divergido: 2 linea(s) de diferencia.
+Genera la migracion que falta con `npm run db:migrate` (prisma migrate dev) y vuelve a comprobar.
+No apliques el cambio con `db push`: no deja migracion, y esto es exactamente como llego H-014.
+
+  [*] Changed the `users` table
+    [+] Added column `campo_de_control_pt127`
+
+EXIT=1        <-- FALLA, nombra la diferencia, y dice que hacer
+
+=== SENTIDO 2: revertido -> DEBE PASAR ===
+
+$ git checkout -- prisma/schema.prisma
+$ grep -c "campoDeControlPT127" prisma/schema.prisma   ->  0
+$ npm run audit:schema
+
+[audit:schema] OK — las migraciones reproducen `schema.prisma`.
+
+EXIT=0        <-- PASA
+
+El campo de control quedo revertido. `git status` sobre schema.prisma: limpio.

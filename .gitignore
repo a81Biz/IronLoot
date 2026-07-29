@@ -157,10 +157,31 @@ graphify-temp/
 # `implementation/` (sin ruta) se retiro en PT-112: capturaba tambien docs/implementation/,
 # que es donde vive la historia de decisiones. No existe un implementation/ en la raiz.
 
-# La evidencia de FDGE mezcla ambas cosas: los .md son razonamiento, el resto son volcados.
+# PT-152 (F-136-A) — La evidencia que un documento cita TIENE que estar en el repositorio.
+#
+# Esto seguia solo los `.md` bajo el criterio «los .md son razonamiento, el resto son volcados». El
+# criterio suena razonable y estaba mal: **la evidencia ES el volcado**. FDGE lo dice sin rodeos —
+# *«el codigo no es evidencia; la ejecucion es evidencia»*— asi que la salida de la suite, la captura
+# del antes y el después y el JSON de verificacion no son subproductos: son la prueba.
+#
+# Medido el 2026-07-29: **81 de 189 ficheros sin seguir**. Cuando se registro F-136-A eran 79 de 162,
+# o sea que empeoraba. Y `PENDING_TASKS` llego a mandar leer un `regresion.txt` que no esta en git:
+# un documento que cita lo que no existe se lee con confianza y es falso — H-016 otra vez.
+#
+# Se invierte el criterio: **entra la evidencia, quedan fuera los artefactos de trabajo.** Hoy eso
+# son dos volcados `.sql` de respaldo (1.2 MB) que nadie cita y que no prueban nada — son la copia de
+# seguridad que se tomo ANTES de una prueba, no su resultado.
+#
+# Coste: ~5 MB. Se paga a proposito. Lo vigila `evidencia-citada-esta-en-git.spec.ts` (RULE-31).
 docs/implementation/evidence/**
 !docs/implementation/evidence/**/
 !docs/implementation/evidence/**/*.md
+!docs/implementation/evidence/**/*.txt
+!docs/implementation/evidence/**/*.png
+!docs/implementation/evidence/**/*.json
+!docs/implementation/evidence/**/*.log
+# Los respaldos de base de datos NO son evidencia: son la copia previa a ejecutar algo.
+docs/implementation/evidence/**/*.sql
 
 # --- Lo que si se versiona, y por que ---
 #   docs/enterprise-documentation/  arquitectura, PRD, TRD, seguridad (lo que audita PTSA)

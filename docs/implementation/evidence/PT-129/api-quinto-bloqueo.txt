@@ -1,0 +1,29 @@
+prisma:warn Prisma failed to detect the libssl/openssl version to use, and may not work as expected. Defaulting to "openssl-1.1.x".
+Please manually install OpenSSL and try installing Prisma again.
+Failed to start application PrismaClientInitializationError: Prisma Client could not locate the Query Engine for runtime "linux-musl".
+
+This happened because Prisma Client was generated for "linux-musl-openssl-3.0.x", but the actual deployment required "linux-musl".
+Add "linux-musl" to `binaryTargets` in the "schema.prisma" file and run `prisma generate` after saving it:
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl"]
+}
+
+The following locations have been searched:
+  /repo/src/api/node_modules/.prisma/client
+  /repo/src/api/node_modules/@prisma/client
+  /tmp/prisma-engines
+    at za (/repo/src/api/node_modules/@prisma/client/runtime/library.js:64:805)
+    at async Object.loadLibrary (/repo/src/api/node_modules/@prisma/client/runtime/library.js:111:10084)
+    at async _r.loadEngine (/repo/src/api/node_modules/@prisma/client/runtime/library.js:112:448)
+    at async _r.instantiateLibrary (/repo/src/api/node_modules/@prisma/client/runtime/library.js:111:12599)
+    at async _r.start (/repo/src/api/node_modules/@prisma/client/runtime/library.js:112:1976)
+    at async Proxy.onModuleInit (/repo/src/api/dist/database/prisma.service.js:35:13)
+    at async Promise.all (index 0)
+    at async callModuleInitHook (/repo/src/api/node_modules/@nestjs/core/hooks/on-module-init.hook.js:43:5)
+    at async NestApplication.callInitHook (/repo/src/api/node_modules/@nestjs/core/nest-application-context.js:252:13)
+    at async NestApplication.init (/repo/src/api/node_modules/@nestjs/core/nest-application.js:105:9) {
+  clientVersion: '5.22.0',
+  errorCode: undefined
+}

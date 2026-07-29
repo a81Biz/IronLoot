@@ -589,6 +589,23 @@ rules that do not exist. The guard accused itself on its first run for exactly t
 that a control block constructs rather than cites — **an exception excuses one file, a rule serves the
 next one.**
 
+### RULE-31: Evidence a document cites must be tracked by git
+**What:** if a `.md` under `docs/implementation/`, `PTSA/` or `changes/` cites a file in
+`evidence/`, that file is in the repository. Working artefacts (DB dumps) are excluded, **declared**
+in `.gitignore`.
+**Why:** `.gitignore` tracked only `.md` files under `evidence/`, on the reasoning *"the .md is the
+reasoning, the rest are dumps"*. That sounds right and is backwards: **the evidence IS the dump.**
+FDGE says it plainly — *code is not evidence, execution is evidence* — so suite output, before/after
+screenshots and verification JSON are not by-products, they are the proof.
+Measured 2026-07-29: **81 of 189 files untracked**, up from 79 of 162 when F-136-A was registered —
+the ratio was getting worse with every PT. `PENDING_TASKS` once told a reader to consult a
+`regresion.txt` that is not in git.
+**What it does not demand:** that everything be cited (there is legitimate evidence no document
+names, and forcing citations produces documents written for the linter), nor that everything be
+tracked (the `.sql` backups are the copy taken *before* running something, not its result).
+**Enforced by:** `evidencia-citada-esta-en-git.spec.ts`, which checks both directions — tracked *and*
+present on disk.
+
 ### RULE-30: Every `data-accion` a template declares has a handler registered
 **What:** ADMIN dispatches actions through a bridge — the template writes `data-accion="conciliar"`,
 `ui-behaviours.js` looks that key up in `window.accionesAdmin`, and the page's script registers it.

@@ -1,0 +1,25 @@
+PT-117 (H-012) — la migracion se comprobo ANTES de aplicarla
+
+El entorno corre `prisma db push --accept-data-loss` en cada arranque y NO hay
+_prisma_migrations en desarrollo (ADR-006 / AUD-001). El SQL se genera con
+migrate diff, se comprueba aditivo, y se aplica con psql.
+
+SQL GENERADO
+  $ npx prisma migrate diff --from-url <db> --to-schema-datamodel prisma/schema.prisma --script
+
+  -- AlterEnum
+  ALTER TYPE "NotificationType" ADD VALUE 'AUCTION_SOLD';
+
+  Una sola sentencia. Sin DROP, sin ALTER COLUMN, sin tocar filas.
+
+APLICACION
+  notificaciones antes:   4
+  ALTER TYPE
+  notificaciones despues: 4      <- intactas
+
+CATALOGO RESULTANTE
+  AUCTION_WON  AUCTION_LOST  BID_OUTBID  ORDER_PAID  ORDER_SHIPPED
+  DISPUTE_UPDATE  SYSTEM  AUCTION_SOLD
+
+Nota: `ALTER TYPE ... ADD VALUE` no puede correr dentro de una transaccion en
+PostgreSQL. Por eso se aplico suelto, no envuelto.

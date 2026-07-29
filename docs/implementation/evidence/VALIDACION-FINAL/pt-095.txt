@@ -1,0 +1,14 @@
+    El dominio de desarrollo no resuelve: base.inexistente.local, client.inexistente.local.
+    Los flujos autenticados NO funcionaran: iniciaras sesion en BASE y CLIENT te tratara como
+    anonimo, porque la cookie se emite para un dominio que tu maquina no conoce.
+    Anade estas lineas al fichero hosts del sistema:
+        127.0.0.1  inexistente.local
+        127.0.0.1  base.inexistente.local
+        127.0.0.1  client.inexistente.local
+        127.0.0.1  api.inexistente.local
+        127.0.0.1  admin.inexistente.local
+      (Windows: C:\Windows\System32\drivers\etc\hosts, como Administrador)
+      (Linux/macOS: /etc/hosts, con sudo)
+
+      at Object.<anonymous> (test/unit/config/_val95.spec.ts:4:11)
+Tests:       2 passed, 2 total

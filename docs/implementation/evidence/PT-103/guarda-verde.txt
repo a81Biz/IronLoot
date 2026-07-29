@@ -1,0 +1,7 @@
+    √ CD-01: ninguna deuda cerrada en HISTORY.log sigue abierta en el registro (3 ms)
+    √ CD-05: se salta limpiamente cuando los documentos no estan (1 ms)
+    √ CD-02: RECHAZA una deuda cerrada en la historia y abierta en el registro (1 ms)
+    √ CD-03: ACEPTA un registro coherente
+    √ CD-04: NO acusa ante una redaccion que no encaja en ninguna lista (1 ms)
+    √ CD-06: una deuda del registro que la historia no menciona es irrelevante
+Tests:       6 passed, 6 total

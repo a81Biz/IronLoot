@@ -1,0 +1,4 @@
+--- drift: schema.prisma vs base construida por migraciones ---
+No difference detected.
+
+EXIT_DIFF=0

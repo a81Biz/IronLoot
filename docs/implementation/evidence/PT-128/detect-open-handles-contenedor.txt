@@ -1,0 +1,40 @@
+      at ExceptionsHandler.next (../node_modules/@nestjs/core/exceptions/exceptions-handler.js:14:18)
+      at ../node_modules/@nestjs/core/router/router-proxy.js:13:35
+
+
+<--- Last few GCs --->
+
+[458:0x6d86e70]    27243 ms: Scavenge 496.0 (518.3) -> 495.6 (518.3) MB, 1.77 / 0.03 ms  (average mu = 0.513, current mu = 0.023) allocation failure; 
+[458:0x6d86e70]    27257 ms: Scavenge 496.1 (518.3) -> 495.8 (522.1) MB, 4.23 / 0.00 ms  (average mu = 0.513, current mu = 0.023) allocation failure; 
+[458:0x6d86e70]    27482 ms: Mark-Compact 501.8 (523.5) -> 494.8 (525.9) MB, 187.91 / 0.03 ms  (average mu = 0.384, current mu = 0.263) allocation failure; scavenge might not succeed
+
+
+<--- JS stacktrace --->
+
+FATAL ERROR: Reached heap limit Allocation failed - JavaScript heap out of memory
+----- Native stack trace -----
+
+ 1: 0xb78db3 node::OOMErrorHandler(char const*, v8::OOMDetails const&) [node]
+ 2: 0xee8300 v8::Utils::ReportOOMFailure(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [node]
+ 3: 0xee85e7 v8::internal::V8::FatalProcessOutOfMemory(v8::internal::Isolate*, char const*, v8::OOMDetails const&) [node]
+ 4: 0x10fb205  [node]
+ 5: 0x1113088 v8::internal::Heap::CollectGarbage(v8::internal::AllocationSpace, v8::internal::GarbageCollectionReason, v8::GCCallbackFlags) [node]
+ 6: 0x10e91f1 v8::internal::HeapAllocator::AllocateRawWithLightRetrySlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment) [node]
+ 7: 0x10ea385 v8::internal::HeapAllocator::AllocateRawWithRetryOrFailSlowPath(int, v8::internal::AllocationType, v8::internal::AllocationOrigin, v8::internal::AllocationAlignment) [node]
+ 8: 0x10c69a6 v8::internal::Factory::AllocateRaw(int, v8::internal::AllocationType, v8::internal::AllocationAlignment) [node]
+ 9: 0x10b8304 v8::internal::FactoryBase<v8::internal::Factory>::AllocateRawWithImmortalMap(int, v8::internal::AllocationType, v8::internal::Map, v8::internal::AllocationAlignment) [node]
+10: 0x10baae6 v8::internal::FactoryBase<v8::internal::Factory>::NewRawOneByteString(int, v8::internal::AllocationType) [node]
+11: 0x140cd17 v8::internal::String::SlowFlatten(v8::internal::Isolate*, v8::internal::Handle<v8::internal::ConsString>, v8::internal::AllocationType) [node]
+12: 0x1279d24 v8::internal::CompilationCacheTable::LookupScript(v8::internal::Handle<v8::internal::CompilationCacheTable>, v8::internal::Handle<v8::internal::String>, v8::internal::ScriptDetails const&, v8::internal::Isolate*) [node]
+13: 0xfa466d v8::internal::CompilationCacheScript::Lookup(v8::internal::Handle<v8::internal::String>, v8::internal::ScriptDetails const&) [node]
+14: 0xfa5255 v8::internal::CompilationCache::LookupScript(v8::internal::Handle<v8::internal::String>, v8::internal::ScriptDetails const&, v8::internal::LanguageMode) [node]
+15: 0xfb22c0  [node]
+16: 0xfb320a v8::internal::Compiler::GetSharedFunctionInfoForScript(v8::internal::Isolate*, v8::internal::Handle<v8::internal::String>, v8::internal::ScriptDetails const&, v8::ScriptCompiler::CompileOptions, v8::ScriptCompiler::NoCacheReason, v8::internal::NativesFlag) [node]
+17: 0xf11de3  [node]
+18: 0xf122b8 v8::ScriptCompiler::CompileUnboundScript(v8::Isolate*, v8::ScriptCompiler::Source*, v8::ScriptCompiler::CompileOptions, v8::ScriptCompiler::NoCacheReason) [node]
+19: 0xca0151 node::contextify::ContextifyScript::New(v8::FunctionCallbackInfo<v8::Value> const&) [node]
+20: 0xf50bdf v8::internal::FunctionCallbackArguments::Call(v8::internal::CallHandlerInfo) [node]
+21: 0xf51195  [node]
+22: 0xf518b3 v8::internal::Builtin_HandleApiCall(int, unsigned long*, v8::internal::Isolate*) [node]
+23: 0x195e376  [node]
+Aborted (core dumped)

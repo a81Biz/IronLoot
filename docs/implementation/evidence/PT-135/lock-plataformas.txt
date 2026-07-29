@@ -1,0 +1,18 @@
+=== PT-135 — El lock: 17 paquetes de plataforma, como antes de PT-126 ===
+@css-inline/css-inline-android-arm-eabi
+@css-inline/css-inline-android-arm64
+@css-inline/css-inline-darwin-arm64
+@css-inline/css-inline-darwin-x64
+@css-inline/css-inline-linux-arm-gnueabihf
+@css-inline/css-inline-linux-arm64-gnu
+@css-inline/css-inline-linux-arm64-musl
+@css-inline/css-inline-linux-x64-gnu
+@css-inline/css-inline-linux-x64-musl
+@css-inline/css-inline-win32-arm64-msvc
+@css-inline/css-inline-win32-x64-msvc
+@msgpackr-extract/msgpackr-extract-darwin-arm64
+@msgpackr-extract/msgpackr-extract-darwin-x64
+@msgpackr-extract/msgpackr-extract-linux-arm
+@msgpackr-extract/msgpackr-extract-linux-arm64
+@msgpackr-extract/msgpackr-extract-linux-x64
+@msgpackr-extract/msgpackr-extract-win32-x64

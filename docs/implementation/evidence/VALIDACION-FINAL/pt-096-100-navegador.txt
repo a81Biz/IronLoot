@@ -1,0 +1,9 @@
+[PASS] PT-096-a   Ordenar el catalogo en BASE :: e.ironloot.local/auctions?sort=price_asc
+[PASS] PT-100     La sesion de ADMIN persiste en el subdominio :: http://admin.ironloot.local/
+[PASS] PT-096-b   El script delegado se carga en ADMIN
+[PASS] PT-096-c   Confirmacion antes de accion destructiva :: pregunta="¿Forzar cierre?" cancelado=true
+[PASS] PT-096-d   Filtro de ADMIN se auto-envia
+[PASS] PT-100-b   Navegar entre secciones sin volver al login :: http://admin.ironloot.local/users
+[PASS] PT-096-e   Cero violaciones de CSP en el recorrido :: 0 violaciones
+
+=== NAVEGADOR === total=7 PASS=7 FALLO=0

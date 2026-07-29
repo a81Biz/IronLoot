@@ -1,0 +1,14 @@
+=== PT-093 — segundo factor obligatorio en produccion ===
+    √ A5: no devuelve errores con configuración de producción válida (2 ms)
+    √ A6: no valida en entornos distintos de production
+    √ A1: rechaza ADMIN_PASSWORD default "admin" en producción (1 ms)
+    √ A2: rechaza ADMIN_PASSWORD vacío en producción (1 ms)
+    √ A3: rechaza ADMIN_PASSWORD placeholder en producción
+    √ A4: rechaza ADMIN_USERNAME default "admin" en producción
+    √ A7: mantiene los checks existentes (JWT_SECRET corto) (1 ms)
+    √ A7b: reporta ALLOWED_ORIGINS ausente en producción
+      √ en produccion, SIN segundo factor el arranque falla (1 ms)
+      √ en produccion, con segundo factor no se queja por eso
+      √ un secreto de TOTP demasiado corto tampoco vale
+      √ en desarrollo NO se exige: la carga no compensa (1 ms)
+Tests:       12 passed, 12 total

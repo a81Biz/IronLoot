@@ -1,0 +1,59 @@
+{
+  "buyer": {
+    "username": "vf_buyer_1784877303060",
+    "email": "vf_buyer_1784877303060@test.local",
+    "password": "Passw0rd!123"
+  },
+  "seller": {
+    "username": "vf_seller_1784877303060",
+    "email": "vf_seller_1784877303060@test.local",
+    "password": "Passw0rd!123"
+  },
+  "R": [
+    {
+      "id": "PT-048-deposit",
+      "pass": true,
+      "detail": "url=https://www.mercadopago.com.mx/checkout/v1/payment/redirect/ err=\"\" net=[\"200 undefined\",\"201 /v1/payments/initiate\"]"
+    },
+    {
+      "id": "PT-048-enable-seller",
+      "pass": true,
+      "detail": "msg=\"\" url=http://localhost:5175/seller/auctions"
+    },
+    {
+      "id": "PT-048-create-auction",
+      "pass": true,
+      "detail": "url=http://localhost:5175/seller/auctions msg=\"\""
+    },
+    {
+      "id": "PT-050-disputes",
+      "pass": true,
+      "detail": "HTTP 200"
+    },
+    {
+      "id": "PT-053-contact",
+      "pass": true,
+      "detail": "HTTP 200"
+    },
+    {
+      "id": "PT-054-auction-404",
+      "pass": true,
+      "detail": "HTTP 404"
+    },
+    {
+      "id": "PT-049-commission-500",
+      "pass": true,
+      "detail": "url=http://localhost:3001/commissions 500s=[]"
+    },
+    {
+      "id": "PT-051-notification",
+      "pass": true,
+      "detail": "url=http://localhost:3001/notifications?sent=1"
+    },
+    {
+      "id": "PT-052-cms",
+      "pass": true,
+      "detail": "HTTP 200 blocks=4 4xx=[]"
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+PT-110 — vulnerabilidades en dependencias de produccion
+
+ANTES   71 vulnerabilidades (15 moderate, 53 high, 3 critical)
+DESPUES 63 vulnerabilidades ( 1 low, 11 moderate, 48 high, 3 critical)
+
+Overrides aplicados — SOLO dentro del mismo mayor, medido paquete a paquete:
+
+  engine.io         6.6.5  -> 6.6.9   (fuera del rango vulnerable 4.1.0-6.6.7)
+  ws                8.18.3 -> 8.21.1
+  socket.io-parser  4.2.5  -> 4.2.7
+  qs                6.13.0 -> 6.15.3
+  lodash            4.17.21-> 4.18.1
+  picomatch         4.0.1  -> 4.0.5
+
+Se DESCARTARON por exigir salto de version mayor (7 de 12 candidatos):
+  body-parser 1.20.3 -> 2.3.0     path-to-regexp 3.3.0 -> 8.4.2
+  brace-expansion 2.0.2 -> 5.0.8  minimatch 9.0.3 -> 10.2.6
+  glob 10.4.5 -> 13.0.6           tar 6.2.1 -> 7.5.22
+  js-yaml 4.1.0 -> 5.2.2
+
+`npm audit fix` (sin --force) NO se pudo aplicar: ERESOLVE.
+  @nestjs-modules/mailer@2.3.7 exige nodemailer>=8.0.5; el proyecto tiene 7.0.13.
+
+VERIFICACION
+  npm test         724/724
+  suite completa   smoke 57/57 · bootstrap 13/13 · authed 41/41 · e2e 5/5
+                   puja-en-vivo 8/8 · extras 19/19 · admin-writes 4/4
+                   withdrawal 13/13 · payment-trace 16/16 (cobro REAL)
+  La puja en vivo sigue funcionando con ws y engine.io cambiados debajo: 8/8.

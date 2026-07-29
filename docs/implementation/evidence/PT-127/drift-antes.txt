@@ -1,0 +1,30 @@
+
+[+] Added enums
+  - PaymentMethodType
+  - AccountVerificationStatus
+
+[+] Added tables
+  - account_verifications
+
+[*] Changed the `NotificationType` enum
+  [+] Added variant `AUCTION_SOLD`
+
+[*] Changed the `account_verifications` table
+  [+] Added index on columns (payment_method_id)
+  [+] Added index on columns (status, expires_at)
+  [+] Added index on columns (user_id)
+  [+] Added foreign key on columns (payment_method_id)
+
+[*] Changed the `payment_cycles` table
+  [+] Added column `provider_ref`
+
+[*] Changed the `payments` table
+  [-] Removed index on columns (reference)
+  [+] Added unique index on columns (reference)
+
+[*] Changed the `user_payment_methods` table
+  [+] Added column `card_last4`
+  [+] Added column `paypal_email`
+  [+] Added column `type`
+
+EXIT=0

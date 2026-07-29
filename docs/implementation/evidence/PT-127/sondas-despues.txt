@@ -1,0 +1,14 @@
+  OK    userPaymentMethod.findMany
+  OK    paymentCycle.findMany
+  OK    accountVerification.findMany
+  OK    payment.findMany
+
+  RESULTADO: 4 de 4
+
+--- indice unico de payments.reference ---
+       indexname        |                                       indexdef                                        
+------------------------+---------------------------------------------------------------------------------------
+ payments_pkey          | CREATE UNIQUE INDEX payments_pkey ON public.payments USING btree (id)
+ payments_reference_key | CREATE UNIQUE INDEX payments_reference_key ON public.payments USING btree (reference)
+(2 rows)
+
