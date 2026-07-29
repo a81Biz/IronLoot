@@ -78,3 +78,35 @@
 - **Bloque desaparecido:** los once VoBo pendientes de FPGE-002 se cerraron hoy (nueve CLOSED con
   validacion humana, dos DONE). Era el mayor bloque de aquella emision.
 - **Estado:** esperando revision humana. FPGE no promueve nada por si mismo.
+
+## 2026-07-29 — Promocion masiva R-008..R-022 -> PT-148..PT-162
+
+- **Trigger:** `promote FPGE` sobre los quince, por decision humana explicita: «marca a todos como
+  APROBADO y promueve todos».
+- **Promotions** (por orden de prioridad de R-003):
+  - R-009 -> PT-148 (REFACTOR, STATE 1-R)      - la guarda SSR<->API a ADMIN y BASE
+  - R-019 -> PT-149 (BUG, STATE 1-B)           - H-021, el veredicto derivado del resultado
+  - R-008 -> PT-150 (FEATURE, STATE 1-E)       - escaner de la imagen base
+  - R-013 -> PT-151 (INVESTIGATION, STATE 1-B) - el patron de H-019
+  - R-012 -> PT-152 (BUG, STATE 1-B)           - la evidencia citada entra en git
+  - R-020 -> PT-153 (REFACTOR, STATE 1-R)      - H-022, los checkpoints por PrismaClient
+  - R-011 -> PT-154 (REFACTOR, STATE 1-R)      - guarda contra deshacer ADR-049
+  - R-010 -> PT-155 (INVESTIGATION, STATE 1-B) - H-005. **BLOQUEADO**
+  - R-017 -> PT-156 (FEATURE, STATE 1-E)       - /ratings sin sesion. **BLOQUEADO**
+  - R-021 -> PT-157 (BUG, STATE 1-B)           - H-024, audit-scope reapuntado y verificado
+  - R-016 -> PT-158 (REFACTOR, STATE 1-R)      - la suite QA sobre TLS
+  - R-018 -> PT-159 (BUG, STATE 1-B)           - la suite cabe en el contenedor
+  - R-014 -> PT-160 (REFACTOR, STATE 1-R)      - pages-moderation.js a classList
+  - R-015 -> PT-161 (REFACTOR, STATE 1-R)      - la imagen sin deps de desarrollo
+  - R-022 -> PT-162 (BUG, STATE 1-B)           - UserResponseDto duplicado
+- **Paquete de propuesta:** `changes/PT-148-162-tanda-fpge-003/` — **uno para los quince**, no quince.
+  El Proposal Gate se cumple igual con un documento que con quince; lo que no se cumpliria es tocar
+  codigo sin ninguno. Un solo ACK desbloquea la tanda.
+- **Doce ejecutables · dos bloqueados · uno con riesgo de entorno.** Los dos bloqueados se promueven
+  porque se pidio promover todos, y se declara aqui en vez de descubrirse a mitad: PT-155 necesita
+  contratar un PAC y una decision fiscal; PT-156 es una eleccion de producto. Los dos entregan su
+  artefacto de decision, no implementacion.
+- **Orden de ejecucion != orden de prioridad.** PT-153 va antes que PT-149 pese a puntuar la mitad:
+  sin el no hay forma de comprobar que PT-149 quedo bien. PT-150 antes que PT-161: mide antes de
+  recortar.
+- **Estado:** los quince en `PROMOVIDO`. Esperando ACK del Proposal Gate.

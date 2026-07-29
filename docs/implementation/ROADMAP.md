@@ -1,7 +1,8 @@
 # ROADMAP — FPGE
 
 **Emisión:** R-003 · **2026-07-29** · **Sesión PTSA origen:** S-003 (2026-07-29, delta sync)
-**Estado:** todos los ítems en `PROPUESTO`. FPGE propone; **el humano dispone**.
+**Estado:** los quince **`APROBADO` por decisión humana el 2026-07-29** y **`PROMOVIDO`** a
+`PT-148`…`PT-162`. FPGE propuso; el humano dispuso: los aprobó todos.
 
 > Tercera emisión, y la segunda de hoy. R-002 se emitió esta mañana **con la compuerta de frescura
 > activada** y advirtiendo que el orden no era definitivo hasta un `resume PTSA`. El delta sync se
@@ -67,21 +68,21 @@ precisamente para que la corazonada no decida.
 
 | Rank | ID | Tipo | Título | Origen | Dim | Δ Score | Esf. | **Priority** | Estado |
 |---:|---|---|---|---|:--:|---:|:--:|---:|---|
-| 1 | **R-009** | REFACTOR | Extender la guarda del contrato SSR↔API a ADMIN y BASE | H-020 | D1 | +4.5 | S | **81.00** | `PROPUESTO` |
-| 2 | **R-019** | BUG | `audit:domain` afirma `cross_coherence_verified = true` sin haber medido | **H-021** | D2 | +4.5 | S | **60.75** | `PROPUESTO` |
-| 3 | **R-008** | FEATURE | Escáner de vulnerabilidades de la imagen base en CI | TD-016 | D2 | +4.5 | S | **40.50** | `PROPUESTO` |
-| 4 | **R-013** | INVESTIGATION | Barrer el patrón de H-019: DTO transformado contra JSON almacenado | H-019 | D2 | +1.5 | S | **27.00** | `PROPUESTO` |
-| 5 | **R-012** | BUG | La evidencia que los documentos citan no está en git | F-136-A | D4 | +1.5 | S | **20.25** | `PROPUESTO` |
-| 6 | **R-020** | REFACTOR | Los dos checkpoints de delta sync consultan con `docker exec` | **H-022** | D2 | +1.5 | S | **18.00** | `PROPUESTO` |
-| 7 | **R-011** | REFACTOR | Impedir que `[START FOUNDATION]` deshaga ADR-049 | PT-141 | D4 | +1.5 | S | **13.50** | `PROPUESTO` |
-| 8 | **R-010** | INVESTIGATION | **H-005** — quién emite la factura (CFDI/PAC) | H-005 | D1 | +4.5 | L | **10.13** | `PROPUESTO` |
-| 9 | **R-017** | FEATURE | `/users/:id/ratings` exige sesión | S-002-V | D1 | +1.5 | S | **9.00** | `PROPUESTO` |
-| 10 | **R-021** | BUG | `audit-scope.yaml` cita cuatro documentos archivados | **H-024** | D4 | +0.5 | S | **6.00** | `PROPUESTO` |
-| 11 | **R-016** | REFACTOR | La suite QA por navegador corre sobre HTTP | S-002-V | D2 | +1.5 | M | **4.50** | `PROPUESTO` |
-| 12 | **R-018** | BUG | La suite del API no cabe en el contenedor con los workers por defecto | HANDOFF | D2 | +0.3 | S | **1.80** | `PROPUESTO` |
-| 13 | **R-014** | REFACTOR | `pages-moderation.js` usa `style.display` | PT-139 | D2 | +0.3 | S | **1.80** | `PROPUESTO` |
-| 14 | **R-015** | REFACTOR | La imagen de producción del API lleva dependencias de desarrollo | S-002 | D2 | +0.3 | M | **0.90** | `PROPUESTO` |
-| 15 | **R-022** | BUG | `UserResponseDto` publicado con dos esquemas distintos | **H-023** | D4 | +0.1 | S | **0.60** | `PROPUESTO` |
+| 1 | **R-009** | REFACTOR | Extender la guarda del contrato SSR↔API a ADMIN y BASE | H-020 | D1 | +4.5 | S | **81.00** | `PROMOVIDO` → **PT-148** |
+| 2 | **R-019** | BUG | `audit:domain` afirma `cross_coherence_verified = true` sin haber medido | **H-021** | D2 | +4.5 | S | **60.75** | `PROMOVIDO` → **PT-149** |
+| 3 | **R-008** | FEATURE | Escáner de vulnerabilidades de la imagen base en CI | TD-016 | D2 | +4.5 | S | **40.50** | `PROMOVIDO` → **PT-150** |
+| 4 | **R-013** | INVESTIGATION | Barrer el patrón de H-019: DTO transformado contra JSON almacenado | H-019 | D2 | +1.5 | S | **27.00** | `PROMOVIDO` → **PT-151** |
+| 5 | **R-012** | BUG | La evidencia que los documentos citan no está en git | F-136-A | D4 | +1.5 | S | **20.25** | `PROMOVIDO` → **PT-152** |
+| 6 | **R-020** | REFACTOR | Los dos checkpoints de delta sync consultan con `docker exec` | **H-022** | D2 | +1.5 | S | **18.00** | `PROMOVIDO` → **PT-153** |
+| 7 | **R-011** | REFACTOR | Impedir que `[START FOUNDATION]` deshaga ADR-049 | PT-141 | D4 | +1.5 | S | **13.50** | `PROMOVIDO` → **PT-154** |
+| 8 | **R-010** | INVESTIGATION | **H-005** — quién emite la factura (CFDI/PAC) | H-005 | D1 | +4.5 | L | **10.13** | `PROMOVIDO` → **PT-155** |
+| 9 | **R-017** | FEATURE | `/users/:id/ratings` exige sesión | S-002-V | D1 | +1.5 | S | **9.00** | `PROMOVIDO` → **PT-156** |
+| 10 | **R-021** | BUG | `audit-scope.yaml` cita cuatro documentos archivados | **H-024** | D4 | +0.5 | S | **6.00** | `PROMOVIDO` → **PT-157** |
+| 11 | **R-016** | REFACTOR | La suite QA por navegador corre sobre HTTP | S-002-V | D2 | +1.5 | M | **4.50** | `PROMOVIDO` → **PT-158** |
+| 12 | **R-018** | BUG | La suite del API no cabe en el contenedor con los workers por defecto | HANDOFF | D2 | +0.3 | S | **1.80** | `PROMOVIDO` → **PT-159** |
+| 13 | **R-014** | REFACTOR | `pages-moderation.js` usa `style.display` | PT-139 | D2 | +0.3 | S | **1.80** | `PROMOVIDO` → **PT-160** |
+| 14 | **R-015** | REFACTOR | La imagen de producción del API lleva dependencias de desarrollo | S-002 | D2 | +0.3 | M | **0.90** | `PROMOVIDO` → **PT-161** |
+| 15 | **R-022** | BUG | `UserResponseDto` publicado con dos esquemas distintos | **H-023** | D4 | +0.1 | S | **0.60** | `PROMOVIDO` → **PT-162** |
 
 Desempate R-018 / R-014 (1.80, ambos D2): **mayor riesgo de no hacerlo**. Una suite que reporta «4
 failed» sin que nada esté roto enseña a descartar sus fallos; el `style.display` de moderación
