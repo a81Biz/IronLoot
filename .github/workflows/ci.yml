@@ -498,7 +498,24 @@ jobs:
 
           arrancar ironloot-client-ci ironloot-client:ci             -e NODE_ENV=production             -e CLIENT_PORT=5175             -e API_URL=http://localhost:3000
 
-          arrancar ironloot-api-ci ironloot-api:ci             -e NODE_ENV=production             -e PORT=3000             -e DATABASE_URL=postgresql://ironloot:ironloot_test@localhost:5432/ironloot_test             -e REDIS_URL=redis://localhost:6379             -e REDIS_HOST=localhost             -e REDIS_PORT=6379             -e JWT_SECRET=ci-jwt-secret-solo-para-verificar-que-la-imagen-arranca             -e SESSION_SECRET=ci-session-secret-solo-para-verificar-que-la-imagen-arranca             -e MERCADO_PAGO_ACCESS_TOKEN=TEST-ci-no-es-un-token-real             -e MERCADO_PAGO_WEBHOOK_SECRET=TEST-ci-no-es-un-secreto-real             -e PAYPAL_CLIENT_ID=TEST-ci-no-es-real             -e PAYPAL_CLIENT_SECRET=TEST-ci-no-es-real             -e PAYPAL_WEBHOOK_ID=TEST-ci-no-es-real
+          arrancar ironloot-api-ci ironloot-api:ci             -e NODE_ENV=production             -e PORT=3000             -e DATABASE_URL=postgresql://ironloot:ironloot_test@localhost:5432/ironloot_test             -e REDIS_URL=redis://localhost:6379             -e REDIS_HOST=localhost             -e REDIS_PORT=6379             -e JWT_SECRET=ci-jwt-secret-solo-para-verificar-que-la-imagen-arranca             -e SESSION_SECRET=ci-session-secret-solo-para-verificar-que-la-imagen-arranca             -e MERCADO_PAGO_ACCESS_TOKEN=TEST-ci-no-es-un-token-real             -e MERCADO_PAGO_WEBHOOK_SECRET=TEST-ci-no-es-un-secreto-real             -e PAYPAL_CLIENT_ID=TEST-ci-no-es-real             -e PAYPAL_CLIENT_SECRET=TEST-ci-no-es-real             -e PAYPAL_WEBHOOK_ID=TEST-ci-no-es-real             -e ALLOWED_ORIGINS=http://localhost:5174,http://localhost:5175             -e ADMIN_API_KEY=ci-admin-api-key-no-usar-fuera-de-este-job             -e ADMIN_USERNAME=ci-verificador-de-imagen             -e ADMIN_PASSWORD=ci-password-larga-y-no-por-defecto-solo-para-este-job             -e ADMIN_TOTP_SECRET=CIVERIFICADORDEIMAGEN234567
+
+          # NOTA — Estas cinco ultimas no estaban, y el API se nego a arrancar por ellas:
+          #
+          #   STARTUP CONFIGURATION ERRORS:
+          #     - ADMIN_API_KEY must not be a placeholder value in production
+          #     - ADMIN_USERNAME must be set to a non-default value (not "admin")
+          #     - ADMIN_TOTP_SECRET must be set (>=16 chars) ... must not rely on a password alone
+          #     - ADMIN_PASSWORD must be set to a strong non-default value
+          #     - ALLOWED_ORIGINS must be explicitly set in production
+          #
+          # **No era un defecto: era el control funcionando.** `validateStartupConfig` (PT-036,
+          # PT-093) solo actua con NODE_ENV=production, y esta es la primera vez que alguien lo
+          # ejerce DENTRO DE UNA IMAGEN. Que abortara con los cinco motivos nombrados es exactamente
+          # lo que se le pidio cuando se escribio.
+          #
+          # Los valores son evidentes a proposito: si alguno acabara en un despliegue real, tiene
+          # que cantar en el primer vistazo.
 
           esperar_healthy ironloot-admin-ci
           esperar_healthy ironloot-base-ci
