@@ -589,6 +589,18 @@ rules that do not exist. The guard accused itself on its first run for exactly t
 that a control block constructs rather than cites — **an exception excuses one file, a rule serves the
 next one.**
 
+### RULE-32: Every pattern in `test:guardas` must match at least one suite
+**What:** the `--testPathPattern` list in `test:guardas` names guard suites. Every pattern must match
+a real file.
+**Why:** PT-148 renamed `rutas-que-el-client-invoca.spec.ts` and the pattern `rutas-que-el-client`
+**stopped matching anything**. The script stayed green — Jest does not complain when a pattern finds
+no files, the others pass and the summary says OK. The SSR↔API contract guard silently dropped out of
+the guard script **four hours after being widened**.
+**The failure mode is the bad one:** it does not break, it **shrinks**. A rename empties it without a
+trace, and what stops being watched does not show up anywhere. RULE-26 applied to the script that
+does the watching.
+**Enforced by:** `patrones-de-guardas-casan.spec.ts`.
+
 ### RULE-31: Evidence a document cites must be tracked by git
 **What:** if a `.md` under `docs/implementation/`, `PTSA/` or `changes/` cites a file in
 `evidence/`, that file is in the repository. Working artefacts (DB dumps) are excluded, **declared**
