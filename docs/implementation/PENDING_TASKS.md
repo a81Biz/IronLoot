@@ -4,7 +4,29 @@
 
 ---
 
-## Cero trabajo FDGE pendiente
+## Esperando validación humana
+
+`[R44]` y STATE 6 prohíben al agente cerrar bugs. **Estos cuatro esperan tu palabra, no trabajo:**
+
+| PT | Qué es | Evidencia |
+|---|---|---|
+| **PT-173** | `shipments` se saltaba `OrderStateMachine`: un pedido `PAID` saltaba a `DELIVERED` | `evidence/PT-173/` |
+| **PT-174** | **La recepción la confirma quien recibe**, y el dinero espera 72 h desde esa confirmación | `evidence/PT-174/` |
+| **PT-175** | Fase 35: la cadena completa —cierre → envío → recepción → liberación → retiro— **sin sembrar** | `evidence/PT-175/` |
+| **PT-176** | El click de PayPal, y el resumen de la suite que omitía la fase caída (**H-027**) | `evidence/PT-176/` |
+
+**El de peso es PT-174, y conviene saber qué cambia**: hasta ahora **el vendedor podía marcar entregado su
+propio envío y liberar su propio holdback**, sin enviar nada y sin que nadie confirmara. El holdback
+protege al comprador durante la ventana de disputa, y lo desactivaba la parte de la que protege.
+
+**Decisión de negocio aplicada: opción B, 72 h** — declarada como supuesto revocable en `PLAN_ACTUAL.md` y
+confirmada con tu «adelante». Es un parámetro (`SETTLEMENT_HOLDBACK_HOURS`), no una política incrustada.
+
+**`H-027` pasa a `CORREGIDA`**, no a `CERRADA`: la cierras tú.
+
+---
+
+## Cero trabajo FDGE pendiente aparte de eso
 
 **Los siete que esperaban validación se cerraron con VoBo humano el 2026-07-29**: PT-166, PT-167,
 PT-168, PT-169, PT-170, PT-171 y PT-172. Detalle y evidencia en `HISTORY.log` § «CIERRE CON VoBo HUMANO

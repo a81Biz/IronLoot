@@ -204,6 +204,36 @@ The API is organized in `src/api/src/modules/` with 27 feature modules:
 
 The `scheduler` module runs cron jobs to advance auction states automatically. During the soft-close window, any new bid extends the auction by `AUCTION_SOFT_CLOSE_WINDOW_SEC`.
 
+### Entrega, recepción y liquidación
+
+**La recepción la confirma quien recibe** (PT-174). El vendedor declara el envío (`SHIPPED`); **el
+comprador**, y sólo él, confirma la recepción (`DELIVERED`). Hasta PT-174 **todo** cambio de estado era
+del vendedor, y como el cron liberaba el holdback en cuanto el pedido estaba `DELIVERED`, **el vendedor
+marcaba entregado su propio envío y liberaba su propio dinero** — sin enviar nada y sin que nadie
+confirmara. El holdback protege al comprador durante la ventana de disputa, y lo podía desactivar la
+única parte de la que protege.
+
+**El neto espera `SETTLEMENT_HOLDBACK_HOURS` (72) desde la confirmación**, no desde el estado. El reloj
+cuelga de `shipment.deliveredAt` — es la lección de H-011, que medía la ventana de disputa desde la
+última modificación de la fila en vez de desde la entrega.
+
+**Y el vencimiento se conserva, porque hay dos mentiras posibles y no son simétricas:** el vendedor puede
+mentir al enviar —ya no puede: no tiene la llave— y el comprador puede mentir **negando** la recepción,
+lo que retendría el dinero del vendedor. A los `DISPUTE_WINDOW_DAYS` (14) se libera igual. Antes eso
+existía por accidente, como el otro brazo de un `OR`; ahora es una regla con su prueba.
+
+**La transición pasa por `OrderStateMachine`** (PT-173). Existía en `@ironloot/core`, decía
+`PAID → SHIPPED → DELIVERED` y ya se consultaba en `orders.service.ts` y `refunds.service.ts`, pero
+`shipments.service.ts` escribía `order.status` a mano: **dos puertas al mismo estado y sólo una con
+cerradura**. Un pedido `PAID` saltaba directo a `DELIVERED`.
+
+**La cadena entera se recorre, no se siembra** (PT-175). `tests/qa-browser-suite/35-cierre-y-liquidacion.js`
+va de la subasta cerrada al retiro de la ganancia **sin un solo `INSERT`** — hay un caso que se lee a sí
+mismo y falla si aparece uno. La fase 60 sigue sembrando el origen del dinero a propósito: prueba el
+subsistema de retiro aislado. Para no esperar 72 h, QA fija `SETTLEMENT_HOLDBACK_HOURS=0` y usa
+`POST /scheduler/release-settlements`, que **sólo existe fuera de producción** (`DevelopmentOnlyGuard`).
+**Configurar no es falsear**: se recorre el mismo código y sólo se adelanta el reloj.
+
 ### Bid & Wallet Flow
 
 1. User places bid → `BidsService` locks funds: `wallet.held_funds += bid.amount`

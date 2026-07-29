@@ -2869,3 +2869,33 @@ Delta (real vs planificado): una desviacion, y la encontro la propia suite. Al f
   la variable del contenedor en vez de comprobar el defecto. Una prueba que cambia de resultado segun
   donde corra no mide lo que cree medir. Se limpia la variable en cada caso y se restaura al final.
 PTSA reference: **H-027** -> CORREGIDA (el resumen ya no omite la fase caida). No se cierra: `[R44]`.
+
+## PT-173 — BUG: `shipments` se saltaba la maquina de estados del pedido
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-173-shipments-se-salta-la-maquina
+Objective: que la transicion del pedido pase por la unica puerta que tiene cerradura.
+Root cause: `shipments.service.updateStatus` escribia `order.status` **a mano**
+  (`prisma.order.update({ data: { status: 'DELIVERED' } })`), saltandose `OrderStateMachine` — que vive
+  en `@ironloot/core`, declara `PAID -> SHIPPED -> DELIVERED` y **ya se consulta** en
+  `orders.service.ts:160` y `refunds.service.ts:20`.
+  **Dos puertas al mismo estado y solo una con cerradura.** Un pedido `PAID` saltaba directo a
+  `DELIVERED` sin pasar por `SHIPPED`, y con eso el cron liberaba el holdback del vendedor. Familia de
+  AUD-005, el doble mecanismo de comision que cerro PT-042.
+Solution: se conecta la maquina que ya existia —**no se escribio ninguna nueva**; el plan preveia
+  crearla y al leer el codigo ya estaba y ya decia lo correcto— y las dos escrituras (envio y pedido)
+  pasan a una `$transaction`.
+  La comprobacion va **antes** de tocar el envio: si la transicion no vale, no se mueve nada. Un envio
+  `DELIVERED` con su pedido en `PAID` seria peor que el defecto original — el sistema contradiciendose.
+Modified files: src/api/src/modules/shipments/shipments.service.ts,
+  src/api/test/unit/shipments/shipments.service.spec.ts
+Evidence: docs/implementation/evidence/PT-173/
+Delta (real vs planificado): dos desviaciones. (1) No hacia falta maquina nueva: se conecto la que habia
+  — la diferencia entre añadir y conectar. (2) `design.md` proponia delegar en
+  `ordersService.updateStatus()`; se hizo con la maquina directa y `$transaction`, porque
+  `updateStatus()` no acepta cliente de transaccion y delegar habria dejado las dos escrituras sueltas.
+  La condicion de «una sola fuente de verdad» se cumple igual: las dos puertas consultan la misma
+  maquina de `core`.
+  Y **una prueba fijaba el defecto**: `should update status and set deliveredAt` pasaba el pedido sin
+  estado, asi que no habia transicion que validar. Corregida.
+PTSA reference: ninguno — defecto nuevo. F-172-A.

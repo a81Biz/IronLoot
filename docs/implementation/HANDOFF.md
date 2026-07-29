@@ -4,14 +4,46 @@
 
 **Rama**: `master`, árbol limpio, cero ramas sin fusionar. **Sin subir a `origin`.**
 
-**Pruebas**: **1134** unitarias en verde — API **881** (111 suites) · CORE **134** · CLIENT **103** ·
-ADMIN **13** · BASE **3**. `test:guardas`: **17** suites / **183** pruebas.
+**Pruebas**: **1159** unitarias en verde — API **906** (112 suites) · CORE **134** · CLIENT **103** ·
+ADMIN **13** · BASE **3**.
 
-**Reglas duras**: **33** `RULE-NN`. **Guardas de documentación**: **12** suites / **134** pruebas.
+**Reglas duras**: **33** `RULE-NN`. **Guardas de documentación**: **12** suites / **135** pruebas.
 
 ---
 
-## Pendiente: tres hallazgos que corregir y una decisión de negocio
+## Lo último: la recepción la confirma quien recibe (PT-173 … PT-176)
+
+**Esperan tu validación cuatro PT.** Detalle y evidencia en [`PENDING_TASKS.md`](PENDING_TASKS.md).
+
+**El defecto de fondo, encontrado al verificar antes de escribir:** `shipments.service.ts:114` daba al
+**vendedor** la llave de todos los estados, incluido `DELIVERED`; y el cron liberaba el holdback en cuanto
+el pedido estaba entregado. Encadenado: **el vendedor marcaba entregado su propio envío y liberaba su
+propio dinero**, sin enviar nada y sin que nadie confirmara. El holdback protege al comprador durante la
+ventana de disputa, y lo desactivaba la parte de la que protege. Y el comprador **no tenía ninguna vía**
+para confirmar — ni endpoint, ni permiso, ni interfaz.
+
+| PT | Qué cierra |
+|---|---|
+| **PT-173** | `shipments` se saltaba `OrderStateMachine`, que ya existía y ya decía lo correcto: dos puertas al mismo estado, una sin cerradura |
+| **PT-174** | La llave se parte por transición: el vendedor envía, **el comprador confirma**. El dinero espera **72 h** desde la confirmación, y el vencimiento de 14 días se conserva **y se declara** |
+| **PT-175** | Fase 35: la cadena completa **sin un solo `INSERT`** — 0 escrituras, frente a las 6 de la fase 60 que siembra |
+| **PT-176** | El click de PayPal (un `div` suyo tapa `#btnLogin`) y **H-027**: el resumen que omitía la fase caída |
+
+**Decisión de negocio aplicada: opción B, 72 h**, declarada como supuesto revocable y confirmada. Es un
+parámetro (`SETTLEMENT_HOLDBACK_HOURS`), no una política incrustada.
+
+**Las dos mentiras, ahora las dos contempladas.** El vendedor ya no puede mentir al enviar: no tiene la
+llave. Y el comprador no puede bloquear el dinero negando la recepción: a los `DISPUTE_WINDOW_DAYS` se
+libera igual. Antes eso existía por accidente, como el otro brazo de un `OR`.
+
+**Y una corrección a mi informe anterior:** dije que la vía garantizada de PayPal quedó sin verificar.
+**Engañoso.** Quedó sin ejercer *en esa corrida*; está probada en **PT-087**, con aprobación en el checkout
+real y **captura** (321.50 → 643.00, sin un solo webhook). Lo que se rompió es el harness contra una UI
+ajena.
+
+---
+
+## Hallazgos de auditoría: tres, y uno ya corregido
 
 ### Cerrado con VoBo humano
 
