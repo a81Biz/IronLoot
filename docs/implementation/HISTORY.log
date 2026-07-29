@@ -2143,3 +2143,29 @@ Solucion: las cuatro imagenes con SU contexto, construidas y ARRANCADAS hasta `h
 Evidence: docs/implementation/evidence/PT-147/
 Delta: tres vueltas de triaje, las tres defectos del job. La segunda fue el control de arranque de
   PT-036/PT-093 funcionando por primera vez dentro de una imagen.
+
+## PT-140 — REFACTOR: doce almacenes de pendientes, ninguno con precedencia
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: refactor/PT-140-registro-unico-de-pendientes
+Objetivo: responder por que «siempre quedan cosas por hacer y nunca se cierran completo».
+Root cause: un pendiente podia vivir en DOCE sitios y ninguno declaraba cual mandaba; de los doce,
+  UNO tenia guarda. `PENDING_TASKS.md` marcaba pendientes cosas hechas, declaraba `BLOCKED` cuarenta
+  y cuatro filas de PT ya fusionados, y `HISTORY.log` habia perdido PT-076, PT-086, PT-129 y PT-130
+  —con evidencia y commits— ademas de los nueve de esta tanda.
+  Y la causa mecanica de fondo: **FPGE no se habia vuelto a ejecutar nunca desde S-001**, asi que el
+  bucle FDGE -> PTSA -> FPGE estaba roto en su tercer eslabon. Nadie decidia que seguia.
+Solucion: trece entradas anadidas al final de `HISTORY.log` con su fecha real; `PENDING_TASKS`
+  reconstruido; `PTSA/PENDIENTES` podado de siete bloques a uno, con los otros integros en archive;
+  `ROADMAP` retirado con su razon escrita; la tabla de precedencia en `CLAUDE.md`; y RULE-20 con
+  `coherencia-de-registros.spec.ts`, tres comprobaciones deterministas.
+Modified files: HISTORY.log · PENDING_TASKS.md · PTSA/PENDIENTES.md · ROADMAP.md · CLAUDE.md ·
+  11-Conventions.md · la guarda · dos ficheros archivados
+Evidence: docs/implementation/evidence/PT-140/
+Delta (real vs planned): dos cosas que el plan no preveia. El analizador acusaba a 78 PT porque
+  `HISTORY.log` AGRUPA (`## PT-090 … PT-104` cierra quince), y una guarda ruidosa acaba desactivada.
+  Y no funcionaba por una razon invisible: los `\b` de sus regex se habian escrito como caracteres de
+  retroceso literales (0x08), que `grep` muestra como nada y solo `cat -A` delata.
+  Ademas la guarda cazo al propio PT-140 en CI, por no haber escrito ESTA entrada. Es la decima vez en
+  la tanda que una guarda caza al agente, y la mas literal de todas.
+PTSA reference: ninguno; es refactor de registro, no correccion de hallazgo.
