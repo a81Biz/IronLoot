@@ -27,11 +27,10 @@ export default () => ({
     password: process.env.DB_PASSWORD,
   },
 
-  // Redis
+  // Redis — PT-137: una sola fuente. `REDIS_HOST`/`REDIS_PORT` se retiran; host y puerto se
+  // derivan de la URL cuando un cliente los necesite (BullMQ los pide sueltos).
   redis: {
     url: process.env.REDIS_URL,
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
   },
 
   // JWT & Security

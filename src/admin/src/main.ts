@@ -78,7 +78,20 @@ async function bootstrap() {
   // Ademas quedaba un cliente ioredis huerfano reintentando para siempre (77 ECONNREFUSED en un
   // arranque). Ahora, si falla, se cierra.
   let store: session.Store | undefined;
-  const redisUrl = process.env.REDIS_URL || "redis://redis:6379";
+  // PT-137/PT-147 — Esta reserva era `redis://redis:6379`, el nombre del contenedor de
+  // `docker-compose`. Fuera de esa red no resuelve, y ADMIN se quedaba reintentando sin llegar
+  // nunca a arrancar: es lo que hizo fallar el job `docker` de PT-147 en su primera corrida.
+  //
+  // Una reserva escrita para un entorno concreto parece un valor por defecto razonable y no lo es.
+  // Sin `REDIS_URL` no se arranca, y se dice cual falta.
+  const redisUrl = process.env.REDIS_URL;
+  if (!redisUrl) {
+    throw new Error(
+      "REDIS_URL no esta definida. ADMIN guarda sus sesiones en Redis; sin ella arrancaria con " +
+        "sesiones en memoria y las perderia en cada reinicio — el defecto de F-39, que estuvo " +
+        "meses sin verse porque el `catch` decia «Redis unavailable» con Redis levantado.",
+    );
+  }
   try {
     // eslint-disable-next-line @typescript-eslint/no-var-requires
     const { RedisStore } = require("connect-redis");
