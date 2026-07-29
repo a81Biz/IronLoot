@@ -5441,3 +5441,17 @@ condujese de forma repetible, y un reseteo se llevó la salida.
 - Architecture Confidence: **90 %** — la parte técnica está clara; **lo que no es una decisión técnica
   es cuánto debe durar la retención tras la confirmación del comprador**, y eso es de negocio.
 - Solution Confidence: **70 %** — depende de esa decisión. Ver `ENRICHMENT.md`.
+
+### F-172-D — Archivar un documento lo saca de las exclusiones de RULE-31
+
+Apareció al archivar `PLAN_ACTUAL.md` como `archive/PLAN_ACTUAL-PT-168-172.md`: el patrón de exclusión era
+`(DISCOVERY|PLAN_ACTUAL)\.md$` y el nombre archivado **ya no casa**, así que la guarda acusó la cita a
+`evidence/PT-162/` que ese plan contiene **para explicar que estaba rota** (PT-170).
+
+**La causa correcta es más general que el nombre**: `docs/implementation/archive/` guarda **copias
+congeladas**. Corregir una cita dentro de un snapshot sería falsificarlo, por el mismo motivo por el que no
+se reescribe `HISTORY.log`. Se excluye el directorio, con su motivo declarado, y se fija en **AC-08**, que
+comprueba las dos direcciones: que lo archivado quede fuera y que **lo vivo siga vigilado**.
+
+Corregido en el acto, dentro de PT-173. No se registra como PT aparte: es un ajuste de una exclusión que la
+propia guarda delató en la misma sesión en que se creó.

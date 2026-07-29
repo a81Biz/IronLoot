@@ -108,6 +108,11 @@ const FUERA_DE_CARPETAS: { patron: RegExp; motivo: string }[] = [
       'el registro de defectos y el plan que los ataca. Su contenido es, literalmente, citar lo que esta roto.',
   },
   {
+    patron: /[/\\]archive[/\\]/,
+    motivo:
+      'copias congeladas. Archivar un plan o un enrichment guarda el documento TAL COMO ERA; corregir una cita dentro seria falsificar el snapshot, por el mismo motivo que no se reescribe HISTORY.log. Lo descubrio esta guarda al archivarse PLAN_ACTUAL-PT-168-172.md, que dejo de casar con el patron de arriba y arrastraba la cita a evidence/PT-162/ que PT-170 documento como rota.',
+  },
+  {
     patron: /self-review\.md$/,
     motivo: 'la autorrevision de un PT enumera lo que encontro roto, con su ruta.',
   },
@@ -244,6 +249,19 @@ describe('La evidencia citada esta en git — RULE-31 (PT-152)', () => {
       const texto = '> Esto citaba `evidence/PT-026/`, que no existe.';
 
       expect(carpetasCitadas(texto)).toEqual([]);
+    });
+
+    it('AC-08 (PT-173): un documento archivado esta fuera, y un vivo dentro', () => {
+      // El caso real: al archivar el plan como `PLAN_ACTUAL-PT-168-172.md` dejo de casar con
+      // `PLAN_ACTUAL\.md$` y la guarda acuso una cita que PT-170 ya habia documentado como rota.
+      // Un snapshot no se corrige: se conserva.
+      const fuera = (ruta: string) => FUERA_DE_CARPETAS.some(({ patron }) => patron.test(ruta));
+
+      expect(fuera('/docs/implementation/archive/PLAN_ACTUAL-PT-168-172.md')).toBe(true);
+      expect(fuera('/docs/implementation/archive/ENRICHMENT-PT-156.md')).toBe(true);
+      // Y lo vivo sigue vigilado: si esto pasara a `true`, la guarda dejaria de mirar lo que importa.
+      expect(fuera('/PTSA/Hallazgos/H-023.md')).toBe(false);
+      expect(fuera('/docs/implementation/PENDING_TASKS.md')).toBe(false);
     });
 
     it('AC-07 (PT-170): la misma ruta FUERA del blockquote si se acusa', () => {
