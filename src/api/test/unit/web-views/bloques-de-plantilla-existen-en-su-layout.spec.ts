@@ -32,9 +32,22 @@ function plantillas(dir: string): string[] {
   });
 }
 
-/** Los bloques que una plantilla **usa**. */
+/**
+ * Los bloques que una plantilla **usa**.
+ *
+ * Los comentarios de Nunjucks —`{# ... #}`— se descartan primero. Esta guarda se acuso a si misma
+ * en cuanto se escribio: el comentario que explica el defecto en `reconciliation.html` cita
+ * `{% block title %}` para contar donde estaba el `<script>`, y la guarda lo leyo como un uso vivo.
+ *
+ * Es la novena vez en esta tanda que le pasa a una guarda de este repositorio. La leccion es
+ * siempre la misma: **si documentar por que algo se movio hace fallar la guarda, la forma de
+ * tenerla en verde es no explicar nada.**
+ */
 export function bloquesUsados(html: string): string[] {
-  return [...new Set([...html.matchAll(/\{%\s*block\s+([A-Za-z0-9_]+)/g)].map((m) => m[1]))];
+  const sinComentarios = html.replace(/\{#[\s\S]*?#\}/g, '');
+  return [
+    ...new Set([...sinComentarios.matchAll(/\{%\s*block\s+([A-Za-z0-9_]+)/g)].map((m) => m[1])),
+  ];
 }
 
 /** El layout del que hereda una plantilla, si hereda de alguno. */
@@ -115,6 +128,14 @@ describe('Todo bloque de plantilla existe en su layout — RULE-19 (PT-139)', ()
       expect(bloquesUsados('{% block a %}{% endblock %}{% block a %}{% endblock %}')).toEqual([
         'a',
       ]);
+    });
+
+    it('C5b: un bloque citado en un COMENTARIO de Nunjucks no cuenta como uso', () => {
+      // Sin esto, explicar por que un `<script>` se movio de bloque haria fallar la guarda.
+      const conComentario =
+        '{# antes vivia en {% block title %} #}{% block scripts %}x{% endblock %}';
+
+      expect(bloquesUsados(conComentario)).toEqual(['scripts']);
     });
 
     it('C6: `{% endblock %}` no se confunde con una declaracion', () => {
