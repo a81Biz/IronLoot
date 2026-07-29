@@ -562,6 +562,30 @@ how "optional" is written, and demanding an active value would mean inventing th
 credentials. Its exception list requires a written reason per entry, and it strips comments before
 scanning: it accused its own explanation of the defect the first time it ran.
 
+### RULE-19: Every `{% block %}` must exist in its layout, and no library attribute without the library
+**What:** a template may only use blocks its layout (or the layout's own parents) declares. And no
+`data-bs-*` — or any other library's attributes — unless that library is actually loaded on that site.
+**Why:** Nunjucks **silently discards** the contents of a block the parent does not declare. No error,
+no console warning, no failing test. `reconciliation.html` put its `<script>` inside
+`{% block title %}`, and `layouts/admin.html` declares only `head`, `content` and `scripts` — so
+`pages-reconciliation.js` existed since PT-096 and **never loaded**. The "Conciliar" button did
+nothing for two months (PT-139).
+Four ADMIN templates had the dead block, not one. Where it came from: BASE and CLIENT **do** declare
+`{% block title %}`, so someone copied a correct idiom into a layout that does not support it.
+The other half: `refunds.html` opened its modal with `data-bs-toggle` and ADMIN has **no Bootstrap
+anywhere**. Inert attributes; the button opened nothing. Refunds move money.
+Both failures are the signature of F-34 — the live bidding that stayed off for days with the whole
+suite green. **They fail silently, and the silence is what makes them last.**
+**Correct:** put scripts in `{% block scripts %}`; reuse the site's existing idiom — ADMIN already had
+`.modal-backdrop.oculto` wrapping `.modal`, used by `moderation.html`, with its CSS written. Show and
+hide with `classList`, never `style.display` (see `admin.css:597`: `style.display = ''` returns the
+element to whatever the CSS says, and the CSS now says hidden).
+**Incorrect:** inventing a third modal structure when the panel already has one; and citing a
+library's attributes as documentation of intent.
+**Enforced by:** `bloques-de-plantilla-existen-en-su-layout.spec.ts` and
+`atributos-bootstrap-sin-bootstrap.spec.ts`. Both strip comments before scanning — they each accused
+their own explanation of the defect on first run.
+
 ---
 
 ## 5. Files Requiring Extra Care Before Modification

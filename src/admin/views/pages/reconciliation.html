@@ -1,6 +1,4 @@
 {% extends "layouts/admin.html" %}
-{% block title %}Conciliación — IronLoot Admin<script src="/js/pages/pages-reconciliation.js"></script>
-{% endblock %}
 {% block content %}
 <h1 class="h3 mb-4">Conciliación de pagos</h1>
 <div class="card mb-4">
@@ -45,4 +43,13 @@
   </div>
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+{# PT-139 — Este <script> vivia dentro de `{% block title %}`, y `layouts/admin.html` no declara ese
+   bloque: Nunjucks descartaba su contenido EN SILENCIO. El fichero existe desde PT-096 y no se
+   cargaba nunca, asi que el boton «Conciliar» llevaba dos meses sin hacer nada.
+   `scripts` va despues de `ui-behaviours.js` y `admin.js` en el layout, que es el orden que este
+   fichero necesita. #}
+<script src="/js/pages/pages-reconciliation.js" defer></script>
 {% endblock %}
