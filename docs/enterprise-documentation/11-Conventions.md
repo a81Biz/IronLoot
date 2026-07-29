@@ -760,6 +760,26 @@ read prose: a guard that forces a particular wording teaches people to write for
 the document stops telling the truth. Its parser understands grouped headers (`## PT-090 … PT-104`)
 because a noisy guard gets disabled, and a disabled guard also stops catching what it did detect.
 
+### RULE-35: An `ND-XXX` asserting an absence is checked like a `TD-XXX`
+**What:** `10-Technical-Debt.md` also holds a `NOT DETERMINED` section. An `ND` entry that asserts
+something is absent, or cites a path, is verified: the fact that closed it must still hold, and the
+document must declare it closed. Both directions.
+**Why:** measured 2026-07-29, two of seven contradicted the code. **`ND-002`** gave as evidence *"no
+`ThrottlerStorageRedisService` referenced"* citing `app.module.ts:75-85` — it has been there **since
+PT-030**, the PT that closed **H-002**. So two official registers stated opposite things about the same
+fact, and the lying one governs debt. **`ND-003`** said the email templates were "not found"; they sit
+exactly where `ND-003` says to look.
+**An absence claim ages the worst way:** the day someone adds what was declared missing, the sentence is
+still there and is now false, with nothing changing colour. H-016 applied to debt.
+`coherencia-deuda-tecnica.spec.ts` only reads `TD-XXX`; the `ND-XXX` live in the same file and weigh the
+same for a reader.
+**Correct:** declare the *fact* in the guard, not the wording — a guard that demands particular prose
+teaches writing for the linter, and then the document stops telling the truth. Adding a row is what it
+costs to close an `ND` with a citation: deliberate, and the difference between closing it and calling it
+closed.
+**Still legitimately open:** `ND-004` — there is no `coverageThreshold`. Left alone.
+**Enforced by:** `deuda-no-determinada-vigente.spec.ts`.
+
 ### RULE-34: The work trail has no gaps — in both directions
 **What:** (a) every PT the history still leaves awaiting validation appears in `PENDING_TASKS.md`;
 (b) every **group** in `HISTORY.log` has an evidence folder, measured against a declared baseline that
@@ -857,3 +877,5 @@ When adding a new required environment variable:
 | 2026-07-28 | RULE-14 — a guard nobody has seen fail is not a guard | PT-127…PT-133 |
 | 2026-07-29 | RULE-33 — a PTSA derived file never contradicts the `H-XXX` (from F-167-A/B) | PT-168 |
 | 2026-07-29 | RULE-34 — the work trail has no gaps, both directions (from F-167-C/E/F) | PT-169 |
+| 2026-07-29 | RULE-31 widened — a citation to a folder is checked too (from F-167-D) | PT-170 |
+| 2026-07-29 | RULE-35 — an `ND-XXX` asserting an absence is checked (from F-167-G) | PT-171 |

@@ -2673,3 +2673,39 @@ Delta (real vs planificado): la ampliacion acuso, al medirla, **tres** citas rot
   tercera en el paquete de PT-145, que ninguna revision habia mirado. Medicion final: **44 citas a
   carpeta comprobadas, 0 rotas**.
 PTSA reference: no cierra hallazgo — corrige las citas DE dos hallazgos cerrados (H-001, H-023). F-167-D.
+
+## PT-171 — BUG: el registro de deuda contradecia al codigo, y a un hallazgo cerrado
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-171-nd-contradicen-al-codigo
+Objective: que ningun `ND-XXX` afirme algo que el codigo desmiente.
+Root cause: `10-Technical-Debt.md` es la autoridad de la deuda tecnica y lleva dentro una seccion
+  `NOT DETERMINED` con siete `ND-XXX`. **Dos contradecian al codigo**, y
+  `coherencia-deuda-tecnica.spec.ts` solo mira los `TD-XXX`:
+  - **ND-002** daba como evidencia «no `ThrottlerStorageRedisService` referenced» citando
+    `app.module.ts:75-85`. Esta en `app.module.ts:90` **desde PT-030**, que es el PT que cerro **H-002**.
+    Asi que **dos registros oficiales decian cosas opuestas sobre el mismo hecho**, y el que mentia es el
+    que gobierna la deuda.
+  - **ND-003** decia que las plantillas de correo «no se encontraron». Estan donde el propio ND-003
+    manda mirar, **con fecha del 19 de junio**.
+  **Una afirmacion de ausencia envejece de la peor manera:** el dia que alguien añade lo que se
+  declaraba ausente, la frase sigue ahi y ya es falsa, sin que nada cambie de color. Es H-016 aplicado a
+  la deuda. ND-003 es la otra familia: los pendientes que PT-141 cerro leyendo donde ellos mismos decian
+  mirar — el coste no es el trabajo, es que nadie vuelve a mirar.
+Solution: las dos entradas se cierran con su cita verificada. **ND-004 se deja abierto**: sigue siendo
+  cierto, no hay `coverageThreshold`, y cerrarlo habria sido el error simetrico.
+  Guarda nueva: **RULE-35** — `deuda-no-determinada-vigente.spec.ts`. Declara el **hecho** verificable de
+  cada `ND` cerrado, no su redaccion: una guarda que exija redactar de cierta forma enseña a escribir
+  para el linter. Comprueba las dos direcciones —que el hecho siga siendo cierto (si el storage de Redis
+  desaparece, H-002 se reabre y esto lo caza) y que el documento lo declare cerrado—. El unico RED fue
+  C2, que es exactamente el defecto: el hecho era cierto desde PT-030 y el documento seguia diciendo
+  «not verified».
+Modified files: docs/enterprise-documentation/10-Technical-Debt.md,
+  docs/enterprise-documentation/11-Conventions.md, src/api/package.json,
+  src/api/test/unit/documentacion/deuda-no-determinada-vigente.spec.ts
+Evidence: docs/implementation/evidence/PT-171/
+Delta (real vs planificado): sin desviacion en el alcance. Se deja constancia de lo que **no** se cierra:
+  ND-001, ND-005, ND-006 y ND-007 no son falsos —dicen que algo *no se inspecciono*, que es una
+  afirmacion sobre la auditoria, no sobre el codigo—. Cerrarlos exige mirar y citar, y eso es trabajo con
+  alcance propio. Se dejan como estan en vez de declararlos cerrados por haberlos leido de pasada.
+PTSA reference: ninguno. Toca el registro que contradecia el cierre de H-002. F-167-G.

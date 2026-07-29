@@ -1,0 +1,24 @@
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+PASS test/unit/documentacion/deuda-no-determinada-vigente.spec.ts
+PASS test/unit/documentacion/coherencia-deuda-tecnica.spec.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       17 passed, 17 total
+Snapshots:   0 total
+Time:        4.669 s, estimated 5 s
+Ran all test suites matching /deuda-no-determinada-vigente|coherencia-deuda-tecnica/i.

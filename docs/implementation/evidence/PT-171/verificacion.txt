@@ -1,0 +1,23 @@
+=== PT-171 — Los hechos que cierran ND-002 y ND-003, verificados
+Fecha: 2026-07-29
+
+--- ND-002 decia: «no ThrottlerStorageRedisService referenced» (app.module.ts:75-85)
+4:import { ThrottlerStorageRedisService } from 'nestjs-throttler-storage-redis';
+14:import { ThrottlerRedisModule, ThrottlerRedisService } from './common/redis/throttler-redis.module';
+77:    // PT-128 (H-015): el cliente Redis lo provee `ThrottlerRedisModule`, no se crea aqui suelto.
+81:      imports: [ThrottlerRedisModule],
+90:        storage: new ThrottlerStorageRedisService(redis.client),
+
+--- El PT que lo puso ahi (PT-030, el mismo que cerro H-002)
+75:    // Rate limiting (global) — Redis storage for shared counters across instances (PT-030)
+
+--- ND-003 decia: «email templates not found in reconnaissance»
+total 6
+drwxr-xr-x 1 Alberto 197609   0 Jun 19 00:28 .
+drwxr-xr-x 1 Alberto 197609   0 Jul 27 18:38 ..
+-rw-r--r-- 1 Alberto 197609 372 Jun 19 00:28 reset-password.hbs
+-rw-r--r-- 1 Alberto 197609 318 Jun 19 00:28 verification.hbs
+
+--- ND-004 sigue siendo CIERTO: no hay coverageThreshold
+0
+0 ocurrencias — se deja abierto

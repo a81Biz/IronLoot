@@ -121,13 +121,28 @@ eso hay guardas y no solo convencion (RULE-07, RULE-09).
 **Location to check:** `src/api/src/modules/bids/`, auction gateway files.
 
 ### ND-002 — Rate limiter storage backend
-**Status:** ThrottlerModule is configured but the storage backend is not verified. Default is in-memory; for multi-instance deployments, a Redis-backed throttler should be used.  
-**Evidence:** `src/api/src/app.module.ts:75-85` — no `ThrottlerStorageRedisService` referenced.  
-**Risk:** In multi-instance deployment, rate limits are per-instance, not global.
+**Status:** ✅ **CERRADA 2026-07-29 por PT-171 — ya lo estaba desde PT-030, y este registro lo negaba.**  
+**Evidence:** `src/api/src/app.module.ts:90` — `storage: new ThrottlerStorageRedisService(redis.client)`,
+con el cliente provisto por `ThrottlerRedisModule` (PT-128: creado suelto, Nest no lo conocía y
+`app.close()` no lo cerraba).  
+**Lo que decía, y por qué importa que fuera falso:** *«no `ThrottlerStorageRedisService` referenced»*,
+citando `app.module.ts:75-85`. Estaba ahí **desde PT-030**, que es el PT que cerró **H-002** — el mismo
+defecto, en el registro de hallazgos. Así que **dos registros oficiales decían cosas opuestas sobre el
+mismo hecho**, y el que mentía era el que gobierna la deuda.
+**Una afirmación de ausencia envejece de la peor manera:** el día que alguien añade lo que se declaraba
+ausente, la frase sigue ahí y ya es falsa, sin que nada cambie de color. Es H-016 aplicado a la deuda.
+**Vigilada por:** `deuda-no-determinada-vigente.spec.ts` (**RULE-35**), que comprueba las dos
+direcciones: que el hecho siga siendo cierto y que el documento lo declare cerrado.
 
 ### ND-003 — Email template locations
-**Status:** `@nestjs-modules/mailer` with Handlebars is installed; email templates not found in reconnaissance.  
-**Location to check:** `src/api/src/modules/notifications/templates/` or similar.
+**Status:** ✅ **CERRADA 2026-07-29 por PT-171 — estaban donde esta misma entrada mandaba mirar.**  
+**Evidence:** `src/api/src/modules/notifications/templates/verification.hbs` y
+`reset-password.hbs`.  
+**Lo que decía:** *«email templates not found in reconnaissance»*, con «**Location to check:**
+`src/api/src/modules/notifications/templates/`». Los dos ficheros están exactamente ahí. Un pendiente
+que se resuelve mirando donde él mismo dice es la familia de los dos que cerró PT-141 («ya estaban, en
+`F-1 § 5`»): **el coste no es el trabajo, es que nadie vuelve a mirar.**
+**Vigilada por:** `deuda-no-determinada-vigente.spec.ts` (**RULE-35**).
 
 ### ND-004 — Test coverage percentage
 **Status:** Unit tests exist for 20+ test files; coverage thresholds not confirmed from `jest.config`.  

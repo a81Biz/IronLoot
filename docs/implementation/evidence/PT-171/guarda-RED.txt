@@ -1,0 +1,59 @@
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+● Validation Warning:
+
+  Unknown option "_comentario_maxWorkers" with value "PT-159 — La suite no cabe en el contenedor con los workers por defecto: tres suites mueren por SIGKILL contra el limite de 1 GB y el resumen dice «4 failed» sin que nada este roto. Quien lo lea aprende a descartar los fallos de esta suite, y asi es como un fallo verdadero pasa desapercibido. Medido el 2026-07-29: con 2 workers muere; en serie pasan las 104 suites. Se fija aqui y no en una nota, porque fue una prevencion que se quedo en una nota lo que hizo volver a H-014 en cuatro dias." was found.
+  This is probably a typing mistake. Fixing it will remove this message.
+
+  Configuration Documentation:
+  https://jestjs.io/docs/configuration
+
+FAIL test/unit/documentacion/deuda-no-determinada-vigente.spec.ts
+  Un `ND-XXX` que afirma una ausencia se comprueba — RULE-35 (PT-171)
+    ✓ el documento existe y tiene seccion NOT DETERMINED con entradas (2 ms)
+    ✓ C1: el hecho que cerro cada `ND` sigue siendo cierto (8 ms)
+    ✕ C2: todo `ND` con un hecho verificado esta declarado cerrado en el documento (3 ms)
+    ✓ C3: toda ruta que la seccion cita existe (3 ms)
+    ✓ C4: cada hecho declarado explica por que importa
+    casos de control
+      ✓ AC-01: un `Status:` cerrado se reconoce
+      ✓ AC-02: un `ND` sin cierre NO se cuenta como cerrado
+      ✓ AC-03: el `Status:` de un `ND` no se atribuye al siguiente (1 ms)
+      ✓ AC-04: una ausencia que ya es falsa se detecta (2 ms)
+      ✓ AC-05: se extrae la ruta aunque la cita lleve `:linea`
+      ✓ AC-06: la extraccion se limita a la seccion NOT DETERMINED
+
+  ● Un `ND-XXX` que afirma una ausencia se comprueba — RULE-35 (PT-171) › C2: todo `ND` con un hecho verificado esta declarado cerrado en el documento
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 4
+
+    - Array []
+    + Array [
+    +   "ND-002",
+    +   "ND-003",
+    + ]
+
+      133 |     );
+      134 |
+    > 135 |     expect(pendientes).toEqual([]);
+          |                        ^
+      136 |   });
+      137 |
+      138 |   it('C3: toda ruta que la seccion cita existe', () => {
+
+      at Object.<anonymous> (test/unit/documentacion/deuda-no-determinada-vigente.spec.ts:135:24)
+
+Test Suites: 1 failed, 1 total
+Tests:       1 failed, 10 passed, 11 total
+Snapshots:   0 total
+Time:        4.632 s
+Ran all test suites matching /deuda-no-determinada-vigente/i.

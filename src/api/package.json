@@ -35,7 +35,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "test:watch": "jest --watch",
     "typecheck": "tsc --noEmit",
-    "test:guardas": "node --max-old-space-size=768 node_modules/jest/bin/jest.js --runInBand --no-coverage --testPathPattern=\"job-de-integracion|rutas-que-los-ssr|coherencia-documentacion|capturas-en-su-sitio|endpoints-legados|coherencia-deuda|healthcheck-apunta|lock-declara|dockerfiles-citados|ramas-del-disparador|limpieza-de-tests|creacion-perezosa-atomica|variables-de-entorno|estado-de-hallazgos|rastro-de-trabajo\""
+    "test:guardas": "node --max-old-space-size=768 node_modules/jest/bin/jest.js --runInBand --no-coverage --testPathPattern=\"job-de-integracion|rutas-que-los-ssr|coherencia-documentacion|capturas-en-su-sitio|endpoints-legados|coherencia-deuda|healthcheck-apunta|lock-declara|dockerfiles-citados|ramas-del-disparador|limpieza-de-tests|creacion-perezosa-atomica|variables-de-entorno|estado-de-hallazgos|rastro-de-trabajo|deuda-no-determinada\""
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
