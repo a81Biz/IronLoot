@@ -3,8 +3,13 @@
 **FDGE V3** · **2026-07-29** · Este fichero se **sobrescribe**: es el estado de ahora, no la
 historia. La historia está en `HISTORY.log`, que es append-only.
 
-**Rama**: `master`. Once PT fusionados el 2026-07-28/29 — **PT-136, 137, 138, 139, 140, 141, 142,
-143, 145, 146, 147**. Cero ramas sin fusionar.
+**Rama**: `master`. Once PT fusionados el 2026-07-28/29 —**PT-136, 137, 138, 139, 140, 141, 142, 143,
+145, 146, 147**— y **los once cerrados el 2026-07-29 con VoBo humano**: los nueve BUG a `CLOSED`, los
+dos REFACTOR a `DONE`.
+
+**Cero ramas sin fusionar** (comprobado: `git branch --no-merged master` vacío, 82 ramas locales todas
+ya en master). **`master` va 10 commits por delante de `origin`** — listo para `git push origin master`,
+sin empujar todavía.
 
 **Pruebas**: **1039** unitarias en verde — API **786** (102 suites) · CORE **134** · CLIENT **103** ·
 ADMIN **13** · BASE **3**. Medidas una a una el 2026-07-29, no arrastradas.
@@ -48,11 +53,29 @@ saliendo con código 0 (PT-138) · el job de observabilidad aprobando sin base d
 los seis asientos escritos y ninguno cuadrando (PT-146). Se midieron **cero** descuadres
 preexistentes en la base de datos real.
 
-## Pendiente de validación humana
+## Auditoría — S-003 (delta sync, 2026-07-29)
 
-**El agente no cierra bugs.** Los once PT de esta tanda están en `VALIDATION_PENDING`, con evidencia
-en `docs/implementation/evidence/PT-XXX/` (`medicion.md` y `self-review.md`). La lista completa,
-incluidos los de sesiones anteriores, está en `PENDING_TASKS.md` § 2.
+```
+Health  95.5 -> 88.9     Clase A -> B
+Risk      24 -> 100      saturado por CERTEZA, no por gravedad
+Confid. 95.0 -> 87.0     la baja la cobertura, no la evidencia
+```
+
+**Cuatro hallazgos nuevos, y no los trajeron los once PT: los trajo mirar.**
+
+| ID | Dim | Sev | Qué |
+|---|:--:|---|---|
+| **H-021** | D2 | ALTA | `audit:domain` imprime `cross_coherence_verified = true` con las **cinco** comprobaciones en `(ERR)`, y sale con código 0 |
+| **H-022** | D2 | MEDIA | Los dos checkpoints de delta sync usan `docker exec psql` y no hay `docker` en el contenedor |
+| **H-024** | D4 | MEDIA | `audit-scope.yaml` cita cuatro documentos que **archivó PT-141**, y describe mal las migraciones |
+| **H-023** | D4 | BAJA | `UserResponseDto` publicado con dos esquemas distintos |
+
+**Cobertura declarada PARCIAL**: D2/D3/D4 al 100 %, **D1 al 50 %**, **D5 al 0 %**. La base está casi
+vacía porque un reseteo se llevó la salida real de S-002. Eso es lo que baja Confidence, y declararlo
+es el punto — `[A8]` no admite un score sin cobertura declarada.
+
+**H-014 quedó verificado en la fuente real**: las dos migraciones aplicadas, sin rollback. Ya no se
+sostiene en el testimonio del PT que lo corrigió.
 
 ## Qué falta, y por qué no se hizo
 
@@ -63,11 +86,15 @@ incluidos los de sesiones anteriores, está en `PENDING_TASKS.md` § 2.
 | **F-136-A** — evidencia no seguida por git | 79 de 162 ficheros. Documentos que citan lo que no está en el repositorio |
 | **H-005** — quién emite la factura | **Decisión de negocio.** Ningún PT la resuelve |
 | **PT-035** — `T-035.12` | Validación **visual**, no automatizable |
+| **H-021 · H-022 · H-023 · H-024** | Abiertos desde S-003. `[R44]`: el agente no cierra hallazgos |
+| **D1 y D5 completos** | Requieren una base **con historia**. Ver riesgos |
 
 ## Riesgos vivos
 
-- **Once validaciones acumuladas.** Es mucha superficie sin confirmar por una persona; si se sigue
-  construyendo encima, un defecto de esta tanda aparecería con varias capas por delante.
+- **La ventana para medir D1 y D5 es estrecha.** `run-all.sh` genera salida real y **trunca la base al
+  empezar**: es lo que se llevó la salida de S-002 y por qué D1 sólo pudo medir 7 de 14 reglas. Hay que
+  medir **justo después** de una corrida por navegador. Y no se medirá bien mientras H-022 siga
+  abierto.
 - **`archive/` es citado por registros históricos** (`PTSA/Evidencias/`, `changes/`). Se archivó en
   vez de borrarse justamente por eso —la inmutabilidad auditable `[A6]` no permite dejar una
   evidencia sin fuente—, pero quien siga una cita antigua tiene que saber bajar un directorio. Está
