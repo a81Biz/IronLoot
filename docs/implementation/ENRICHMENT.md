@@ -1,158 +1,171 @@
-# ENRICHMENT.md — PT-174
+# ENRICHMENT.md — PT-194: cablear el refresco de sesión (TD-025)
 
-**STATE 1-E.** `FEATURE` — El comprador confirma la recepción; el vendedor declara el envío.
+**STATE 1-E.** `FEATURE` — La sesión del portal privado deja de durar quince minutos.
 
-**Fecha**: 2026-07-29
-**Origen**: petición del humano — *«primero el comprador, el que gana la subasta, debe tener la opción de
-marcar "recibida" después de que el vendedor la marca como "enviada" … aquí se puede aclarar la entrega
-recepción, quizá falta profundizar»*.
-**Hallazgo que lo motiva**: `DISCOVERY.md § F-172-A`.
+**Fecha**: 2026-07-30
+**Origen**: `TD-025`, abierta al medir `AUD-035` en PT-192. Petición del humano: *«vamos ahora con
+TD-025»*.
+**Complejidad**: STANDARD.
 **Estado**: esperando ACK. **Cero líneas de `src/` tocadas.**
 
-> El enrichment anterior (**PT-156**, `BLOCKED` esperando una decisión de producto) se conserva en
-> `archive/ENRICHMENT-PT-156.md`.
+> El enrichment anterior (**PT-174**, cerrado) se conserva en `archive/ENRICHMENT-PT-174.md`.
 
 ---
 
 ## El problema, en una frase
 
-**Hoy el vendedor marca `DELIVERED` su propio envío y con eso libera su propio holdback.** El comprador
-no tiene ninguna vía —ni endpoint, ni permiso, ni interfaz— para confirmar que recibió.
-
-Verificado: `shipments.service.ts:114` restringe **todo** cambio de estado al vendedor; no hay validación
-de transición; `@ironloot/core` no tiene máquina de estados de envío; y `grep` sobre
-`src/apps/client/views/` y `public/js/` no devuelve **nada** sobre enviar, recibir o confirmar entrega.
+**El portal privado echa al usuario a los quince minutos**, aunque el sistema tenga escrito y guardado
+todo lo necesario para que la sesión dure siete días.
 
 ---
 
-## Lo que hay que decidir antes de implementar
+## Lo medido, que es distinto de lo que dice la deuda
 
-Esto es lo que el humano llamó *«quizá falta profundizar»*, y **no es una decisión técnica**. La retención
-existe para que, si algo sale mal, el dinero todavía esté ahí. Si la confirmación del comprador libera al
-instante, el dinero se va **antes** de que la ventana de disputa haya corrido.
+`TD-025` dice *«el refresco existe y nadie lo llama»*. El reparto real cambia el tamaño del trabajo:
 
-| | Cuándo se libera | A favor | En contra |
-|---|---|---|---|
-| **A** | **Inmediato** al confirmar el comprador | El vendedor cobra en minutos; es lo que pide «no esperar tantos minutos» | **Una disputa posterior no tiene fondos que reclamar.** La ventana de 14 días queda decorativa |
-| **B** | **Timer corto** (48–72 h) desde la confirmación | El vendedor cobra en días, no semanas, y queda margen para reclamar | Hay que elegir el número, y sigue siendo una espera |
-| **C** | Inmediato, con la disputa reclamando contra **saldo futuro** o una reserva de plataforma | Rápido **y** protegido | El más costoso: exige saldo negativo o una reserva, que hoy no existen |
+| Pieza | Estado | Qué se comprobó |
+|---|---|---|
+| `POST /api/v1/auth/refresh` | **completo** | Valida sesión, revocación, expiración y estado del usuario; devuelve access token nuevo con **perfil fresco** |
+| Tabla `sessions` | **completa** | `refreshToken @unique`, `expiresAt`, `revokedAt`, `lastUsedAt`, `ipAddress`, `userAgent` |
+| `logout` | **completo** | Revoca la sesión, o **todas** las del usuario |
+| BASE — escribir cookies al refrescar | **completo** | `/api/v1/auth/refresh` ya está en `AUTH_TOKEN_ENDPOINTS` |
+| **CLIENT — intentar el refresco** | **ausente** | Ni el guard ni el proxy lo intentan |
 
-**Recomendación: B con 72 h**, por una razón concreta de este repositorio: `DISPUTE_WINDOW_DAYS` ya existe
-y se lee del entorno, así que **B es un cambio de parámetro y de disparador, no de modelo**. A es un cambio
-de política de riesgo disfrazado de mejora de UX. C exige un modelo de saldo que no está.
+**No hay que construir el refresco: hay que llamarlo.** El trabajo es de integración en el CLIENT, no
+de autenticación en el API — y eso baja mucho el riesgo, porque no se toca ni la firma ni la validación
+de tokens.
 
-### Las dos mentiras, que no son simétricas
+**Dato que condiciona el diseño:** el endpoint **no rota** el refresh token; devuelve el mismo. Eso hace
+que varias llamadas simultáneas sean inocuas entre sí — ninguna invalida a las otras. Es lo que
+convierte el caso concurrente en un problema de eficiencia y no de corrección.
 
-El humano lo dijo así: *«la regla de espera … para asegurar que no mienta el vendedor al enviar ni el
-comprador al recibir»*. Son dos riesgos distintos y **hoy sólo uno está contemplado**:
+---
 
-- **El vendedor miente al enviar** → hoy es posible y **sin coste**: marca `DELIVERED` sin enviar nada y
-  cobra. Es F-172-A.
-- **El comprador miente al recibir** → hoy **no puede**, porque no tiene la acción. Cuando la tenga, la
-  mentira útil para él es **negar** la recepción, que retendría el dinero del vendedor. **Eso exige un
-  vencimiento**: si no confirma ni disputa en N días, se libera igual.
+## Dónde falta, exactamente
 
-`DISPUTE_WINDOW_DAYS` ya cumple ese papel de vencimiento, pero **hoy es un efecto lateral, no una regla
-declarada**. Este PT la declara.
+Hay **dos** caminos por los que el portal llega al API, y hoy ninguno refresca:
+
+**(a) Navegación de página** — `ClientAuthGuard`. Verifica el JWT localmente; si falla, borra la cookie
+y manda al login. Es donde el usuario ve el efecto: *«acabo de entrar y me ha echado»*.
+
+**(b) Llamada del navegador** — el proxy BFF (`/api/*`). Inyecta `Authorization` desde la cookie y
+**deja pasar el 401 tal cual**. El JS de página recibe un 401 que no sabe interpretar.
+
+Cablear sólo (a) deja el portal a medias: la página carga y sus llamadas fallan. Cablear sólo (b) deja
+la navegación rota. **Los dos, o ninguno.**
 
 ---
 
 ## Criterios de aceptación
 
-**Autorización y máquina de estados**
+**CA-1 — La sesión sobrevive a la expiración del access token.**
+Con `JWT_ACCESS_EXPIRY=15m` y un refresh token válido, una navegación a una página privada **17
+minutos** después de iniciar sesión la sirve, sin pasar por el login.
 
-- **AC-01** — el paso a `SHIPPED` sólo lo puede hacer **el vendedor** del pedido.
-- **AC-02** — el paso a `DELIVERED` sólo lo puede hacer **el comprador**. El vendedor recibe **403** con
-  un mensaje que dice por qué. *(Hoy devuelve 200: es el defecto.)*
-- **AC-03** — la transición se valida `PENDING → SHIPPED → DELIVERED`. El salto de `PENDING` a
-  `DELIVERED` se rechaza con **400**. *(Hoy se acepta.)*
-- **AC-04** — la máquina de estados vive en `@ironloot/core`, sin NestJS ni Prisma, como la de subastas
-  (RULE-02).
-- **AC-05** — la autorización se comprueba **en el servicio**, no sólo en el controlador.
+**CA-2 — Y la llamada del navegador también.**
+En esas mismas condiciones, un `fetch` a `/api/v1/...` desde el JS de página devuelve **200**, no 401.
 
-**Liberación del holdback**
+**CA-3 — La cookie se actualiza con el token nuevo.**
+Tras un refresco, `access_token` lleva el token nuevo, con `maxAge` derivado de `JWT_ACCESS_EXPIRY`
+(PT-192). La petición siguiente **no vuelve a refrescar**.
 
-- **AC-06** — la confirmación del comprador dispara la liberación según la opción elegida (A/B/C).
-- **AC-07** — **el vencimiento sigue existiendo**: si el comprador no confirma, `DISPUTE_WINDOW_DAYS`
-  libera igual. Un comprador que calla no puede retener el dinero indefinidamente.
-- **AC-08** — la liberación es **idempotente**: `sellerSettledAt` impide una segunda del mismo pedido.
-- **AC-09** — el camino nuevo **no se salta RULE-24**: lee bloqueando la fila, y con orden fijo si toca
-  dos monederos.
+**CA-4 — Un refresco fallido cierra la sesión, y no reintenta.**
+Sesión revocada, expirada o usuario suspendido → se borran **las dos** cookies y se redirige al login.
+**Nunca un bucle**: como máximo **un** intento de refresco por petición.
 
-**Interfaz (CLIENT)**
+**CA-5 — Sin refresh token no hay intento.**
+Si no hay cookie `refresh_token`, el comportamiento es el de hoy: al login, directo. Sin llamada al API.
 
-- **AC-10** — el vendedor tiene un control para declarar el envío, con transportista y guía.
-- **AC-11** — el comprador tiene un control para confirmar la recepción, **visible sólo cuando el envío
-  está `SHIPPED`**.
-- **AC-12** — el JS va en `public/js/` y los estilos al CSS del sitio: la CSP no lleva `'unsafe-inline'`,
-  así que un `onclick=` o un `style=` **no funcionaría y el navegador no diría nada** (RULE-07, RULE-09).
-- **AC-13** — confirmar la recepción tiene consecuencia económica: lleva confirmación previa, y ese
-  `confirm()` **debe estar registrado** (RULE-30 — es el defecto que dejó veinticuatro manejadores muertos
-  en ADMIN).
-- **AC-14** — toda ruta que el CLIENT invoque existe en el API (RULE-11).
+**CA-6 — El perfil se actualiza al refrescar.**
+El endpoint devuelve el perfil fresco y el token nuevo lo lleva. Un usuario que se hace vendedor lo ve
+en el siguiente refresco sin volver a entrar.
 
-**Trazabilidad**
+**CA-7 — Peticiones concurrentes no producen N refrescos.**
+Una carga de página que dispara varias llamadas con el token expirado produce **un** refresco, no uno
+por llamada.
 
-- **AC-15** — envío y recepción quedan en `audit_events` vía `@AuditedAction`, con quién y cuándo.
-- **AC-16** — `shippedAt` y `deliveredAt` se sellan en el momento real de cada transición.
+**CA-8 — El logout sigue cerrando de verdad.**
+Tras cerrar sesión, un refresco con ese token devuelve 401 y **no** revive la sesión.
 
 ---
 
 ## Escenarios de prueba
 
 **Camino feliz**
+1. Login → esperar a que expire el access token → navegar a `/dashboard` → **200**, sin login.
+2. Lo mismo con un `fetch` a `/api/v1/wallet/balance` → **200**.
+3. Token válido y sin expirar → **no** se llama a `/auth/refresh` (se cuenta).
 
-1. Vendedor declara envío → `SHIPPED`, `shippedAt` sellado, pedido `SHIPPED`, aviso al comprador.
-2. Comprador confirma recepción → `DELIVERED`, `deliveredAt` sellado, pedido `DELIVERED`.
-3. Liberación según la opción elegida → `pending_balance` → `balance` con asiento `SETTLEMENT_RELEASE`.
-4. Vendedor solicita el retiro de esa ganancia → reserva real, aprobación admin, `PAID`.
-
-**Casos límite**
-
-5. **El vendedor intenta `DELIVERED`** → **403**. Hoy: 200. *Es el caso que prueba que el defecto murió.*
-6. **Salto `PENDING` → `DELIVERED`** → **400**. Hoy: se acepta.
-7. **El comprador confirma dos veces** → una sola liberación.
-8. **Un tercero** intenta cualquiera de las dos → 403.
-9. **El comprador nunca confirma** → a los `DISPUTE_WINDOW_DAYS` se libera igual.
-10. **Disputa abierta antes de liberar** → con B, el timer no libera mientras la disputa esté abierta.
+**Bordes**
+4. `refresh_token` presente pero **revocado** (logout previo) → login, cookies borradas.
+5. `refresh_token` **expirado** (>7 d) → login, cookies borradas.
+6. Usuario **suspendido** entre medias → login. El estado se comprueba en el API, no en el CLIENT.
+7. **Sin** cookie `refresh_token` → login, y **cero** llamadas al API.
+8. Cinco llamadas concurrentes con el token expirado → **un** refresco.
 
 **Fallo**
+9. El API **no responde** al refrescar (caído o lento) → login; ni página en blanco ni espera
+   indefinida. Toda llamada a un tercero declara su tope (PT-183/PT-184) — aquí el tercero es el API.
+10. El refresco devuelve **500** → se trata como fallo, no como éxito silencioso.
 
-11. Envío inexistente o pedido no `PAID` → 400, como ya hace `create()`.
-12. **Dos confirmaciones simultáneas** → una sola liberación y un solo asiento (RULE-24).
+**Control**
+11. Un `access_token` **manipulado** sigue rechazándose: refrescar no puede convertirse en una vía para
+    aceptar un token inválido.
 
 ---
 
-## NFRs
+## NFR
 
-- **Concurrencia** — la liberación mueve saldo: `SELECT … FOR UPDATE`, orden fijo de bloqueo (RULE-24).
-- **Idempotencia** — `sellerSettledAt` como clave; una confirmación repetida no duplica el asiento.
-- **Observabilidad** — sin `catch` mudos. La línea base de silencios es **25** y no debe subir (D3).
-- **Rendimiento** — sin consultas nuevas en el camino de la puja ni del pago.
+- **Seguridad**: el `refresh_token` no sale nunca al navegador en JS — sigue siendo `httpOnly`. El
+  refresco ocurre **servidor a servidor** desde el CLIENT.
+- **Latencia**: como mucho **una** llamada extra por petición, y sólo cuando el token expiró.
+- **Observabilidad**: cada refresco deja traza con su resultado. El API ya cuenta
+  `auth_refresh_success` / `auth_refresh_failed` con motivo; hay que poder distinguir «no se intentó»
+  de «se intentó y falló».
+- **Tope de espera**: el refresco declara el suyo. Un refresco colgado no puede colgar la página.
 
 ---
 
 ## Fuera de alcance, explícito
 
-- **`RETURNED` y las devoluciones.** El enum lo tiene y nada lo usa; abrirlo arrastra reembolsos y
-  logística.
-- **La resolución de disputas.** Resolver y reembolsar son dos pasos por decisión ya tomada; este PT no
-  los une.
-- **Integración con transportistas.** Transportista y guía se capturan como texto; no se consulta ninguna
-  API de tracking.
-- **Notificaciones por correo.** El aviso in-app entra; el correo no.
-- **La opción C.** Exige un modelo de saldo (negativo o reserva) que no existe.
-- **El retiro en sí.** Ya está implementado y probado real (PT-069…072); este PT sólo hace que el dinero
-  **llegue** a ser retirable por el camino verdadero.
+- **Rotación del refresh token.** Hoy no rota. Rotar detecta el robo del token, pero introduce una
+  carrera real con peticiones concurrentes y obliga a una ventana de gracia. **Es un cambio de
+  seguridad con su propio análisis**, no un efecto colateral de cablear el refresco. Si se decide, va
+  en su PT y con su ADR.
+- **Refresco silencioso en el navegador** (temporizador en JS). No hace falta: el BFF lo hace en
+  servidor y no expone nada.
+- **Gestión de sesiones para el usuario** («cerrar sesión en otros dispositivos»). La tabla lo soporta
+  —`ipAddress`, `userAgent`, `revokedAt`—, pero es funcionalidad de producto, no esta deuda.
+- **ADMIN.** Tiene su propio cliente y su propio refresco (`admin-api-client.service.ts`). No se toca.
+- **BASE.** Es el sitio público; sus páginas no exigen sesión.
+- **Cambiar `JWT_ACCESS_EXPIRY`.** Los 15 minutos dejan de doler cuando el refresco funciona; tocarlos
+  ahora sería enmascarar el defecto en vez de arreglarlo.
 
 ---
 
 ## Confianza
 
-- Architecture Confidence: **90 %** — el modelo (`Shipment`, `Order`, `sellerSettledAt`,
-  `releaseSettlement`) ya existe; faltan autorización, transición e interfaz.
-- Implementation Confidence: **70 %**, y lo que falta **no es técnico**: es la decisión A/B/C. Con ella
-  tomada, **90 %**.
+- **Arquitectura: 95 %.** Los dos puntos de integración están localizados y medidos; el API no se toca.
+- **Implementación: 80 %.** Lo que baja el número es **CA-7** (concurrencia): en un proceso SSR hay que
+  compartir la promesa del refresco en vuelo, y hay que decidir su alcance —¿por usuario? ¿por refresh
+  token?— y qué ocurre con varias instancias del CLIENT. Eso se resuelve en STATE 2.
 
-**Esto es una pregunta, no una suposición.** Si el ACK llega sin elegir, asumo **B con 72 h**, lo dejo
-escrito en `PLAN_ACTUAL.md` y se puede revocar.
+---
+
+## Riesgos, dichos ahora
+
+**1. Un bucle de refresco.** Si un refresco fallido no cierra la sesión, cada petición lo reintenta y el
+usuario queda atrapado, con carga sobre el API en cada navegación. `CA-4` existe por eso, y su prueba es
+de las que hay que **ver fallar**.
+
+**2. Aceptar un token que debería rechazarse.** El refresco añade una vía a la sesión, y una vía nueva a
+la sesión se prueba en los dos sentidos. `CA-11` cubre eso.
+
+**3. Que el arreglo tape el síntoma.** Con el refresco funcionando, un `JWT_SECRET` mal puesto o una
+sesión revocada dejarían de verse como «me echa» y pasarían a verse como… nada. Por eso la
+observabilidad está en los NFR y no como añadido: **hay que poder distinguir «no se intentó» de «se
+intentó y falló»**.
+
+---
+
+**STOP — FDGE STATE 1-E.** Esperando ACK humano antes de pasar a STATE 2 (estrategia).
