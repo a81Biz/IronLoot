@@ -3586,6 +3586,38 @@ Delta (real vs planned): cuatro cosas, y tres son errores mios corregidos antes 
      **resto** de `/admin/**`. Corregido.
 PTSA reference: ninguno — deuda documental. AUD-006 y AUD-011 quedan abiertos y declarados en la tabla.
 
+## PT-190 — REFACTOR: la regla que faltaba, y el cierre de la jornada
+Date: 2026-07-29
+Status: DONE
+Branch: docs/PT-190-cierre-y-push
+Objective: dejar escrita como regla la leccion de PT-189, poner al dia los registros derivados, y preparar la
+  jornada entera para subirla a `origin`.
+Root cause: **PT-189 escribio la guarda y no la regla.** Este repositorio funciona porque cada guarda tiene una
+  `RULE-NN` que explica **por que existe y que fallo real la origino**; una guarda sin regla es un mecanismo sin
+  memoria — el que la encuentre fallando no sabra si arreglar el codigo o borrar la prueba.
+Solution:
+  - **RULE-38**: *una afirmacion de estado sobre un hallazgo lleva veredicto, y «sin verificar» es uno legitimo.*
+    Con el desglose honesto —15 corregidos, 5 abiertos, 1 limitacion declarada, 15 sin verificar— frente al
+    «36/36» que nunca fue cierto. Y con las dos advertencias que costaron trabajo: **reescribe la frase, no el
+    simbolo**, y **una tabla es un sitio; un parrafo es una coincidencia**.
+  - `CLAUDE.md`, el Delta Log y el README del contrato al dia (36 reglas, 15 suites de documentacion, 159
+    pruebas).
+  - `PENDING_TASKS.md`: los **cinco AUD abiertos** con lo que costaria cerrar cada uno, y dicho explicitamente
+    que **no se ha empezado ninguno** — promoverlos a `H-XXX` los metaria en el score de Health, y esa es una
+    decision del humano.
+  - `HANDOFF.md`: la respuesta a la pregunta de fondo —*como dejan de salir cosas*— en forma de tabla de clases
+    con guarda y sin guarda.
+Modified files:
+  docs/enterprise-documentation/11-Conventions.md (RULE-38 + Delta Log) · README.md
+  CLAUDE.md · docs/implementation/PENDING_TASKS.md · HANDOFF.md
+Evidence: docs/implementation/evidence/PT-190/
+Delta (real vs planned): **no se abrio ninguno de los cinco AUD abiertos, y es deliberado.** El humano pidio
+  «actualiza la documentacion y prepara para subir», no «arregla lo que quede». Empezar `AUD-006` (autenticar el
+  handshake) o `AUD-011` (enrutar el panel por la maquina de estados) habria sido ampliar el alcance por
+  iniciativa propia sobre una peticion de cierre — justo lo contrario de lo que la jornada ha estado corrigiendo.
+  Quedan declarados, con evidencia y con su coste estimado, en el sitio donde se leen.
+PTSA reference: ninguno. Los cinco AUD abiertos viven en el registro de la auditoria de julio, no en el de PTSA.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3597,7 +3629,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**141** encabezados · **0** realmente abiertos · **6** sin `Status:` declarado.
+**142** encabezados · **0** realmente abiertos · **6** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -3742,3 +3774,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-187 | 3434 | `DONE` | **DONE** | — |
 | PT-188 | 3480 | `DONE` | **DONE** | — |
 | PT-189 | 3538 | `DONE` | **DONE** | — |
+| PT-190 | 3589 | `DONE` | **DONE** | — |

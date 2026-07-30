@@ -1,6 +1,6 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181 … PT-188)
+**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181 … PT-190)
 
 ---
 
@@ -35,6 +35,28 @@ Los veintiocho anteriores estaban ya cerrados; detalle en `PTSA/RESUMEN.md` § S
 enmendando la declaración de valor a la vez: el producto ya **no promete** emitir CFDI y `P-012` pasa a
 `FUERA_DE_ALCANCE_V1`. **El sistema sigue sin emitir facturas** — el cierre es por el lado de la declaración,
 y así está escrito. Si v1.1 lo vuelve a prometer, `P-012` vuelve y **H-005 se reabre con él**.
+
+---
+
+## Dos hallazgos verificados ABIERTOS — tu decisión, no trabajo iniciado
+
+PT-189 midió los 21 `AUD` que se podían medir sin leer seguridad línea a línea. **Cinco están abiertos**, y dos
+de ellos se verificaron hoy por primera vez:
+
+| Hallazgo | Qué es | Coste de cerrarlo |
+|---|---|---|
+| **AUD-006** | El WebSocket **no autentica el handshake**: `handleConnection` sólo registra, y `joinAuction` acepta cualquier UUID | Cambio de diseño. **Matiz que importa**: sólo emite `emitAuctionEvent` a la sala de la subasta —datos que `GET /auctions/:id` ya da en público—, así que **no es una fuga**, es superficie sin autenticar |
+| **AUD-011** | `admin.service.ts` **no pasa por `AuctionStateMachine`**: el panel puede saltar transiciones que el servicio prohíbe | Refactor de las mutaciones del panel. Es la familia de PT-173 (`shipments` escribía el estado por fuera) pero con más puertas |
+| **AUD-010** | Resolver una disputa **no mueve dinero**: devuelve una nota indicando `POST /admin/refunds` | Decidir si se automatiza o se documenta como proceso manual |
+| **AUD-012** | El VO `Money` existe en `core` y **ningún servicio del API lo importa** | Cablearlo o retirarlo. `ProcessRefundUseCase` está en el mismo caso |
+| **AUD-027** | `SMTP_*` sigue existiendo junto a `MAIL_*` en `system-config` | Unificar. Bajo, pero es una segunda ruta de configuración viva |
+
+**No se han abierto como `H-XXX` ni se ha empezado ninguno.** Promoverlos al registro PTSA los metería en el
+score de Health, y esa es una decisión tuya — no algo que el agente deba hacer por iniciativa propia. Están
+declarados en la tabla de veredictos con su evidencia; ahí no se pierden.
+
+**Y quedan 15 `AUD` con veredicto `sin verificar`.** Eso es deuda **de medición**, no de código: puede que estén
+todos corregidos. Lo que ya no ocurre es que nadie sepa cuáles son.
 
 ---
 

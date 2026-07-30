@@ -773,6 +773,33 @@ read prose: a guard that forces a particular wording teaches people to write for
 the document stops telling the truth. Its parser understands grouped headers (`## PT-090 … PT-104`)
 because a noisy guard gets disabled, and a disabled guard also stops catching what it did detect.
 
+### RULE-38: A state claim about a finding must carry a verdict, and "unverified" is a legal one
+**What:** any document that presents an `AUD-XXX` as a live defect must not contradict the **verdict table** in
+`docs-v2/transversal/Registro-de-Hallazgos.md`, which gives every one of the 36 findings exactly one of four
+states: `corregido` · `abierto` · `limitación declarada` · **`sin verificar`**. A finding cited in `docs-v2`
+that has no row in that table fails the guard.
+**Why:** measured 2026-07-29. **74 lines across 22 documents** declared as live defects nine findings that had
+been fixed **for months** — and one of them, `RN-64`, did not merely lag: it **described the defective behaviour
+as if it were the business rule**, the very one PT-174 had to fix because it let the seller release his own
+money. The register itself claimed **"36/36 corrected"** while five were not, and claimed its recommendation
+column "indicates the PT that resolved it" when **only 2 of 36 rows cite a PT**.
+None of that came from a recent change. It came from **nobody looking again**, and no guard covering the class:
+`11-Conventions.md` had one, `10-Technical-Debt.md` had one, and 36 audit findings had none.
+**"Unverified" is the load-bearing part.** The rule does not demand omniscience — it demands that *whether
+someone looked* is recorded. Today's honest count is **15 corrected · 5 open · 1 declared limitation · 15
+unverified**, not 36/36. A finite list with 15 entries has an end; "36/36" had no end because it was never true.
+**Correct:** state the verdict, or state that you have not measured it. **Incorrect:** flipping the marker
+without rewriting the sentence — the first attempt at this PT turned `⚠️` into `✅` and left lines reading
+*"✅ **No aplicado** — el código sólo exige `>currentPrice`"*. **A line that contradicts itself is worse than a
+stale one**, and that attempt was reverted.
+**Enforced by:** `afirmaciones-de-estado-verificadas.spec.ts`. Read why its bar sits where it does before
+raising it: the first version demanded the verdict word on *every* line carrying a warning marker and accused 18
+documents **that were telling the truth** — `AUD-010` is open and a `⚠️` beside it is exact. Taxing correct
+prose teaches writing for the linter. The only thing forbidden is presenting as live what is already fixed. And
+its verdict parser reads **the table only**: the first one read any line with a finding id and a status word, so
+the paragraph explaining *why* "36/36" was inexact made `AUD-016` come out "corrected". **A table is a place; a
+paragraph is a coincidence.**
+
 ### RULE-37: An append-only register needs a generated index, and a BUG closed by the agent is not closed
 **What:** `HISTORY.log` is append-only, so a `Status:` line records what was true **when written**, not today.
 The real state lives in a later `## CIERRE CON VoBo` block. Two obligations follow: (a) the file ends with a
@@ -948,6 +975,8 @@ When adding a new required environment variable:
 | 2026-07-29 | RULE-36 — a shared service never decides what its callers do with a failure (from H-032/H-033) | PT-183 |
 | 2026-07-29 | RULE-17 corollary widened — the guard covers the **four** services, not just the API (from H-035) | PT-186 |
 | 2026-07-29 | RULE-37 — an append-only register needs a generated index; a BUG the agent closes is not closed | PT-187 |
+| 2026-07-29 | Endpoint inventory guarded in both directions — no missing route, **no phantom route** (from H-020) | PT-188 |
+| 2026-07-29 | RULE-38 — a state claim about a finding carries a verdict; "unverified" is a legal one | PT-189 |
 
 **Backfill (PT-183).** This log claimed to be *the* incremental record and held **12 of 34 rules**. Twenty-two
 were missing, so a reader checking when a rule arrived — and against which defect — found nothing and had no

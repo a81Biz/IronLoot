@@ -4,10 +4,10 @@
 
 **Rama**: `master`, árbol limpio, cero ramas sin fusionar. **Sin subir a `origin`.**
 
-**Pruebas**: **1245** unitarias en verde — API **992** (122 suites) · CORE **134** · CLIENT **103** ·
+**Pruebas**: **1253** unitarias en verde — API **1000** (123 suites) · CORE **134** · CLIENT **103** ·
 ADMIN **13** · BASE **3**.
 
-**Reglas duras**: **35** `RULE-NN`. **Guardas de documentación**: **14** suites / **151** pruebas.
+**Reglas duras**: **36** `RULE-NN` (RULE-38 nueva). **Guardas de documentación**: **15** suites / **159** pruebas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
 `npm run indice:estado`. **139 encabezados · 0 realmente abiertos.**
@@ -63,48 +63,54 @@ Lista en [`PENDING_TASKS.md`](PENDING_TASKS.md).
 
 ---
 
-## Lo último: la documentación decía cosas que el código dejó de hacer (PT-188)
+## Lo último: 74 líneas declaraban vigentes nueve hallazgos corregidos (PT-189)
 
-Fui a añadir lo de la jornada y **medí primero**. Lo que había:
+Me pediste revisar la documentación para saber qué falta, y luego arreglarlo en orden. Esto es lo que había:
 
-| Documento | Decía | Es |
-|---|---|---|
-| `inventory/endpoints.md` | 86 rutas, incluida `/users/settings` | **159**, y esa ruta **no existe** — es la fantasma de **H-020** |
-| `inventory/entities.md` | «Total models: 27» | **33** |
-| `Catalogo-de-API.md` | «~118 endpoints», ADMIN «~61» | **159** y **80** |
-| `Catalogo-Maestro-de-Reglas.md` `RN-64` | El holdback se libera «cuando el pedido está DELIVERED» | Eso **era el defecto**: así el vendedor liberaba su propio dinero |
-| `Master-Test-Plan.md` | «frontends: 0 suites, ninguna» | **3 suites, 119 casos** |
-| Registro Maestro de ADR | Se quedaba en ADR-049 | Faltaban **seis** decisiones de la jornada |
+**El registro de hallazgos afirmaba «36/36 corregidos»** y **cinco no lo estaban**. También decía que su columna
+de recomendación «indica el PT que lo resolvió» — **sólo 2 de 36 filas citan un PT**. Ninguna de esas dos frases
+es mía: son de julio. Lo que las mantenía vivas es que **nadie las volvía a mirar y ninguna guarda cubría la
+clase**.
 
-**La peor es `RN-64`**: no estaba incompleta, **describía el comportamiento defectuoso como si fuera la regla de
-negocio**. Quien la leyera para entender la liberación del holdback entendía justo lo que PT-174 tuvo que
-corregir.
+**(a)** 81 fragmentos reescritos en 22 documentos. **Reescribí la frase, no el símbolo** — mi primer intento
+cambió `⚠️` por `✅` dejando el texto del defecto, y **lo reverté**: una línea que se contradice a sí misma es
+peor que una obsoleta.
 
-**Y la de `endpoints.md` es la que más enseña.** H-020 costó que «Configuración» no cargara para nadie. El código
-se arregló hace meses; **el documento que un agente lee para saber a dónde llamar siguió diciendo la ruta
-equivocada**. Así vuelve H-020.
+**(b)** **UC-17** (declarar envío) y **UC-18** (confirmar recepción), que no existían. Antes de hoy «recepción» y
+«holdback» **no aparecían ni una vez** en `1-negocio` ni en `2-producto`: lo más importante de la jornada vivía
+en las reglas y en las ADR, no en el producto.
 
-### Dónde estaba la causa
+**(c)** Los ocho que faltaban, medidos. Corregidos AUD-004/007/013/014/018/023; **abiertos AUD-006** (WebSocket
+sin autenticar) y **AUD-011** (el panel salta la máquina de estados).
 
-`11-Conventions.md` tiene guarda. `10-Technical-Debt.md` tiene guarda. **Los seis inventarios no tenían
-ninguna** — y son los que se desviaron. Ahora `endpoints.md` la tiene en las dos direcciones; **los otros cinco
-siguen sin ella y está escrito**, no dado por hecho.
+### La forma en que esto deja de salir
 
-### Y volví a retirar una promesa en vez de afinarla
+Es lo que preguntaste, y tiene respuesta concreta: **el corpus de afirmaciones es finito, y cada clase o tiene
+guarda o está declarada.**
 
-Intenté deducir el nivel de autorización de cada ruta. Tres versiones, tres resultados distintos — una dio `JWT` a
-`POST /auth/register` **teniendo `@Public()`**, y otra dio por **públicos los ochenta endpoints de
-administración**, porque `admin.controller.ts` declara `@UseGuards(AdminDualAuthGuard)` **junto a** `@Public()`.
+| Clase | Estado |
+|---|---|
+| `RULE-NN` · `TD`/`ND` · `H-XXX`↔derivados · HISTORY/PENDING · índice de estado | guardadas desde antes |
+| endpoints del inventario | **PT-188** |
+| **afirmaciones `AUD` en `docs-v2`** | **PT-189 (RULE-38)** |
+| Los otros 5 inventarios · citas `fichero:línea` fuera del TRD | **sin guarda, y escrito** |
 
-La cuarta funcionaba, y **la retiré igual**. Esa columna se cura a mano —19 controladores, no 159 rutas— y la
-guarda comprueba sólo lo que se mide sin ambigüedad. **Prometer menos y cumplirlo es mejor que una guarda que a
-veces miente.**
+La pieza que cierra el bucle es la **tabla de veredictos de los 36**, con cuatro estados donde **«sin verificar»
+es legítimo**. No se exige saberlo todo: se exige que **conste si se ha mirado**. Recuento honesto de hoy: **15
+corregidos · 5 abiertos · 1 limitación declarada · 15 sin verificar**.
 
-Añadidas **ADR-050 … ADR-055** al Registro Maestro: la recepción la confirma quien recibe · un servicio no decide
-por sus llamantes · todo tercero declara su tope · ninguna variable de conexión tiene reserva · el registro
-append-only necesita índice · **v1.0 no afirma que su fiabilidad esté demostrada**.
+Mientras haya casillas «sin verificar» seguirán apareciendo cosas al medirlas. **Eso ya no es un fallo del
+análisis: es una lista con 15 entradas y un final.**
+
+### Y cinco veces hoy mis guardas midieron otra cosa
+
+El patrón es siempre el mismo: **comprobar la forma en vez de la relación**. En PT-189 fueron tres —el arreglo a
+medias, el listón que acusó a 18 documentos que decían la verdad, y el parser que leía prosa en vez de la tabla—.
+Los cacé antes de darlos por buenos, pero el patrón es mío y está escrito en cada autorrevisión.
 
 ---
+
+## Antes de eso: la documentación medida (PT-188)
 
 ## Antes de eso: las tres decisiones (PT-186, PT-187)
 
@@ -290,7 +296,7 @@ con la contabilidad cerrando sola —950 → 95 de comisión → 855 retenido �
 
 ## Siguiente
 
-1. **`git push origin master`** de lo de esta tanda. Lo anterior ya está en `origin`.
+1. **Subido a `origin/master`** — ya no hay nada pendiente de empujar.
 2. **Volumen de ciclos de pago.** Es lo único que sube D5 del 0 % y saca la Confianza del filo de 91. No lo
    cierra otra corrida igual: hacen falta 20 ciclos resueltos.
 3. **H-005**: cuando haya PAC. Los tres modelos están medidos en `evidence/PT-155/hallazgos.md`; la opción C
