@@ -3891,6 +3891,42 @@ jornada no eran fiables, y varios VoBo se dieron sobre ellas.
 Verificacion en el cierre: API **1076** pruebas en 133 suites, comprobado dos veces. Las dos guardas
 **vistas fallar** con sabotaje dirigido y restauradas a verde.
 
+## PT-194 — FEATURE: la sesion del portal deja de durar quince minutos (TD-025)
+Date: 2026-07-30
+Status: VALIDATION_PENDING
+Branch: feature/PT-194-refresco-de-sesion
+Objective: cablear el refresco de sesion. El API lo exponia, BASE guardaba el token con su cookie de
+  30 dias, y **no lo llamaba nadie**: la sesion efectiva duraba los 15 minutos del access token.
+Solution:
+  - `common/auth/refrescar-sesion.ts` — **unico sitio del CLIENT que conoce `/auth/refresh`**. Tres
+    desenlaces que NO se colapsan: tokens, `null` (la sesion murio, lo dijo el API con 401/403) y
+    *lanza* (no se pudo preguntar: 500, red caida, tope agotado). Colapsar los dos ultimos haria
+    indistinguible «los usuarios se salen» de «el API esta caido».
+  - **Deduplicacion en vuelo** por refresh token: cinco llamadas concurrentes -> una al API, contado.
+    Por token y no por usuario: dos sesiones del mismo usuario son independientes.
+  - **El guard refresca una vez, y solo ante `TokenExpiredError`.** Es la decision de seguridad del
+    PT: refrescar ante cualquier fallo de `verify` bastaria para que un `access_token` basura con una
+    cookie de refresco valida obtuviera un token nuevo.
+  - **El token nuevo llega a `req.cookies` de la misma peticion**, o las 28 llamadas de `apiGet`
+    irian con el viejo y la pagina cargaria vacia, sin error y sin traza.
+  - **El proxy reintenta una vez** con `selfHandleResponse` + `responseInterceptor`, el patron que
+    BASE ya usa. Con prueba de que un 200, un 404 y un **cuerpo binario** salen identicos: el riesgo
+    de ese cambio no son los 401, son los demas.
+  - `apiGet` deja de confundir un 401 con «sin datos»; no cambia de firma (28 usos).
+  - Guarda `refresco-no-relaja-la-verificacion.spec.ts`, **vista fallar** con dos sabotajes dirigidos.
+Modified files: src/apps/client/src/common/{auth/refrescar-sesion.ts, bff/reintentar-tras-refresco.ts,
+  config/vida-de-sesion.ts, guards/client-auth.guard.ts}, src/apps/client/src/{main.ts,
+  app.controller.ts}, 3 specs nuevas del CLIENT, 1 guarda nueva del API
+Evidence: la carpeta de evidencia de este PT
+Delta (real vs planned): las once tareas tal como estaban en el Proposal Package. **Dos errores mios
+  por el camino, los dos anotados**: (1) un sabotaje que **no llego a aplicarse** —prettier habia
+  partido la linea— y el script no lo comprobaba, asi que la guarda parecio no servir cuando el
+  problema era la herramienta de verificacion; **un sabotaje que no aplica es indistinguible de una
+  guarda que funciona**. (2) un doble de prueba que inicializaba `res.statusCode` en 200 cuando
+  `responseInterceptor` ya copia el estado antes de llamar al interceptor: la prueba media otra cosa,
+  no habia defecto en el codigo.
+PTSA reference: cierra TD-025. No hay hallazgo PTSA asociado.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3902,7 +3938,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**146** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**147** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4052,3 +4088,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-192 | 3708 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3761 |
 | PT-193 | 3805 | `DONE` | **DONE** | — |
 | PT-195 | 3841 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3870 |
+| PT-194 | 3894 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |

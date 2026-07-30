@@ -2,6 +2,8 @@ import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Response, Request } from "express";
 import * as jwt from "jsonwebtoken";
 import { variableObligatoria } from "../config/variable-obligatoria";
+import { refrescarSesion, type Tokens } from "../auth/refrescar-sesion";
+import { VIDA_ACCESO_MS } from "../config/vida-de-sesion";
 
 // PT-186 (H-035) — Aqui BASE_URL es a donde se manda a alguien que no ha iniciado sesion. Con reserva a
 // `localhost:5174`, un despliegue sin la variable redirigia a una direccion que solo existe en la maquina de
@@ -39,26 +41,107 @@ if (JWT_SECRET.length < LONGITUD_MINIMA) {
 }
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
 
+/** Opciones con las que se borran las cookies. Deben coincidir con las que las escribieron. */
+const OPCIONES_BORRADO = { domain: COOKIE_DOMAIN, path: "/" };
+
 @Injectable()
 export class ClientAuthGuard implements CanActivate {
-  canActivate(context: ExecutionContext): boolean {
+  /**
+   * PT-194 (`TD-025`) — **Verificar → refrescar UNA vez → login.**
+   *
+   * Antes era *verificar → fallar → login*, y con `JWT_ACCESS_EXPIRY=15m` eso significaba que **la
+   * sesión efectiva del portal duraba quince minutos**, aunque el sistema tuviera escrito y guardado
+   * todo lo necesario para que durase siete días: el API expone `/auth/refresh`, BASE guarda el token
+   * de refresco con su cookie… y **no lo llamaba nadie**.
+   *
+   * ## Sólo la expiración refresca, y ésa es la decisión de seguridad
+   *
+   * `jwt.verify` falla por expiración, por firma inválida, por token malformado. Refrescar ante
+   * **cualquier** fallo convertiría el refresco en una vía para saltarse la verificación: bastaría
+   * presentar un `access_token` basura junto a una cookie de refresco válida y este guard pediría un
+   * token nuevo tan tranquilo.
+   *
+   * ## Un intento por petición, nunca dos
+   *
+   * Es la barrera contra el bucle. Un refresco fallido que no cerrara sesión se reintentaría en cada
+   * navegación: el usuario atrapado y el API recibiendo una llamada por página.
+   *
+   * ## Y el token nuevo tiene que llegar a `apiGet` de esta misma petición
+   *
+   * Se actualiza `req.cookies.access_token` **en memoria**, no sólo la cookie del navegador. Sin eso,
+   * las 28 llamadas de `apiGet` de esta petición irían con el token viejo y la página renderizaría
+   * **vacía** —sin error y sin traza—, con la cookie ya correcta para la siguiente. Un arreglo que
+   * produce páginas en blanco es peor que el defecto que corrige.
+   */
+  async canActivate(context: ExecutionContext): Promise<boolean> {
     const req = context.switchToHttp().getRequest<Request>();
     const res = context.switchToHttp().getResponse<Response>();
 
     const token = req.cookies?.["access_token"];
-    if (!token) {
-      res.redirect(`${BASE_URL}/auth/login`);
-      return false;
-    }
+    if (!token) return this.alLogin(res);
 
     try {
-      const payload = jwt.verify(token, JWT_SECRET) as Record<string, unknown>;
-      (req as any).user = payload;
+      (req as any).user = jwt.verify(token, JWT_SECRET) as Record<
+        string,
+        unknown
+      >;
       return true;
-    } catch {
-      res.clearCookie("access_token", { domain: COOKIE_DOMAIN, path: "/" });
-      res.redirect(`${BASE_URL}/auth/login`);
-      return false;
+    } catch (error) {
+      // **La rama que decide la seguridad de todo esto.** Cualquier fallo que no sea expiración
+      // —firma inválida, token malformado, basura— va al login SIN refrescar.
+      if (!(error instanceof jwt.TokenExpiredError))
+        return this.cerrarSesion(res);
+
+      return this.refrescarYSeguir(req, res);
     }
+  }
+
+  private async refrescarYSeguir(
+    req: Request,
+    res: Response,
+  ): Promise<boolean> {
+    const refreshToken = req.cookies?.["refresh_token"];
+    // Sin token de refresco no hay nada que preguntar: al login, y **sin llamar al API**.
+    if (!refreshToken) return this.cerrarSesion(res);
+
+    let tokens: Tokens | null;
+    try {
+      tokens = await refrescarSesion(refreshToken);
+    } catch {
+      // El API no contestó. Lleva al mismo sitio que un `null`, pero por otro motivo — y esa
+      // diferencia la registra `refrescarSesion`, que es donde se sabe cuál de los dos fue.
+      return this.cerrarSesion(res);
+    }
+
+    // `null` = la sesión murió: revocada, expirada o usuario suspendido. Lo dijo el API.
+    if (!tokens) return this.cerrarSesion(res);
+
+    res.cookie("access_token", tokens.accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: (process.env.COOKIE_SAMESITE || "Lax") as
+        "lax" | "strict" | "none",
+      ...(COOKIE_DOMAIN ? { domain: COOKIE_DOMAIN } : {}),
+      maxAge: VIDA_ACCESO_MS,
+      path: "/",
+    });
+
+    // **Lo que evita la página en blanco**: `apiGet` lee de aquí, en esta misma petición.
+    if (req.cookies) req.cookies["access_token"] = tokens.accessToken;
+    (req as any).user = jwt.decode(tokens.accessToken);
+
+    return true;
+  }
+
+  /** Borra **las dos** cookies y manda al login. Dejar la de refresco sería dejar una llave muerta. */
+  private cerrarSesion(res: Response): boolean {
+    res.clearCookie("access_token", OPCIONES_BORRADO);
+    res.clearCookie("refresh_token", OPCIONES_BORRADO);
+    return this.alLogin(res);
+  }
+
+  private alLogin(res: Response): boolean {
+    res.redirect(`${BASE_URL}/auth/login`);
+    return false;
   }
 }
