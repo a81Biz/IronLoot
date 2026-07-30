@@ -902,6 +902,66 @@
         "FUERA_DE_ALCANCE_V1": 1
       },
       "nota": "PRIMERA emision con CERO hallazgos activos, y hay que leerla con tres avisos que forman parte de ella. (1) El Health sube a 100 EN PARTE porque el alcance se estrecho: H-005 se cerro aceptandola como limitacion declarada, con la declaracion de valor enmendada a la vez (F-1 U-006) — el producto ya no promete emitir CFDI y P-012 pasa a FUERA_DE_ALCANCE_V1. El sistema sigue sin emitir facturas. (2) La Confianza esta a UN punto del umbral de A porque D5 esta al 0 %: la fiabilidad operacional NO esta demostrada. (3) Cero hallazgos activos es cero defectos CONOCIDOS: un dia de mirar y ejecutar produjo OCHO hallazgos, cinco con meses en el codigo. H-028 nacio y murio en esta corrida — una tasa sobre 2 casos capaba la clase a B por aritmetica, y al reves 1 de 1 daba 100 % VERDE. Y el checkpoint D3 cazo dos catch mudos introducidos por PT-174 unas horas antes."
+    },
+    {
+      "session": "S-006",
+      "date": "2026-07-29",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 100,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "health": 100.0,
+        "risk": 0,
+        "confidence": 91.0
+      },
+      "classification": "A",
+      "classification_without_cap": "A",
+      "cap_reason": null,
+      "cap_note": "Sin cap. §15.6 se cumple por los dos lados. Los scores son IDENTICOS a S-005 y esa identidad es el dato: entre las dos emisiones aparecieron TRES hallazgos mas (H-029, H-030, H-031), se corrigieron y se cerraron. Un 100 que no se mueve no significa que nada haya pasado.",
+      "score_freshness": {
+        "last_verified": "2026-07-29",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "risk_detail": {
+        "risk_bruto": 0,
+        "detalle": "Cero hallazgos activos. Los 31 del registro estan CERRADA."
+      },
+      "coverage_detail": {
+        "D1": 100,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "D5": 0,
+        "motivo": "Igual que S-005: D1/D2/D3/D4 al 100 %, D5 al 0 % por MUESTRA INSUFICIENTE (2 ciclos resueltos frente a los 20 que los umbrales exigen). Este delta sync NO amplia cobertura: confirma por codigo y por ejecucion tres correcciones. La fiabilidad operacional sigue SIN demostrar."
+      },
+      "trigger": "Barrido dirigido a «controles declarados» tras el cierre de S-005, por instruccion del humano («revisa de nuevo que falta» / «si hay un hallazgo nuevo lo tratas hasta cerrarlo»).",
+      "findings_changes": {
+        "nuevos": [
+          "H-029",
+          "H-030",
+          "H-031"
+        ],
+        "revisados": [],
+        "cerrados": [
+          "H-029",
+          "H-030",
+          "H-031"
+        ]
+      },
+      "evidencias_nuevas": [
+        "E-034",
+        "E-035"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "FUERA_DE_ALCANCE_V1": 1
+      },
+      "nota": "Tercera emision consecutiva en la que un barrido dirigido encuentra defectos que ninguna prueba senalaba. Los tres son de la misma forma —un control que APARENTA estar puesto—: un guard de reCAPTCHA que comprobaba que el token existiera y no que fuese valido (H-029, D2); un reenvio de verificacion que respondia «Verification email sent» con la llamada de envio comentada (H-030, D1, ALTA — es el camino de recuperacion de una cuenta que no se puede activar); y la reserva de SETTLEMENT_HOLDBACK_HOURS a 0 en docker-compose, que dejaba sin ventana de proteccion al comprador en cualquier despliegue que no declarase la variable (H-031, D2). H-031 lo introduje yo mismo unas horas antes en PT-174 y se registra igual: esconderlo en la prosa de una evidencia lo dejaria fuera del recuento, y el recuento es lo que se lee. H-029 y H-030 llevaban MESES. Los avisos de S-005 siguen vigentes uno por uno, y el tercero se refuerza: cero hallazgos activos mide lo que se ha buscado, no lo que hay."
     }
   ]
 }
