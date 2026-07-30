@@ -1,0 +1,13 @@
+{
+ "status": "healthy",
+ "dependencies": {
+  "database": {
+   "status": "up",
+   "latency": 1
+  },
+  "redis": {
+   "status": "up",
+   "latency": 1
+  }
+ }
+}

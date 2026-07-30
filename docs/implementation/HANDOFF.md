@@ -4,7 +4,7 @@
 
 **Rama**: `master`, árbol limpio, cero ramas sin fusionar. **Sin subir a `origin`.**
 
-**Pruebas**: **1219** unitarias en verde — API **966** (119 suites) · CORE **134** · CLIENT **103** ·
+**Pruebas**: **1226** unitarias en verde — API **973** (120 suites) · CORE **134** · CLIENT **103** ·
 ADMIN **13** · BASE **3**.
 
 **Reglas duras**: **34** `RULE-NN` (RULE-36 nueva, RULE-17 con corolario). **Guardas de documentación**: **12**
@@ -14,29 +14,28 @@ suites / **136** pruebas.
 
 ## Estado: CERTIFICADO Clase A · cero hallazgos activos
 
-**S-008 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
+**S-009 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
 
-| Métrica | S-007 | **S-008** |
+| Métrica | S-008 | **S-009** |
 |---|---|---|
 | Health | 100.0 | **100 / 100** |
 | Risk | 0 | **0 / 100** |
 | Confidence | 91.0 | **91.0** |
 | Clase | A | **A** |
 
-**Hallazgos: 34 registrados, CERO activos.** Los seis de hoy —H-029 … H-034— cerrados con tu VoBo y verificados
-**ejecutando**.
+**Hallazgos: 35 registrados, CERO activos.** Los siete de hoy —H-029 … H-035— cerrados con tu VoBo y
+verificados **ejecutando**.
 
-### Los mismos cuatro números por CUARTA vez, y ése es el dato
+### Los mismos cuatro números por QUINTA vez, y ése es el dato
 
-En cada intervalo entre emisiones apareció trabajo real: **tres** hallazgos entre S-005 y S-006, **dos** entre
-S-006 y S-007 —uno ALTA—, **uno** entre S-007 y S-008. Seis defectos reales, todos cerrados antes de emitir.
+Cuatro intervalos entre emisiones, y en cada uno apareció trabajo real: **3 · 2 · 1 · 1**. Siete defectos reales,
+todos cerrados antes de emitir, y los cuatro números sin moverse ni un punto.
 
-**La estabilidad de este 100 mide que se cierra lo que se encuentra, no que no haya nada que encontrar.** Quien
-lea sólo la tabla se lleva la impresión de cuatro emisiones sin incidentes.
+**La estabilidad de este 100 mide que se cierra lo que se encuentra, no que no haya nada que encontrar.**
 
-**Y cada hallazgo salió de comprobar el anterior.** H-032 y H-033, al verificar el cierre de H-030. H-034, al
-aplicar al camino del dinero la recomendación que dejó escrita S-007. Eso hace de la cadena algo más útil que su
-resultado: **el sitio donde buscar lo dijo el hallazgo previo, no una intuición**.
+**Y cada hallazgo salió de comprobar el anterior.** H-032/H-033, al verificar el cierre de H-030. H-034, con la
+recomendación que dejó S-007. H-035, con la lista que dejó S-008. **No es una racha: es una cadena** — el sitio
+donde buscar lo dijo el trabajo previo, no una intuición.
 
 ### Tres avisos que forman parte del resultado, no lo adornan
 
@@ -62,7 +61,45 @@ Lista en [`PENDING_TASKS.md`](PENDING_TASKS.md).
 
 ---
 
-## Lo último: las pasarelas no declaraban ningún tope (PT-184)
+## Lo último: una guarda con el nombre correcto mirando otra cosa (PT-185)
+
+Cerré la lista que dejó S-008 —los dos terceros que faltaban— y el resultado es distinto en cada uno, que es por
+qué había que mirarlos y no suponerlos:
+
+- **El almacenamiento**: se miró y **no aplica**. `writeFile` en disco local, sin servicio remoto en v1.0.
+  «Queda por mirar» y «se miró y no aplica» son estados distintos, y sólo el segundo cierra un pendiente.
+- **Redis**: el defecto **no era el que fui a buscar**. Iba por un tope, y `ioredis` trae los suyos. Lo que
+  apareció al mirar fue otra cosa.
+
+### H-035 — la reserva que RULE-17 prohíbe, sobreviviendo en un fichero
+
+```ts
+// distributed-lock.service.ts:12
+const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+```
+
+**Lo que vale no es el defecto: es su causa.** La guarda de RULE-17 comprueba que las variables estén
+**declaradas**. El texto de la regla dice, en negrita y como su afirmación central: *«the fallback was the problem,
+not the variable»* — **y esa mitad no la comprobaba nadie**. Se vigiló lo fácil de medir y quedó sin vigilar lo que
+causó el incidente del que nació la regla: cinco contenedores caídos.
+
+Por eso este `||` pasó por **PT-137**, por **PT-147** y por todas las corridas de la suite, mientras el cliente de
+al lado llevaba escrito *«PT-137 — Mismo defecto que las colas: reserva a `localhost`»*.
+
+Es la **segunda vez hoy** que aparece esta forma: H-031 tenía la guarda del holdback mirando el servicio cuando el
+agujero estaba en el compose. Aparece lo suficiente para nombrarla — **una guarda puede existir, tener el nombre
+correcto y mirar al lado del agujero.**
+
+Lo que costaba: el cerrojo impide que dos instancias cierren la misma subasta. Sin `REDIS_URL`, el proceso
+**arranca**, apunta a un `localhost` que no es nadie, `acquireLock` relanza y **ninguna subasta se cierra**.
+
+**La corrección vale por la guarda nueva más que por el arreglo**: cubre las tres formas de escribir una reserva
+—`||`, `??` y el segundo argumento de `config.get`, que es la del incidente original— y **se vio acusar al fichero
+correcto, y sólo a ése**, antes de arreglarlo.
+
+---
+
+## Antes de eso: las pasarelas no declaraban ningún tope (PT-184)
 
 La recomendación de S-007 decía que los candidatos siguientes eran los otros terceros —**la pasarela de pago**,
 Redis, el almacenamiento—. El primero de la lista tenía el defecto.
@@ -226,10 +263,12 @@ con la contabilidad cerrando sola —950 → 95 de comisión → 855 retenido �
    cierra otra corrida igual: hacen falta 20 ciclos resueltos.
 3. **H-005**: cuando haya PAC. Los tres modelos están medidos en `evidence/PT-155/hallazgos.md`; la opción C
    es subconjunto de la B, y la B exige datos que **no se pueden pedir retroactivamente**.
-4. **Terminar la lista de terceros: quedan Redis y el almacenamiento de ficheros.** La pasarela era el primero
-   de los tres y tenía el defecto, así que no conviene dar por buenos los otros dos. Con **Redis** hay una
-   ventaja: **se puede parar** en desarrollo —ya se hizo en PT-178—, así que ahí el fallo se podrá **medir** y no
-   sólo leer. Es exactamente lo que separó a H-033 de H-034.
+4. **Llevar la guarda de reservas a ADMIN, BASE y CLIENT.** `conexiones-sin-reserva.spec.ts` mira sólo
+   `src/api/src`, y **ADMIN tuvo exactamente este defecto en PT-147**. Es el pendiente más concreto que deja la
+   jornada, y hoy no hay nada que impida que vuelva por ahí.
+5. **La pregunta que abrió H-035, aplicada al resto de las reglas:** ¿qué otra `RULE-NN` vigila la parte fácil de
+   medir y no la que causó su incidente? Es la forma más productiva que ha salido hoy — no buscar código
+   sospechoso, sino **guardas que miran al lado del agujero**.
 5. **Y seguir mirando dónde el código promete algo**: un nombre que dice «verifica», una respuesta que dice
    «enviado», una variable que declara una espera, **una prueba que dice «no lanza»**. Una de esas cuatro formas
    era, hoy, una prueba nuestra.

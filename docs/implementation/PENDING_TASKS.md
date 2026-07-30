@@ -1,19 +1,19 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181 … PT-184)
+**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181 … PT-185)
 
 ---
 
 ## Esperando validación humana: nada
 
-**PT-181 … PT-184 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
-veintisiete PT de la jornada quedan cerrados**: PT-158 … PT-184.
+**PT-181 … PT-185 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
+veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
 
 **Cero trabajo FDGE pendiente.**
 
 ---
 
-## Hallazgos de auditoría: 34, todos `CERRADA`
+## Hallazgos de auditoría: 35, todos `CERRADA`
 
 | Hallazgo | Dim | PT | Cómo se comprobó |
 |---|:--:|---|---|
@@ -23,11 +23,12 @@ veintisiete PT de la jornada quedan cerrados**: PT-158 … PT-184.
 | **H-032** | D3 | PT-183 | **En vivo** con Mailhog parado: `200` con bandeja vacía → **500** |
 | **H-033** | D3 | PT-183 | Medido: **121 s → ~5 s** |
 | **H-034** | D3 | PT-184 | 7 casos, con **C1 y C2 vistos fallar** al devolver una llamada a su forma sin tope |
+| **H-035** | D2 | PT-185 | La guarda nueva **vista acusar al fichero correcto, y sólo a ése**, antes del arreglo |
 
-Los seis nacieron y murieron el 2026-07-29, **cada uno saliendo de comprobar el anterior**: H-032/H-033 al
-verificar el cierre de H-030 —y uno desmiente parte de ese cierre, anotado sin reabrirlo (`[A6]`)— y H-034 al
-aplicar al camino del dinero la recomendación que dejó S-007. Los veintiocho anteriores estaban ya cerrados;
-detalle en `PTSA/RESUMEN.md` § S-008.
+Los siete nacieron y murieron el 2026-07-29, **cada uno saliendo de comprobar el anterior**: H-032/H-033 al
+verificar el cierre de H-030 —y uno desmiente parte de ese cierre, anotado sin reabrirlo (`[A6]`)—, H-034 al
+aplicar al camino del dinero la recomendación de S-007, y **H-035 al cerrar la lista de terceros que dejó S-008**.
+Los veintiocho anteriores estaban ya cerrados; detalle en `PTSA/RESUMEN.md` § S-009.
 
 **H-005 (CFDI) está `CERRADA` como limitación declarada** por decisión del humano, con `F-1 § U-006`
 enmendando la declaración de valor a la vez: el producto ya **no promete** emitir CFDI y `P-012` pasa a
@@ -58,15 +59,17 @@ llegue el proveedor:
 
 ## La auditoría, al día
 
-**S-008 emitido** el 2026-07-29. `freshness = FRESH`, `commits_since_audit = 0`.
+**S-009 emitido** el 2026-07-29. `freshness = FRESH`, `commits_since_audit = 0`.
 
-**Health 100 · Risk 0 · Confidence 91.0 · Clase A.** Los mismos por **cuarta** vez — **y eso es el dato**: en cada
-intervalo apareció trabajo real (tres hallazgos, luego dos, luego uno), y todos se cerraron antes de emitir. **La
+**Health 100 · Risk 0 · Confidence 91.0 · Clase A.** Los mismos por **quinta** vez — **y eso es el dato**: cuatro
+intervalos, y en cada uno trabajo real (3 · 2 · 1 · 1). Siete defectos, todos cerrados antes de emitir. **La
 estabilidad del 100 mide que se cierra lo que se encuentra, no que no haya nada que encontrar.**
 
-**Y queda una tarea de auditoría con nombre**: mirar los **dos terceros que faltan** —Redis y el almacenamiento de
-ficheros—. La recomendación acertó con el primero de los tres a la primera, así que no conviene darlos por
-buenos. Con Redis, además, el fallo se puede **medir** parándolo, como en PT-178.
+**La lista de terceros queda cerrada**: la pasarela tenía el defecto, Redis tenía otro distinto y el
+almacenamiento **no aplica** (es `writeFile` local).
+
+**Y queda un pendiente concreto**: la guarda de reservas mira sólo `src/api/src`. **ADMIN, BASE y CLIENT no están
+cubiertos, y ADMIN tuvo exactamente este defecto en PT-147.**
 
 **Lo único que falta medir es D5, y no lo cierra otra corrida igual:** hacen falta **20 ciclos de pago
 resueltos** y hay **2**. Con `>= 95 %` para verde, un solo fallo entre `n` cumple `(n−1)/n >= 0.95` sólo si

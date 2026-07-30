@@ -1,0 +1,7 @@
+
+> iron-loot-api@0.5.1 audit:check
+> ts-node scripts/audit-check.ts
+
+[audit:check] 0 paquete(s) con aviso propio en produccion.
+[audit:check] Linea base de 2026-07-27: 0 — PT-126 cerro TD-015. Los cuatro servicios NestJS pasaron a la 11 con Express 5, y los avisos que quedaban de la cadena del mailer se fijaron por override a sus versiones parcheadas. La linea base esta VACIA a proposito: no queda ningun aviso triado pendiente.
+[audit:check] OK — Sin novedades respecto a la linea base.
