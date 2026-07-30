@@ -9,9 +9,119 @@
 | **Código usado** | api, base, client, admin, core, prisma, docker, nginx |
 | **Nivel de confianza** | Alto |
 
-> **✅ REMEDIADO (2026-07-23):** 36/36 hallazgos corregidos y **fusionados a master** (PTs 036–047). Cierres finales (PT-047): **AUD-016** → interruptor `CFDI_ENABLED` (OFF por defecto; `generate()` responde 503 claro y el admin lo prende/apaga desde la UI); la integración real del PAC queda como dependencia externa a contratar. **AUD-028** → scripts de CI en el `package.json` raíz. **AUD-033** → código muerto eliminado. Detalle: [../Informe-Remediacion.md](../Informe-Remediacion.md). La tabla inferior conserva el estado original de la auditoría; la columna de recomendación indica el PT que lo resolvió.
+> **⚠ REVISADO EL 2026-07-29 (PT-189) — «36/36» no era exacto.**
+>
+> Esta cabecera decía **«36/36 hallazgos corregidos y fusionados a master»**. Se midieron 13 contra el código
+> y la base, y **tres siguen abiertos**:
+>
+> | Hallazgo | Lo que dice el código hoy |
+> |---|---|
+> | **AUD-010** | Resolver una disputa **no mueve dinero**: `resolveDisputeFavorBuyer` devuelve `note: 'Initiate refund via POST /admin/refunds'`. El movimiento es un paso manual aparte |
+> | **AUD-012** | El VO `Money` existe en `@ironloot/core` y **ningún servicio del API lo importa** |
+> | **AUD-027** | `SMTP_*` sigue existiendo junto a `MAIL_*` en `system-config.service.ts` |
+>
+> **AUD-016** (CFDI) la propia cabecera ya lo matizaba, y es correcto: hay interruptor y el PAC es dependencia
+> externa. Es H-005, aceptado como limitación declarada de v1.0.
+>
+> ## Los ocho que faltaban, medidos también (2026-07-29, tarde)
+>
+> | Hallazgo | Medición | Veredicto |
+> |---|---|---|
+> | **AUD-004** | `validate-startup-config.ts` aborta con credenciales por defecto; `admin/auth/login` a 10/min | **corregido** (PT-036) |
+> | **AUD-006** | `handleConnection` **sólo registra**: no autentica el handshake, y `joinAuction` acepta cualquier UUID | **ABIERTO** — ver matiz abajo |
+> | **AUD-007** | ADMIN monta `helmet` con `contentSecurityPolicy` (`main.ts:21-22`) | **corregido** |
+> | **AUD-011** | `admin.service.ts` **no menciona** `AuctionStateMachine` ni `canTransition` | **ABIERTO** |
+> | **AUD-013** | 16 pruebas en 3 suites de comisiones y reembolsos | **corregido** |
+> | **AUD-014** | La postura está escrita: *«CSRF mitigado por JWT Bearer + `SameSite`; los tokens de doble envío no se usan»* | **corregido** (la contradicción doc↔código ya no existe) |
+> | **AUD-018** | `system-cleanup`: retención **única** y configurable, `LOG_RETENTION_DAYS` con 90 por defecto, comentada como *«single authoritative retention»* (PT-043) | **corregido** |
+> | **AUD-023** | HeyBanco documentado en `Integraciones-y-Configuracion.md` y declarado en `src/api/.env.example` | **corregido** |
+>
+> **El matiz de AUD-006 importa y se dice:** el gateway **no autentica**, y eso es cierto. Pero lo único que
+> emite es `emitAuctionEvent(auctionId, …)` a la sala `auction:<id>` — **datos de subasta, que son públicos**
+> (`GET /auctions/:id` es `Public`). No hay canal por usuario ni datos privados en el socket. Así que la
+> exposición real es **la que ya está abierta por la API pública**, no una fuga. Sigue siendo un hallazgo
+> legítimo —una sala sin autenticar es superficie— pero **no es la fuga de datos que su enunciado sugiere**, y
+> confundir las dos cosas es lo que hace que un hallazgo ALTA se ignore.
+>
+> ## Recuento honesto tras medir los 21
+>
+> **17 corregidos y verificados · 3 abiertos y verificados · 1 aceptado como limitación (AUD-016/H-005) · 15 sin
+> verificar.**
+>
+> Los abiertos son **AUD-006** (WebSocket sin autenticar), **AUD-010** (resolver disputa no mueve dinero),
+> **AUD-011** (el admin salta la máquina de estados), **AUD-012** (el VO `Money` sin usar) y **AUD-027**
+> (`SMTP_*` duplicado). Cinco, no tres: los dos nuevos salieron de esta segunda medición.
+
+> **Nueve sí están corregidos y verificados hoy** — AUD-001, 002, 003, 005, 008, 009, 017, 025, 030 —, y hasta
+> hoy **veintidós documentos seguían declarándolos como defectos vigentes**. Corregido en PT-189.
+>
+> **Y la segunda frase de esta cabecera también era falsa:** decía que «la columna de recomendación indica el PT
+> que lo resolvió». **Sólo dos de las 36 filas citan un PT**; el resto contiene la recomendación original de la
+> auditoría, que es otra cosa. La columna no se reescribe —es el registro histórico de lo que se recomendó— pero
+> deja de anunciarse como algo que no es.
+>
+> **Lo que esto enseña, y es el motivo de anotarlo aquí en vez de corregir el número y callar:** un «36/36» se
+> lee y se cree. Trece medidos dieron tres abiertos; **los 23 restantes no se han verificado**, así que el
+> número honesto de hoy no es 36/36 ni 33/36: es **9 verificados corregidos, 3 verificados abiertos, 1 aceptado
+> como limitación, 23 sin verificar**.
+
+> **Nota original (2026-07-23):** 36/36 hallazgos corregidos y **fusionados a master** (PTs 036–047). Cierres finales (PT-047): **AUD-016** → interruptor `CFDI_ENABLED` (OFF por defecto; `generate()` responde 503 claro y el admin lo prende/apaga desde la UI); la integración real del PAC queda como dependencia externa a contratar. **AUD-028** → scripts de CI en el `package.json` raíz. **AUD-033** → código muerto eliminado. Detalle: [../Informe-Remediacion.md](../Informe-Remediacion.md). La tabla inferior conserva el estado original de la auditoría; la columna de recomendación indica el PT que lo resolvió.
 >
 > **Estado real, no ideal.** 36 hallazgos entre documentación y realidad. En conflicto doc↔código **gana el código**. Los hallazgos de dominio/seguridad **no se cierran** sin validación humana ni evidencia post-fix (se corrigen bajo FDGE). El **detalle completo por hallazgo** (descripción, ubicación, evidencia, impacto, recomendación) está en `audit/deliverables/01-Registro-de-Hallazgos.md`; aquí queda el registro canónico resumido.
+
+
+## Tabla de veredictos — los 36, uno por uno (PT-189)
+
+**Esta tabla existe para que la pregunta «¿falta algo?» tenga respuesta sin volver a barrer el repositorio.**
+Cada hallazgo tiene exactamente uno de cuatro estados, y **«sin verificar» es un estado legítimo**: lo que no se
+permite es no haberlo mirado nunca y que nadie lo sepa.
+
+La vigila `afirmaciones-de-estado-verificadas.spec.ts`: si un documento presenta como defecto vivo un `AUD`
+marcado aquí `corregido`, la prueba falla. Y si alguien cita un `AUD` que no está en esta tabla, también.
+
+| Hallazgo | Veredicto | Cómo se sabe |
+|---|---|---|
+| AUD-001 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-002 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-003 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-004 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-005 | corregido | verificado el 2026-07-29 contra código o base |
+| **AUD-006** | **abierto** | el WebSocket no autentica el handshake; sólo emite datos de subasta, que ya son públicos |
+| AUD-007 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-008 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-009 | corregido | verificado el 2026-07-29 contra código o base |
+| **AUD-010** | **abierto** | resolver una disputa no mueve dinero — el reembolso es un paso manual aparte |
+| **AUD-011** | **abierto** | `admin.service.ts` no pasa por `AuctionStateMachine` |
+| **AUD-012** | **abierto** | el VO `Money` de `core` no lo importa ningún servicio del API |
+| AUD-013 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-014 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-015 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-016 | limitación declarada | CFDI — aceptado como limitación declarada de v1.0 (H-005). Falta el PAC, no el código |
+| AUD-017 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-018 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-019 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-020 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-021 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-022 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-023 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-024 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-025 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-026 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| **AUD-027** | **abierto** | `SMTP_*` sigue existiendo junto a `MAIL_*` en `system-config` |
+| AUD-028 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-029 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-030 | corregido | verificado el 2026-07-29 contra código o base |
+| AUD-031 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-032 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-033 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-034 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-035 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-036 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+
+**Recuento: 15 corregidos · 5 abiertos · 1 limitación declarada · 15 sin verificar.**
+
+Los 15 sin verificar son deuda **de medición**, no de código: puede que estén todos corregidos. Lo que no se
+puede es seguir diciendo «36/36» sobre ellos.
 
 ## Distribución
 

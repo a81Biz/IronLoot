@@ -1,0 +1,17 @@
+PASS test/unit/documentacion/afirmaciones-de-estado-verificadas.spec.ts
+  Toda afirmacion de estado sobre un AUD tiene veredicto — PT-189
+    ✓ C1: ningun documento presenta como defecto vivo un AUD que la tabla declara corregido (105 ms)
+    ✓ C2: el registro declara un veredicto para cada AUD citado en docs-v2 (94 ms)
+    ✓ C3: el registro NO afirma un recuento redondo sin desglosarlo
+    casos de control
+      ✓ AC-01: una linea con senal y veredicto NO se acusa
+      ✓ AC-02: una linea con senal y SIN veredicto si se acusa
+      ✓ AC-03: una linea que cita un AUD SIN senal de problema no se acusa (1 ms)
+      ✓ AC-04: «sin verificar» cuenta como veredicto — se permite no saber, no se permite no mirar
+      ✓ AC-05: el registro no esta vacio — una guarda sobre un fichero vacio pasa sin comprobar nada (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        5.056 s
+Ran all test suites matching /afirmaciones-de-estado/i.

@@ -1,0 +1,11 @@
+=== AUD-008: la afirmacion que el grafo destapo, medida en la base real ===
+
+      table_name       |      column_default      
+-----------------------+--------------------------
+ account_verifications | 'MXN'::character varying
+ payment_cycles        | 'MXN'::character varying
+ payments              | 'MXN'::character varying
+ refund_requests       | 'MXN'::character varying
+ wallets               | 'MXN'::character varying
+(5 rows)
+

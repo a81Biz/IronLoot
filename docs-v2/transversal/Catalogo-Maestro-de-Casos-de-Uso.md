@@ -29,23 +29,25 @@
 | UC-02 Iniciar sesión (+2FA) | ✔ | ✔ | ✔ | | | `auth.controller.ts:75` | ✅ |
 | UC-03 Recuperar/restablecer contraseña | ✔ | | | | ✔ | `auth.controller.ts:183` | ✅ |
 | UC-04 Explorar catálogo y ver detalle | ✔ | ✔ | | | | BASE `app.controller.ts:48` | ✅ |
-| UC-05 **Pujar en subasta** | | ✔ | | | | `bids.controller.ts:18` (API) | ✗ **sin UI** (AUD-002) |
+| UC-05 **Pujar en subasta** | | ✔ | | | | `bids.controller.ts:18` (API) | ✅ (AUD-002 corregido: UI + Socket.io) |
 | UC-06 Ganar subasta / cierre automático | | ✔ | ✔ | | ✔ | `auction-scheduler.service.ts:127` | ⚠️ (AUD-012) |
-| UC-07 Añadir/quitar de watchlist | | ✔ | | | | `watchlist.controller.ts:38` | ⚠️ (auth UI AUD-003) |
-| UC-08 Depositar en wallet | | ✔ | ✔ | | ✔ | `wallet.controller.ts:83` | ⚠️ (AUD-003) |
-| UC-09 Retirar de wallet | | ✔ | ✔ | | | `wallet.controller.ts:113` | ⚠️ (AUD-003) |
+| UC-07 Añadir/quitar de watchlist | | ✔ | | | | `watchlist.controller.ts:38` | ✅ (AUD-003 corregido: el CLIENT proxya por BFF) |
+| UC-08 Depositar en wallet | | ✔ | ✔ | | ✔ | `wallet.controller.ts:83` | ✅ (AUD-003 corregido) |
+| UC-09 Retirar de wallet | | ✔ | ✔ | | | `wallet.controller.ts:113` | ✅ (AUD-003 corregido) |
 | UC-10 Ver historial/ledger | | ✔ | ✔ | | | `wallet.controller.ts:60` | ✅ |
-| UC-11 Habilitarse como vendedor | | ✔ | | | | `users.controller.ts:234` | ⚠️ (AUD-003) |
-| UC-12 Publicar/editar subasta | | | ✔ | | | `auctions.controller.ts:39,172` | ⚠️ (AUD-003) |
+| UC-11 Habilitarse como vendedor | | ✔ | | | | `users.controller.ts:234` | ✅ (AUD-003 corregido) |
+| UC-12 Publicar/editar subasta | | | ✔ | | | `auctions.controller.ts:39,172` | ✅ (AUD-003 corregido) |
 | UC-13 Gestionar orden (comprador/vendedor) | | ✔ | ✔ | | | `orders.controller.ts:28` | ✅ |
 | UC-14 Registrar envío / actualizar estado | | | ✔ | | | `shipments.controller.ts:27` | ✅ |
 | UC-15 Calificar contraparte | | ✔ | ✔ | | | `ratings.controller.ts:16` | ✅ |
-| UC-16 Abrir/gestionar disputa | | ✔ | ✔ | | | `disputes.controller.ts:16` | ⚠️ (AUD-003) |
+| UC-17 **Declarar envío** (vendedor) | | | ✔ | | | `shipments.controller.ts` | ✅ sólo el vendedor; el comprador recibe 403 |
+| UC-18 **Confirmar recepción** (comprador) | | ✔ | | | | `shipments.controller.ts` | ✅ **sólo el comprador**; arranca el reloj del holdback (PT-174) |
+| UC-16 Abrir/gestionar disputa | | ✔ | ✔ | | | `disputes.controller.ts:16` | ✅ (AUD-003 corregido) |
 | UC-17 Confirmar pago vía webhook | | | | | ✔ | `payments.controller.ts:45` | ✅ |
 | UC-18 Moderar subastas/lotes/usuarios | | | | ✔ | | `admin.controller.ts:97` | ⚠️ salta FSM (AUD-011) |
 | UC-19 Resolver disputa | | | | ✔ | | `admin.service.ts:868` | ✗ no mueve dinero (AUD-010) |
-| UC-20 Procesar reembolso | | | | ✔ | | `refunds.service.ts` | ⚠️ sin tests (AUD-013) |
-| UC-21 Configurar comisiones | | | | ✔ | | `commissions.controller.ts` | ⚠️ no cableado (AUD-005) |
+| UC-20 Procesar reembolso | | | | ✔ | | `refunds.service.ts` | ✅ con pruebas (AUD-013 corregido) |
+| UC-21 Configurar comisiones | | | | ✔ | | `commissions.controller.ts` | ✅ cableado al cierre (AUD-005 corregido) |
 | UC-22 Revisar KYC | | | | ✔ | | `kyc.service.ts` | ⚠️ manual |
 | UC-23 Generar CFDI | | | | ✔ | | `cfdi.service.ts:33` | ✗ stub (AUD-016) |
 | UC-24 Enviar campaña de notificaciones | | | | ✔ | | `admin.controller.ts:545` | ⚠️ |
@@ -61,4 +63,4 @@
 4. **Conflicto:** UC-16 → UC-19 → UC-20. *(UC-19 no mueve dinero, AUD-010.)*
 5. **Operación admin:** UC-18/UC-21/UC-22/UC-24/UC-26.
 
-> **Cobertura de casos:** de 27 casos, 10 ✅ plenamente operables, 12 ⚠️ parciales (mayormente por AUD-003 auth UI), 5 ✗ con eslabón roto (UC-05, UC-19, UC-23, UC-25 + dependientes). Todos con respaldo en código o marcados como pendientes explícitos.
+> **Cobertura de casos (revisada 2026-07-29).** El recuento original —10 operables, 12 parciales «mayormente por AUD-003», 5 con eslabón roto— **ya no describe el sistema**: `AUD-003` (auth UI) y `AUD-002` (UC-05, sin UI de puja) están corregidos y verificados. Siguen con eslabón roto **UC-19** (resolver disputa no mueve dinero, `AUD-010`) y **UC-23** (CFDI, `AUD-016`). El recuento exacto no se rehace aquí: hacerlo a ojo sería sustituir una cifra obsoleta por otra sin medir. Todos con respaldo en código o marcados como pendientes explícitos.

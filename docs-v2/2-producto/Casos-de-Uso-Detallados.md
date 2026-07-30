@@ -25,12 +25,12 @@
 - **Alternativo:** refrescar token `POST /auth/refresh`.
 - **Excepción:** no verificado → 403 `USER_NOT_VERIFIED` (`RN-03`); SUSPENDED/BANNED → bloqueado (`RN-04`); credenciales inválidas → 401; rate limit 5/60s.
 
-## UC-05 — Pujar en una subasta ⚠️ (cadena rota)
+## UC-05 — Pujar en una subasta ✅ (cadena completa desde 2026-07-29)
 - **Actor:** Comprador · **Precondición:** subasta ACTIVE/PUBLISHED no expirada; wallet con saldo.
 - **Happy (backend):** `POST /auctions/:id/bids` → valida (`RN-13/15/16`) → bloquea fondos (`RN-22`) → crea puja → actualiza `currentPrice` → libera al líder anterior (`RN-23`) → si tardía, soft-close extiende (`RN-17`) → emite `bid:new`/`auction:extended`. `[bids.service.ts:71-176]`
 - **Alternativo:** ser superado → notificación BID_OUTBID + liberación de fondos.
 - **Excepción:** puja ≤ actual → `BID_TOO_LOW`; puja a su propia subasta → `BID_ON_OWN_AUCTION`; fondos insuficientes → error + no se crea puja; fallo en TX → compensación libera lo recién retenido. `[bids.service.ts:79-202]`
-- **⚠️ Estado real:** **no hay pantalla de puja ni cliente Socket.io** en CLIENT; el CTA "Pujar ahora" enlaza a una ruta inexistente → el caso **no es operable desde la UI** (`AUD-002`). Además el incremento mínimo configurado no se aplica (`AUD-009`).
+- **✅ Estado real (2026-07-29):** la puja se hace desde el detalle de la subasta, con cliente Socket.io en `pages-auction-detail.js` (`AUD-002` **corregido**). El incremento mínimo configurado no se aplica (`AUD-009`).
 
 ## UC-06 — Cierre de subasta y adjudicación (Sistema)
 - **Actor:** Sistema (scheduler) · **Trigger:** cron cada minuto.
@@ -38,11 +38,37 @@
 - **Alternativo:** sin pujas → cierra sin orden.
 - **Excepción:** otra instancia tiene el lock → se omite (evita doble proceso). **Riesgo:** el use-case `CloseAuctionUseCase` de core no se usa; settlement con baja cobertura (`AUD-012`).
 
-## UC-08 — Depositar en el monedero ⚠️
+## UC-08 — Depositar en el monedero ✅
 - **Actor:** Comprador/Vendedor.
 - **Happy:** inicia pago `POST /payments/initiate` (MP/PayPal) → paga en proveedor → webhook `POST /payments/webhook/:provider` (valida firma HMAC o verify-webhook-signature, `RN-50`) → si `COMPLETED`, acredita el **monto verificado** (`RN-24`). `[wallet.controller.ts:83, payments.service.ts:159]`
 - **Excepción:** monto verificado ≠ solicitado → `PaymentMismatchException`; firma inválida o secreto ausente → rechazo.
-- **⚠️ Estado real:** el formulario client-side de depósito llama al API cross-origin sin ruta de auth válida (`AUD-003`).
+- **✅ Estado real (2026-07-29):** el CLIENT proxya al API por su BFF (`main.ts:86`), que inyecta el `Authorization` desde la cookie HttpOnly. **`AUD-003` corregido.**
+
+## UC-17 — Declarar el envío (vendedor) ✅
+- **Actor:** **Vendedor**, y sólo él · **Precondición:** pedido en `PAID`.
+- **Happy:** `PATCH /shipments/:id` con `SHIPPED` → el pedido pasa a `SHIPPED` y se avisa al comprador. La
+  transición la valida `OrderStateMachine`; `carrier` y `trackingNumber` son **campos manuales** — no hay
+  integración con transportista en v1.0 (`RN-35`, `AUD-024`).
+- **Excepción:** el **comprador** no puede declarar el envío → **403**.
+- **Nota:** hasta PT-173 `shipments` escribía `order.status` **por fuera** de la máquina de estados: había **dos
+  puertas al mismo estado y sólo una con cerradura**, y un pedido `PAID` podía saltar directo a `DELIVERED`.
+
+## UC-18 — Confirmar la recepción (comprador) ✅ **la llave la tiene quien recibe**
+- **Actor:** **Comprador**, y sólo él · **Precondición:** pedido en `SHIPPED`.
+- **Happy:** `PATCH /shipments/:id` con `DELIVERED` → el pedido pasa a `DELIVERED` y **arranca el reloj del
+  holdback**: `shipment.deliveredAt` es el instante desde el que se cuentan las `SETTLEMENT_HOLDBACK_HOURS` (72)
+  antes de que el neto del vendedor pase de `pendingBalance` a disponible (`RN-64`).
+- **Excepción:** el **vendedor** no puede confirmar la recepción → **403**. Lo comprueba `QA-CL-07` en la fase 35
+  de la suite por navegador.
+- **Por qué esto es una regla y no un detalle (PT-174):** hasta entonces **todo** cambio de estado era del
+  vendedor, y el cron liberaba el holdback en cuanto el pedido estaba `DELIVERED`. Es decir: **el vendedor
+  marcaba entregado su propio envío y liberaba su propio dinero**, sin enviar nada y sin que nadie confirmara.
+  El holdback protege al comprador durante la ventana de disputa, y lo podía desactivar **la única parte de la
+  que protege**.
+- **Y hay dos mentiras posibles, no una:** el vendedor puede mentir al enviar —ya no puede, no tiene la llave— y
+  el comprador puede mentir **negando** la recepción, lo que retendría el dinero del vendedor para siempre. Por
+  eso el vencimiento se conserva: a los `DISPUTE_WINDOW_DAYS` (14) desde la creación del pedido **se libera
+  igual**. Antes eso existía por accidente, como el otro brazo de un `OR`; ahora es una regla con su prueba.
 
 ## UC-09 — Retirar del monedero (vendedor, con aprobación admin) ✅
 - **Precondición:** KYC APPROVED (`RN-62`) + método bancario con CLABE válida (`RN-63`) + saldo **disponible** suficiente (el `pendingBalance` retenido no cuenta, `RN-64`).
@@ -62,7 +88,7 @@
 
 ## UC-20 — Procesar reembolso (Admin) ⚠️
 - **Happy:** `POST /admin/refunds` → 0<monto≤total, uno por orden → acredita comprador (`REFUND`), orden→`REFUNDED`, audit event, en TX. `[refunds.service.ts:19-89]`
-- **⚠️ Estado real:** servicio de producción **sin tests** (`AUD-013`); el `ProcessRefundUseCase` de core (probado) no se usa.
+- **⚠️ Estado real (2026-07-29):** el servicio **sí tiene pruebas** — 16 en 3 suites de comisiones y reembolsos (`AUD-013` corregido). Lo que sigue abierto es otra cosa: el `ProcessRefundUseCase` de `core` **no se usa** (`AUD-012`).
 
 ## UC-23 — Generar CFDI (Admin) ✗
 - **Intención:** `POST /admin/cfdi/:orderId/generate` → factura timbrada por el PAC.

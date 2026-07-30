@@ -63,7 +63,7 @@ Escala: Impacto (1-5) × Probabilidad (1-5).
 | RG-07 | Fuga de flujo de pujas por WS sin auth. | AUD-006 | 3 | 3 | **Medio** | R-11 |
 | RG-08 | Registros de auditoría truncados antes de tiempo. | AUD-018 | 3 | 3 | **Medio** | R-16 |
 | RG-09 | Falsa confianza de calidad (tests de core no ejecutados en prod). | AUD-012 | 3 | 4 | **Medio** | R-07, R-08 |
-| RG-10 | Inconsistencia de precio por incremento no aplicado. | AUD-009 | 2 | 3 | **Medio** | R-13 |
+| RG-10 | ~~Inconsistencia de precio por incremento no aplicado~~ — **cerrado**: se aplica en `bids.service.ts:92-98`. | AUD-009 corregido | 2 | 3 | **Medio** | R-13 |
 | RG-11 | Decisiones basadas en documentación obsoleta/contradictoria. | AUD-014, AUD-020, AUD-021 | 3 | 3 | **Medio** | docs-v2 + FDGE |
 
 ## 3. Recomendación de gobierno

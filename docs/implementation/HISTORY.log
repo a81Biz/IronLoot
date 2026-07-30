@@ -3535,6 +3535,57 @@ Delta (real vs planned): dos cosas, y la segunda es una decision de alcance.
   leccion que esta jornada se llevo cuatro veces.
 PTSA reference: ninguno — deuda documental, no hallazgo de auditoria.
 
+## PT-189 — REFACTOR: 74 lineas declaraban como defectos vigentes nueve hallazgos corregidos
+Date: 2026-07-29
+Status: DONE
+Branch: docs/PT-189-aud-obsoletos
+Objective: (a) corregir los AUD obsoletos, (b) documentar la entrega/recepcion en negocio y producto,
+  (c) verificar los AUD que faltaban — y dejar el mecanismo para que esta clase deje de aparecer.
+Root cause: **nada vigilaba las afirmaciones de estado de `docs-v2`.** `11-Conventions.md` tiene guarda,
+  `10-Technical-Debt.md` tiene guarda, y las 36 fichas `AUD-XXX` no tenian ninguna. Resultado medido: **74
+  lineas en 22 documentos** declaraban como defectos vigentes nueve hallazgos corregidos **hacia meses**.
+  Y el propio registro afirmaba dos cosas falsas sobre si mismo:
+    - «**36/36 hallazgos corregidos**» — medidos 21, **cinco siguen abiertos**;
+    - «la columna de recomendacion indica el PT que lo resolvio» — **solo 2 de 36 filas citan un PT**.
+Solution:
+  **(a)** 81 fragmentos reescritos en 22 ficheros. **No se cambio el simbolo: se reescribio la frase.** Y se
+  conserva el identificador —`AUD-008` sigue citado— porque es la trazabilidad de por que la linea existe.
+  Los nueve verificados: AUD-001 (`audit:schema` OK) · 002 (puja y Socket.io en `pages-auction-detail.js`) ·
+  003 (el CLIENT proxya, `main.ts:86`) · 005 (fuente unica `resolveRatePercent`) · **008 (la base dice `MXN` en
+  las cinco tablas)** · 009 (`bids.service.ts:92-98`) · 017 (`db:seed` existe) · 025 (`DevelopmentOnlyGuard`) ·
+  030 (10 ficheros en `public/js/pages/` y dos guardas contra el inline).
+  **(b)** **UC-17** (declarar envio) y **UC-18** (confirmar recepcion) nuevos en `Casos-de-Uso-Detallados.md`, con
+  las dos mentiras posibles y por que el vencimiento se conserva. `RF-52`/`RF-53` en el PRD, `BR-07` reescrito en
+  el BRD, `US-07`/`US-07b`/`US-07c` en el mapa de historias, y las dos filas en el catalogo maestro. Antes,
+  «recepcion» y «holdback» **no aparecian ni una vez** en `1-negocio` ni en `2-producto`.
+  **(c)** Los ocho que faltaban, medidos: **corregidos** AUD-004 (el arranque rechaza credenciales por defecto;
+  login admin a 10/min), 007 (ADMIN monta Helmet+CSP), 013 (16 pruebas en 3 suites), 014 (la postura CSRF esta
+  escrita), 018 (retencion unica `LOG_RETENTION_DAYS`), 023 (HeyBanco documentado). **Abiertos** AUD-006 (el
+  WebSocket no autentica el handshake) y AUD-011 (el admin no pasa por `AuctionStateMachine`).
+  **Y el mecanismo, que es lo que se pidio**: `afirmaciones-de-estado-verificadas.spec.ts` + una **tabla de
+  veredictos de los 36** en el registro. Cuatro estados, y **«sin verificar» es legitimo**: lo que no se permite
+  es no haberlo mirado nunca y que nadie lo sepa.
+Modified files:
+  docs-v2: 22 ficheros (1-negocio, 2-producto, 3-arquitectura, 4-ingenieria, 5-qa, 6-devops, 7-ux, transversal)
+  docs-v2/transversal/Registro-de-Hallazgos.md (tabla de veredictos + las dos afirmaciones falsas corregidas)
+  src/api/test/unit/documentacion/afirmaciones-de-estado-verificadas.spec.ts (nuevo, 8 casos)
+Evidence: docs/implementation/evidence/PT-189/
+Delta (real vs planned): cuatro cosas, y tres son errores mios corregidos antes de darlos por buenos.
+  1. **El primer intento fue un arreglo a medias y lo reverti.** Cambie `⚠️` por `✅` sin reescribir la frase:
+     quedaban lineas como «✅ **No aplicado** — el codigo solo exige `>currentPrice`». **Cambiar el marcador sin
+     el texto es peor que no tocarlo**, porque el documento pasa a contradecirse en la misma linea.
+  2. **El primer liston de la guarda estaba mal puesto.** Exigia la palabra del veredicto en **toda** linea con
+     senal de problema, y acuso a 18 documentos que **decian la verdad** — `AUD-010` sigue abierto y un `⚠️` a su
+     lado es exacto. Habria sido un impuesto de prosa sobre lo correcto, y ensena a escribir para la guarda. El
+     defecto real era uno solo: **presentar como vivo algo ya corregido**. Eso es lo que se prohibe.
+  3. **El parser de veredictos leia prosa.** Cogia cualquier linea con un `AUD` y una palabra de estado, y la
+     prosa que explica *por que* «36/36» era inexacto hacia que `AUD-016` saliera «corregido». Se restringio a la
+     tabla: **una tabla es un sitio; un parrafo es una coincidencia.**
+  4. **Y una afirmacion de `docs-v2` contradecia mi propia medicion de PT-188**: el catalogo de API decia que
+     `POST /admin/auth/login` es `@SkipThrottle`, y lleva `@Throttle({limit:10})`. El `@SkipThrottle` es del
+     **resto** de `/admin/**`. Corregido.
+PTSA reference: ninguno — deuda documental. AUD-006 y AUD-011 quedan abiertos y declarados en la tabla.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3546,7 +3597,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**140** encabezados · **0** realmente abiertos · **6** sin `Status:` declarado.
+**141** encabezados · **0** realmente abiertos · **6** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -3690,3 +3741,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-186 | 3352 | `DONE` | **DONE** | cerrado en la línea 3397 |
 | PT-187 | 3434 | `DONE` | **DONE** | — |
 | PT-188 | 3480 | `DONE` | **DONE** | — |
+| PT-189 | 3538 | `DONE` | **DONE** | — |

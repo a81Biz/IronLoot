@@ -26,7 +26,7 @@
 
 - **Catálogo** `/auctions` — lista paginada con búsqueda.
 - **Detalle** `/auctions/:id` — información del lote y precio actual. El botón **"Pujar ahora"** te lleva al portal privado.
-- ⚠️ **Limitación actual:** el flujo de puja en la interfaz **no está disponible** (`AUD-002`). Para pujar se requiere la función que está pendiente de implementación.
+- ✅ **Corregido (`AUD-002`).** La puja se hace desde el detalle de la subasta, con actualización en vivo por Socket.io.
 
 ## 3. Panel del comprador (portal privado)
 
@@ -37,12 +37,12 @@
 | Ganadas | `/auctions/won-auctions` | Subastas que ganaste (órdenes) |
 | Watchlist | `/auctions/watchlist` | Subastas seguidas |
 | Wallet | `/wallet` | Saldo disponible y retenido |
-| Depositar | `/wallet/deposit` | Añadir fondos (⚠️ `AUD-003`) |
+| Depositar | `/wallet/deposit` | Añadir fondos |
 | Retirar | `/wallet/withdrawals` | Solicitar retiro (requiere KYC aprobado + CLABE registrada; máx. diario configurable) — pasa por aprobación del admin |
 | Historial | `/wallet/history` | Movimientos del ledger |
 | Órdenes | `/orders`, `/orders/:id` | Tus compras/ventas |
 | Notificaciones | `/notifications` | Alertas (superado, ganada, etc.) |
-| Disputas | `/disputes`, `/disputes/create` | Abrir/seguir disputas (⚠️ `AUD-003`) |
+| Disputas | `/disputes`, `/disputes/create` | Abrir/seguir disputas |
 | Reputación | `/reputation` | Tus calificaciones |
 
 ### Cómo funciona tu dinero

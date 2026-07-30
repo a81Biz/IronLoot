@@ -63,7 +63,7 @@ Retención efectiva = **30 días** (gana el más estricto). El log "inmutable" s
 
 - [ ] Secretos no placeholder: `JWT_SECRET`, `SESSION_SECRET`, `ADMIN_API_KEY`, **`ADMIN_USERNAME/PASSWORD`** (gate añadido por **PT-036**, VALIDATION_PENDING; en producción el arranque falla si son vacíos/placeholder/`admin`).
 - [ ] `ALLOWED_ORIGINS` no vacío; `COOKIE_SECURE=true`; `COOKIE_DOMAIN` con punto.
-- [ ] Esquema completo aplicado (⚠️ `migrate deploy` insuficiente por `AUD-001` → aplicar reconciliación).
+- [x] Esquema completo aplicado por migración. `AUD-001` corregido (PT-127) y **vigilado en CI** por el job `schema-drift`.
 - [ ] Proveedores de pago configurados (incluye `HEY_BANCO_*` si se usa, `AUD-023`).
 - [ ] PAC de CFDI configurado (bloqueante fiscal, `AUD-016`).
 - [ ] Diagnostics restringido en prod (`AUD-025`).

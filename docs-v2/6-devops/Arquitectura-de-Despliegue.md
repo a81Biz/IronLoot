@@ -58,4 +58,4 @@ cd src/apps/client && npm install && npm run start:dev
 ```
 
 > ✅ **AUD-001 (VALIDATION_PENDING, PT-037):** la migración `20260723_reconcile_backoffice_schema_and_currency` reconstruye el esquema completo (28 tablas) vía `migrate deploy`. **Entornos existentes creados por `db push`** deben baselinear una vez: `prisma migrate resolve --applied 20260723_reconcile_backoffice_schema_and_currency`. Incluye el fix `payments.currency`→MXN (AUD-008).
-> ⚠️ `npm run db:seed` sigue fallando (sin script, `AUD-017`, pendiente).
+> ✅ `npm run db:seed` existe y funciona: `"db:seed": "npx prisma db seed"` con `prisma/seed.ts`. `AUD-017` corregido.
