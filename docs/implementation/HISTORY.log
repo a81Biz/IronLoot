@@ -3927,6 +3927,25 @@ Delta (real vs planned): las once tareas tal como estaban en el Proposal Package
   no habia defecto en el codigo.
 PTSA reference: cierra TD-025. No hay hallazgo PTSA asociado.
 
+## CIERRE CON VoBo HUMANO — PT-194
+Date: 2026-07-30
+Status: registro
+Objective: registrar el VoBo humano sobre PT-194.
+
+**Instruccion literal:** *«da PT-194 por validado con mi VoBo»*. Con eso PT-194 pasa de
+`VALIDATION_PENDING` a **CLOSED**, y con el se cierra `TD-025`.
+
+**Lo que queda funcionando**: la sesion del portal privado dura lo que dure el refresh token en vez de
+los quince minutos del access token. Los dos caminos cableados —el guard para la navegacion y el proxy
+BFF para las llamadas del navegador—, sin tocar una linea del API.
+
+**Lo que este cierre NO afirma**: que el refresh token rote. No lo hace. Un token robado sirve **siete
+dias**. Era el estado anterior y no empeora — pero ahora que el refresco se usa de verdad, la rotacion
+gana valor, y es el trabajo que el humano abre a continuacion (**PT-196**).
+
+Verificacion en el cierre: API **1082** pruebas en 134 suites · CLIENT **134** en 11 (eran 103 en 8) ·
+CORE 93 · ADMIN 13 · BASE 3. Cada guarda vista fallar con sabotaje dirigido.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3938,7 +3957,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**147** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
+**147** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4088,4 +4107,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-192 | 3708 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3761 |
 | PT-193 | 3805 | `DONE` | **DONE** | — |
 | PT-195 | 3841 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3870 |
-| PT-194 | 3894 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |
+| PT-194 | 3894 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3930 |

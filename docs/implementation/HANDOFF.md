@@ -2,7 +2,7 @@
 
 **FDGE V3** · **2026-07-30** · Se **sobrescribe**: es el estado de ahora, no la historia.
 
-**Rama**: `refactor/PT-193-retirar-la-superficie-huerfana`, pendiente de fusionar.
+**Rama**: `master`, árbol limpio, al día con `origin` y sin una sola rama suelta.
 
 **Pruebas**: **1325** unitarias en verde — API **1082** (134 suites) · CORE **93** (6) · CLIENT **134**
 (11) · ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
@@ -11,7 +11,7 @@ con sus 41 casos: eran pruebas verdes sobre código que no corría en producció
 **Reglas duras**: **36** `RULE-NN` (RULE-38 nueva). **Guardas de documentación**: **15** suites / **159** pruebas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **147 encabezados · 1 realmente abierto** (PT-194, `VALIDATION_PENDING`).
+`npm run indice:estado`. **148 encabezados · 0 realmente abiertos.**
 
 ---
 
@@ -57,9 +57,10 @@ esta corrida vivían en el **camino de fallo**, que nunca se había ejecutado.
 
 ---
 
-## Esperan tu validación: **PT-194**
+## Esperan tu validación: nada
 
-Toca el **camino de autenticación**: aunque sea FEATURE, el agente no cierra lo que decide quién eres.
+**PT-194 cerrado con tu VoBo** el 2026-07-30. `TD-025` cerrada con él. **En curso: PT-196**, la
+rotación del refresh token.
 
 **PT-192 cerrado con tu VoBo** el 2026-07-30, con constancia en `HISTORY.log`. Con él, **los 144 PT del
 registro están cerrados**. **TD-024 se decidió y cerró en PT-193** (ADR-058). Queda deuda técnica en

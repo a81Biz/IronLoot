@@ -1,171 +1,163 @@
-# ENRICHMENT.md — PT-194: cablear el refresco de sesión (TD-025)
+# ENRICHMENT.md — PT-196: rotación del refresh token
 
-**STATE 1-E.** `FEATURE` — La sesión del portal privado deja de durar quince minutos.
+**STATE 1-E.** `FEATURE` — Un refresh token robado deja de servir siete días.
 
 **Fecha**: 2026-07-30
-**Origen**: `TD-025`, abierta al medir `AUD-035` en PT-192. Petición del humano: *«vamos ahora con
-TD-025»*.
-**Complejidad**: STANDARD.
+**Origen**: `changes/PT-194-refresco-de-sesion/out-of-scope.md § 1`. Petición del humano: *«pasemos a
+la rotación del refresh token y resolver lo necesario»*.
+**Complejidad**: **MAJOR** — toca autenticación **y el esquema de la base de datos**.
 **Estado**: esperando ACK. **Cero líneas de `src/` tocadas.**
 
-> El enrichment anterior (**PT-174**, cerrado) se conserva en `archive/ENRICHMENT-PT-174.md`.
+> El enrichment anterior (**PT-194**, cerrado) se conserva en `archive/ENRICHMENT-PT-194.md`.
 
 ---
 
 ## El problema, en una frase
 
-**El portal privado echa al usuario a los quince minutos**, aunque el sistema tenga escrito y guardado
-todo lo necesario para que la sesión dure siete días.
+**Un refresh token robado sirve siete días, y nadie se entera.** No hay forma de distinguir al usuario
+legítimo del que le copió la cookie: los dos presentan el mismo token y los dos reciben sesión.
 
 ---
 
-## Lo medido, que es distinto de lo que dice la deuda
+## Lo medido, y cambia el tamaño del trabajo
 
-`TD-025` dice *«el refresco existe y nadie lo llama»*. El reparto real cambia el tamaño del trabajo:
+Antes de proponer nada, tres cosas que sólo se saben mirando:
 
-| Pieza | Estado | Qué se comprobó |
-|---|---|---|
-| `POST /api/v1/auth/refresh` | **completo** | Valida sesión, revocación, expiración y estado del usuario; devuelve access token nuevo con **perfil fresco** |
-| Tabla `sessions` | **completa** | `refreshToken @unique`, `expiresAt`, `revokedAt`, `lastUsedAt`, `ipAddress`, `userAgent` |
-| `logout` | **completo** | Revoca la sesión, o **todas** las del usuario |
-| BASE — escribir cookies al refrescar | **completo** | `/api/v1/auth/refresh` ya está en `AUTH_TOKEN_ENDPOINTS` |
-| **CLIENT — intentar el refresco** | **ausente** | Ni el guard ni el proxy lo intentan |
+### 1. Hoy el refresco **no toca** el token
 
-**No hay que construir el refresco: hay que llamarlo.** El trabajo es de integración en el CLIENT, no
-de autenticación en el API — y eso baja mucho el riesgo, porque no se toca ni la firma ni la validación
-de tokens.
+`refreshToken()` actualiza `lastUsedAt` y devuelve `session.refreshToken` — *«keep same refresh
+token»*, dice el comentario. La rotación es un cambio en el API, no una configuración.
 
-**Dato que condiciona el diseño:** el endpoint **no rota** el refresh token; devuelve el mismo. Eso hace
-que varias llamadas simultáneas sean inocuas entre sí — ninguna invalida a las otras. Es lo que
-convierte el caso concurrente en un problema de eficiencia y no de corrección.
+### 2. **El CLIENT no guarda el token nuevo**, y eso convierte la rotación en una bomba
 
----
+`refrescarSesion()` **ya devuelve** `refreshToken`, pero ni el guard ni el interceptor del proxy lo
+escriben: los dos escriben **sólo** `access_token`.
 
-## Dónde falta, exactamente
+Consecuencia si se rotara hoy sin tocar el CLIENT: el navegador conservaría el token **viejo**, el
+siguiente refresco lo presentaría, y con detección de reuso eso significa *«alguien está usando un
+token ya rotado»* → **se revocaría la sesión de todos los usuarios, en su segundo refresco**.
 
-Hay **dos** caminos por los que el portal llega al API, y hoy ninguno refresca:
+**La rotación sin persistencia no es una mejora a medias: es una regresión total.** Se dice aquí porque
+el enunciado —«rotar el token»— no lo insinúa en absoluto.
 
-**(a) Navegación de página** — `ClientAuthGuard`. Verifica el JWT localmente; si falla, borra la cookie
-y manda al login. Es donde el usuario ve el efecto: *«acabo de entrar y me ha echado»*.
+### 3. El esquema no tiene dónde apoyar la detección de reuso
 
-**(b) Llamada del navegador** — el proxy BFF (`/api/*`). Inyecta `Authorization` desde la cookie y
-**deja pasar el 401 tal cual**. El JS de página recibe un 401 que no sabe interpretar.
+`Session` tiene `refreshToken @unique`, `expiresAt`, `revokedAt`, `lastUsedAt`, `ipAddress`,
+`userAgent`. **No hay `replacedBy`, ni `familyId`, ni nada que enlace un token con el que lo sustituyó.**
 
-Cablear sólo (a) deja el portal a medias: la página carga y sus llamadas fallan. Cablear sólo (b) deja
-la navegación rota. **Los dos, o ninguno.**
+Sin eso, un token rotado simplemente *no existe* y su presentación es indistinguible de una sesión
+caducada. **La detección de reuso —que es el beneficio real de rotar— exige un cambio de esquema**, y
+por tanto una migración (RULE-10).
 
 ---
 
 ## Criterios de aceptación
 
-**CA-1 — La sesión sobrevive a la expiración del access token.**
-Con `JWT_ACCESS_EXPIRY=15m` y un refresh token válido, una navegación a una página privada **17
-minutos** después de iniciar sesión la sirve, sin pasar por el login.
+**CA-1 — Cada refresco entrega un token nuevo.**
+Dos refrescos consecutivos devuelven `refreshToken` distintos.
 
-**CA-2 — Y la llamada del navegador también.**
-En esas mismas condiciones, un `fetch` a `/api/v1/...` desde el JS de página devuelve **200**, no 401.
+**CA-2 — El token anterior deja de valer.**
+Presentar el token ya rotado no devuelve sesión.
 
-**CA-3 — La cookie se actualiza con el token nuevo.**
-Tras un refresco, `access_token` lleva el token nuevo, con `maxAge` derivado de `JWT_ACCESS_EXPIRY`
-(PT-192). La petición siguiente **no vuelve a refrescar**.
+**CA-3 — El CLIENT persiste el token nuevo, por los dos caminos.**
+Tras un refresco por navegación **y** tras uno por el proxy, la cookie `refresh_token` lleva el nuevo.
+Sin esto, todo lo demás es una regresión (ver §2).
 
-**CA-4 — Un refresco fallido cierra la sesión, y no reintenta.**
-Sesión revocada, expirada o usuario suspendido → se borran **las dos** cookies y se redirige al login.
-**Nunca un bucle**: como máximo **un** intento de refresco por petición.
+**CA-4 — Reusar un token rotado revoca la sesión entera.**
+Es el punto de rotar. Si aparece un token ya sustituido, hay dos copias en circulación: se revoca **la
+familia completa**, no sólo ese token. El legítimo también pierde la sesión — y **es correcto**: no se
+sabe cuál de los dos es, y dejar viva la sesión sería dejar viva la del ladrón.
 
-**CA-5 — Sin refresh token no hay intento.**
-Si no hay cookie `refresh_token`, el comportamiento es el de hoy: al login, directo. Sin llamada al API.
+**CA-5 — Una ventana de gracia evita revocar por una carrera.**
+Dos peticiones concurrentes del **mismo** navegador pueden llegar con el token viejo. Durante
+`ROTATION_GRACE_SEC` desde la rotación, presentar el token anterior devuelve **el nuevo** en vez de
+revocar. Pasada la ventana, `CA-4`.
 
-**CA-6 — El perfil se actualiza al refrescar.**
-El endpoint devuelve el perfil fresco y el token nuevo lo lleva. Un usuario que se hace vendedor lo ve
-en el siguiente refresco sin volver a entrar.
+**CA-6 — El logout sigue revocando, y ahora la familia.**
+Cerrar sesión invalida el token actual y toda su cadena.
 
-**CA-7 — Peticiones concurrentes no producen N refrescos.**
-Una carga de página que dispara varias llamadas con el token expirado produce **un** refresco, no uno
-por llamada.
+**CA-7 — Un refresco fallido no deja la sesión a medias.**
+Rotar y persistir tienen que ser **una sola transacción**: si se entrega un token nuevo y no se guarda,
+o se guarda y no se entrega, el usuario queda fuera con la sesión viva en la base.
 
-**CA-8 — El logout sigue cerrando de verdad.**
-Tras cerrar sesión, un refresco con ese token devuelve 401 y **no** revive la sesión.
+**CA-8 — Las sesiones existentes siguen funcionando.**
+La migración no puede echar a nadie: un token anterior a la rotación se acepta y **rota en su primer
+uso**.
 
 ---
 
 ## Escenarios de prueba
 
 **Camino feliz**
-1. Login → esperar a que expire el access token → navegar a `/dashboard` → **200**, sin login.
-2. Lo mismo con un `fetch` a `/api/v1/wallet/balance` → **200**.
-3. Token válido y sin expirar → **no** se llama a `/auth/refresh` (se cuenta).
+1. Refrescar → token nuevo ≠ anterior; la cookie del CLIENT lo lleva.
+2. Refrescar otra vez con el nuevo → funciona.
+3. Navegación y `fetch` del navegador: **los dos** persisten el token nuevo.
 
-**Bordes**
-4. `refresh_token` presente pero **revocado** (logout previo) → login, cookies borradas.
-5. `refresh_token` **expirado** (>7 d) → login, cookies borradas.
-6. Usuario **suspendido** entre medias → login. El estado se comprueba en el API, no en el CLIENT.
-7. **Sin** cookie `refresh_token` → login, y **cero** llamadas al API.
-8. Cinco llamadas concurrentes con el token expirado → **un** refresco.
+**Seguridad — lo que justifica el PT**
+4. Refrescar, y volver a presentar el **token viejo** pasada la gracia → sesión revocada.
+5. Tras esa revocación, el token **nuevo** tampoco vale: se revocó la familia.
+6. El usuario legítimo, tras el robo, es enviado al login. **Es el resultado correcto.**
+
+**Concurrencia**
+7. Dos refrescos simultáneos con el mismo token dentro de la gracia → los dos reciben sesión, **sin**
+   revocar.
+8. Dos instancias del CLIENT, mismo token → igual que 7. Es el caso que la deduplicación por proceso
+   de PT-194 **no** cubre, y por eso la gracia no es opcional.
+
+**Migración**
+9. Una sesión creada **antes** del cambio sigue valiendo, y rota en su primer refresco.
 
 **Fallo**
-9. El API **no responde** al refrescar (caído o lento) → login; ni página en blanco ni espera
-   indefinida. Toda llamada a un tercero declara su tope (PT-183/PT-184) — aquí el tercero es el API.
-10. El refresco devuelve **500** → se trata como fallo, no como éxito silencioso.
-
-**Control**
-11. Un `access_token` **manipulado** sigue rechazándose: refrescar no puede convertirse en una vía para
-    aceptar un token inválido.
+10. Si la escritura de la rotación falla, el token anterior **sigue valiendo**: no se entrega uno nuevo
+    sin haberlo guardado.
 
 ---
 
 ## NFR
 
-- **Seguridad**: el `refresh_token` no sale nunca al navegador en JS — sigue siendo `httpOnly`. El
-  refresco ocurre **servidor a servidor** desde el CLIENT.
-- **Latencia**: como mucho **una** llamada extra por petición, y sólo cuando el token expiró.
-- **Observabilidad**: cada refresco deja traza con su resultado. El API ya cuenta
-  `auth_refresh_success` / `auth_refresh_failed` con motivo; hay que poder distinguir «no se intentó»
-  de «se intentó y falló».
-- **Tope de espera**: el refresco declara el suyo. Un refresco colgado no puede colgar la página.
+- **Seguridad**: es el objetivo. Reusar un token rotado tiene que ser **detectable y ruidoso** — deja
+  traza con `ipAddress` y `userAgent` de las dos presentaciones, que es lo que permite investigar.
+- **Compatibilidad**: nadie pierde la sesión por desplegar (`CA-8`).
+- **Atomicidad**: rotación y persistencia, una transacción (`CA-7`).
+- **Observabilidad**: distinguir *«sesión caducada»*, *«token rotado dentro de la gracia»* y
+  *«REUSO DETECTADO»*. El tercero es un evento de seguridad, no un 401 más.
 
 ---
 
 ## Fuera de alcance, explícito
 
-- **Rotación del refresh token.** Hoy no rota. Rotar detecta el robo del token, pero introduce una
-  carrera real con peticiones concurrentes y obliga a una ventana de gracia. **Es un cambio de
-  seguridad con su propio análisis**, no un efecto colateral de cablear el refresco. Si se decide, va
-  en su PT y con su ADR.
-- **Refresco silencioso en el navegador** (temporizador en JS). No hace falta: el BFF lo hace en
-  servidor y no expone nada.
-- **Gestión de sesiones para el usuario** («cerrar sesión en otros dispositivos»). La tabla lo soporta
-  —`ipAddress`, `userAgent`, `revokedAt`—, pero es funcionalidad de producto, no esta deuda.
-- **ADMIN.** Tiene su propio cliente y su propio refresco (`admin-api-client.service.ts`). No se toca.
-- **BASE.** Es el sitio público; sus páginas no exigen sesión.
-- **Cambiar `JWT_ACCESS_EXPIRY`.** Los 15 minutos dejan de doler cuando el refresco funciona; tocarlos
-  ahora sería enmascarar el defecto en vez de arreglarlo.
+- **Notificar al usuario** el robo detectado. Es funcionalidad de producto (correo, aviso en el panel)
+  y depende de decidir qué se le dice.
+- **Gestión de sesiones para el usuario** («cerrar en otros dispositivos»). Sigue fuera, como en
+  PT-194.
+- **ADMIN**: tiene su propio refresco. No se toca.
+- **Reducir `JWT_REFRESH_EXPIRY`**: rotar y acortar son decisiones independientes; mezclarlas
+  impediría saber cuál mejoró qué.
+- **Vincular la sesión a la IP o al `userAgent`.** Suena a refuerzo y rompe usuarios legítimos —
+  móviles que cambian de red, proxies corporativos. Si se quiere, con su propio análisis.
 
 ---
 
 ## Confianza
 
-- **Arquitectura: 95 %.** Los dos puntos de integración están localizados y medidos; el API no se toca.
-- **Implementación: 80 %.** Lo que baja el número es **CA-7** (concurrencia): en un proceso SSR hay que
-  compartir la promesa del refresco en vuelo, y hay que decidir su alcance —¿por usuario? ¿por refresh
-  token?— y qué ocurre con varias instancias del CLIENT. Eso se resuelve en STATE 2.
+- **Arquitectura: 85 %.** La rotación es conocida; lo que baja el número es **elegir la ventana de
+  gracia** y decidir si la familia se modela con `replacedById` (cadena) o con un `familyId` (grupo).
+  Eso es STATE 2.
+- **Implementación: 70 %.** Toca **esquema + API + los dos caminos del CLIENT**, y la migración tiene
+  que ser compatible hacia atrás. Es el PT más arriesgado de la serie.
 
 ---
 
 ## Riesgos, dichos ahora
 
-**1. Un bucle de refresco.** Si un refresco fallido no cierra la sesión, cada petición lo reintenta y el
-usuario queda atrapado, con carga sobre el API en cada navegación. `CA-4` existe por eso, y su prueba es
-de las que hay que **ver fallar**.
+**1. Echar a todo el mundo.** Si el CLIENT no persiste el token nuevo —el hallazgo §2— la rotación
+revoca a cada usuario en su segundo refresco. `CA-3` es el criterio que lo impide, y su prueba es de
+las que hay que ver fallar.
 
-**2. Aceptar un token que debería rechazarse.** El refresco añade una vía a la sesión, y una vía nueva a
-la sesión se prueba en los dos sentidos. `CA-11` cubre eso.
+**2. Revocar por una carrera.** Sin ventana de gracia, dos peticiones concurrentes del mismo navegador
+parecen un robo. La deduplicación de PT-194 es **por proceso** y no cubre varias instancias.
 
-**3. Que el arreglo tape el síntoma.** Con el refresco funcionando, un `JWT_SECRET` mal puesto o una
-sesión revocada dejarían de verse como «me echa» y pasarían a verse como… nada. Por eso la
-observabilidad está en los NFR y no como añadido: **hay que poder distinguir «no se intentó» de «se
-intentó y falló»**.
+**3. Que la migración eche a los que ya están dentro.** `CA-8`.
 
----
-
-**STOP — FDGE STATE 1-E.** Esperando ACK humano antes de pasar a STATE 2 (estrategia).
+**4. Que el reuso se detecte y no se note.** Si el evento se registra como un 401 más, se habrá pagado
+el coste de rotar sin obtener el beneficio: **saber que hubo un robo**.
