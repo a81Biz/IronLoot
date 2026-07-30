@@ -404,12 +404,20 @@ Each SSR site follows the same convention:
   entero, un segundo namespace público con el mismo nombrado de salas y un emisor **genérico**, que hacía
   la guarda indecidible. Y **los gateways se descubren, no se enumeran**: la lista fija de
   `dependencias-vulnerables.spec.ts` reventó al retirar uno, cuando el modo peligroso es el contrario.
-- **Lo que `@ironloot/core` exporta, alguien lo usa; y lo que no, está declarado y contado** (PT-191,
-  AUD-012). AUD-012 nombraba un símbolo (`Money`); medido el conjunto eran **30 de 42 sin un solo
-  consumidor fuera de `core`**. Un contrato muerto no se ignora como el código muerto: **se lee** — `core`
-  declara un `IPaymentProvider` que no aplica en ninguna parte mientras el vivo lo declara el API. Quedan
-  24, uno a uno en `core-sin-superficie-huerfana.spec.ts`, y son `TD-024`: retirarlos es abandonar el
-  diseño hexagonal y eso pide una ADR. Lo que la guarda impide es que **crezcan**.
+- **Lo que `@ironloot/core` exporta, alguien lo usa** (PT-191 + PT-193, AUD-012 / TD-024 / ADR-058).
+  AUD-012 nombraba un símbolo (`Money`); medido el conjunto eran **30 de 42 sin un solo consumidor fuera
+  de `core`**. Hoy quedan **10**, todos declarados uno a uno en `core-sin-superficie-huerfana.spec.ts`:
+  los **8 puertos que ADR-033 conserva** —con criterio de revisión escrito, no son un pendiente— y 2
+  falsos positivos de medir por nombre (tipos de `validateBid()`, que TypeScript resuelve
+  estructuralmente). Los otros 15 se retiraron.
+  **El caso que decidió la retirada** fue `IPaymentProvider`: declaraba qué debe cumplir una pasarela y
+  **ningún adaptador lo implementaba**, porque el contrato vivo lo declara el API. Eso no es código
+  muerto —que se ignora—: es **documentación falsa ejecutable**, que se lee y se cree. Y ADR-033 lo daba
+  por vivo (*«PT-080 sí revivió `IPaymentProvider`»*): medido, **cero implementadores**; la ADR lleva su
+  enmienda. **Un contrato duplicado no se conserva «por si acaso»** — un puerto sin adaptador sí, porque
+  es una intención de diseño; una segunda respuesta a una pregunta que ya tiene una, no.
+  La guarda impide que la cifra **crezca**, y `AC-02` falla si un declarado deja de ser huérfano, para
+  que la lista no acabe describiendo un pasado.
 - **Lo que el contrato cita, existe; y un identificador nombra una sola cosa** (PT-191). Dos clases que
   estaban declaradas *sin guarda* y ya no lo están. `11-Conventions.md` —lo que Foundation llama su
   salida más crítica— citaba **tres ficheros inexistentes**, y el mejor de los tres era el nombre viejo

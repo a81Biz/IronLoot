@@ -561,6 +561,33 @@ que el fichero mande de verdad.
 ---
 
 ### TD-024 — `@ironloot/core` es en su mayor parte una librería que nadie importa
+**Status: ✅ CERRADA 2026-07-30 por PT-193 (ADR-058), y con una corrección sobre cómo se abrió.**
+
+**Qué se hizo.** De los 24 símbolos que quedaban tras PT-191: **15 retirados** (`integrations/` entero,
+cuatro eventos que nadie emitía, los DTO de paginación — y con ellos `shared/`, que se quedó sin
+contenido), **8 conservados por ADR-033** y **2 que eran falsos positivos** de medir por nombre (los
+tipos de `validateBid()`, que sí se usa, y que TypeScript resuelve estructuralmente).
+
+**El caso que decidió la retirada** fue `IPaymentProvider`: declaraba qué debe cumplir una pasarela y
+**ningún adaptador lo implementaba**, porque el contrato vivo lo declara el API. Un contrato duplicado
+sin implementadores no es código muerto —que se ignora—: es **documentación falsa ejecutable**, que se
+lee y se cree. Familia de H-016.
+
+**Y la corrección sobre cómo se abrió esta entrada.** PT-191 la abrió sobre los 24 «como si estuvieran
+sin decidir», y **8 ya lo estaban**: ADR-033 los conserva desde su fecha, con criterio de revisión
+escrito. Es un caso pequeño del mismo defecto que este repositorio lleva semanas corrigiendo — **abrir
+una deuda sin comprobar si ya había una decisión** produce trabajo duplicado y una lista que exagera lo
+pendiente. Se anota aquí porque el número «24» circuló como si fuera todo trabajo por hacer, y sólo 15
+lo eran.
+
+**Lo que impide que vuelva:** `core-sin-superficie-huerfana.spec.ts`, con la lista bajada a **10** y
+`AC-02`, que falla si un declarado deja de ser huérfano — para que la lista no acabe describiendo un
+pasado.
+
+---
+
+<details><summary>Enunciado original (PT-191), conservado</summary>
+
 **Abierta 2026-07-30 · PT-191 (al cerrar AUD-006/AUD-010/AUD-012) · Severidad: MEDIA · Esfuerzo: M**
 
 **La cifra, que es de lo que trata esta entrada.** Al cerrar AUD-012 —que nombraba *un* símbolo
@@ -591,6 +618,9 @@ consumidores rompe la prueba con su nombre y su fichero, y un declarado que deja
 
 **Cómo comprobar el estado:** `npx jest --testPathPattern="core-sin-superficie" --no-coverage` — el caso
 `C3` imprime la cuenta viva.
+
+
+</details>
 
 ---
 

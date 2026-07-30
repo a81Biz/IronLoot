@@ -62,42 +62,19 @@ const CONSUMIDORES = [
  * Medido el 2026-07-30. Cada entrada es un pendiente declarado, no un permiso.
  */
 const HUERFANOS_DECLARADOS: Record<string, string> = {
-  // ── Puertos de la arquitectura hexagonal (TD-024) ────────────────────────────────────────────
-  // Los adaptadores nunca se escribieron: el API habla con Prisma directamente. PT-042 ya retiró
-  // los casos de uso que los consumían. Retirar también los puertos es abandonar el diseño, y eso
-  // se decide con una ADR.
-  IAuctionRepository: 'TD-024 — puerto hexagonal sin adaptador',
-  AuctionSummary: 'TD-024 — tipo de IAuctionRepository',
-  IBidRepository: 'TD-024 — puerto hexagonal sin adaptador',
-  BidSummary: 'TD-024 — tipo de IBidRepository',
-  IOrderRepository: 'TD-024 — puerto hexagonal sin adaptador',
-  OrderSummary: 'TD-024 — tipo de IOrderRepository',
-  IWalletRepository: 'TD-024 — puerto hexagonal sin adaptador',
-  WalletSummary: 'TD-024 — tipo de IWalletRepository',
-
-  // ── Contratos de integración que el API redeclara por su cuenta (TD-024) ─────────────────────
-  // Éstos son los que engañan al leerlos: el contrato vivo está en `modules/payments/interfaces/`.
-  IPaymentProvider: 'TD-024 — el contrato vivo lo declara el API',
-  PaymentStatus: 'TD-024 — tipo de IPaymentProvider',
-  PaymentLink: 'TD-024 — tipo de IPaymentProvider',
-  NormalizedPaymentResult: 'TD-024 — tipo de IPaymentProvider',
-  PaymentProviderIdentity: 'TD-024 — tipo de IPaymentProvider',
-  IEmailService: 'TD-024 — el API usa EmailService directamente',
-  IStorageService: 'TD-024 — sin implementadores',
-  CfdiData: 'TD-024 — CFDI es un stub declarado',
-  StampedCfdi: 'TD-024 — CFDI es un stub declarado',
-
-  // ── Eventos de dominio que nadie emite (TD-024) ──────────────────────────────────────────────
-  // `AuctionClosedEvent` SÍ se emite (`auction-scheduler.service.ts`), y por eso no está aquí:
-  // el fichero de eventos está medio vivo, que es la razón de listar símbolos y no ficheros.
-  BidPlacedEvent: 'TD-024 — evento declarado que nadie emite',
-  OrderCreatedEvent: 'TD-024 — evento declarado que nadie emite',
-  PaymentCompletedEvent: 'TD-024 — evento declarado que nadie emite',
-  RefundProcessedEvent: 'TD-024 — evento declarado que nadie emite',
-
-  // ── DTOs compartidos sin consumidor (TD-024) ─────────────────────────────────────────────────
-  PaginationQuery: 'TD-024 — el API usa sus propios DTO de paginación',
-  PaginatedResult: 'TD-024 — el API usa sus propios DTO de paginación',
+  // ── Puertos de la arquitectura hexagonal — CONSERVADOS POR ADR-033 ───────────────────────────
+  // No son un pendiente: son una decisión tomada. ADR-033 los conserva «marcados como
+  // previstos-no-adoptados», con criterio de revisión escrito — *cuando exista más de una
+  // implementación de persistencia, o cuando el dominio deba probarse sin base de datos*.
+  // PT-191 abrió `TD-024` sobre ellos sin ver que ya estaban decididos; PT-193 lo corrige.
+  IAuctionRepository: 'ADR-033 — puerto conservado como previsto-no-adoptado',
+  AuctionSummary: 'ADR-033 — tipo de IAuctionRepository',
+  IBidRepository: 'ADR-033 — puerto conservado como previsto-no-adoptado',
+  BidSummary: 'ADR-033 — tipo de IBidRepository',
+  IOrderRepository: 'ADR-033 — puerto conservado como previsto-no-adoptado',
+  OrderSummary: 'ADR-033 — tipo de IOrderRepository',
+  IWalletRepository: 'ADR-033 — puerto conservado como previsto-no-adoptado',
+  WalletSummary: 'ADR-033 — tipo de IWalletRepository',
 
   // ── Tipos consumidos por forma, no por nombre ────────────────────────────────────────────────
   // `validateBid()` SÍ se usa; sus tipos no se nombran en la llamada porque TypeScript es
@@ -206,7 +183,7 @@ describe('`@ironloot/core` no crece en superficie huerfana — AUD-012 (PT-191)'
   it('C3: el pendiente que queda esta contado, no estimado', () => {
     // Sin una cifra, «hay codigo muerto en core» es una impresion. `TD-024` se decide con esto.
     expect(huerfanos.length).toBe(Object.keys(HUERFANOS_DECLARADOS).length);
-    expect(huerfanos.length).toBeLessThanOrEqual(25);
+    expect(huerfanos.length).toBeLessThanOrEqual(10);
   });
 
   describe('casos de control', () => {
