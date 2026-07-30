@@ -397,3 +397,36 @@ sus dependencias **por inyección**. El argumento sonaba a razón técnica y era
 vuelta a **25**.
 
 **D3 sigue en 100**: los dos hallazgos abrieron y cerraron dentro de esta corrida. Evidencia `E-036`.
+
+---
+
+## Update U-012 — 2026-07-29 (S-008, delta sync): el mismo patrón en el camino del dinero
+
+**H-034 (MEDIA)** — las seis llamadas de los tres adaptadores de pasarela usaban `fetch` **sin `signal`**, y no
+había un `AbortController` en todo el directorio:
+
+```
+paypal.provider.ts:111        OAuth2 token
+paypal.provider.ts:153        crear orden / capturar      ← por aquí pasa la captura
+mercadopago.provider.ts:364   consulta de la vía garantizada
+heybanco.provider.ts:41 · :77 · :115
+```
+
+**Lo encontró la recomendación de U-011**, escrita minutos antes: *«los candidatos siguientes son los otros
+terceros: la pasarela de pago, Redis, el almacenamiento»*. El primero de la lista lo tenía. Antes de hoy sólo
+**dos** ficheros del API declaraban un tope, y los dos son de hoy — **no era un descuido puntual, era la forma**.
+
+Cerrado con `gateway-timeouts.ts`: **8 s consultar · 20 s operar**, con la asimetría del dominio (la vía
+garantizada volverá a preguntar; una captura abandonada deja un cobro sin saber qué pasó). Un helper y no tres
+`AbortController` a mano, porque cada uno sería una oportunidad de olvidar el `clearTimeout` — y un temporizador
+sin limpiar mantiene el bucle de eventos despierto, lo que en una suite aparece como «Jest did not exit» y se
+atribuye a otra cosa.
+
+**MEDIA, con su razón:** PT-087 garantiza que ningún pago cobrado queda sin acreditar, así que **el dinero no se
+pierde por esto**; se degrada el tiempo de respuesta y la ocupación de recursos.
+
+**Y lo que no se afirma:** no se ha observado una llamada colgada contra una pasarela real. H-033 se **midió**
+(121 s parando Mailhog); H-034 se **leyó**. `[A1]` exige distinguirlo, y la diferencia marca el siguiente paso:
+**Redis se puede parar**, así que ahí el fallo se podrá medir.
+
+**D3 sigue en 100**: el hallazgo abrió y cerró dentro de esta corrida. Evidencia `E-037`.

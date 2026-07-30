@@ -1,0 +1,16 @@
+PASS test/unit/payments/topes-de-pasarela.spec.ts
+  Las llamadas a las pasarelas declaran su tope — H-034 (PT-184)
+    ✓ C1: ningún `fetch` del directorio se queda sin señal de aborto (17 ms)
+    ✓ C2: hay un `conSenalDeAborto` por cada `fetch`, en los tres proveedores (25 ms)
+    ✓ C3: consultar corta antes que crear o capturar — la asimetría es del dominio
+    ✓ C4: ningún tope llega al minuto (1 ms)
+    casos de control
+      ✓ AC-01: el helper corta de verdad cuando el tercero no responde (56 ms)
+      ✓ AC-02: una llamada que responde a tiempo pasa sin tocarla (1 ms)
+      ✓ AC-03: el temporizador se limpia también en el camino feliz (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       7 passed, 7 total
+Snapshots:   0 total
+Time:        4.85 s
+Ran all test suites matching /topes-de-pasarela/i.

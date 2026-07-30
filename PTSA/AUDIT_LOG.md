@@ -957,3 +957,54 @@ La cobertura de dimension no cambia; lo que cambio es **lo que se ha mirado**: h
 de **fallo** de la capa de correo. Ahi estaban los dos.
 
 **Estado de la corrida:** CERRADA_SIN_HALLAZGOS_ACTIVOS — **33 hallazgos, todos CERRADA**.
+
+---
+
+## S-008 — 2026-07-29 — DELTA SYNC: la recomendacion de ayer encontro el hallazgo de hoy
+
+**Disparador:** barrido de patrones derivado de **lo que S-007 dejo escrito** hace minutos: *«ejercitar caminos de
+fallo… los candidatos siguientes son los otros terceros: la pasarela de pago, Redis, el almacenamiento»*.
+
+**El primero de la lista tenia el defecto.** Y eso no es merito del barrido: es la senal de que H-033 no era un
+caso aislado del correo, sino **la forma de este sistema al hablar con un tercero**. Antes de hoy, exactamente
+**dos** ficheros del API declaraban un tope — y los dos se escribieron hoy.
+
+| Hallazgo | Dim | Sev | Que pasaba |
+|---|:--:|:--:|---|
+| **H-034** | D3 | MEDIA | Las **seis** llamadas de los tres adaptadores de pasarela usaban `fetch` **sin `signal`**, sin un `AbortController` en todo el directorio. Incluida la que **captura** en PayPal y la que consulta en la via garantizada |
+
+**CERRADA** en PT-184 con `gateway-timeouts.ts`: **8 s para consultar, 20 s para operar**. La asimetria es **del
+dominio** — consultar puede cortarse pronto porque la via garantizada volvera; **crear o capturar** no, porque
+abandonar algo que quizas se completo al otro lado deja un cobro sin saber que paso.
+
+**MEDIA y no ALTA, dicho con su razon:** por diseno de PT-087 ningun pago cobrado queda sin acreditar —via
+garantizada, reapertura del ciclo, asiento idempotente por referencia—, asi que **el dinero no se pierde por
+esto**. Se degrada el tiempo de respuesta y la ocupacion de recursos.
+
+**Lo que esta emision NO afirma, y es `[A1]`:** no se ha observado una llamada colgada contra una pasarela real. A
+diferencia de H-033 —donde los 121 s **se midieron** parando Mailhog— aqui el defecto esta comprobado **leyendo**
+las seis llamadas y el directorio completo, y la consecuencia se **infiere**. La ficha lo dice con estas mismas
+palabras.
+
+**Dos notas de metodo:**
+
+1. **Once `catch` sin `throw` ni registro, y ninguno es hallazgo.** Estan declarados en la linea base del
+   checkpoint D3, que exige motivo escrito por entrada; los dos mas sensibles estan razonados en `CLAUDE.md`
+   (*«un apunte de trazabilidad no puede costarle el deposito al usuario»*). Once capturas sin `throw` suenan a
+   once defectos y son once decisiones: **la diferencia la hace el motivo escrito**, que es exactamente lo que
+   faltaba en H-032 — alli la captura tenia una **pregunta sin responder** en vez de una razon.
+2. **Mis casos C1 y C2 no supieron fallar a la primera** — segunda vez en dos PT. C2 se contentaba con que el
+   fichero *contuviera* una cadena, y bastaba la linea del `import`. C1 tenia el error simetrico: recortaba una
+   ventana fija y **acusaba una llamada ya corregida**; un falso positivo ensena a desconfiar de la guarda, que es
+   la forma silenciosa de perderla.
+
+**Scores:** Health **100** · Risk **0** · Confidence **91.0** · Clase **A**. Los mismos por **cuarta** vez.
+
+**En cada intervalo entre emisiones aparecio trabajo real**: tres hallazgos, luego dos, luego uno. Seis defectos,
+todos cerrados antes de emitir. La estabilidad del 100 mide que **se cierra lo que se encuentra**, no que no haya
+nada que encontrar.
+
+**Siguiente, con nombre:** quedan **Redis** y el **almacenamiento de ficheros**. Con Redis el fallo se puede
+**medir** —se para en desarrollo, como en PT-178—, y eso es lo que separo a H-033 de H-034.
+
+**Estado de la corrida:** CERRADA_SIN_HALLAZGOS_ACTIVOS — **34 hallazgos, todos CERRADA**.

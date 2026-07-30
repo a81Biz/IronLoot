@@ -11,6 +11,7 @@ import { WebhookSignatureValidator } from '@ironloot/core';
 import { UnauthorizedException, ValidationException } from '../../../common/observability';
 import { PaymentTraceService } from '../payment-trace.service';
 import { depositReturnUrl } from '../return-urls';
+import { GATEWAY_TIMEOUTS_MS, conSenalDeAborto } from './gateway-timeouts';
 
 const MP_API = 'https://api.mercadopago.com';
 
@@ -361,9 +362,14 @@ export class MercadoPagoProvider implements PaymentProvider {
   /** GET autenticado contra la API de MP. Devuelve null si el recurso no resuelve. */
   private async mpGet<T>(path: string, reference = ''): Promise<T | null> {
     const started = Date.now();
-    const res = await fetch(`${MP_API}${path}`, {
-      headers: { Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}` },
-    });
+    // PT-184 (H-034) — Consulta de estado: es la que usa la via garantizada, en un proceso periodico. Una
+    // consulta colgada retenia su ejecucion y con ella la resolucion de los pagos que esperaban.
+    const res = await conSenalDeAborto(GATEWAY_TIMEOUTS_MS.consulta, (signal) =>
+      fetch(`${MP_API}${path}`, {
+        headers: { Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}` },
+        signal,
+      }),
+    );
 
     const body = res.ok ? ((await res.json()) as T) : null;
 

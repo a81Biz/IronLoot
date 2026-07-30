@@ -9,6 +9,7 @@ import {
 import { UnauthorizedException, ValidationException } from '../../../common/observability';
 import { PaymentTraceService } from '../payment-trace.service';
 import { depositReturnUrl } from '../return-urls';
+import { GATEWAY_TIMEOUTS_MS, conSenalDeAborto } from './gateway-timeouts';
 
 /** Margen de seguridad para renovar el token antes de que expire realmente. */
 const TOKEN_REFRESH_MARGIN_MS = 60_000;
@@ -108,14 +109,19 @@ export class PaypalProvider implements PaymentProvider {
     }
 
     const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
-    const res = await fetch(`${this.apiBaseUrl}/v1/oauth2/token`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Basic ${basic}`,
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: 'grant_type=client_credentials',
-    });
+    // PT-184 (H-034) — Pedir el token es una consulta: si PayPal no contesta, la via garantizada volvera a
+    // intentarlo. Sin tope, esta llamada podia colgarse indefinidamente **antes** de la operacion real.
+    const res = await conSenalDeAborto(GATEWAY_TIMEOUTS_MS.consulta, (signal) =>
+      fetch(`${this.apiBaseUrl}/v1/oauth2/token`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Basic ${basic}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: 'grant_type=client_credentials',
+        signal,
+      }),
+    );
 
     if (!res.ok) {
       throw new Error(`PayPal OAuth2 token request failed with status ${res.status}`);
@@ -149,11 +155,17 @@ export class PaypalProvider implements PaymentProvider {
     url: string,
     init: { method: string; headers?: Record<string, string>; body?: string },
   ): Promise<{ data: T; status: number; durationMs: number }> {
+    // PT-184 (H-034) — Por aqui pasan **crear orden y capturar**, asi que el tope es el de operacion: cortar
+    // pronto una captura dejaria un cobro en el aire, que es peor que esperar. La duracion que la traza
+    // registra sigue midiendose fuera, sobre `startedAt`, y ahora tiene un techo conocido.
     const call = async (token: string) =>
-      fetch(url, {
-        ...init,
-        headers: { ...(init.headers ?? {}), Authorization: `Bearer ${token}` },
-      });
+      conSenalDeAborto(GATEWAY_TIMEOUTS_MS.operacion, (signal) =>
+        fetch(url, {
+          ...init,
+          headers: { ...(init.headers ?? {}), Authorization: `Bearer ${token}` },
+          signal,
+        }),
+      );
 
     const startedAt = Date.now();
     let res = await call(await this.getAccessToken());

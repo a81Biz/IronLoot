@@ -3267,3 +3267,46 @@ Delta (real vs planned): cuatro cosas, y tres son mias.
   4. **H-033 aparecio midiendo, no leyendo.** La primera prueba del camino de fallo no dio un 500: dio un
      cliente agotado a los 40 s. Sin ejecutarlo, esos dos minutos no se habrian visto nunca.
 PTSA reference: H-032, H-033 — las dos CERRADA con VoBo humano. H-030 revisada.
+
+## PT-184 — BUG: las seis llamadas a las pasarelas no declaraban ningun tope (H-034)
+Date: 2026-07-29
+Status: DONE
+Branch: fix/PT-184-las-pasarelas-sin-tope
+Objective: cerrar el hallazgo que salio de aplicar, al camino del dinero, la recomendacion que S-007 habia
+  escrito minutos antes.
+Root cause: **la forma de este sistema al hablar con un tercero era no declarar cuanto se le espera.** Antes de
+  hoy, exactamente **dos** ficheros del API declaraban un tope, y los dos se escribieron hoy (el guard de
+  reCAPTCHA en PT-182, la comprobacion de Redis en PT-178). Las seis llamadas de los tres adaptadores de
+  pasarela usaban `fetch` sin `signal`, y no habia un `AbortController` en todo el directorio.
+Solution:
+  - `gateway-timeouts.ts`: `consulta` 8 s · `operacion` 20 s, y el helper `conSenalDeAborto`.
+  - **La asimetria es del dominio**: consultar puede cortarse pronto —la via garantizada es periodica y
+    volvera—, pero **crear o capturar** no, porque abandonar algo que quizas se completo al otro lado deja un
+    cobro sin saber que paso. Es el razonamiento de `socketTimeout` > `connectionTimeout` en H-033.
+  - Un helper y no tres `AbortController` a mano: cada uno seria una oportunidad de olvidar el `clearTimeout`, y
+    un temporizador sin limpiar mantiene el bucle de eventos despierto — en una suite eso sale como «Jest did
+    not exit» y se atribuye a otra cosa. La limpieza va en un `finally`. Lo vigila AC-03.
+Modified files:
+  src/api/src/modules/payments/providers/gateway-timeouts.ts (nuevo)
+  src/api/src/modules/payments/providers/paypal.provider.ts · mercadopago.provider.ts · heybanco.provider.ts
+  src/api/test/unit/payments/topes-de-pasarela.spec.ts (nuevo, 7 casos)
+  PTSA/Hallazgos/H-034.md (nuevo) · PTSA/Evidencias/E-037.md
+Evidence: docs/implementation/evidence/PT-184/
+Delta (real vs planned): tres cosas.
+  1. **El hallazgo lo encontro la recomendacion del PT anterior.** No es merito del barrido: es la senal de que
+     H-033 no era un caso aislado del correo. El primer candidato de la lista que S-007 dejo escrita tenia el
+     defecto.
+  2. **C2 no supo fallar a la primera.** Solo exigia que el fichero *contuviera* `conSenalDeAborto`, y con eso
+     bastaba la linea del `import`: pasaba con el defecto puesto. Ahora **cuenta** una envoltura por `fetch`. Es
+     la segunda vez en dos PT que un caso mio comprueba que exista una cadena en vez de una relacion.
+  3. **C1 tuvo el defecto simetrico**: recortaba una ventana fija de 500 caracteres y el cuerpo de
+     `POST /payments` de HeyBanco es mas largo, asi que **acusaba una llamada ya corregida**. Un falso positivo
+     ensena a desconfiar de la guarda, que es la forma silenciosa de perderla. Ahora cierra por parentesis
+     balanceados.
+  Y una nota que evita una alarma: el barrido encontro **11 `catch` sin `throw` ni registro**, y **ninguno es
+  hallazgo**. Estan declarados en la linea base del checkpoint D3, que exige motivo escrito por entrada; los dos
+  mas sensibles —`payment-trace` y `audit-persistence`— son deliberados y estan documentados en `CLAUDE.md`
+  (*«un apunte de trazabilidad no puede costarle el deposito al usuario»*). Once capturas sin `throw` suenan a
+  once defectos y son once decisiones: **la diferencia la hace el motivo escrito**, que es justo lo que faltaba
+  en H-032 — alli la captura no tenia motivo, tenia una pregunta sin responder.
+PTSA reference: H-034 — CERRADA con VoBo humano.

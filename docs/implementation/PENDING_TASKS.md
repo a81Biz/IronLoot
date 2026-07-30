@@ -1,19 +1,19 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181, PT-182 y PT-183)
+**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181 … PT-184)
 
 ---
 
 ## Esperando validación humana: nada
 
-**PT-181, PT-182 y PT-183 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que
-**los veintiséis PT de la jornada quedan cerrados**: PT-158 … PT-183.
+**PT-181 … PT-184 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
+veintisiete PT de la jornada quedan cerrados**: PT-158 … PT-184.
 
 **Cero trabajo FDGE pendiente.**
 
 ---
 
-## Hallazgos de auditoría: 33, todos `CERRADA`
+## Hallazgos de auditoría: 34, todos `CERRADA`
 
 | Hallazgo | Dim | PT | Cómo se comprobó |
 |---|:--:|---|---|
@@ -22,10 +22,12 @@
 | **H-031** | D2 | PT-182 | C7 **visto fallar** con la reserva del compose a `0` |
 | **H-032** | D3 | PT-183 | **En vivo** con Mailhog parado: `200` con bandeja vacía → **500** |
 | **H-033** | D3 | PT-183 | Medido: **121 s → ~5 s** |
+| **H-034** | D3 | PT-184 | 7 casos, con **C1 y C2 vistos fallar** al devolver una llamada a su forma sin tope |
 
-Los cinco nacieron y murieron el 2026-07-29. Los dos últimos salieron de **comprobar el cierre de H-030**, y uno
-de ellos desmiente parte de ese cierre: está anotado en su ficha, sin reabrirlo (`[A6]`). Los veintiocho
-anteriores estaban ya cerrados; detalle en `PTSA/RESUMEN.md` § S-007.
+Los seis nacieron y murieron el 2026-07-29, **cada uno saliendo de comprobar el anterior**: H-032/H-033 al
+verificar el cierre de H-030 —y uno desmiente parte de ese cierre, anotado sin reabrirlo (`[A6]`)— y H-034 al
+aplicar al camino del dinero la recomendación que dejó S-007. Los veintiocho anteriores estaban ya cerrados;
+detalle en `PTSA/RESUMEN.md` § S-008.
 
 **H-005 (CFDI) está `CERRADA` como limitación declarada** por decisión del humano, con `F-1 § U-006`
 enmendando la declaración de valor a la vez: el producto ya **no promete** emitir CFDI y `P-012` pasa a
@@ -56,11 +58,15 @@ llegue el proveedor:
 
 ## La auditoría, al día
 
-**S-007 emitido** el 2026-07-29. `freshness = FRESH`, `commits_since_audit = 0`.
+**S-008 emitido** el 2026-07-29. `freshness = FRESH`, `commits_since_audit = 0`.
 
-**Health 100 · Risk 0 · Confidence 91.0 · Clase A.** Los mismos por tercera vez — **y eso es el dato**: en cada
-intervalo entre emisiones apareció trabajo real (tres hallazgos, luego dos más), y todos se cerraron antes de
-emitir. **La estabilidad del 100 mide que se cierra lo que se encuentra, no que no haya nada que encontrar.**
+**Health 100 · Risk 0 · Confidence 91.0 · Clase A.** Los mismos por **cuarta** vez — **y eso es el dato**: en cada
+intervalo apareció trabajo real (tres hallazgos, luego dos, luego uno), y todos se cerraron antes de emitir. **La
+estabilidad del 100 mide que se cierra lo que se encuentra, no que no haya nada que encontrar.**
+
+**Y queda una tarea de auditoría con nombre**: mirar los **dos terceros que faltan** —Redis y el almacenamiento de
+ficheros—. La recomendación acertó con el primero de los tres a la primera, así que no conviene darlos por
+buenos. Con Redis, además, el fallo se puede **medir** parándolo, como en PT-178.
 
 **Lo único que falta medir es D5, y no lo cierra otra corrida igual:** hacen falta **20 ciclos de pago
 resueltos** y hay **2**. Con `>= 95 %` para verde, un solo fallo entre `n` cumple `(n−1)/n >= 0.95` sólo si

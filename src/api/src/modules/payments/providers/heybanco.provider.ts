@@ -8,6 +8,7 @@ import {
 } from '../interfaces';
 import { depositReturnUrl } from '../return-urls';
 import { apiOrigin } from '../../../common/config/public-origins';
+import { GATEWAY_TIMEOUTS_MS, conSenalDeAborto } from './gateway-timeouts';
 
 /**
  * Hey Banco Payment Provider
@@ -38,16 +39,20 @@ export class HeyBancoProvider implements PaymentProvider {
       throw new Error('HEY_BANCO_CLIENT_ID and HEY_BANCO_CLIENT_SECRET are required');
     }
 
-    const response = await fetch(`${this.apiUrl}/oauth/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        grant_type: 'client_credentials',
-        client_id: this.clientId,
-        client_secret: this.clientSecret,
-        scope: 'payments:write payments:read',
+    // PT-184 (H-034) — Token: consulta.
+    const response = await conSenalDeAborto(GATEWAY_TIMEOUTS_MS.consulta, (signal) =>
+      fetch(`${this.apiUrl}/oauth/token`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grant_type: 'client_credentials',
+          client_id: this.clientId,
+          client_secret: this.clientSecret,
+          scope: 'payments:write payments:read',
+        }),
+        signal,
       }),
-    });
+    );
 
     if (!response.ok) {
       throw new Error(`HeyBanco auth failed: ${response.status}`);
@@ -74,22 +79,26 @@ export class HeyBancoProvider implements PaymentProvider {
     // existe para ella.
     const apiBaseUrl = apiOrigin();
 
-    const response = await fetch(`${this.apiUrl}/payments`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        reference: orderId,
-        amount: { value: amount, currency },
-        description,
-        payer: { email: buyerEmail },
-        redirect_url: depositReturnUrl(orderId, 'success'),
-        cancel_url: depositReturnUrl(orderId, 'cancel'),
-        webhook_url: `${apiBaseUrl}/api/v1/payments/webhook/HEY_BANCO`,
+    // PT-184 (H-034) — Crear el pago es una operacion: no se corta pronto.
+    const response = await conSenalDeAborto(GATEWAY_TIMEOUTS_MS.operacion, (signal) =>
+      fetch(`${this.apiUrl}/payments`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          reference: orderId,
+          amount: { value: amount, currency },
+          description,
+          payer: { email: buyerEmail },
+          redirect_url: depositReturnUrl(orderId, 'success'),
+          cancel_url: depositReturnUrl(orderId, 'cancel'),
+          webhook_url: `${apiBaseUrl}/api/v1/payments/webhook/HEY_BANCO`,
+        }),
+        signal,
       }),
-    });
+    );
 
     if (!response.ok) {
       const err = await response.text();
@@ -112,9 +121,13 @@ export class HeyBancoProvider implements PaymentProvider {
 
     const token = await this.getAccessToken();
 
-    const response = await fetch(`${this.apiUrl}/payments/${externalId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    // PT-184 (H-034) — Verificar es consulta.
+    const response = await conSenalDeAborto(GATEWAY_TIMEOUTS_MS.consulta, (signal) =>
+      fetch(`${this.apiUrl}/payments/${externalId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        signal,
+      }),
+    );
 
     if (!response.ok) throw new Error(`HeyBanco verify failed: ${response.status}`);
 
