@@ -6,15 +6,40 @@
 ## CONFIRMED STUBS / INCOMPLETE IMPLEMENTATIONS
 
 ### TD-001 — CFDI/PAC Integration (stub)
-**Status:** Schema exists, service exists, no real PAC integration.  
-**Evidence:** `src/api/prisma/schema.prisma:739-754` — `CfdiRecord` model fully defined; `src/api/src/modules/cfdi/` exists; no PAC HTTP client found in dependencies.  
-**Impact:** Fiscal invoicing (required for B2B Mexico) is non-functional.  
-**Risk:** HIGH if platform targets B2B or VAT-registered sellers.
+**Status:** ✅ **CERRADA 2026-07-29 por decisión de negocio — aceptada como limitación declarada de v1.0.**  
+**Evidence:** `src/api/prisma/schema.prisma:739-754` — `CfdiRecord` model fully defined; `src/api/src/modules/cfdi/` exists; no PAC HTTP client found in dependencies. **Nada de eso cambió**: sigue siendo un stub.  
+**Qué cambió, y es lo único:** el humano decidió el 2026-07-29 *«acepta como limitación declarada»*, y la
+**declaración de valor se enmendó a la vez** (`PTSA/Fases/F-1_Declaracion_Valor.md § U-006`): la plataforma
+ya **no promete** emitir CFDI en v1.0, y `P-012 (CfdiRecord)` pasó a `FUERA_DE_ALCANCE_V1`. El hallazgo
+gemelo **H-005** se cerró con el mismo acto.
+**Por qué esto no es cerrar una deuda declarándola cerrada.** Una deuda que se cierra «aceptándola» sin
+tocar la promesa deja el registro mintiendo igual: seguiría existiendo un hueco entre lo que el producto
+dice hacer y lo que hace. Aquí **la promesa es lo que se retiró**. Emitir un CFDI exige un **PAC certificado
+ante el SAT** —un tercero contratado— y una decisión fiscal sobre quién factura una venta entre
+particulares. **No hay código que sustituya a eso.**
+**Reapertura declarada:** si v1.1 vuelve a declarar la facturación como producto entregado, `P-012` vuelve
+al inventario y **esta deuda y H-005 se reabren con él**.
+**Los tres modelos posibles**, con sus consecuencias técnicas medidas, están en
+`docs/implementation/evidence/PT-155/hallazgos.md`. La opción C es subconjunto de la B; la B exige datos
+fiscales y una autorización legal que **no se pueden pedir retroactivamente** a quien ya vendió.
 
-### TD-002 — Stripe and Hey Banco not implemented
-**Status:** In `PaymentProvider` enum but no integration code confirmed.  
-**Evidence:** `src/api/prisma/schema.prisma:284-285` — `STRIPE`, `HEY_BANCO` in enum.  
-**Impact:** Only Mercado Pago is operational in production.
+### TD-002 — Stripe y Hey Banco: el código está; faltan las credenciales
+**Status:** **REESCRITA 2026-07-29 por PT-181 — el enunciado anterior era falso.** Sigue abierta, pero por
+otro motivo del que decía.  
+**Lo que decía:** *«In `PaymentProvider` enum but no integration code confirmed»*.  
+**Lo que hay, medido:** `src/api/src/modules/payments/providers/stripe.provider.ts` (**128 líneas**) y
+`heybanco.provider.ts` (**169 líneas**), **ambos registrados como adaptadores** en
+`payments.module.ts:38-39`. Y como PT-087 exige las garantías a **todo adaptador registrado**,
+`provider-guarantees.spec` las comprueba para los cuatro — **6 pruebas en verde**.
+**Lo que falta de verdad:** **credenciales de ambas pasarelas**. Sin ellas el código no se puede ejercer
+contra el proveedor real, que es la única prueba que cuenta para un cobro. Es un tercero, igual que el PAC
+de TD-001, y por eso sigue abierta.
+**Por qué importa la diferencia.** «No hay código» y «hay código sin credenciales» llevan a decisiones
+opuestas: la primera dice *implementar*, la segunda dice *conseguir accesos y probar*. Un registro que
+manda a escribir lo que ya está escrito cuesta el trabajo entero. Es la familia de ND-002 y ND-007, las dos
+corregidas hoy: **una afirmación de ausencia envejece de la peor manera.**
+**Impact:** Mercado Pago y PayPal están operativos y probados contra el proveedor real; Stripe y Hey Banco,
+sin verificar.
 
 > **Corrected 2026-07-25 (PT-076).** This entry previously read *"Only Mercado Pago and
 > PayPal are operational"*, which was false: PayPal had integration code (WPS + IPN) but
@@ -116,10 +141,6 @@ eso hay guardas y no solo convencion (RULE-07, RULE-09).
 
 ## NOT DETERMINED
 
-### ND-001 — WebSocket event payload schemas
-**Status:** WebSocket events referenced in CLAUDE.md (`bid.new`, `auction.extended`, `auction.closed`) but their exact payload schemas are not verified from code inspection.  
-**Location to check:** `src/api/src/modules/bids/`, auction gateway files.
-
 ### ND-002 — Rate limiter storage backend
 **Status:** ✅ **CERRADA 2026-07-29 por PT-171 — ya lo estaba desde PT-030, y este registro lo negaba.**  
 **Evidence:** `src/api/src/app.module.ts:90` — `storage: new ThrottlerStorageRedisService(redis.client)`,
@@ -145,20 +166,55 @@ que se resuelve mirando donde él mismo dice es la familia de los dos que cerró
 **Vigilada por:** `deuda-no-determinada-vigente.spec.ts` (**RULE-35**).
 
 ### ND-004 — Test coverage percentage
-**Status:** Unit tests exist for 20+ test files; coverage thresholds not confirmed from `jest.config`.  
-**Location to check:** `src/api/package.json` jest `coverageThreshold`.
-
-### ND-005 — Feature flags implementation
-**Status:** `FeatureFlagsModule` is registered in app.module.ts; its implementation was not inspected.  
-**Location to check:** `src/api/src/modules/feature-flags/`.
-
-### ND-006 — BullMQ queue names and processors
-**Status:** BullMQ is configured globally; individual queues/processors not inventoried.  
-**Location to check:** All `src/api/src/modules/**/*.module.ts` for `BullModule.registerQueue()`.
+**Status:** ✅ **CERRADA 2026-07-29 por PT-181 — confirmado: NO hay umbral configurado.**  
+**Evidence:** `src/api/jest.config.js` (donde vive la configuración desde PT-172) **no declara
+`coverageThreshold`**. `collectCoverageFrom` sí está; el umbral que haría fallar la suite por bajar de un
+mínimo, no.
+**La incógnita se resolvió, y lo que queda es una decisión, no un desconocimiento.** Poner un umbral es
+elegir un número y aceptar que la suite falle por debajo — trabajo con dueño, no un «no determinado». Se
+separan a propósito: mezclarlos es lo que mantuvo abiertos seis `ND` durante semanas, cinco de los cuales
+se cerraban **mirando**.
+**Dato para cuando se decida:** la suite del API son **933 pruebas en 114 suites**; el monorepo, 1186.
 
 ### ND-007 — CLIENT proxy pattern
-**Status:** CLIENT does not use the BFF proxy (no `http-proxy-middleware`); instead uses direct `fetch()` calls with cookie-extracted token. Cross-site requests from browser JavaScript may be blocked by CORS if the CLIENT template renders forms that POST directly to API from browser (not via SSR controller).  
-**Risk:** MEDIUM — needs verification that no client-side JS makes direct API calls.
+**Status:** ✅ **CERRADA 2026-07-29 por PT-181 — la afirmación era FALSA.**  
+**Evidence:** `src/apps/client/src/main.ts:13` importa `createProxyMiddleware`, y `:83` monta el proxy BFF
+sobre `/api` inyectando la cabecera `Authorization` desde la cookie. **Lo puso PT-038 (AUD-003).**
+**Lo que decía:** *«CLIENT does not use the BFF proxy (no `http-proxy-middleware`)»*. Con el `import`
+delante. Es la familia de **ND-002** —que afirmaba que `ThrottlerStorageRedisService` no estaba referenciado
+cuando llevaba ahí desde PT-030— y de **H-016**: una afirmación de ausencia envejece de la peor manera,
+porque el día que alguien añade lo que se declaraba ausente la frase sigue escrita y ya es falsa.
+**Cómo se descubrió:** al escribir la fase 35 (PT-175) hubo que decidir si las llamadas del navegador
+podían ser relativas. Lo eran, **porque el proxy existe** — y este `ND` decía lo contrario.
+**Vigilada por:** `deuda-no-determinada-vigente.spec.ts` (**RULE-35**), con el hecho declarado.
+
+### ND-006 — BullMQ queue names and processors
+**Status:** ✅ **CERRADA 2026-07-29 por PT-181 — inventariadas.**  
+**Evidence:** dos colas, y sólo dos: `NOTIFICATION_QUEUE`
+(`src/api/src/modules/notifications/notifications.module.ts:16`) y `WEBHOOK_RETRY_QUEUE`
+(`src/api/src/modules/payments/payments.module.ts:22`). Ambas por `BullModule.registerQueue()`.
+**Nota:** el `ND` pedía «inventariar», y eso se cierra mirando. Costaba un `grep`.
+
+### ND-001 — WebSocket event payload schemas
+**Status:** ✅ **CERRADA 2026-07-29 por PT-181 — los gateways son dos y están localizados.**  
+**Evidence:** `src/api/src/modules/auctions/auctions.gateway.ts` y
+`src/api/src/modules/notifications/events.gateway.ts`. Los eventos que `CLAUDE.md` nombra —`bid.new`,
+`auction.extended`, `auction.closed`— viven en el primero.
+**Lo que este cierre NO afirma:** que los esquemas de payload estén *documentados*. No lo están, y eso es
+una tarea de documentación con dueño (`docs-v2/`, que mantienen personas — ADR-049), no un «no
+determinado». **La incógnita se resolvió: los gateways existen y son dos.** Lo que quede es trabajo, no
+desconocimiento, y mezclarlos es lo que mantuvo este `ND` abierto seis semanas.
+
+### ND-005 — Feature flags implementation
+**Status:** ✅ **CERRADA 2026-07-29 por PT-181 — inspeccionada, y lo que hay merece decirse.**  
+**Evidence:** `src/api/src/modules/feature-flags/feature-flags.service.ts` son **ocho líneas**:
+`isEnabled(flag)` devuelve `process.env[flag] === 'true'`. No hay controlador, no hay persistencia, no hay
+caché. **Y `grep -rn "FeatureFlagsService"` fuera de su propia carpeta no devuelve nada: cero llamantes.**
+**Candidato a retirada, con una decisión de por medio.** ADR-047 dice que *un endpoint sin llamantes se
+retira, no se pule*, y esto es el mismo caso. **No se retira aquí** por dos razones: está citado en
+`docs-v2/5-qa/Master-Test-Plan.md`, que mantienen personas (ADR-049), y en el inventario. Retirar un módulo
+documentado es una decisión de producto, no una corrección de coherencia. Queda registrado para que se
+decida sabiendo lo que es: **un lector de variables de entorno de ocho líneas que nadie llama.**
 
 ## KNOWN TECHNICAL DECISIONS WITH TRADEOFFS
 
