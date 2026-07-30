@@ -1,7 +1,14 @@
 # Inventory — Services
 
-All injectable NestJS services across services.  
-**Source:** `src/api/src/modules/**/*.service.ts`, `src/admin/src/app.service.ts`, `src/packages/core/src/`
+All injectable NestJS services across services.
+**Source:** `src/api/src/**/*.service.ts`, `src/admin/src/**/*.service.ts`,
+`src/apps/{base,client}/src/**/*.service.ts`, `src/packages/core/src/`
+
+> **Alcance corregido el 2026-07-30.** El título decía *«all … across services»* y la línea de origen
+> declaraba uno más estrecho —sólo `src/api/src/modules/**` y un único fichero de ADMIN—, así que el
+> documento **se leía como completo y nombraba 39 de 48**. Las dos frases no podían ser ciertas a la
+> vez. Se amplía el origen, que es lo que el título ya prometía. Lo vigila
+> `inventario-de-servicios-completo.spec.ts`.
 
 ---
 
@@ -128,3 +135,26 @@ con el fichero donde se lee, que es la regla desde PT-090.
 - El alfabeto excluye `0/O` y `1/I/L`: el código se dicta por teléfono y se transcribe a mano.
 - Se acepta **en minúsculas**: exigir mayúsculas sería castigar al usuario por cómo teclea.
 - **Nunca se escribe en la traza de pagos** (`PaymentTraceService`).
+
+## ADMIN Services (`src/admin/src/`)
+
+| Service | Fichero | Qué hace |
+|---|---|---|
+| `AdminApiClient` | `shared/admin-api-client.service.ts` | Cliente HTTP hacia el API, con su propio refresco de JWT |
+| `AuctionsAdminService` | `modules/auctions/auctions.service.ts` | Moderación de subastas desde el panel |
+| `ConfigurationService` | `modules/configuration/configuration.service.ts` | Configuración de pago y almacenamiento |
+| `LotsService` | `modules/lots/lots.service.ts` | Lotes |
+| `ModerationService` | `modules/moderation/moderation.service.ts` | Cola de moderación |
+| `ReconciliationService` | `modules/reconciliation/reconciliation.service.ts` | Conciliación de pagos |
+| `ReportsService` | `modules/reports/reports.service.ts` | Informes del panel |
+
+## Observabilidad (`src/api/src/common/observability/`)
+
+| Service | Fichero | Qué hace |
+|---|---|---|
+| `StructuredLogger` | `logger.service.ts` | Registro estructurado con `traceId`; raíz de todos los hijos |
+| `ChildLogger` | `logger.service.ts` | Registro con contexto de un servicio concreto (`logger.child('X')`) |
+
+> Los dos de observabilidad viven **fuera de `modules/`**, y por eso el origen anterior no los alcanzaba.
+> Se nombran porque son inyectables y porque `StructuredLogger` es dependencia de casi todo el API: un
+> inventario de servicios que no lo mencione da una imagen falsa de las dependencias.

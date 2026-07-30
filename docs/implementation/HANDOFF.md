@@ -4,13 +4,13 @@
 
 **Rama**: `master`, árbol limpio, al día con `origin` y sin una sola rama suelta.
 
-**Pruebas**: **1354** unitarias en verde — API **1101** (136 suites) · CLIENT **144** (12) · CORE **93** (6) · ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
+**Pruebas**: **1361** unitarias en verde — API **1108** (137 suites) · CLIENT **144** (12) · CORE **93** (6) · ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
 con sus 41 casos: eran pruebas verdes sobre código que no corría en producción.)*
 
 **Reglas duras**: **36** `RULE-NN` (RULE-38 nueva). **Guardas de documentación**: **15** suites / **159** pruebas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **148 encabezados · 0 realmente abiertos.**
+`npm run indice:estado`. **149 encabezados · 1 realmente abierto** (PT-197, `VALIDATION_PENDING`).
 
 ---
 
@@ -56,7 +56,7 @@ esta corrida vivían en el **camino de fallo**, que nunca se había ejecutado.
 
 ---
 
-## Esperan tu validación: nada
+## Esperan tu validación: **PT-197**
 
 **PT-196 cerrado con tu VoBo** el 2026-07-30. **Cero trabajo FDGE pendiente.**
 
@@ -158,7 +158,8 @@ entero que no hacía nada.
 | **el generador del índice de estado** | **PT-191** — se comía en silencio una entrada mal colocada; ahora **aborta nombrándola** |
 | **citas a fichero en el contrato de agente** | **PT-191** — `11-Conventions.md` citaba **tres ficheros que no existen**, y uno era el nombre viejo que `RULE-32` existe para contar |
 | **unicidad de `UC` · `RN` · `ADR`** | **PT-191** — ningún identificador se define dos veces como clave de fila |
-| Los otros 5 inventarios · `P-XXX` (12 productos) · citas `fichero:línea` en `docs-v2` | **sin guarda, y escrito** |
+| **`entities.md` y `services.md`** | **PT-197** — cobertura en los dos sentidos: contra el esquema Prisma y contra los `*.service.ts` de los cuatro servicios |
+| `routes.md` · `components.md` · `integrations.md` · `P-XXX` (12 productos) · citas `fichero:línea` en `docs-v2` | **sin guarda, y escrito** — sus fuentes no son mecánicamente enumerables |
 
 Los **15 `AUD` sin verificar** siguen siendo deuda de medición. No se declaran corregidos sin medirlos: eso es
 exactamente lo que produjo el «36/36».

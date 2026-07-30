@@ -4013,6 +4013,46 @@ Verificacion en el cierre: API **1101** pruebas en 136 suites · CLIENT **144** 
 ADMIN 13 · BASE 3. `audit:schema` sin deriva. Guardas vistas fallar con sabotaje **verificado** — la
 leccion de PT-194, donde un sabotaje que no se aplico parecio una guarda que funciona.
 
+## PT-197 — BUG TRIVIAL: dos inventarios decian «todos» y el certificado se declaraba fresco
+Date: 2026-07-30
+Status: VALIDATION_PENDING
+Branch: master (TRIVIAL, condensado — el humano pidio revisar la documentacion y encontrar lo pendiente)
+Objective: revisar la documentacion **enumerando el espacio de clases** en vez de buscar en
+  profundidad, que es lo que devolvia listas de sintomas.
+Root cause: tres huecos, los tres de la misma familia —afirmaciones que se leen con confianza:
+  1. `entities.md` decia *«All Prisma models and enums»* y nombraba **52 de 56**: faltaban
+     `PaymentCycleStatus`, `WithdrawalStatus`, `PaymentMethodType` y `AccountVerificationStatus`.
+  2. `services.md` se titulaba *«all injectable NestJS services across services»* y su linea de origen
+     declaraba **otro alcance mas estrecho** —solo `src/api/src/modules/**` y un fichero de ADMIN—:
+     nombraba **39 de 48**. Las dos frases no podian ser ciertas a la vez.
+  3. `PTSA/ESTADO_ACTUAL.md` declaraba `freshness = FRESH` y `commits_since_audit = 0`. Medido: **28
+     commits y 6 PT** desde S-010, incluida una **migracion de esquema** y cambios en el **camino de
+     autenticacion** — las dos cosas que `[A7]` considera motivo de caducidad.
+  **Ninguno de los tres afirmaba algo falso sobre lo que nombraba.** Enganaban por otra via: se leen
+  como completos. Quien busque `PaymentCycleStatus` en el inventario y no lo encuentre concluye que no
+  existe.
+Solution:
+  - Los cuatro enums y los nueve servicios anadidos, con el alcance de `services.md` corregido para
+    que coincida con lo que su titulo ya prometia.
+  - `inventarios-completos.spec.ts`: comprueba cobertura en los **dos sentidos** —que no falte nada del
+    esquema y que el inventario no nombre nada inexistente— con casos de control que impiden pasar en
+    vacio. **Vista fallar** anadiendo un enum al esquema: lo acusa por nombre.
+  - `freshness` a **STALE** con la cifra medida. **Health, Risk y Confidence se dejan como estan a
+    proposito**: recalcularlos exige un delta sync, y PTSA solo se activa con su disparador explicito.
+    Inventar un numero aqui seria lo que `[A1]` prohibe. Se anota la consecuencia: con STALE, `[A8]`
+    dice que el score no es valido y §15.6 capta la clase en **C** — el «Clase A» de la tabla es el de
+    S-010, no el de hoy.
+Modified files: inventory/{entities,services}.md, PTSA/ESTADO_ACTUAL.md,
+  test/unit/documentacion/inventarios-completos.spec.ts (nuevo)
+Evidence: la carpeta de evidencia de este PT
+Delta (real vs planned): el plan era «revisar». Aparecio que **dos de las cinco clases sin guarda ya no
+  lo estan**: entidades y servicios se comprueban mecanicamente contra su fuente. Las otras tres
+  —`routes.md`, `components.md`, `integrations.md`— siguen sin guarda **y ahora esta declarado en la
+  propia prueba** (`AC-04`), no solo en el HANDOFF: sus fuentes no son enumerables como un esquema
+  Prisma o un patron de fichero.
+PTSA reference: ninguna. El cambio en `ESTADO_ACTUAL.md` corrige una afirmacion de frescura, no emite
+  ni recalcula puntuacion.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -4024,7 +4064,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**148** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**149** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4176,3 +4216,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-195 | 3841 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3870 |
 | PT-194 | 3894 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3930 |
 | PT-196 | 3949 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3990 |
+| PT-197 | 4016 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |

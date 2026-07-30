@@ -11,9 +11,24 @@ Fase actual:    CERTIFICADO — Clase A
 Health:         100 / 100      cero hallazgos activos
 Risk:           0 / 100        Risk_bruto = 0
 Confidence:     91.0 / 100     A UN PUNTO del umbral de A — la baja D5 al 0 %
-Freshness:      FRESH          medido el 2026-07-29, commits_since_audit = 0
+Freshness:      STALE          medido el 2026-07-30: 28 commits y 6 PT desde S-010
 Cobertura:      PARCIAL        D1/D2/D3/D4 al 100 % · D5 al 0 % — LIMITACIÓN DECLARADA de v1.0
 ```
+
+> **Frescura corregida el 2026-07-30 — y esto NO recalcula la puntuación.**
+>
+> Este bloque declaraba `freshness = FRESH` y `commits_since_audit = 0`. Medido: desde S-010 hay
+> **28 commits y 6 PT** (PT-191 … PT-196), y entre ellos **una migración de esquema** y cambios en el
+> **camino de autenticación** — las dos cosas que `[A7]` considera motivo de caducidad.
+>
+> **Health, Risk y Confidence se dejan como están, a propósito.** Recalcularlos exige un delta sync, y
+> PTSA sólo se activa con su disparador explícito (`resume PTSA`): inventar un número aquí sería
+> justamente lo que `[A1]` prohíbe. Lo que sí es medible sin auditar es **cuántos commits han pasado**,
+> y eso es lo que se corrige.
+>
+> **Consecuencia práctica**, dicha porque cambia cómo hay que leer lo de abajo: con `freshness = STALE`,
+> `[A8]` dice que **el score no es válido** hasta el próximo sync, y §15.6 capta la clase en **C**. El
+> «Clase A» de la tabla siguiente es el de S-010, no el de hoy.
 
 **Regla del Agua Potable: NO activada** — D1 = 100. Se dice porque `[A4]` lo exige.
 

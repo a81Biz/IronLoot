@@ -27,6 +27,24 @@ All Prisma models and enums from `src/api/prisma/schema.prisma`.
 | `CampaignStatus` | DRAFT, SCHEDULED, SENT, FAILED | `notification_campaigns.status` |
 | `RefundStatus` | PENDING_REFUND, PROCESSING, COMPLETED, FAILED | `refund_requests.status` |
 | `CmsContentType` | TEXT, HTML, JSON | `cms_content.type` |
+| `PaymentCycleStatus` | REQUESTED, CONFIRMED, SETTLED, FAILED, ANOMALY, EXPIRED | `payment_cycles.status` |
+| `WithdrawalStatus` | REQUESTED, APPROVED, PROCESSING, PAID, REJECTED, FAILED | `withdrawal_requests.status` |
+| `PaymentMethodType` | CLABE, PAYPAL, DEBIT_CARD | `user_payment_methods.type` |
+| `AccountVerificationStatus` | PENDING, SENT, VERIFIED, BLOCKED, EXPIRED, FAILED | `account_verifications.status` |
+
+> **Completado el 2026-07-30.** Estos cuatro faltaban. El documento dice *«todos los modelos y enums»*
+> y nombraba **52 de 56** — no afirmaba nada falso, pero **se leía como completo y no lo estaba**, que
+> es la forma silenciosa del mismo problema: quien busque `PaymentCycleStatus` aquí concluye que no
+> existe. Lo vigila desde ahora `inventario-de-entidades-completo.spec.ts`.
+| `PaymentCycleStatus` | REQUESTED, CONFIRMED, SETTLED, FAILED, ANOMALY, EXPIRED | `payment_cycles.status` |
+| `WithdrawalStatus` | REQUESTED, APPROVED, PROCESSING, PAID, REJECTED, FAILED | `withdrawal_requests.status` |
+| `PaymentMethodType` | CLABE, PAYPAL, DEBIT_CARD | `user_payment_methods.type` |
+| `AccountVerificationStatus` | PENDING, SENT, VERIFIED, BLOCKED, EXPIRED, FAILED | `account_verifications.status` |
+
+> **Completado el 2026-07-30.** Estos cuatro faltaban. El documento dice *«todos los modelos y enums»*
+> y nombraba **52 de 56** — no afirmaba nada falso, pero **se leía como completo y no lo estaba**, que
+> es la forma silenciosa del mismo problema: quien busque `PaymentCycleStatus` aquí concluye que no
+> existe. Lo vigila desde ahora `inventario-de-entidades-completo.spec.ts`.
 
 ---
 
