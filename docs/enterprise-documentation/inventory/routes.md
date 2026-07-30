@@ -100,6 +100,18 @@ Source: `src/admin/src/app.module.ts` (18 admin modules)
 
 ---
 
+## Dos páginas que faltaban (medido en PT-188)
+
+| Sitio | Ruta | Qué es |
+|---|---|---|
+| BASE | `/contact` | Página de contacto pública. |
+| CLIENT | `/wallet/deposit/return` | **La ruta canónica de retorno de TODAS las pasarelas** (ADR-042). Antes cada proveedor volvía a una ruta distinta y **ninguna existía**, así que un pago real acababa en 404 después de haber cobrado. El `status` que llega por la URL **no es fuente de verdad** —lo escribe el navegador—: la página pregunta a `GET /payments/status/:reference` (ADR-043). Un ciclo abierto se informa **pendiente**, jamás fallido: efectivo y SPEI tardan horas, y decir «falló» provoca un segundo pago. |
+
+Que la ruta de retorno de los pagos no estuviera en el inventario de rutas es exactamente la clase de omisión
+que ADR-042 existe para que no vuelva a pasar.
+
+---
+
 ## Nginx Traffic Routing (`ironloot.local` — PT-025)
 
 | Pattern | Destination | Status Code |

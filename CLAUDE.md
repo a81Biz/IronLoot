@@ -363,6 +363,34 @@ Each SSR site follows the same convention:
   identificador canónico de un pago —la clave de deduplicación— lo resuelve cada adaptador.
   Ningún pago cobrado queda sin acreditar: si la notificación no llega, la vía garantizada lo
   encuentra por consulta; a las `PAYMENT_EXPIRATION_HOURS` (72) sin resolver, expira.
+- **Un servicio compartido no decide qué hacen sus llamantes con un fallo** (RULE-36, PT-183).
+  `EmailService` capturaba cualquier error de envío y no lo relanzaba. Con eso caían **tres capas de
+  recuperación**: el `catch` del worker de la cola, su contador de intentos y los reintentos de
+  BullMQ — un envío fallido marcaba el trabajo como **completado**. Ahora propaga, y **cada llamante
+  declara qué hace, con el motivo escrito al lado**: el reenvío de verificación y la cola propagan;
+  el registro captura (la cuenta ya existe); la recuperación de contraseña captura **por seguridad**,
+  porque su respuesta es opaca a propósito y propagar convertiría una caída del SMTP en un **oráculo
+  de enumeración**. Y ojo: **había una prueba verde sosteniendo el defecto** (`should not throw when
+  mailerService fails`, dos veces).
+- **Toda llamada a un tercero declara su tope de espera** (PT-183/PT-184). Sin declararlos,
+  nodemailer aplica **dos minutos**: con el SMTP caído, el registro y el reenvío se colgaban 121 s.
+  `MAIL_TIMEOUTS_MS` (5/5/10 s) y `GATEWAY_TIMEOUTS_MS` (**consultar 8 s, operar 20 s**). La
+  asimetría es **del dominio**: consultar puede cortarse pronto porque la vía garantizada volverá;
+  **crear o capturar** no, porque abandonar algo que quizá se completó al otro lado deja un cobro sin
+  saber qué pasó. Los valores **se derivan** de lo que el sistema ya espera de un tercero, no se
+  eligen. Y un tope agotado **no es un rechazo** de la pasarela.
+- **Ninguna variable de conexión tiene reserva, en los cuatro servicios** (PT-185/PT-186). El corolario
+  duro de RULE-17: `variableObligatoria()` **aborta nombrando la variable**. En un SSR **a dónde
+  llamar es una conexión** — `API_URL` con reserva a `localhost:3000` hacía que el sitio mandara
+  *todas* sus llamadas a su propio contenedor y **arrancara `healthy` sin funcionar**. Lo vigila
+  `conexiones-sin-reserva.spec.ts` en API, ADMIN, BASE y CLIENT. **Excepción declarada**:
+  `public-origins.ts` conserva el **subdominio** de desarrollo (nunca un puerto) por ADR-045.
+- **El estado real de un PT se lee en el ÍNDICE DE ESTADO**, al final de `HISTORY.log`
+  (`npm run indice:estado`, PT-187). El log es append-only, así que la línea `Status:` de una entrada
+  es **histórica**: **102 entradas dicen `VALIDATION_PENDING` estando cerradas**. No las reescribas —
+  borrarías el momento en que se supo cada cosa. Y **un BUG con `Status: DONE` sin bloque de VoBo que
+  lo nombre no está cerrado** (RULE-37): un cierre sin constancia de quién lo autorizó es
+  indistinguible de uno que el agente se dio a sí mismo.
 - **Trazabilidad de pagos**: `PaymentTraceService` es el punto **único** de escritura de la traza,
   y la redacción de credenciales vive dentro — ningún llamante puede saltársela. Nunca lanza: un
   apunte de trazabilidad no puede costarle el depósito al usuario. Consulta:
