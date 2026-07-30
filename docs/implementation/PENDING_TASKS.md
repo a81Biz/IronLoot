@@ -1,17 +1,20 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (PT-192 — los quince «sin verificar», medidos)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-192 cerrado con VoBo humano)
 
 ---
 
-## Esperando validación humana: **PT-192**
+## Esperando validación humana: nada
 
 **PT-181 … PT-185 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
 veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
 
 **PT-191 cerrado con VoBo humano** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37).
-**PT-192 queda en `VALIDATION_PENDING`**: son cinco BUG y el agente no cierra bugs (FDGE STATE 6).
-El resto de los 144 PT del registro está cerrado.
+**PT-192 cerrado con VoBo humano** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37). Con él,
+**los 144 PT del registro están cerrados**: el índice de estado dice **0 realmente abiertos**.
+
+**Cero trabajo FDGE pendiente.** Lo único abierto es deuda técnica: TD-002 y TD-009 (terceros),
+**TD-024** (decisión de arquitectura pendiente) y **TD-025** (el refresco sin cablear).
 
 ---
 
