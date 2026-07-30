@@ -40,8 +40,8 @@
 | UC-13 Gestionar orden (comprador/vendedor) | | ✔ | ✔ | | | `orders.controller.ts:28` | ✅ |
 | UC-14 Registrar envío / actualizar estado | | | ✔ | | | `shipments.controller.ts:27` | ✅ |
 | UC-15 Calificar contraparte | | ✔ | ✔ | | | `ratings.controller.ts:16` | ✅ |
-| UC-17 **Declarar envío** (vendedor) | | | ✔ | | | `shipments.controller.ts` | ✅ sólo el vendedor; el comprador recibe 403 |
-| UC-18 **Confirmar recepción** (comprador) | | ✔ | | | | `shipments.controller.ts` | ✅ **sólo el comprador**; arranca el reloj del holdback (PT-174) |
+| UC-28 **Declarar envío** (vendedor) | | | ✔ | | | `shipments.controller.ts` | ✅ sólo el vendedor; el comprador recibe 403 |
+| UC-29 **Confirmar recepción** (comprador) | | ✔ | | | | `shipments.controller.ts` | ✅ **sólo el comprador**; arranca el reloj del holdback (PT-174) |
 | UC-16 Abrir/gestionar disputa | | ✔ | ✔ | | | `disputes.controller.ts:16` | ✅ (AUD-003 corregido) |
 | UC-17 Confirmar pago vía webhook | | | | | ✔ | `payments.controller.ts:45` | ✅ |
 | UC-18 Moderar subastas/lotes/usuarios | | | | ✔ | | `admin.controller.ts:97` | ✅ pasa por la FSM (AUD-011 corregido, PT-191) |
