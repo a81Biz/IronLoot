@@ -2,16 +2,16 @@
 
 **FDGE V3** · **2026-07-30** · Se **sobrescribe**: es el estado de ahora, no la historia.
 
-**Rama**: `fix/PT-191-cerrar-los-aud-abiertos`, pendiente de fusionar a `master`.
+**Rama**: `master`, árbol limpio, **al día con `origin`** y cero ramas sin fusionar.
 
-**Pruebas**: **1255** unitarias en verde — API **1043** (128 suites) · CORE **93** (6) · CLIENT **103** ·
+**Pruebas**: **1263** unitarias en verde — API **1051** (129 suites) · CORE **93** (6) · CLIENT **103** ·
 ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
 con sus 41 casos: eran pruebas verdes sobre código que no corría en producción.)*
 
 **Reglas duras**: **36** `RULE-NN` (RULE-38 nueva). **Guardas de documentación**: **15** suites / **159** pruebas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **143 encabezados · 1 realmente abierto** (PT-191, `VALIDATION_PENDING`).
+`npm run indice:estado`. **143 encabezados · 0 realmente abiertos.**
 
 ---
 
@@ -57,10 +57,11 @@ esta corrida vivían en el **camino de fallo**, que nunca se había ejecutado.
 
 ---
 
-## Esperan tu validación: **PT-191**
+## Esperan tu validación: nada
 
-Todo lo anterior —**PT-158 … PT-190**— está cerrado con tu VoBo. **PT-191 queda en `VALIDATION_PENDING`**
-porque son cinco BUG y el agente no cierra bugs (FDGE STATE 6). Lista en
+**PT-191 cerrado con tu VoBo** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37: un BUG `DONE` sin
+bloque de VoBo que lo nombre no está cerrado). Con él, **los 143 PT del registro están cerrados** — el
+índice de estado, que es quien lo mide, dice **0 realmente abiertos**. Lista en
 [`PENDING_TASKS.md`](PENDING_TASKS.md).
 
 ---
@@ -100,7 +101,9 @@ entero que no hacía nada.
 | **superficie exportada de `@ironloot/core`** | **PT-191** — 24 huérfanos declarados uno a uno; no pueden crecer |
 | **cargas del canal público (WebSocket)** | **PT-191** — ninguna emisión puede llevar un campo identificativo |
 | **el generador del índice de estado** | **PT-191** — se comía en silencio una entrada mal colocada; ahora **aborta nombrándola** |
-| Los otros 5 inventarios · citas `fichero:línea` fuera del TRD · `ADR`/`RN`/`UC`/`P` (170 identificadores) | **sin guarda, y escrito** |
+| **citas a fichero en el contrato de agente** | **PT-191** — `11-Conventions.md` citaba **tres ficheros que no existen**, y uno era el nombre viejo que `RULE-32` existe para contar |
+| **unicidad de `UC` · `RN` · `ADR`** | **PT-191** — ningún identificador se define dos veces como clave de fila |
+| Los otros 5 inventarios · `P-XXX` (12 productos) · citas `fichero:línea` en `docs-v2` | **sin guarda, y escrito** |
 
 Los **15 `AUD` sin verificar** siguen siendo deuda de medición. No se declaran corregidos sin medirlos: eso es
 exactamente lo que produjo el «36/36».
@@ -143,7 +146,7 @@ guarda o está declarada.**
 | `RULE-NN` · `TD`/`ND` · `H-XXX`↔derivados · HISTORY/PENDING · índice de estado | guardadas desde antes |
 | endpoints del inventario | **PT-188** |
 | **afirmaciones `AUD` en `docs-v2`** | **PT-189 (RULE-38)** |
-| Los otros 5 inventarios · citas `fichero:línea` fuera del TRD | **sin guarda, y escrito** |
+| Los otros 5 inventarios · citas `fichero:línea` en `docs-v2` | **sin guarda, y escrito** *(las del contrato de agente sí, desde PT-191)* |
 
 La pieza que cierra el bucle es la **tabla de veredictos de los 36**, con cuatro estados donde **«sin verificar»
 es legítimo**. No se exige saberlo todo: se exige que **conste si se ha mirado**. Recuento honesto de hoy: **15

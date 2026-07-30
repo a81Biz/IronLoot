@@ -73,7 +73,18 @@ export function analizar(log: string): Entrada[] {
 
     for (let j = i + 1; j < Math.min(i + 12, lineas.length); j++) {
       if (lineas[j].startsWith('## ')) break;
-      const s = /^Status:\s*(\S+)/.exec(lineas[j]);
+      // PT-191 — **`Status:` cuenta esté al principio de la línea o no.**
+      //
+      // Antes esto era `/^Status:/`, y las seis entradas más antiguas del log —PT-039 … PT-044—
+      // escriben la cabecera en una sola línea: `Date: … | Status: CLOSED | Branch: …`. El índice las
+      // listaba como **`SIN_DECLARAR`** mientras el log decía `CLOSED` a dos palabras de distancia.
+      //
+      // Seis de 143 no parece mucho hasta que se recuerda para qué existe este índice: es lo que
+      // `CLAUDE.md` manda leer para saber el estado real, precisamente porque la línea `Status:` de
+      // una entrada es histórica. **Un índice que dice «no consta» sobre algo que sí consta es la
+      // misma familia que el registro que decía «36/36»** — y es peor que no tenerlo, porque manda a
+      // buscar un dato que ya estaba escrito.
+      const s = /(?:^|\|\s*)Status:\s*(\S+)/.exec(lineas[j]);
       if (s) {
         estado = s[1];
         break;

@@ -3667,6 +3667,44 @@ Delta (real vs planned): el plan era «cerrar cinco hallazgos». Aparecieron **s
 PTSA reference: AUD-006, AUD-010, AUD-011, AUD-012, AUD-027 — los cinco a «corregido» en la tabla de
   veredictos de docs-v2/transversal/Registro-de-Hallazgos.md. Recuento: 20 / 0 / 1 / 15.
 
+## CIERRE CON VoBo HUMANO — PT-191
+Date: 2026-07-30
+Status: registro
+Objective: registrar el VoBo humano sobre PT-191, que cerro los cinco AUD que quedaban abiertos.
+
+**Instruccion literal:** *«de PT-191 cierralos todos, tienes mi VoBo»*. Con eso PT-191 pasa de
+`VALIDATION_PENDING` a **CLOSED**, y con el los cinco hallazgos que cerraba:
+
+  AUD-006  el canal publico sin autenticar — y las dos armas cargadas que le apuntaban
+  AUD-010  resolver una disputa no movia dinero — eran tres defectos, uno imprimia dinero
+  AUD-011  seis puertas al estado de una subasta sin cerradura, con la maquina incompleta debajo
+  AUD-012  30 de 42 simbolos de `core` sin consumidor; `Money` y el IPN de PayPal retirados
+  AUD-027  el formulario SMTP del panel que guardaba y no configuraba nada
+
+**Recuento de la tabla de veredictos: 20 corregidos · 0 abiertos · 1 limitacion declarada · 15 sin
+verificar.** Los quince siguen siendo deuda **de medicion** y no se tocan aqui: declararlos
+corregidos sin medirlos es exactamente lo que produjo el «36/36» que esa tabla existe para desmentir.
+
+**Lo que este PT deja escrito, que vale mas que los cinco cierres:** *el enunciado de un hallazgo es
+su sintoma, no su tamano*. Ninguno de los cinco era lo que decia, y cuatro eran mas grandes. Mientras
+«revisar que falta» signifique releer enunciados, lo que sale es la lista de sintomas.
+
+**Tres defectos aparecieron DESPUES del cierre, y tambien se cerraron** —la instruccion permanente es
+*«si hay un hallazgo nuevo lo tratas hasta cerrarlo»*—:
+
+  1. El generador del indice de estado **se comia en silencio** una entrada colocada entre el
+     separador y la marca. En un fichero append-only eso es perdida de datos sin aviso. Ahora aborta
+     nombrando la entrada; costo dos intentos descubrirlo, los dos diciendo «ok».
+  2. `UC-17` y `UC-18` **nombraban dos casos de uso cada uno**, y lo introdujo PT-189 dos commits
+     antes. Lo encontro el grafo de conocimiento al reconstruirse. Renumerados a `UC-28`/`UC-29`, con
+     guarda que cubre `UC`/`RN`/`ADR` — una de las cuatro clases que estaban declaradas sin guarda.
+  3. La poda de nodos fantasma de graphify compara rutas **absolutas** contra **relativas**: declaro
+     «sin deriva» dejando **40 nodos** apuntando a ficheros retirados. Podados con la comparacion
+     correcta.
+
+Verificacion en el cierre: API **1051** pruebas en 129 suites · CORE **93** en 6 · CLIENT 103 ·
+ADMIN 13 · BASE 3. Arbol limpio, `master` al dia con `origin`, cero ramas sin fusionar.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3678,7 +3716,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**143** encabezados · **1** realmente abiertos · **6** sin `Status:` declarado.
+**143** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -3696,12 +3734,12 @@ falsificaría el registro. Esto añade, no toca.
 | PT-036 | 172 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
 | PT-037 | 185 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
 | PT-038 | 198 | `CLOSED` | **CLOSED** | cerrado en la línea 248 |
-| PT-039 | 211 | `SIN_DECLARAR` | **SIN_DECLARAR** | cerrado en la línea 212 |
-| PT-040 | 219 | `SIN_DECLARAR` | **SIN_DECLARAR** | cerrado en la línea 1524 |
-| PT-041 | 226 | `SIN_DECLARAR` | **SIN_DECLARAR** | cerrado en la línea 1524 |
-| PT-042 | 233 | `SIN_DECLARAR` | **SIN_DECLARAR** | cerrado en la línea 1524 |
-| PT-043 | 240 | `SIN_DECLARAR` | **SIN_DECLARAR** | cerrado en la línea 1524 |
-| PT-044 | 247 | `SIN_DECLARAR` | **SIN_DECLARAR** | cerrado en la línea 1524 |
+| PT-039 | 211 | `CLOSED` | **CLOSED** | cerrado en la línea 212 |
+| PT-040 | 219 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-041 | 226 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-042 | 233 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-043 | 240 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-044 | 247 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
 | PT-047 | 261 | `DONE` | **DONE** | cerrado en la línea 1524 |
 | PT-048 | 284 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
 | PT-049 | 296 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
@@ -3824,4 +3862,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-188 | 3480 | `DONE` | **DONE** | — |
 | PT-189 | 3538 | `DONE` | **DONE** | — |
 | PT-190 | 3589 | `DONE` | **DONE** | — |
-| PT-191 | 3621 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |
+| PT-191 | 3621 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3670 |

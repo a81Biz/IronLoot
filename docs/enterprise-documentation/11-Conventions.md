@@ -303,7 +303,7 @@ if (typeof io !== 'function') { console.error('Puja en vivo no disponible: …')
 ```
 **Incorrect:** the page script first, no `defer`, and `catch (e) { /* optional */ }`.
 **Enforced by:** `src/apps/client/test/orden-de-scripts.spec.ts` (static) and
-`tests/qa-browser-suite/32-puja-en-vivo.cjs` (two real browsers).
+`tests/qa-browser-suite/32-puja-en-vivo.js` (two real browsers).
 
 ### RULE-08: Closing a technical debt is TWO writes, not one
 **What:** The code **and** `10-Technical-Debt.md`. The new status must **cite what can be read** to
@@ -350,7 +350,7 @@ PT-037 fixed this once, on 23-jul, and the drift came back **in four days** beca
 was left as a documentation note. A rule that only lives in a document is not a control.
 **Correct:** edit `schema.prisma` → `npm run db:migrate` → commit the migration with the change.
 **Incorrect:** edit `schema.prisma` → restart the container and assume it applied.
-**Enforced by:** `npm run audit:schema` (`scripts/schema-drift-check.ts`), CI job `schema-drift`,
+**Enforced by:** `npm run audit:schema` (`src/api/scripts/schema-drift-check.ts`), CI job `schema-drift`,
 **without `needs`** — a broken job must not be able to hide it.
 
 ---
@@ -365,7 +365,7 @@ load for any user, and the error pointed at the identifier, which was not the pr
 A 404 would have told the truth. The wildcard turned an honest error into a misleading one.
 **Correct:** `apiGet(token, "/api/v1/users/me/settings")`
 **Incorrect:** `apiGet(token, "/api/v1/users/settings")`
-**Enforced by:** `src/api/test/unit/web-views/rutas-que-el-client-invoca.spec.ts`. A literal route
+**Enforced by:** `src/api/test/unit/web-views/rutas-que-los-ssr-invocan.spec.ts`. A literal route
 requires a literal destination: matching only through a wildcard **is** the defect.
 
 ---
@@ -592,6 +592,19 @@ next one.**
 ### RULE-32: Every pattern in `test:guardas` must match at least one suite
 **What:** the `--testPathPattern` list in `test:guardas` names guard suites. Every pattern must match
 a real file.
+> **PT-191 — esta regla estaba rota por lo que documenta.** RULE-31, sixty lines above, still cited
+> `rutas-que-el-client-invoca.spec.ts` — **the old name**, the very rename this rule exists to describe.
+> Two other citations in this document pointed nowhere as well: the live-bidding QA suite was cited with
+> a `.cjs` extension it does not have, and the schema-drift script was cited without its `src/api/`
+> prefix. None of the three broke anything: they just stopped resolving, quietly, in the document
+> Foundation Protocol calls *the most critical output*.
+>
+> *(Those two are described here rather than quoted, because the guard below reads backticked paths and
+> would — correctly — accuse this very note for citing them. A guard that catches the paragraph explaining
+> its own subject is working.)*
+> Now guarded by `src/api/test/unit/documentacion/citas-de-fichero-existen.spec.ts` — the class
+> PT-189 had left declared as *unguarded*.
+
 **Why:** PT-148 renamed `rutas-que-el-client-invoca.spec.ts` and the pattern `rutas-que-el-client`
 **stopped matching anything**. The script stayed green — Jest does not complain when a pattern finds
 no files, the others pass and the summary says OK. The SSR↔API contract guard silently dropped out of

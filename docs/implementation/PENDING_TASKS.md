@@ -1,16 +1,19 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (PT-191 — los cinco `AUD` abiertos, cerrados)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-191 cerrado con VoBo humano)
 
 ---
 
-## Esperando validación humana: **PT-191**
+## Esperando validación humana: nada
 
 **PT-181 … PT-185 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
 veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
 
-**PT-191 queda en `VALIDATION_PENDING`**: son cinco BUG y el agente no cierra bugs (FDGE STATE 6). Todo
-lo demás está cerrado.
+**PT-191 cerrado con VoBo humano** el 2026-07-30 (*«de PT-191 ciérralos todos, tienes mi VoBo»*), con
+constancia en `HISTORY.log` (RULE-37). Con él, **los 143 PT del registro están cerrados**: el índice de
+estado dice **0 realmente abiertos**.
+
+**Cero trabajo FDGE pendiente.**
 
 ---
 

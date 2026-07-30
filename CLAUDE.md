@@ -410,6 +410,15 @@ Each SSR site follows the same convention:
   declara un `IPaymentProvider` que no aplica en ninguna parte mientras el vivo lo declara el API. Quedan
   24, uno a uno en `core-sin-superficie-huerfana.spec.ts`, y son `TD-024`: retirarlos es abandonar el
   diseño hexagonal y eso pide una ADR. Lo que la guarda impide es que **crezcan**.
+- **Lo que el contrato cita, existe; y un identificador nombra una sola cosa** (PT-191). Dos clases que
+  estaban declaradas *sin guarda* y ya no lo están. `11-Conventions.md` —lo que Foundation llama su
+  salida más crítica— citaba **tres ficheros inexistentes**, y el mejor de los tres era el nombre viejo
+  de la guarda que **`RULE-32` existe para contar**: la regla que documenta *«un renombrado vacía una
+  referencia sin dejar rastro»* estaba rota por ese mismo renombrado. En paralelo, `UC-17` y `UC-18`
+  **nombraban dos casos de uso cada uno** —lo introdujo PT-189 sobre números ya ocupados, y lo encontró
+  el grafo—: un identificador duplicado **rompe hacia atrás**, porque las referencias que lo citaban
+  siguen resolviendo, sólo que a dos sitios. Lo vigilan `citas-de-fichero-existen.spec.ts` y
+  `identificadores-sin-colision.spec.ts`; la segunda distingue `RN-64` de `RN-64b`, que son dos reglas.
 - **Una afirmación de estado sobre un hallazgo lleva veredicto, y «sin verificar» vale** (RULE-38, PT-189).
   Los 36 `AUD-XXX` de la auditoría de julio tienen su estado en la **tabla de veredictos** de
   `docs-v2/transversal/Registro-de-Hallazgos.md`: `corregido` · `abierto` · `limitación declarada` ·
