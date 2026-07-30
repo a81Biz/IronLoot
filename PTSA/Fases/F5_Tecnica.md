@@ -252,3 +252,52 @@ comprobo en `information_schema` antes de concluir nada; sobre una tabla de cont
 `relation does not exist` tiene la forma exacta de un hallazgo grave.
 
 Evidencia: **E-029**, **E-030**.
+
+---
+
+## Update U-009 — 2026-07-29 (S-006, delta sync): dos controles que aparentaban estar puestos
+
+El barrido de esta corrida no buscó errores: buscó **afirmaciones**. En D2 salieron dos, y ninguno de los dos
+fallaba nunca — por eso uno llevaba meses.
+
+### H-029 — `recaptcha.guard.ts` comprobaba la existencia del token, no su validez
+
+```ts
+if (!token) throw new ForbiddenException('CAPTCHA token required');
+// TODO: Verify token with Google API
+return true; // Mock success for now
+```
+
+Con `RECAPTCHA_ENABLED=true`, la cadena `"x"` pasaba igual que un token legítimo de Google, y esto protege
+`POST /auth/register`. **No había exposición mientras la variable estuviera en `false`** —su valor por
+defecto— y ahí estaba el peligro: el día que alguien la encendiera creería tener protección contra bots y no
+la tendría. Familia de H-004 (la validación del método de pago comentada en el retiro).
+
+Corregido en PT-182: verifica contra Google y **falla cerrado**. Sin secreto, no pasa. Google dice `false`, no
+pasa. **Google no responde, no pasa** — un timeout no puede ser una puerta accionable por quien sepa
+provocarlo. Siete casos, con C1 y AC-02 como controles: el comportamiento por defecto y la forma de mandar el
+token no cambian.
+
+### H-031 — la reserva de `SETTLEMENT_HOLDBACK_HOURS` era `0`
+
+```yaml
+- SETTLEMENT_HOLDBACK_HOURS=${SETTLEMENT_HOLDBACK_HOURS:-0}
+```
+
+La espera que protege al comprador **valía cero** en cualquier despliegue que no declarase la variable: el
+neto de la venta se liberaba al instante de la confirmación, sin ventana, y **nada lo habría dicho** — el cron
+corre, los asientos cuadran, la espera simplemente no ocurre.
+
+Es **RULE-17 aplicada a una regla de negocio**: *un valor por defecto convierte «mal configurado» en
+«configurado hacia ninguna parte»*. Aquí el proceso no sólo arranca — funciona, y funciona **sin la
+protección**.
+
+**Lo introdujo PT-174 unas horas antes**, para que la fase 35 de QA no esperase tres días. Reserva a `:-72`, y
+QA **declara** su `0` en el `.env`: eso es configurar.
+
+Y la guarda nueva **tenía el defecto que venía a vigilar** — contaba `..` a mano para llegar a la raíz y
+dentro del contenedor eso daba `/docker-compose.yml`, así que el caso fallaba por no encontrar el fichero. Una
+guarda inútil sin dejar de existir. Se vio fallar **por el motivo correcto** después de arreglarla.
+
+**D2 sigue en 100**: los dos abrieron y cerraron dentro de esta corrida. Evidencias `E-034` (los defectos) y
+`E-035` (los cierres).

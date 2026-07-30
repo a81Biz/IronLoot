@@ -138,13 +138,20 @@ services:
       # suites. La palanca era el techo, no el reciclado.
       - NODE_OPTIONS=--max-old-space-size=1536
       # PT-174/PT-175 — Horas que el neto de una venta espera en `pending_balance` tras la confirmacion
-      # del comprador. En produccion son 72 (ver `.env.example`); **aqui 0** para que la fase 35 de QA
-      # recorra la cadena completa sin esperar tres dias.
+      # del comprador.
       #
-      # Es CONFIGURAR, no falsear: se ejecuta el mismo codigo y solo se adelanta el reloj. Sembrar el
+      # **La reserva es 72, no 0** (PT-182). Estuvo en `:-0` unas horas y era la misma familia que H-029 y
+      # H-030: un control que aparenta estar puesto y no lo esta. Un despliegue que no declarase la
+      # variable liberaba el neto **al instante** de la confirmacion, sin ventana de proteccion para el
+      # comprador, y nada lo habria dicho — el cron corre, los asientos cuadran, la espera simplemente no
+      # existe. Es RULE-17 aplicada a una regla de negocio: el valor por defecto no puede ser el
+      # desprotegido.
+      #
+      # QA pone 0 **explicitamente** en el `.env` para que la fase 35 recorra la cadena sin esperar tres
+      # dias. Eso es CONFIGURAR: se ejecuta el mismo codigo y solo se adelanta el reloj. Sembrar el
       # resultado con un `INSERT` —lo que hace `60-withdrawal.js`— es afirmar que ocurrio algo que nunca
       # paso por ahi.
-      - SETTLEMENT_HOLDBACK_HOURS=${SETTLEMENT_HOLDBACK_HOURS:-0}
+      - SETTLEMENT_HOLDBACK_HOURS=${SETTLEMENT_HOLDBACK_HOURS:-72}
       - DATABASE_URL=postgresql://${DB_USER:-ironloot}:${DB_PASSWORD:-ironloot_dev}@db:5432/${DB_NAME:-ironloot_db}
       - REDIS_URL=redis://redis:6379
       - LOG_LEVEL=${LOG_LEVEL:-debug}

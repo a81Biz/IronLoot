@@ -389,3 +389,52 @@ cuantas filas se pronuncia, y con 0 disputas **no se pronuncia**.
 el score no cambia por eso. Lo que cambia es que **el producto ya no promete lo que no entrega**.
 
 Evidencia: **E-033**.
+
+---
+
+## Update U-009 — 2026-07-29 (S-006, delta sync): «Verification email sent» sin enviar nada
+
+### H-030 (ALTA)
+
+`users.service.ts`, tal como estaba:
+
+```ts
+// TODO: Send actual email when NotificationsModule is ready
+// await this.emailService.sendVerificationEmail(user.email, emailVerificationToken);
+
+return { message: 'Verification email sent. Please check your inbox.' };
+```
+
+Generaba el token, lo guardaba, escribía el apunte de auditoría **y no enviaba nada**. La respuesta decía que
+sí.
+
+**Es D1 y es ALTA por lo que el producto promete, no por el correo.** Éste es el camino de recuperación de una
+cuenta que no se puede activar: lo pide exactamente quien no recibió el correo del registro, y se le dejaba
+esperando para siempre — leyendo «revisa tu bandeja».
+
+Y la condición del `TODO` **ya se cumplía**: `email.service.ts:24` implementa `sendVerificationEmail(to,
+token)` y está en uso en el registro. El comentario **sobrevivió al trabajo que lo resolvía**: F-33 otra vez,
+en su forma pequeña.
+
+### El cierre no se comprueba contra la respuesta del endpoint
+
+La respuesta ya decía «enviado» cuando no enviaba, así que **no es evidencia de nada**. Se comprueba contra
+Mailhog:
+
+```
+correos tras registro  1  ['Verifica tu cuenta de Iron Loot']
+reenvio                HTTP 200
+correos tras reenvio   2  ['Verifica tu cuenta de Iron Loot', 'Verifica tu cuenta de Iron Loot']
+```
+
+**La afirmación es el `1 → 2`.**
+
+El envío **no se envuelve en `catch`** a propósito: un `catch` que se comiera el fallo reproduciría el defecto
+por otra vía. Lo vigila C2 de `reenvio-de-verificacion.spec.ts`.
+
+Uno de los casos de control **pasaba por el motivo equivocado** al escribirlo: usaba `emailVerified`, campo que
+no existe —el esquema tiene `emailVerifiedAt` (`schema.prisma:75`)—, así que el servicio no veía la
+verificación y no reenviaba **por ceguera, no por respeto**. Un caso verde que no comprobaba nada. Corregido
+antes de darlo por bueno.
+
+**D1 sigue en 100**: el hallazgo abrió y cerró dentro de esta corrida. Evidencias `E-034` y `E-035`.

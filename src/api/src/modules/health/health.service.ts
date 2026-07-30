@@ -61,7 +61,9 @@ export class HealthService {
   async checkDetailed(): Promise<HealthStatus> {
     const basicHealth = this.check();
 
-    // TODO: Implement actual database and Redis checks when Prisma is set up
+    // PT-182 — Aqui decia «TODO: implement actual database and Redis checks when Prisma is set up».
+    // Prisma esta configurado, la base se comprueba con `healthCheck()` desde hace tiempo y **Redis se
+    // comprueba desde PT-178** (H-026). El comentario sobrevivio al trabajo que lo resolvia — F-33.
     const dependencies = {
       database: await this.checkDatabase(),
       redis: await this.checkRedis(),

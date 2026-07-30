@@ -1,0 +1,54 @@
+[31m[Nest] 608  - [39m07/30/2026, 1:36:12 AM [31m  ERROR[39m [38;5;3m[AuctionSchedulerService] [39m[31mFailed to release settlement for order malo[39m
+[31m[Nest] 608  - [39m07/30/2026, 1:36:12 AM [31m  ERROR[39m [38;5;3m[AuctionSchedulerService] [39mError: boom
+    at Object.<anonymous> [90m(/app/[39mtest/unit/scheduler/liberacion-de-liquidacion.spec.ts:232:65[90m)[39m
+    at Promise.then.completed [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:298:28[90m)[39m
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:231:10[90m)[39m
+    at _callCircusTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:316:40[90m)[39m
+    at _runTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:252:3[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:126:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at run [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:71:3[90m)[39m
+    at runAndTransformResultsToJestFormat [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21[90m)[39m
+    at jestAdapter [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapter.js:79:19[90m)[39m
+    at runTestInternal [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:367:16[90m)[39m
+    at runTest [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:444:34[90m)[39m
+PASS test/unit/scheduler/liberacion-de-liquidacion.spec.ts (6.197 s)
+  releaseMaturedSettlements — la espera cuelga de la confirmación (PT-174)
+    ✓ C1: NO libera por el estado del pedido — libera por tiempo (9 ms)
+    ✓ C2: una rama cuelga de `shipment.deliveredAt`, no de `updatedAt` (2 ms)
+    ✓ C3: el corte por confirmación son 72 h por defecto (2 ms)
+    ✓ C4: el VENCIMIENTO se conserva — un comprador que calla no retiene el dinero (2 ms)
+    ✓ C5: sólo mira lo no liquidado — la idempotencia sigue en `sellerSettledAt` (2 ms)
+    ✓ C6: libera de verdad lo que la consulta devuelve, y marca el pedido (2 ms)
+    casos de control
+      ✓ AC-01: `SETTLEMENT_HOLDBACK_HOURS=0` libera en el primer tic (1 ms)
+      ✓ C7: la reserva de `docker-compose` NO es el valor desprotegido (2 ms)
+      ✓ AC-02: sin pedidos maduros no se libera nada (2 ms)
+      ✓ AC-03: un fallo al liberar un pedido no impide liberar los demás (10 ms)
+
+PASS test/unit/users/reenvio-de-verificacion.spec.ts
+  El reenvio de verificacion envia de verdad — H-030 (PT-182)
+    ✓ C1: se llama al servicio de correo con el destinatario y el token (3 ms)
+    ✓ C2: si el envio FALLA, no se responde exito (3 ms)
+    casos de control
+      ✓ AC-01: un correo ya verificado no reenvia nada (7 ms)
+      ✓ AC-02: un usuario que no existe no reenvia nada (5 ms)
+
+PASS test/unit/auth/recaptcha-falla-cerrado.spec.ts
+  El guard de reCAPTCHA falla cerrado — H-029 (PT-182)
+    ✓ C1: desactivado, pasa sin mirar nada — no cambia el comportamiento por defecto (1 ms)
+    ✓ C2: activado y SIN token, sigue rechazando (4 ms)
+    ✓ C3: activado con un token BASURA, ya NO pasa — es el defecto (1 ms)
+    ✓ C4: activado con un token que Google valida, pasa (1 ms)
+    ✓ C5: activado SIN secreto, rechaza — no pasa por defecto
+    casos de control
+      ✓ AC-01: si Google no responde, NO se deja pasar (1 ms)
+      ✓ AC-02: el token tambien se acepta en el cuerpo, como antes
+
+Test Suites: 3 passed, 3 total
+Tests:       21 passed, 21 total
+Snapshots:   0 total
+Time:        7.076 s
+Ran all test suites matching /unit\/(auth\/recaptcha-falla-cerrado|users\/reenvio-de-verificacion|scheduler\/liberacion-de-liquidacion)/i.

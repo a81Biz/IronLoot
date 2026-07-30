@@ -864,3 +864,46 @@ lo vuelve a prometer, `P-012` vuelve y H-005 se reabre con el.
 gracias a la **fase 35** (PT-175), que cierra una subasta de verdad.
 
 **Estado de la corrida:** CERRADA_SIN_HALLAZGOS_ACTIVOS.
+
+---
+
+## S-006 — 2026-07-29 — DELTA SYNC: tres controles que aparentaban estar puestos
+
+**Disparador:** barrido dirigido tras el cierre de S-005, por instruccion del humano —*«revisa de nuevo que
+falta»*, *«si hay un hallazgo nuevo lo tratas hasta cerrarlo»*, *«cierra los PT con mi VoBo»*.
+
+**Que se busco:** no errores, **afirmaciones**. Guards que prometen verificar, respuestas que dicen «hecho»,
+variables que declaran una espera. Salieron tres, y **ninguno fallaba** — por eso dos llevaban meses.
+
+| Hallazgo | Dim | Sev | Que afirmaba | Que hacia |
+|---|:--:|:--:|---|---|
+| **H-029** | D2 | MEDIA | «verifica el captcha» | comprobaba que el token **existiera**; `"x"` pasaba |
+| **H-030** | D1 | ALTA | «Verification email sent» | la llamada de envio estaba **comentada** |
+| **H-031** | D2 | MEDIA | una espera de 72 h | reserva `:-0` en el compose: **sin espera** |
+
+Las tres **CERRADA** en PT-182, con VoBo humano instruido de antemano, y verificadas **ejecutando**: 21 casos
+verdes en tres guardas, el reenvio comprobado **en vivo contra Mailhog** (`1 -> 2` correos — la respuesta del
+endpoint no es evidencia de nada, porque ya decia «enviado» cuando no enviaba) y **C7 visto fallar** con la
+reserva devuelta a `:-0`.
+
+**H-031 es mio y de hoy**: lo introdujo PT-174 unas horas antes para que la fase 35 de QA no esperase tres
+dias. Se registra como hallazgo en vez de dejarlo en la prosa de una evidencia, porque **el recuento es lo que
+se lee**.
+
+**Scores:** Health **100** · Risk **0** · Confidence **91.0** · Clase **A**. Identicos a S-005.
+
+**Y esa identidad es el dato de esta emision.** Entre las dos aparecieron tres hallazgos mas —uno ALTA en
+D1—, se corrigieron y se cerraron; el numero no se movio. **Un 100 estable no significa que no haya pasado
+nada.** Los tres avisos de S-005 siguen vigentes, y el tercero se refuerza: es la **tercera** emision
+consecutiva en la que un barrido dirigido encuentra defectos que ninguna prueba senalaba.
+
+**Dos guardas propias se pusieron en rojo durante la corrida, con razon:** RULE-33, porque `RESUMEN.md` y
+`ESTADO_ACTUAL.md` anunciaban `0` hallazgos activos con dos abiertos en el registro; y RULE-20, porque la
+carpeta de evidencia de PT-182 existia antes que su entrada en `HISTORY.log`. Las dos veces **el numero lo
+corrigio el trabajo, no la guarda**.
+
+**Cobertura declarada** (`[A8]`): sin cambios — D1/D2/D3/D4 al **100 %**, **D5 al 0 %**. Este delta sync no
+amplia cobertura: confirma correcciones. La fiabilidad operacional **sigue sin demostrarse**: 2 ciclos
+resueltos frente a los 20 que los umbrales exigen.
+
+**Estado de la corrida:** CERRADA_SIN_HALLAZGOS_ACTIVOS — **31 hallazgos, todos CERRADA**.
