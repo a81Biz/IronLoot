@@ -99,6 +99,17 @@ tsconfig.build.tsbuildinfo
 !scripts/*.js
 !src/admin/public/js/**/*.js
 
+# PT-175 — **Cuarta vez, y esta se cobro una fase entera.** Las fases de `tests/qa-browser-suite/` son
+# codigo fuente: las escribe una persona y las ejecuta node. El `*.js` de arriba las ignora.
+#
+# No se habia notado porque **las fases que ya existian estan seguidas desde antes de la regla**, y
+# `.gitignore` no desindexa lo ya seguido: solo muerde a las NUEVAS. Asi que la suite parecia estar
+# entera en el repositorio mientras cualquier fase nueva se quedaba en la maquina de quien la escribio.
+#
+# Se descubrio al intentar commitear `35-cierre-y-liquidacion.js`: `git commit` dijo «nothing to
+# commit», con el fichero delante y funcionando. La forma peor de este fallo — **no protesta**.
+!tests/qa-browser-suite/*.js
+
 # =====================================================
 # SECTION 4: IDE & EDITOR
 # =====================================================
