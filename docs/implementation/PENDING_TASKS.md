@@ -4,7 +4,7 @@
 
 ---
 
-## Esperando validación humana: **PT-196**
+## Esperando validación humana: nada
 
 **PT-181 … PT-185 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
 veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
@@ -20,13 +20,12 @@ explicación cómoda.
 **PT-194 cerrado con VoBo humano** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37).
 **`TD-025` cerrada** con él.
 
-**En curso**: **PT-196** — la **rotación del refresh token**, en **STATE 3** esperando el Proposal
-Gate. Paquete en `changes/PT-196-rotacion-del-refresh-token/` con 12 tareas en cuatro bloques.
-**Cero líneas de `src/` y ninguna rama** — el Proposal Gate es absoluto.
+**PT-196 cerrado con VoBo humano** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37): las doce
+tareas de la rotación del refresh token, en sus cuatro bloques. **Cero trabajo FDGE pendiente.**
 
-Es **MAJOR**: toca autenticación **y** el esquema. Y el orden de despliegue es parte del diseño — si el
-API rotara antes de que el CLIENT persista el token nuevo, **todos los usuarios perderían la sesión en
-su segundo refresco**.
+El orden de despliegue se respetó y era la mitad segura de la operación: el CLIENT persistió el token
+nuevo **antes** de que el API empezara a rotar. Invertirlo habría hecho que todos los usuarios
+perdieran la sesión en su segundo refresco.
 
 **TD-024 cerrada** por PT-193 (ADR-058): 15 símbolos retirados, 8
 conservados por ADR-033 y 2 que eran falsos positivos de medir por nombre. Queda deuda técnica en

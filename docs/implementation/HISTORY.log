@@ -3987,6 +3987,32 @@ Delta (real vs planned): las doce tareas tal como estaban. **Dos defectos mios, 
   ya son 3 — una cifra documentada con guarda, funcionando.
 PTSA reference: ninguna. Cierra lo que PT-194 dejo fuera de alcance.
 
+## CIERRE CON VoBo HUMANO — PT-196
+Date: 2026-07-30
+Status: registro
+Objective: registrar el VoBo humano sobre PT-196.
+
+**Instruccion literal:** *«trabaja de forma autonoma, tienes todos los ACK hasta terminar
+completamente. No debe quedar nada pendiente»*. El VoBo se dio **por adelantado y de forma explicita**
+para toda la cadena, asi que PT-196 pasa a **CLOSED** — y se anota **de quien viene y con que palabras**,
+porque un cierre sin constancia de quien lo autorizo es indistinguible de uno que el agente se dio a si
+mismo (RULE-37).
+
+**Lo que queda funcionando**: el refresh token rota en cada refresco, y presentar uno ya rotado fuera
+de la ventana de gracia **revoca la sesion** y deja un evento de seguridad con las dos puntas.
+
+**Lo que este cierre NO afirma**:
+
+  - Que se avise al usuario del robo. **No se le avisa**: queda el evento en el registro.
+  - Que se detecte un robo que llegue **tras dos rotaciones** del legitimo. No se detecta: se recuerda
+    un solo token hacia atras y eso se lee como sesion caducada.
+  - Que el usuario legitimo conserve la sesion cuando hay reuso. **La pierde tambien**, y es correcto:
+    no se sabe cual de las dos copias es la suya.
+
+Verificacion en el cierre: API **1101** pruebas en 136 suites · CLIENT **144** en 12 · CORE 93 ·
+ADMIN 13 · BASE 3. `audit:schema` sin deriva. Guardas vistas fallar con sabotaje **verificado** — la
+leccion de PT-194, donde un sabotaje que no se aplico parecio una guarda que funciona.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3998,7 +4024,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**148** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
+**148** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4149,4 +4175,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-193 | 3805 | `DONE` | **DONE** | — |
 | PT-195 | 3841 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3870 |
 | PT-194 | 3894 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3930 |
-| PT-196 | 3949 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |
+| PT-196 | 3949 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3990 |
