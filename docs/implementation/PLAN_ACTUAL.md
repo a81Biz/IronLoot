@@ -1,163 +1,188 @@
 # PLAN_ACTUAL — STATE 2: Clasificación y Estrategia
 
-**Fecha**: 2026-07-29
-**PT en el plan**: **PT-173 · PT-174 · PT-175 · PT-176**
-**Origen**: petición del humano de construir la fase de QA que cierra la subasta y llega hasta el retiro.
-Al verificar qué existía apareció el defecto de fondo — `DISCOVERY.md § F-172-A…C`.
-**Estado**: **esperando ACK. Cero líneas de `src/` tocadas. Ninguna rama abierta.**
-
-> El plan anterior (**PT-168…PT-172**, cerrados con VoBo y fusionados) se conserva en
-> `archive/PLAN_ACTUAL-PT-168-172.md`.
+**Fecha**: 2026-07-30
+**PT en el plan**: **PT-194** — cablear el refresco de sesión (`TD-025`)
+**Tipo**: FEATURE · **Complejidad**: STANDARD
+**Entrada**: `ENRICHMENT.md` (PT-194), con ACK del humano.
+**Estado**: esperando ACK de esta estrategia. **Cero líneas de `src/` tocadas.**
 
 ---
 
-## Objetivo
+## 1. Objetivo
 
-**Que la recepción la confirme quien recibe.** Hoy el vendedor marca `DELIVERED` su propio envío y con eso
-libera su propio holdback: el control que protege al comprador lo desactiva la parte de la que protege.
-
-De ahí sale todo lo demás — la fase de QA que el humano pidió sólo es construible *de verdad* cuando el
-comprador tiene su acción; hasta entonces cualquier suite tendría que **sembrar**, que es lo que hace la
-actual y lo que queremos dejar de hacer.
-
-## Clasificación
-
-| PT | Tipo | Complejidad | Qué | Depende de |
-|---|---|---|---|---|
-| **PT-173** | **BUG** (seguridad/dominio) | STANDARD | El vendedor libera su propio holdback: autorización y guarda de transición | — |
-| **PT-174** | **FEATURE** | MAJOR | El comprador confirma recepción; el vendedor declara envío; interfaz en CLIENT | **decisión A/B/C** |
-| **PT-175** | **FEATURE** (QA) | STANDARD | Fase `35-cierre-y-liquidacion.js`: cierre → envío → recepción → liberación → retiro, **sin sembrar** | PT-173, PT-174 |
-| **PT-176** | **BUG** | TRIVIAL | El click de PayPal: un `div` de su UI tapa `#btnLogin` | — |
-
-**PT-174 es MAJOR** y por eso exige análisis de riesgo y de regresión, y Proposal Package completo:
-cambia quién puede hacer qué sobre dinero retenido.
-
-**PT-173 y PT-176 son independientes**: se pueden ejecutar ya, sin esperar la decisión de negocio.
+Que la sesión del portal privado dure lo que dura el refresh token (**7 días**) en vez de lo que dura
+el access token (**15 minutos**), llamando al refresco que ya existe — **sin tocar la autenticación
+del API**.
 
 ---
 
-## PT-173 — El vendedor deja de poder liberar su propio holdback
+## 2. Lo que la medición añadió al enrichment: son tres puntos, no dos
 
-**Es un BUG, no parte del FEATURE**, y conviene separarlo: hoy hay una vía por la que un vendedor cobra sin
-enviar. Cerrarla no exige decidir nada de negocio.
+El enrichment identificó dos —el guard y el proxy—. Al diseñar apareció el tercero, y es consecuencia
+del primero:
 
-1. `PATCH /shipments/:id/status` a `DELIVERED` **deja de aceptarse del vendedor** → 403.
-2. Se valida la transición `PENDING → SHIPPED → DELIVERED` → 400 al salto.
-3. Máquina de estados de envío en `@ironloot/core`, sin NestJS ni Prisma (RULE-02).
+**(c) `apiGet()` en `app.controller.ts`** — 28 usos. Llama al API con el token de la cookie y
+**se traga cualquier fallo devolviendo `null`**:
 
-**Efecto colateral que hay que decir:** mientras PT-174 no exista, **nadie** podrá marcar `DELIVERED`, así
-que la liberación quedará sólo en el vencimiento de `DISPUTE_WINDOW_DAYS`. Es un endurecimiento
-deliberado: **preferimos que el dinero espere 14 días a que se libere por una vía que no debería existir.**
+```ts
+if (!res.ok) return null;
+} catch { return null; }
+```
 
-Con guarda: una prueba que ejerce el 403 del vendedor y el 400 del salto, con casos de control en los dos
-sentidos (RULE-14).
+Hoy no se nota porque el guard corre antes y rechaza el token expirado. **Pero en cuanto el guard
+refresque, `req.cookies.access_token` seguirá teniendo el token viejo**, y las 28 llamadas de esa misma
+petición irían con él: la página cargaría **vacía**, sin error, sin traza. Un arreglo que produce
+páginas en blanco es peor que el defecto que corrige.
 
-## PT-174 — El comprador confirma la recepción
-
-Todo el detalle en `ENRICHMENT.md`: 16 criterios de aceptación, 12 escenarios, NFRs y fuera de alcance.
-
-**Lo que este plan añade es el orden:** primero API y máquina de estados, después interfaz. La interfaz sin
-la autorización sería una pantalla que promete algo que el servicio no garantiza.
-
-**La decisión pendiente**, y no la tomo yo:
-
-| | Cuándo se libera tras la confirmación |
-|---|---|
-| **A** | Inmediato |
-| **B** *(recomendada)* | Timer corto, **72 h** |
-| **C** | Inmediato, con reclamación contra saldo futuro o reserva |
-
-**Supuesto declarado y revocable:** si el ACK llega sin elegir, asumo **B con 72 h**, porque
-`DISPUTE_WINDOW_DAYS` ya existe y B es un cambio de parámetro, no de modelo.
-
-## PT-175 — La fase que el humano pidió, sin sembrar nada
-
-`tests/qa-browser-suite/35-cierre-y-liquidacion.js`:
-
-1. Subasta con ventana **corta** (minutos, no las 2 h del bootstrap actual) para que el cierre quepa en la
-   corrida. **Hoy ya se demostró que el cron cierra solo**: subasta `CLOSED`, pedido 950.00 `PAID`,
-   comisión 95.00, vendedor con 855.00 en holdback.
-2. El vendedor declara el envío (API real).
-3. **El comprador confirma la recepción** (API real) ← el eslabón que hoy no existe.
-4. La liberación ocurre según A/B/C; la fase la comprueba en el ledger (`SETTLEMENT_RELEASE`).
-5. El vendedor solicita el retiro **de esa ganancia** — no de un saldo sembrado.
-
-**Y se retira el sembrado de `60-withdrawal.js`**, o se declara explícitamente que esa fase prueba el
-subsistema aislado mientras la 35 prueba la cadena. Lo segundo es más honesto y más rápido de leer.
-
-**Sobre la espera**, que es lo que el humano quiere evitar: con la recepción confirmada por el comprador, la
-espera deja de ser de 14 días. Cuánto queda depende de A/B/C — con **A** son segundos; con **B**, la fase
-tendría que **adelantar el vencimiento** por configuración (`DISPUTE_WINDOW_DAYS` corto en el entorno de
-QA), no por `UPDATE` a la base. Es la diferencia entre configurar y falsear.
-
-## PT-176 — El click de PayPal
-
-`71-paypal-guaranteed.js:78`. El botón es visible y habilitado, y un `<div class="loginSignUpSeparator">`
-de PayPal se le superpone. Opciones, de menos a más frágil: `press('Enter')` sobre el campo, `click({
-force: true })`, o descartar el overlay.
-
-**Se arregla y se deja anotado que es un selector contra una UI ajena**, que volverá a romperse. Y **no se
-declara verificada la vía garantizada por esto**: ya lo estaba por PT-087, con captura real.
+Es la familia de los `catch` mudos que el checkpoint D3 persigue: **el `null` de `apiGet` no distingue
+«no hay datos» de «no me dejaron verlos»**.
 
 ---
 
-## Alternativas consideradas
+## 3. Solución propuesta
 
-| Alternativa | Por qué se rechaza |
-|---|---|
-| **Sólo construir la fase de QA (lo pedido literal)** | Tendría que **sembrar** la entrega o marcarla como el vendedor — es decir, ejercitar el defecto en vez de exponerlo. La fase pasaría en verde sobre un flujo que permite cobrar sin enviar |
-| **Meter PT-173 dentro de PT-174** | El BUG se puede cerrar hoy; el FEATURE espera una decisión de negocio. Juntarlos ataría el arreglo de seguridad a una decisión de producto |
-| **Liberar al confirmar, sin más (opción A)** | Es un cambio de política de riesgo. Se propone, no se asume |
-| **Que la fase de QA fuerce la liberación con `UPDATE` a la BD** | Falsear en vez de configurar. Es lo que hace hoy `60-withdrawal.js` y lo que este plan viene a quitar |
-| **Arreglar PayPal con selectores más específicos** | El problema no es la especificidad: es un overlay. Un selector más fino se rompe igual la próxima vez |
+### 3.1 Una sola pieza que refresca: `refrescarSesion()`
+
+Un módulo en `src/apps/client/src/common/auth/` con **una** responsabilidad: dado un refresh token,
+devolver tokens nuevos o decir que la sesión murió. Es el único sitio que llama a `/auth/refresh`.
+
+```
+refrescarSesion(refreshToken) -> { accessToken, refreshToken } | null
+```
+
+- `null` significa **sesión muerta** (revocada, expirada, usuario suspendido) → cerrar sesión.
+- **Lanza** si el API no responde → se trata como fallo, no como éxito (lección de RULE-36).
+- Declara su **tope de espera** (PT-183/PT-184): el API es un tercero para el CLIENT.
+
+**Deduplicación en vuelo (CA-7)**: un `Map<refreshToken, Promise<...>>` a nivel de módulo. La primera
+llamada crea la promesa; las simultáneas con el mismo token **se enganchan a ella**; se borra al
+resolverse. Cinco llamadas concurrentes → **una** al API.
+
+> **Por qué esto basta, y qué no cubre.** El endpoint **no rota** el refresh token, así que dos
+> instancias del CLIENT refrescando a la vez no se invalidan: cada una obtiene un access token válido.
+> La deduplicación es **por proceso** y eso es una limitación **declarada**, no un descuido: con N
+> instancias el peor caso son N llamadas en lugar de N×M. Compartirla entre instancias exigiría Redis
+> y un cerrojo distribuido para ahorrar como mucho una llamada — desproporcionado, y añade una
+> dependencia al camino de la sesión.
+
+### 3.2 El guard: refresca antes de rendirse
+
+`ClientAuthGuard` pasa de *verificar → fallar → login* a *verificar → refrescar una vez → login*.
+
+1. `jwt.verify` falla **por expiración** → intentar refresco. Cualquier otro fallo (firma inválida,
+   token manipulado) → **al login directo, sin refrescar**. Distinguir importa: refrescar sobre un
+   token falsificado convertiría el refresco en una vía para saltarse la verificación (**CA-11**).
+2. Sin cookie `refresh_token` → login, **sin llamar al API** (`CA-5`).
+3. Refresco bien → escribir la cookie nueva, **actualizar `req.cookies.access_token` en memoria** para
+   que `apiGet` de esta misma petición use el token nuevo, y continuar.
+4. Refresco mal → borrar **las dos** cookies y al login. **Un intento por petición, nunca dos**
+   (`CA-4`).
+
+### 3.3 El proxy: un reintento, y sólo uno
+
+El proxy BFF pasa a `selfHandleResponse: true` con `responseInterceptor` — **exactamente el patrón que
+BASE ya usa**, misma librería y misma versión (`http-proxy-middleware ^3.0.7`). No se inventa nada.
+
+- Respuesta **401** del API + hay `refresh_token` → refrescar, **reintentar la petición una vez** con el
+  token nuevo, escribir la cookie.
+- Sin refresh token, o el refresco falla, o el reintento vuelve a dar 401 → **devolver el 401**. El JS
+  de página decide; no se redirige una llamada XHR.
+
+### 3.4 `apiGet` deja de ser mudo
+
+No se cambia su firma —28 usos—, pero **el 401 deja de confundirse con «sin datos»**: se registra con
+su motivo. La corrección del token la hace el guard (3.2.3); esto es la mitad de observabilidad que
+exige el NFR, y es lo que permite distinguir «no se intentó» de «se intentó y falló».
 
 ---
 
-## Riesgos y análisis de regresión (PT-174 es MAJOR)
+## 4. Alternativas consideradas
 
-| Riesgo | Mitigación |
-|---|---|
-| **PT-173 deja la liberación sólo al vencimiento** hasta que PT-174 exista | Declarado arriba y aceptado: es preferible a la vía actual. Si el hueco molesta, PT-174 va detrás sin pausa |
-| **Un comprador que no confirma retiene el dinero del vendedor** | AC-07: el vencimiento sigue liberando. **Es la mentira simétrica** y está contemplada |
-| **La liberación por el camino nuevo se salta el bloqueo de fila** | AC-09 + RULE-24. `releaseSettlement` ya lo hace; la prueba nueva lo exige también por el camino nuevo |
-| **Doble liberación** por confirmación repetida o simultánea | `sellerSettledAt` + escenarios 7 y 12 |
-| **La interfaz nueva no funciona en silencio** por la CSP | AC-12/AC-13 y las guardas `plantillas-sin-js-inline`, `estilos-fuera-de-plantillas`, RULE-30 |
-| **El CLIENT llama a una ruta que no existe** | RULE-11 y `rutas-que-el-client-invoca.spec.ts`, que cubre también el JS de navegador |
-| **Romper el retiro que ya funciona** | PT-175 no toca el subsistema de retiro: sólo cambia de dónde viene el dinero |
+**A. Refrescar sólo en el proxy, y que el guard confíe en la cookie.**
+Más simple: un punto en vez de dos. **Rechazada**: el guard verifica el JWT él mismo, así que un token
+expirado lo rechaza *antes* de que el proxy vea nada. La navegación seguiría rota.
 
-**Lo que se comprueba antes y después:** suite completa del API (881), CORE (134), CLIENT (103), las 12
-guardas de documentación y `test:guardas`.
+**B. Que el guard no verifique y delegue todo al API.**
+Elimina el problema de raíz: una sola autoridad. **Rechazada por coste**: una llamada al API en *cada*
+navegación, incluso con el token fresco. Hoy la verificación local es gratis. Contradice el NFR de
+latencia.
 
----
+**C. Refresco silencioso en el navegador** (temporizador en JS que llama a `/auth/refresh`).
+**Rechazada**: ya está fuera de alcance en el enrichment. Añade superficie en el cliente para algo que
+el BFF resuelve en servidor sin exponer nada.
 
-## Criterios de éxito
+**D. Deduplicar con Redis, compartido entre instancias.**
+**Rechazada por desproporción**: sin rotación, N llamadas concurrentes son inocuas. Se pagaría una
+dependencia nueva **en el camino de la sesión** para ahorrar como mucho una llamada por instancia. Si
+algún día se rota el token, esta decisión se revisa — y entonces hará falta de verdad.
 
-1. Un vendedor que intenta `DELIVERED` recibe **403**; el salto `PENDING → DELIVERED` recibe **400**.
-2. El comprador puede confirmar la recepción por API **y desde CLIENT**, sólo si el envío está `SHIPPED`.
-3. La liberación ocurre según la opción elegida, es **idempotente** y deja `SETTLEMENT_RELEASE`.
-4. Si el comprador no confirma, el vencimiento libera igual.
-5. La fase 35 recorre **cierre → envío → recepción → liberación → retiro sin un solo `INSERT` sembrado**.
-6. La fase 71 de PayPal vuelve a pasar.
-7. Guardas nuevas **vistas fallar** antes de arreglar, con casos de control en los dos sentidos.
-8. `audit:domain` sigue en **14 de 14** y la línea base de silencios sigue en 25.
+**E. Subir `JWT_ACCESS_EXPIRY` a 7 días y no refrescar.**
+**Rechazada, y conviene decir por qué**: haría desaparecer el síntoma y **empeoraría la seguridad** —
+un token robado valdría una semana, y el sistema perdería la única comprobación de revocación que
+tiene, que ocurre justo en el refresco. Sería enmascarar el defecto.
 
 ---
 
-## Lo que este plan NO hace
+## 5. Dependencias
 
-- **No decide A/B/C.** Es de negocio.
-- **No toca `RETURNED`, disputas, transportistas ni correo** (ver `ENRICHMENT.md § fuera de alcance`).
-- **No cierra H-025 ni H-026**, que son de la auditoría y van por su cuenta.
-- **No emite PTSA.** D1 quedó en 14/14 hoy; el registro se actualizará cuando toque, no aquí.
+- `POST /api/v1/auth/refresh` — **existe y no se toca**.
+- `http-proxy-middleware ^3.0.7` con `responseInterceptor` — **ya está**, BASE lo usa.
+- `VIDA_ACCESO_MS` (PT-192) para el `maxAge` de la cookie nueva. **Vive en BASE**: hay que decidir si se
+  duplica en CLIENT o se extrae. → tarea explícita en STATE 3.
+- `JWT_SECRET` obligatorio en CLIENT (PT-192) — ya cerrado.
 
 ---
 
-## COMPUERTA — STATE 2
+## 6. Restricciones
 
-**Esperando ACK.** No se abre rama ni se toca `src/` hasta que llegue, y para PT-174 hace falta además el
-Proposal Package aprobado (`changes/PT-174-…/`).
+- **No se toca el API.** Ni firma, ni validación, ni el modelo `Session`.
+- **No se rota el refresh token.** Fuera de alcance, declarado.
+- El `refresh_token` **no sale al navegador en JS**: sigue `httpOnly` y el refresco es servidor a
+  servidor.
+- **Un intento de refresco por petición.** Es la barrera contra el bucle.
+- Sin dependencias nuevas.
 
-**Lo que necesito de ti, mínimo:** la decisión **A / B / C** — o un «adelante» y aplico **B con 72 h**,
-revocable.
+---
 
-**Si quieres avanzar sin decidir todavía**: **PT-173 y PT-176 no dependen de la decisión** y pueden ir ya.
+## 7. Análisis de regresión (obligatorio)
+
+**Qué puede romperse, y cómo se comprueba:**
+
+| Riesgo | Por qué | Cómo se cubre |
+|---|---|---|
+| **Bucle de refresco** | Un refresco fallido que no cierra sesión se reintenta en cada petición | `CA-4` + una prueba que cuenta intentos. **De las que hay que ver fallar** |
+| **Páginas en blanco** | El guard refresca y `apiGet` sigue con el token viejo → 28 llamadas fallidas mudas | §3.2.3 actualiza `req.cookies` en memoria; prueba con token expirado que comprueba que los datos llegan |
+| **Aceptar un token manipulado** | Refrescar sobre cualquier fallo de `verify`, no sólo expiración | §3.2.1 distingue el motivo; `CA-11` lo prueba en los dos sentidos |
+| **Romper el proxy** | Pasar a `selfHandleResponse` cambia cómo se devuelve **toda** respuesta, no sólo los 401 | Se copia el patrón de BASE, que lleva meses en producción. Prueba de que un 200 normal sigue llegando intacto (cuerpo y cabeceras) |
+| **Socket.io** | El proxy de `/socket.io` es **otro** middleware y no se toca | Prueba de que la puja en vivo sigue conectando |
+| **El logout deja de cerrar** | Si el refresco reviviera una sesión revocada | `CA-8`; el API ya lo comprueba — la prueba verifica que el CLIENT no lo esquiva |
+| **Latencia en el camino feliz** | Que se refresque con el token válido | Prueba que **cuenta** las llamadas a `/auth/refresh` y exige **cero** con token fresco |
+
+**Flujos afectados**: toda página privada del CLIENT (`@UseGuards(ClientAuthGuard)`), todas las llamadas
+del navegador por `/api/*`, y las 28 de `apiGet`. **No afectados**: BASE, ADMIN, el API, y el proxy de
+`socket.io`.
+
+---
+
+## 8. Criterios de éxito
+
+Los **8 CA** del enrichment, cada uno con prueba. Y tres que son de este plan:
+
+- **E-1**: con token fresco, **cero** llamadas a `/auth/refresh` (se cuenta, no se supone).
+- **E-2**: cinco llamadas concurrentes con token expirado → **una** llamada al API.
+- **E-3**: una respuesta 200 normal atraviesa el proxy **idéntica** tras el cambio a
+  `selfHandleResponse` — cuerpo y cabeceras.
+
+---
+
+## 9. Lo que este plan NO resuelve, dicho ahora
+
+- **Varias instancias del CLIENT** deduplican por separado. Declarado en §3.1 con su motivo.
+- **El refresco no rota**, así que un refresh token robado sirve 7 días. Es el estado actual y su
+  cambio tiene su propio PT.
+- **`apiGet` sigue devolviendo `null`** ante un fallo real del API. Se le añade traza, no se le cambia
+  la firma: tocar 28 llamadas para eso es otro trabajo.
+
+---
+
+**STOP — FDGE STATE 2.** Esperando ACK antes de STATE 3 (Proposal Package + Proposal Gate).
