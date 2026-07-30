@@ -907,3 +907,53 @@ amplia cobertura: confirma correcciones. La fiabilidad operacional **sigue sin d
 resueltos frente a los 20 que los umbrales exigen.
 
 **Estado de la corrida:** CERRADA_SIN_HALLAZGOS_ACTIVOS — **31 hallazgos, todos CERRADA**.
+
+---
+
+## S-007 — 2026-07-29 — DELTA SYNC: los dos hallazgos que salieron de comprobar el cierre anterior
+
+**Disparador:** barrido de la capa de correo al verificar el cierre de H-030, por la instruccion del humano
+—*«si hay un hallazgo nuevo lo tratas hasta cerrarlo»*—.
+
+**Y uno de los dos desmiente parte de ese cierre.** H-030 afirmaba que el reenvio de verificacion *«propaga el
+fallo — un `catch` que se lo comiera reproduciria el defecto por otra via»*. **El `catch` existia**, una capa mas
+abajo, dentro de `EmailService`.
+
+Lo que se hizo mal es identificable: se comprobo **ejecutando** que el correo salia y se dio por bueno **por
+lectura** que el fallo se propagaba. Una de las dos afirmaciones se ejecuto y la otra se supuso — y la supuesta
+era la falsa. Es `[A1]` incumplido por el agente. **H-030 no se reabre** (lo que reclamaba esta cumplido y
+verificado en vivo) pero queda anotado en su ficha: `[A6]`, la evidencia se revisa, no se reescribe.
+
+| Hallazgo | Dim | Sev | Que pasaba |
+|---|:--:|:--:|---|
+| **H-032** | D3 | **ALTA** | `EmailService` absorbia el fallo y con el **tres capas de recuperacion**: el `catch` del worker de la cola, su contador de intentos y los reintentos de BullMQ. Un envio fallido marcaba el trabajo como **completado**. Familia de H-014/H-015/H-027 |
+| **H-033** | D3 | MEDIA | El transporte no declaraba **ningun tope**: con el SMTP caido, el reenvio **y el registro** se colgaban **121 s**. Preexistente, tapado por H-032 — tras la espera se respondia `200` |
+
+Las dos **CERRADA** en PT-183 y verificadas ejecutando: 13 casos nuevos, y **en vivo con Mailhog parado** el
+reenvio pasa de `200 «Verification email sent»` con la bandeja vacia a **500 «Connection timeout»**, y de
+**121 s** a **~5 s**.
+
+**Tres cosas mas, todas propias:**
+
+1. **Una prueba verde sostenia el defecto**: `should not throw when mailerService fails`, dos veces, en el mismo
+   fichero que hasta PT-089 exigia la reserva `localhost:5174`. **Una prueba puede ser el mecanismo que mantiene
+   vivo un defecto.**
+2. **Los casos de control C4/C5/C6 no supieron fallar hasta la TERCERA version.** Las dos primeras pasaban con
+   el defecto puesto. Detalle en `E-036`, y es incomodo porque *«una guarda que nadie ha visto fallar no es una
+   guarda»* se escribio dos veces hoy en este mismo repositorio.
+3. **El checkpoint D3 cazo, por tercera vez en la jornada, un `catch` mudo del dia**: el del guard de reCAPTCHA
+   de PT-182, cuya justificacion escrita —«añadir el logger cambiaria su firma en todos los llamantes»— era
+   **falsa**. Un guard recibe sus dependencias por inyeccion. 26 -> 25.
+
+**RULE-36** nueva: *un servicio compartido no decide que hacen sus llamantes con un fallo.* Y el **Delta Log** de
+las convenciones, que declaraba ser el registro incremental con **12 de 34** reglas, queda completo — con las 22
+filas nuevas marcadas como reconstruidas desde `HISTORY.log`, porque su procedencia es mas debil.
+
+**Scores:** Health **100** · Risk **0** · Confidence **91.0** · Clase **A**. Los mismos por tercera vez.
+
+**La estabilidad de este 100 mide que se cierra lo que se encuentra, NO que no haya nada que encontrar.** Tres
+emisiones consecutivas, y en cada intervalo un barrido dirigido encontro defectos que ninguna prueba senalaba.
+La cobertura de dimension no cambia; lo que cambio es **lo que se ha mirado**: hoy, por primera vez, el camino
+de **fallo** de la capa de correo. Ahi estaban los dos.
+
+**Estado de la corrida:** CERRADA_SIN_HALLAZGOS_ACTIVOS — **33 hallazgos, todos CERRADA**.

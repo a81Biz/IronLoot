@@ -4,36 +4,35 @@
 
 **Rama**: `master`, árbol limpio, cero ramas sin fusionar. **Sin subir a `origin`.**
 
-**Pruebas**: **1199** unitarias en verde — API **946** (116 suites) · CORE **134** · CLIENT **103** ·
+**Pruebas**: **1212** unitarias en verde — API **959** (118 suites) · CORE **134** · CLIENT **103** ·
 ADMIN **13** · BASE **3**.
 
-**Reglas duras**: **33** `RULE-NN` (RULE-17 con corolario nuevo). **Guardas de documentación**: **12** suites
-/ **136** pruebas.
+**Reglas duras**: **34** `RULE-NN` (RULE-36 nueva, RULE-17 con corolario). **Guardas de documentación**: **12**
+suites / **136** pruebas.
 
 ---
 
 ## Estado: CERTIFICADO Clase A · cero hallazgos activos
 
-**S-006 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
+**S-007 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
 
-| Métrica | S-005 | **S-006** |
+| Métrica | S-006 | **S-007** |
 |---|---|---|
 | Health | 100.0 | **100 / 100** |
 | Risk | 0 | **0 / 100** |
 | Confidence | 91.0 | **91.0** |
 | Clase | A | **A** |
 
-**Hallazgos: 31 registrados, CERO activos.** Los tres de esta corrida —H-029, H-030, H-031— cerrados con tu
-VoBo y verificados **ejecutando**.
+**Hallazgos: 33 registrados, CERO activos.** Los cinco de hoy —H-029 … H-033— cerrados con tu VoBo y
+verificados **ejecutando**.
 
-### La columna «cambio» está vacía, y ése es el dato
+### Los mismos cuatro números por tercera vez, y ése es el dato
 
-Entre S-005 y S-006 aparecieron **tres hallazgos**, uno **ALTA** en D1, se corrigieron y se cerraron. Los
-cuatro números no se movieron.
+En cada intervalo entre emisiones apareció trabajo real: tres hallazgos entre S-005 y S-006, **dos más** entre
+S-006 y S-007 —uno **ALTA**—, y todos cerrados antes de emitir.
 
-**Un 100 estable no significa que no haya pasado nada.** Quien lea sólo la tabla se lleva la impresión de una
-jornada sin incidentes, y hubo tres defectos reales — uno de ellos en el camino que usa quien no puede activar
-su cuenta.
+**La estabilidad de este 100 mide que se cierra lo que se encuentra, no que no haya nada que encontrar.** Quien
+lea sólo la tabla se lleva la impresión de tres jornadas sin incidentes, y hubo cinco defectos reales.
 
 ### Tres avisos que forman parte del resultado, no lo adornan
 
@@ -46,20 +45,64 @@ sistema sigue sin emitir facturas.** Si v1.1 vuelve a prometerla, ese producto v
 operacional **no está demostrada** — hacen falta **20 ciclos de pago resueltos** y hay **2**. Cualquier
 pérdida de cobertura tumba la Clase A.
 
-**3. Cero hallazgos activos es cero defectos CONOCIDOS.** Y esta emisión lo demuestra por **tercera vez
-consecutiva**: un barrido dirigido encontró tres defectos que **ninguna prueba señalaba**, y dos llevaban
-meses en el código.
+**3. Cero hallazgos activos es cero defectos CONOCIDOS.** Tercera emisión consecutiva en que un barrido
+dirigido encuentra defectos que **ninguna prueba señalaba** — y hoy quedó claro **dónde** buscar: los dos de
+esta corrida vivían en el **camino de fallo**, que nunca se había ejecutado.
 
 ---
 
 ## Esperan tu validación: nada
 
-Los veinticinco PT de la jornada —**PT-158 … PT-182**— están cerrados con tu VoBo. Cero trabajo FDGE
-pendiente. Lista en [`PENDING_TASKS.md`](PENDING_TASKS.md).
+Los veintiséis PT de la jornada —**PT-158 … PT-183**— están cerrados con tu VoBo. Cero trabajo FDGE pendiente.
+Lista en [`PENDING_TASKS.md`](PENDING_TASKS.md).
 
 ---
 
-## Lo último: tres controles que aparentaban estar puestos (PT-182)
+## Lo último: el fallo de envío no llegaba a nadie (PT-183)
+
+Los dos hallazgos salieron de **comprobar el cierre del anterior**, ejecutando el camino de **fallo**. El camino
+feliz del correo estaba probado desde siempre; el otro, nunca.
+
+### Y uno desmiente parte de ese cierre — mío, de hace minutos
+
+H-030 se cerró afirmando que el reenvío *«propaga el fallo — un `catch` que se lo comiera reproduciría el defecto
+por otra vía»*. **El `catch` existía**, una capa más abajo, dentro de `EmailService`.
+
+Lo que hice mal es identificable: **comprobé ejecutando que el correo salía, y di por bueno por lectura que el
+fallo se propagaba.** Una afirmación se ejecutó y la otra se supuso — y la supuesta era la falsa. H-030 no se
+reabre (lo que reclamaba está cumplido y verificado en vivo), pero queda anotado en su ficha.
+
+| Hallazgo | Sev | Qué pasaba | Cierre |
+|---|:--:|---|---|
+| **H-032** | **ALTA** | `EmailService` absorbía el fallo, y con él **tres capas de recuperación**: el `catch` del worker de la cola, su contador de intentos y los reintentos de BullMQ. Un envío fallido marcaba el trabajo como **completado** | **En vivo** con Mailhog parado: `200 «Verification email sent»` con bandeja vacía → **500 «Connection timeout»** |
+| **H-033** | MEDIA | El transporte no declaraba **ningún tope**: con el SMTP caído, reenvío **y registro** se colgaban **121 s**. Preexistente, tapado por H-032 | Medido: **121 s → ~5 s** |
+
+El servicio llevaba su propia duda escrita: `// Don't rethrow to avoid breaking registration flow?`. La duda era
+buena; contestarla **una vez para todos los llamantes**, no — la respuesta correcta es distinta en cada uno. Ahora
+los cuatro la declaran con su motivo: reenvío y cola **propagan**; registro **captura** (la cuenta ya existe) y
+recuperación de contraseña **captura**, porque su respuesta es opaca a propósito y propagar convertiría una caída
+del SMTP en un **oráculo de enumeración**. Es **RULE-36**.
+
+### Tres cosas propias, y las tres incómodas
+
+1. **Una prueba verde sostenía el defecto** — `should not throw when mailerService fails`, dos veces, en el mismo
+   fichero que hasta PT-089 exigía la reserva `localhost:5174`. **Una prueba puede ser el mecanismo que mantiene
+   vivo un defecto.**
+2. **Mis casos de control no supieron fallar hasta la tercera versión.** Las dos primeras pasaban con el defecto
+   puesto, y eso es especialmente incómodo el mismo día en que escribí dos veces que *una guarda que nadie ha
+   visto fallar no es una guarda*.
+3. **El checkpoint D3 cazó, por tercera vez hoy, un `catch` mudo mío de hace horas** — el del guard de reCAPTCHA
+   de PT-182, con una justificación escrita que era **falsa**: dije que inyectar el logger «cambiaría su firma en
+   todos los llamantes», y un guard recibe sus dependencias por inyección.
+
+### Y el registro de reglas declaraba ser completo sin serlo
+
+El **Delta Log** de las convenciones dice ser *el* registro incremental y tenía **12 de 34** reglas. Completado,
+con las filas nuevas marcadas como **reconstruidas** desde `HISTORY.log` — su procedencia es más débil y se dice.
+
+---
+
+## Antes de eso: tres controles que aparentaban estar puestos (PT-182)
 
 El barrido no buscó errores. Buscó **afirmaciones**: un nombre que promete verificar, una respuesta que dice
 «enviado», una variable que declara una espera. **Ninguno de los tres fallaba nunca** — por eso dos llevaban
@@ -140,6 +183,10 @@ con la contabilidad cerrando sola —950 → 95 de comisión → 855 retenido �
    cierra otra corrida igual: hacen falta 20 ciclos resueltos.
 3. **H-005**: cuando haya PAC. Los tres modelos están medidos en `evidence/PT-155/hallazgos.md`; la opción C
    es subconjunto de la B, y la B exige datos que **no se pueden pedir retroactivamente**.
-4. **Seguir mirando, y ya se sabe dónde.** Tres emisiones seguidas en que un barrido dirigido encuentra
-   defectos que ninguna prueba señalaba. Lo que los tres de hoy tienen en común da la pista: **los sitios
-   donde el código promete algo**. Ahí un defecto puede vivir años sin que nada se ponga rojo.
+4. **Ejercitar caminos de FALLO, no sólo los felices.** Es la lección más accionable de hoy: los dos últimos
+   hallazgos vivían en el camino de error, que **nunca se había ejecutado**. Parar la dependencia y pedir la
+   operación —lo que aquí se hizo con Mailhog— encontró en cinco minutos dos defectos con meses de vida. Los
+   candidatos siguientes son los otros terceros: la pasarela de pago, Redis, el almacenamiento de ficheros.
+5. **Y seguir mirando dónde el código promete algo**: un nombre que dice «verifica», una respuesta que dice
+   «enviado», una variable que declara una espera, **una prueba que dice «no lanza»**. Una de esas cuatro formas
+   era, hoy, una prueba nuestra.

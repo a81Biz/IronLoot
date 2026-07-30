@@ -57,11 +57,18 @@ describe('EmailService', () => {
       expect(sentArgs.context.url).not.toContain('5173');
     });
 
-    it('should not throw when mailerService fails', async () => {
+    it('propaga el fallo del envío — PT-183 (H-032)', async () => {
+      // **Este caso afirmaba lo contrario** («should not throw when mailerService fails»), y por eso el
+      // defecto sobrevivió: había una prueba verde fijándolo en su sitio. Es la misma forma que el caso de
+      // `BASE_URL` unas líneas más abajo, que exigía el valor de reserva `localhost:5174` hasta PT-089.
+      //
+      // Absorber el error aquí anulaba el reintento de la cola —el `catch` de
+      // `notification-queue.worker.ts` era inalcanzable— y hacía que el reenvío de verificación respondiera
+      // «revisa tu bandeja» sin haber enviado nada. Quién captura y por qué, en `H-032 § Corrección`.
       mockMailer.sendMail.mockRejectedValueOnce(new Error('SMTP unreachable'));
-      await expect(
-        service.sendVerificationEmail('user@example.com', 'tok'),
-      ).resolves.toBeUndefined();
+      await expect(service.sendVerificationEmail('user@example.com', 'tok')).rejects.toThrow(
+        'SMTP unreachable',
+      );
     });
   });
 
@@ -78,11 +85,14 @@ describe('EmailService', () => {
       expect(sentArgs.context.url).not.toContain('5173');
     });
 
-    it('should not throw when mailerService fails', async () => {
+    it('propaga el fallo del envío — PT-183 (H-032)', async () => {
+      // Igual que el de verificación: afirmaba «no lanza». Quien decide qué hacer con el fallo es el
+      // llamante, y en la recuperación de contraseña `auth.service` **sí lo captura** — para no convertir una
+      // caída del SMTP en un oráculo de enumeración. Esa captura está ahí, razonada y escrita.
       mockMailer.sendMail.mockRejectedValueOnce(new Error('SMTP unreachable'));
-      await expect(
-        service.sendPasswordResetEmail('user@example.com', 'tok'),
-      ).resolves.toBeUndefined();
+      await expect(service.sendPasswordResetEmail('user@example.com', 'tok')).rejects.toThrow(
+        'SMTP unreachable',
+      );
     });
   });
 

@@ -1,28 +1,31 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181 y PT-182)
+**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181, PT-182 y PT-183)
 
 ---
 
 ## Esperando validación humana: nada
 
-**PT-181 y PT-182 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que
-**los veinticinco PT de la jornada quedan cerrados**: PT-158 … PT-182.
+**PT-181, PT-182 y PT-183 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que
+**los veintiséis PT de la jornada quedan cerrados**: PT-158 … PT-183.
 
 **Cero trabajo FDGE pendiente.**
 
 ---
 
-## Hallazgos de auditoría: 31, todos `CERRADA`
+## Hallazgos de auditoría: 33, todos `CERRADA`
 
 | Hallazgo | Dim | PT | Cómo se comprobó |
 |---|:--:|---|---|
 | **H-029** | D2 | PT-182 | 7 casos: token basura rechazado, **y el timeout de Google también** |
 | **H-030** | D1 | PT-182 | **En vivo** contra Mailhog: `1 → 2` correos |
 | **H-031** | D2 | PT-182 | C7 **visto fallar** con la reserva del compose a `0` |
+| **H-032** | D3 | PT-183 | **En vivo** con Mailhog parado: `200` con bandeja vacía → **500** |
+| **H-033** | D3 | PT-183 | Medido: **121 s → ~5 s** |
 
-Los tres nacieron y murieron el 2026-07-29, en el barrido posterior a S-005. Los veintiocho anteriores
-(H-001…H-028) estaban ya cerrados; detalle en `PTSA/RESUMEN.md` § S-006.
+Los cinco nacieron y murieron el 2026-07-29. Los dos últimos salieron de **comprobar el cierre de H-030**, y uno
+de ellos desmiente parte de ese cierre: está anotado en su ficha, sin reabrirlo (`[A6]`). Los veintiocho
+anteriores estaban ya cerrados; detalle en `PTSA/RESUMEN.md` § S-007.
 
 **H-005 (CFDI) está `CERRADA` como limitación declarada** por decisión del humano, con `F-1 § U-006`
 enmendando la declaración de valor a la vez: el producto ya **no promete** emitir CFDI y `P-012` pasa a
@@ -53,11 +56,11 @@ llegue el proveedor:
 
 ## La auditoría, al día
 
-**S-006 emitido** el 2026-07-29. `freshness = FRESH`, `commits_since_audit = 0`.
+**S-007 emitido** el 2026-07-29. `freshness = FRESH`, `commits_since_audit = 0`.
 
-**Health 100 · Risk 0 · Confidence 91.0 · Clase A.** Idénticos a S-005 — **y esa identidad es el dato**: entre
-las dos emisiones aparecieron tres hallazgos, uno ALTA en D1, y se cerraron antes de emitir. Un 100 estable no
-significa que no haya pasado nada.
+**Health 100 · Risk 0 · Confidence 91.0 · Clase A.** Los mismos por tercera vez — **y eso es el dato**: en cada
+intervalo entre emisiones apareció trabajo real (tres hallazgos, luego dos más), y todos se cerraron antes de
+emitir. **La estabilidad del 100 mide que se cierra lo que se encuentra, no que no haya nada que encontrar.**
 
 **Lo único que falta medir es D5, y no lo cierra otra corrida igual:** hacen falta **20 ciclos de pago
 resueltos** y hay **2**. Con `>= 95 %` para verde, un solo fallo entre `n` cumple `(n−1)/n >= 0.95` sólo si

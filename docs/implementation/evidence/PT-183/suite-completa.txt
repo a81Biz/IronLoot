@@ -1,0 +1,350 @@
+PASS test/unit/documentacion/evidencia-citada-esta-en-git.spec.ts (7.409 s)
+PASS test/unit/notifications/fallo-de-envio-propagado.spec.ts
+PASS test/unit/health/redis-observable.spec.ts
+PASS test/unit/documentacion/reglas-citadas-existen.spec.ts
+PASS test/unit/payments/payments.controller.spec.ts
+[31m[Nest] 680  - [39m07/30/2026, 2:14:43 AM [31m  ERROR[39m [38;5;3m[AuctionSchedulerService] [39m[31mFailed to release settlement for order malo[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:14:43 AM [31m  ERROR[39m [38;5;3m[AuctionSchedulerService] [39mError: boom
+    at Object.<anonymous> [90m(/app/[39mtest/unit/scheduler/liberacion-de-liquidacion.spec.ts:232:65[90m)[39m
+    at Promise.then.completed [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:298:28[90m)[39m
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:231:10[90m)[39m
+    at _callCircusTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:316:40[90m)[39m
+    at _runTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:252:3[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:126:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at run [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:71:3[90m)[39m
+    at runAndTransformResultsToJestFormat [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21[90m)[39m
+    at jestAdapter [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapter.js:79:19[90m)[39m
+    at runTestInternal [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:367:16[90m)[39m
+    at runTest [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:444:34[90m)[39m
+PASS test/unit/scheduler/liberacion-de-liquidacion.spec.ts
+PASS test/unit/config/variables-de-entorno-declaradas.spec.ts
+PASS test/unit/persistencia/creacion-perezosa-atomica.spec.ts
+PASS test/unit/auth/auth.service.spec.ts
+PASS test/unit/wallet/wallet.controller.spec.ts
+PASS test/unit/despliegue/ramas-del-disparador-existen.spec.ts
+PASS test/unit/web-views/bloques-de-plantilla-existen-en-su-layout.spec.ts
+PASS test/unit/web-views/atributos-bootstrap-sin-bootstrap.spec.ts
+PASS test/unit/bids/bids.controller.spec.ts
+PASS test/unit/auctions/auctions.controller.spec.ts
+PASS src/modules/shipments/shipments.controller.spec.ts
+PASS test/unit/users/users.controller.spec.ts
+PASS src/modules/disputes/disputes.controller.spec.ts
+PASS test/unit/payments/webhook-public.spec.ts
+PASS test/unit/payments/payment-reconciliation.spec.ts
+PASS test/unit/payments/payments-dedup-amount.spec.ts
+PASS test/unit/web-views/rutas-que-los-ssr-invocan.spec.ts
+PASS src/modules/auth/auth.controller.spec.ts
+PASS src/modules/ratings/ratings.controller.spec.ts
+PASS test/unit/payments/webhook-credit.spec.ts
+PASS test/unit/payments/payment-method-cardinality.spec.ts
+PASS test/unit/payments/payments.service.spec.ts
+PASS test/unit/pruebas/limpieza-de-tests-acotada.spec.ts
+PASS test/unit/payments/credit-integrity.spec.ts
+PASS test/unit/wallet/withdrawals.service.spec.ts
+PASS test/unit/orders/orders.controller.spec.ts
+PASS test/unit/qa-suite/auction-helper.spec.ts
+[31m[Nest] 680  - [39m07/30/2026, 2:14:59 AM [31m  ERROR[39m [38;5;3m[MercadoPagoProvider] [39m[31mMercadoPago HMAC verification failed — rejecting[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:14:59 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mPayPal webhook signature verification failed (WH-FALSO)[39m
+PASS test/unit/payments/provider-guarantees.spec.ts
+[33m[Nest] 680  - [39m07/30/2026, 2:14:59 AM [33m   WARN[39m [38;5;3m[StripeProvider] [39m[33mSTRIPE_SECRET_KEY not found. Stripe provider disabled.[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:14:59 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=WEBHOOK topic=payment id=123[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:14:59 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-FALSO)[39m
+[33m[Nest] 680  - [39m07/30/2026, 2:14:59 AM [33m   WARN[39m [38;5;3m[StripeProvider] [39m[33mSTRIPE_SECRET_KEY not found. Stripe provider disabled.[39m
+[33m[Nest] 680  - [39m07/30/2026, 2:14:59 AM [33m   WARN[39m [38;5;3m[StripeProvider] [39m[33mSTRIPE_SECRET_KEY not found. Stripe provider disabled.[39m
+[33m[Nest] 680  - [39m07/30/2026, 2:14:59 AM [33m   WARN[39m [38;5;3m[StripeProvider] [39m[33mSTRIPE_SECRET_KEY not found. Stripe provider disabled.[39m
+PASS test/unit/auctions/auctions.service.spec.ts
+PASS test/unit/wallet/wallet.service.spec.ts
+PASS test/unit/shipments/shipments.service.spec.ts
+[31m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [31m  ERROR[39m [38;5;3m[MercadoPagoProvider] [39m[31mMercadoPago HMAC verification failed — rejecting[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [31m  ERROR[39m [38;5;3m[MercadoPagoProvider] [39m[31mMissing MercadoPago signature headers — rejecting[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [31m  ERROR[39m [38;5;3m[MercadoPagoProvider] [39m[31mAnomalia: 2 pagos aprobados para DEP-08b22a46-49a4-4ece-a8ff-021cce24ed70-1784948505855[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [31m  ERROR[39m [38;5;3m[MercadoPagoProvider] [39m[31mMercadoPago API /v1/payments/169718720683 responded 404[39m
+PASS test/unit/payments/mercadopago-notification.spec.ts
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=payment id=169718720683[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=WEBHOOK topic=payment id=169718720683[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=WEBHOOK topic=payment id=169718720683[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=WEBHOOK topic=payment id=169718720683[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=payment id=169718720683[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=payment id=169718720683[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=merchant_order id=MO-1[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=WEBHOOK topic=payment id=PAY01KYEDNWM3EHE6WWKPJ4228D91[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=chargebacks id=CB-1[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mIgnoring unsubscribed MercadoPago topic "chargebacks"[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=payment id=169718720683[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=order id=ORDTST01KYEDNWKHXHCS58ZPA3GESWMT[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=order id=ORDTST01KYEDNWKHXHCS58ZPA3GESWMT[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=payment id=169718720683[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=order id=ORDTST01KYEDNWKHXHCS58ZPA3GESWMT[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=order id=ORDTST01KYEDNWKHXHCS58ZPA3GESWMT[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:01 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=payment id=169718720683[39m
+PASS test/unit/wallet/account-verification.spec.ts
+[31m[Nest] 680  - [39m07/30/2026, 2:15:02 AM [31m  ERROR[39m [38;5;3m[AuctionSchedulerService] [39m[31mFailed to close auction auction-1[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:02 AM [31m  ERROR[39m [38;5;3m[AuctionSchedulerService] [39mTypeError: Cannot read properties of undefined (reading 'id')
+    at prisma.$transaction.timeout [90m(/app/[39msrc/modules/scheduler/auction-scheduler.service.ts:179:67[90m)[39m
+    at AuctionSchedulerService.closeExpiredAuctions [90m(/app/[39msrc/modules/scheduler/auction-scheduler.service.ts:129:9[90m)[39m
+    at Object.<anonymous> [90m(/app/[39mtest/unit/scheduler/auction-scheduler.service.spec.ts:103:7[90m)[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:02 AM [31m  ERROR[39m [38;5;3m[AuctionSchedulerService] [39m[31mFailed to close auction auction-1[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:02 AM [31m  ERROR[39m [38;5;3m[AuctionSchedulerService] [39mError: Wallet not found
+    at Object.<anonymous> [90m(/app/[39mtest/unit/scheduler/auction-scheduler.service.spec.ts:131:66[90m)[39m
+    at [90m/app/[39mnode_modules/[4mjest-mock[24m/build/index.js:397:39
+    at Object.<anonymous> [90m(/app/[39mnode_modules/[4mjest-mock[24m/build/index.js:404:13[90m)[39m
+    at Object.mockConstructor [as $transaction] [90m(/app/[39mnode_modules/[4mjest-mock[24m/build/index.js:148:19[90m)[39m
+    at AuctionSchedulerService.closeExpiredAuctions [90m(/app/[39msrc/modules/scheduler/auction-scheduler.service.ts:129:27[90m)[39m
+    at Object.<anonymous> [90m(/app/[39mtest/unit/scheduler/auction-scheduler.service.spec.ts:136:7[90m)[39m
+PASS test/unit/scheduler/auction-scheduler.service.spec.ts
+PASS test/unit/payments/mercadopago-preference.spec.ts
+[32m[Nest] 680  - [39m07/30/2026, 2:15:02 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mCreating MercadoPago preference for Order DEP-u-1[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:02 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39mObject(2) {
+  amount: [33m500[39m,
+  buyerEmail: [32m'a@b.com'[39m
+}
+[32m[Nest] 680  - [39m07/30/2026, 2:15:02 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mCreating MercadoPago preference for Order DEP-u-1[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:02 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39mObject(2) {
+  amount: [33m500[39m,
+  buyerEmail: [32m'a@b.com'[39m
+}
+[32m[Nest] 680  - [39m07/30/2026, 2:15:02 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mCreating MercadoPago preference for Order DEP-u-1[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:02 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39mObject(2) {
+  amount: [33m500[39m,
+  buyerEmail: [32m'a@b.com'[39m
+}
+PASS test/unit/disputes/disputes.service.spec.ts
+PASS test/unit/orders/orders.service.spec.ts
+PASS src/modules/notifications/notifications.controller.spec.ts
+PASS src/modules/wallet/wallet.service.spec.ts
+PASS test/unit/wallet/settlement.spec.ts
+PASS test/unit/wallet/deposit-creates-wallet.spec.ts
+PASS src/modules/diagnostics/diagnostics.controller.spec.ts
+PASS test/unit/disputes/ventana-desde-la-entrega.spec.ts
+PASS test/unit/notifications/notifications.service.spec.ts
+PASS test/unit/users/users.service.spec.ts
+PASS test/unit/observabilidad/middleware-de-contexto-registrado.spec.ts
+PASS test/unit/admin/admin-auth.controller.spec.ts
+[32m[Nest] 680  - [39m07/30/2026, 2:15:06 AM [32m    LOG[39m [38;5;3m[AdminAuthController] [39m[32mAdmin login successful: ironadmin[39m
+[33m[Nest] 680  - [39m07/30/2026, 2:15:06 AM [33m   WARN[39m [38;5;3m[AdminAuthController] [39m[33mAdmin login failed for user: ironadmin[39m
+[33m[Nest] 680  - [39m07/30/2026, 2:15:06 AM [33m   WARN[39m [38;5;3m[AdminAuthController] [39m[33mAdmin login failed for user: someone[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:06 AM [32m    LOG[39m [38;5;3m[AdminAuthController] [39m[32mAdmin login successful: admin[39m
+PASS test/unit/users/ajustes-parciales.spec.ts
+PASS test/unit/auth/compatibilidad-de-hashes.spec.ts
+PASS test/unit/bids/bids.service.spec.ts
+[31m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mPayPal webhook signature verification failed (WH-1)[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mPayPal webhook signature verification failed (WH-1)[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mRejecting PayPal webhook — missing header(s): auth_algo, cert_url, transmission_id, transmission_sig, transmission_time[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mPayPal webhook signature verification failed (WH-1)[39m
+PASS test/unit/payments/paypal-guarantees.spec.ts
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-u1-1 (321.5 MXN)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-u1-1 (100 MXN)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCapturing PayPal order ORDER-1[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-u1-1 (100 MXN)[39m
+[33m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [33m   WARN[39m [38;5;3m[PaypalProvider] [39m[33mNo se pudo registrar la traza de PayPal: bd caída[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-1)[39m
+[33m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [33m   WARN[39m [38;5;3m[PaypalProvider] [39m[33mNo se pudo consultar la orden ORDER-1 en PayPal: PayPal request to https://api-m.sandbox.paypal.com/v2/checkout/orders/ORDER-1 failed with status 500[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-1)[39m
+PASS test/unit/users/reenvio-de-verificacion.spec.ts
+[31m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mPayPal webhook signature verification failed (WH-CAPTURE-1)[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mRejecting PayPal webhook — missing header(s): transmission_sig[39m
+PASS test/unit/payments/paypal-webhook.spec.ts
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-APPROVED-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCapturing PayPal order ORDER-XYZ[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-APPROVED-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCapturing PayPal order ORDER-XYZ[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.DENIED (WH-DENIED-1)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:07 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mIgnoring unsubscribed PayPal event PAYMENT.CAPTURE.DENIED[39m
+[32m[Nest] 680  - [39m07/25/2026, 12:00:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/25/2026, 12:00:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/25/2026, 12:01:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/25/2026, 12:00:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/25/2026, 12:01:10 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/25/2026, 12:00:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[33m[Nest] 680  - [39m07/25/2026, 12:00:00 PM [33m   WARN[39m [38;5;3m[PaypalProvider] [39m[33mPayPal returned 401 — refreshing access token and retrying once[39m
+[32m[Nest] 680  - [39m07/25/2026, 12:00:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[33m[Nest] 680  - [39m07/25/2026, 12:00:00 PM [33m   WARN[39m [38;5;3m[PaypalProvider] [39m[33mPayPal returned 401 — refreshing access token and retrying once[39m
+[32m[Nest] 680  - [39m07/25/2026, 12:00:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+PASS test/unit/payments/paypal-auth.spec.ts
+PASS test/unit/refunds/refunds.service.spec.ts
+PASS test/unit/notifications/email.service.spec.ts
+PASS test/unit/system-cleanup/webhook-retention.spec.ts
+PASS test/unit/payments/paypal-create-order.spec.ts
+[32m[Nest] 680  - [39m07/30/2026, 2:15:09 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:09 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (99.99 MXN)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:09 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:09 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:09 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:09 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:09 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:09 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:09 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:09 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+PASS test/unit/ratings/ratings.service.spec.ts
+PASS test/unit/payments/payment-cycle.spec.ts
+[31m[Nest] 680  - [39m07/30/2026, 2:15:09 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mNo se pudo devolver la captura CAP-9: PayPal respondio 422[39m
+PASS test/unit/payments/paypal-verification-charge.spec.ts
+PASS test/unit/payments/payment-record.spec.ts
+PASS test/unit/health/health.controller.spec.ts
+PASS test/unit/auth/recaptcha-falla-cerrado.spec.ts
+PASS test/unit/payments/payment-trace.spec.ts
+PASS test/unit/payments/respuesta-de-pasarela-no-es-averia.spec.ts
+PASS test/unit/payments/deposit-status.spec.ts
+PASS test/unit/payments/payment-row-idempotence.spec.ts
+PASS test/unit/cfdi/cfdi.service.spec.ts
+PASS test/unit/qa-suite/capturas-en-su-sitio.spec.ts
+PASS test/unit/web-views/acciones-declaradas-tienen-manejador.spec.ts
+PASS test/unit/upload/upload.service.spec.ts
+PASS test/unit/commissions/commissions.service.spec.ts
+PASS test/unit/documentacion/patrones-de-guardas-casan.spec.ts
+PASS test/unit/documentacion/estado-de-hallazgos-coherente.spec.ts
+[31m[Nest] 680  - [39m07/30/2026, 2:15:12 AM [31m  ERROR[39m [38;5;3m[DistributedLockService] [39m[31mFailed to acquire lock test-lock[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:12 AM [31m  ERROR[39m [38;5;3m[DistributedLockService] [39mError: Redis connection failed
+    at Object.<anonymous> [90m(/app/[39msrc/common/redis/distributed-lock.service.spec.ts:54:39[90m)[39m
+    at Promise.then.completed [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:298:28[90m)[39m
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:231:10[90m)[39m
+    at _callCircusTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:316:40[90m)[39m
+    at _runTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:252:3[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:126:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at run [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:71:3[90m)[39m
+    at runAndTransformResultsToJestFormat [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21[90m)[39m
+    at jestAdapter [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapter.js:79:19[90m)[39m
+    at runTestInternal [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:367:16[90m)[39m
+    at runTest [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:444:34[90m)[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:12 AM [31m  ERROR[39m [38;5;3m[DistributedLockService] [39m[31mFailed to release lock test-lock[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:12 AM [31m  ERROR[39m [38;5;3m[DistributedLockService] [39mError: Redis Lua script failed
+    at Object.<anonymous> [90m(/app/[39msrc/common/redis/distributed-lock.service.spec.ts:79:40[90m)[39m
+    at Promise.then.completed [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:298:28[90m)[39m
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:231:10[90m)[39m
+    at _callCircusTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:316:40[90m)[39m
+    at _runTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:252:3[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:126:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at run [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:71:3[90m)[39m
+    at runAndTransformResultsToJestFormat [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21[90m)[39m
+    at jestAdapter [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapter.js:79:19[90m)[39m
+    at runTestInternal [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:367:16[90m)[39m
+    at runTest [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:444:34[90m)[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:12 AM [31m  ERROR[39m [38;5;3m[DistributedLockService] [39m[31mFailed to check lock status test-lock[39m
+[31m[Nest] 680  - [39m07/30/2026, 2:15:12 AM [31m  ERROR[39m [38;5;3m[DistributedLockService] [39mError: Redis connection failed
+    at Object.<anonymous> [90m(/app/[39msrc/common/redis/distributed-lock.service.spec.ts:106:42[90m)[39m
+    at Promise.then.completed [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:298:28[90m)[39m
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:231:10[90m)[39m
+    at _callCircusTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:316:40[90m)[39m
+    at _runTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:252:3[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:126:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at run [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:71:3[90m)[39m
+    at runAndTransformResultsToJestFormat [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21[90m)[39m
+    at jestAdapter [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapter.js:79:19[90m)[39m
+    at runTestInternal [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:367:16[90m)[39m
+    at runTest [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:444:34[90m)[39m
+PASS src/common/redis/distributed-lock.service.spec.ts
+PASS test/unit/commissions/registro-de-comision.spec.ts
+PASS test/unit/documentacion/deuda-no-determinada-vigente.spec.ts
+[32m[Nest] 680  - [39m07/30/2026, 2:15:12 AM [32m    LOG[39m [38;5;3m[CommissionsService] [39m[32mComision registrada para el pedido order-uuid-1: 95 MXN (10%)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:12 AM [32m    LOG[39m [38;5;3m[CommissionsService] [39m[32mComision registrada para el pedido order-uuid-1: 95 MXN (10%)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:12 AM [32m    LOG[39m [38;5;3m[CommissionsService] [39m[32mComision registrada para el pedido order-uuid-1: 71.25 MXN (7.5%)[39m
+[32m[Nest] 680  - [39m07/30/2026, 2:15:12 AM [32m    LOG[39m [38;5;3m[CommissionsService] [39m[32mComision registrada para el pedido order-uuid-1: 10 MXN (10%)[39m
+PASS test/unit/kyc/kyc.service.spec.ts
+PASS test/unit/despliegue/lock-declara-plataformas.spec.ts
+PASS test/unit/documentacion/alcance-de-auditoria-existe.spec.ts
+PASS test/unit/upload/tipo-real-de-fichero.spec.ts
+PASS test/unit/payments/payment-provider-registry.spec.ts
+PASS test/unit/documentacion/contexto-de-construccion.spec.ts
+PASS test/unit/documentacion/coherencia-documentacion-codigo.spec.ts
+PASS test/unit/documentacion/rastro-de-trabajo-completo.spec.ts
+PASS test/unit/notifications/topes-del-transporte.spec.ts
+FAIL test/unit/documentacion/coherencia-de-registros.spec.ts
+  ● Los registros de trabajo no se contradicen — RULE-20 (PT-140) › C2: todo PT con carpeta de evidencia tiene entrada en HISTORY.log
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "PT-183",
+    + ]
+
+      158 |     const sinEntrada = conEvidencia.filter((pt) => !enHistoria.has(pt)).sort();
+      159 |
+    > 160 |     expect(sinEntrada).toEqual([]);
+          |                        ^
+      161 |   });
+      162 |
+      163 |   it('C3: ninguna TD cerrada figura pendiente en PENDING_TASKS', () => {
+
+      at Object.<anonymous> (test/unit/documentacion/coherencia-de-registros.spec.ts:160:24)
+
+PASS test/unit/config/secreto-jwt.spec.ts
+PASS test/unit/despliegue/healthcheck-apunta-a-ruta-real.spec.ts
+PASS test/unit/config/validate-startup-config.spec.ts
+PASS test/unit/observabilidad/fiabilidad-operacional.spec.ts
+PASS test/unit/payments/return-urls.spec.ts
+PASS test/unit/observabilidad/codigo-de-error-por-estado.spec.ts
+PASS test/unit/documentacion/coherencia-deuda-tecnica.spec.ts
+PASS test/unit/config/public-domain-check.spec.ts
+PASS test/unit/dominio/veredicto-de-coherencia.spec.ts
+PASS test/unit/common/identificadores.spec.ts
+PASS test/unit/despliegue/solo-en-contenedor.spec.ts
+PASS test/unit/observabilidad/catch-mudos.spec.ts
+PASS test/unit/config/expiracion-jwt.spec.ts
+PASS test/unit/seguridad/checkpoint-de-dependencias.spec.ts
+PASS test/unit/payments/endpoints-legados-retirados.spec.ts
+PASS test/unit/despliegue/dockerfiles-citados-existen.spec.ts
+PASS test/unit/notifications/tipo-de-aviso-al-cerrar.spec.ts
+PASS test/unit/common/public-origins.spec.ts
+PASS test/unit/ci/job-de-integracion.spec.ts
+PASS test/unit/seguridad/dependencias-vulnerables.spec.ts
+PASS test/unit/esquema/coherencia-migraciones.spec.ts
+PASS test/unit/dominio/reglas-como-codigo.spec.ts
+PASS test/unit/documentacion/configuracion-de-pruebas-montada.spec.ts
+PASS test/unit/wallet/clabe.util.spec.ts
+PASS test/unit/web-views/web-views.deprecation.spec.ts
+
+Summary of all failing tests
+FAIL test/unit/documentacion/coherencia-de-registros.spec.ts
+  ● Los registros de trabajo no se contradicen — RULE-20 (PT-140) › C2: todo PT con carpeta de evidencia tiene entrada en HISTORY.log
+
+    expect(received).toEqual(expected) // deep equality
+
+    - Expected  - 1
+    + Received  + 3
+
+    - Array []
+    + Array [
+    +   "PT-183",
+    + ]
+
+      158 |     const sinEntrada = conEvidencia.filter((pt) => !enHistoria.has(pt)).sort();
+      159 |
+    > 160 |     expect(sinEntrada).toEqual([]);
+          |                        ^
+      161 |   });
+      162 |
+      163 |   it('C3: ninguna TD cerrada figura pendiente en PENDING_TASKS', () => {
+
+      at Object.<anonymous> (test/unit/documentacion/coherencia-de-registros.spec.ts:160:24)
+
+
+Test Suites: 1 failed, 117 passed, 118 total
+Tests:       1 failed, 958 passed, 959 total
+Snapshots:   0 total
+Time:        46.916 s, estimated 52 s

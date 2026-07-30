@@ -3211,3 +3211,59 @@ Delta (real vs planned): tres cosas que no estaban en el plan.
   evidencia de este PT existia antes que esta entrada. Las dos veces el numero lo corrigio el trabajo, no la
   guarda.
 PTSA reference: H-029, H-030, H-031 — las tres CERRADA con VoBo humano.
+
+## PT-183 — BUG: el fallo de envio no llegaba a nadie, y tardaba dos minutos en no llegar (H-032/H-033)
+Date: 2026-07-29
+Status: DONE
+Branch: fix/PT-183-el-fallo-de-envio-no-llegaba
+Objective: cerrar los dos hallazgos que salieron de comprobar el cierre de H-030 — y corregir una afirmacion
+  falsa que ese cierre contiene.
+Root cause: **una captura colocada donde no se puede decidir.** `EmailService` absorbia cualquier fallo de
+  envio, con su propia duda escrita al lado: *«Don't rethrow to avoid breaking registration flow?»*. La duda
+  era buena; contestarla **una vez, para todos los llamantes**, no puede serlo — la respuesta correcta es
+  distinta en cada uno, y el servicio no sabe a cual esta sirviendo.
+Solution:
+  - **H-032** (ALTA) — Los dos metodos de `EmailService` propagan, conservando el `log.error` que ya tenian.
+    Y **cada llamante declara que hace con el fallo, con el motivo escrito**: el reenvio propaga (es lo unico
+    que hace el endpoint); la **cola** propaga (su `catch` cuenta intentos y relanza para que BullMQ reintente
+    — **ese `catch` era inalcanzable**, un envio fallido marcaba el trabajo como completado: familia de
+    H-014/H-015/H-027); el **registro** captura (la cuenta ya existe y hay via de reenvio); la **recuperacion
+    de contrasena** captura, porque su respuesta es **opaca a proposito** y propagar convertiria una caida del
+    SMTP en un **oraculo de enumeracion** — 500 para las direcciones que existen, 200 para las que no.
+  - **H-033** (MEDIA, preexistente) — `MAIL_TIMEOUTS_MS` cableado en el transporte. Sin topes, nodemailer
+    aplicaba los suyos: **dos minutos para conectar**. Medido: `real 2m1.490s` con el SMTP caido, en el camino
+    del reenvio **y en el del registro**. Estaba tapado por H-032, porque tras los dos minutos se respondia
+    `200`. Ahora corta en ~5 s. Los valores **se derivan**: 5 000 ms es lo que ya espera el guard de reCAPTCHA
+    de Google; 2 000 ms lo que espera la comprobacion de Redis.
+  - **El `catch` mudo que yo mismo escribi en PT-182**: el checkpoint D3 lo delato el mismo dia (26 contra
+    linea base 25). Y la justificacion que le puse era **falsa** — decia que anadir el logger «cambiaria su
+    firma en todos los llamantes», y un guard recibe sus dependencias por inyeccion. Logger inyectado; vuelta
+    a 25.
+  - **RULE-36** nueva: *un servicio compartido no decide que hacen sus llamantes con un fallo.* Y el **Delta
+    Log** se rellena: declaraba ser el registro incremental con **12 de 34** reglas. Las 22 filas nuevas van
+    marcadas como reconstruidas desde `HISTORY.log`, porque su procedencia es mas debil que la de las otras.
+Modified files:
+  src/api/src/modules/notifications/email.service.ts · notifications.module.ts · mail-timeouts.ts (nuevo)
+  src/api/src/modules/auth/auth.service.ts · guards/recaptcha.guard.ts
+  src/api/test/unit/notifications/fallo-de-envio-propagado.spec.ts (nuevo, 8 casos)
+  src/api/test/unit/notifications/topes-del-transporte.spec.ts (nuevo, 5 casos)
+  src/api/test/unit/notifications/email.service.spec.ts · test/unit/auth/recaptcha-falla-cerrado.spec.ts
+  docs/enterprise-documentation/11-Conventions.md (RULE-36 + Delta Log)
+  PTSA/Hallazgos/H-032.md · H-033.md (nuevos) · H-030.md (revision) · PTSA/Evidencias/E-036.md
+Evidence: docs/implementation/evidence/PT-183/
+Delta (real vs planned): cuatro cosas, y tres son mias.
+  1. **Correjo una afirmacion del cierre de H-030, escrito hace minutos.** Decia que el reenvio «propaga el
+     fallo — un `catch` que se lo comiera reproduciria el defecto por otra via». El `catch` **existia**, una
+     capa mas abajo. Comprobe ejecutando que el correo **salia** y di por bueno **por lectura** que el fallo se
+     propagaba: una de las dos afirmaciones se ejecuto y la otra se supuso, y la supuesta era la falsa. H-030
+     **no se reabre** —lo que reclamaba esta cumplido— pero queda anotado en su ficha. `[A6]`.
+  2. **Habia una prueba verde sosteniendo el defecto.** `email.service.spec.ts` afirmaba `should not throw when
+     mailerService fails`, **dos veces**. Misma forma que el caso de `BASE_URL` en ese mismo fichero, que
+     exigia la reserva `localhost:5174` hasta PT-089.
+  3. **C4, C5 y C6 no supieron fallar hasta la tercera version.** La primera recortaba 1200 caracteres y dentro
+     caian otras menciones a «H-032»; la segunda buscaba el `try` anterior sin comprobar que fuese el que
+     envuelve, y al sabotearlo encontraba otro ya cerrado. Las dos pasaban con el defecto puesto. La tercera se
+     vio caer por su propio motivo. Detalle en `E-036`.
+  4. **H-033 aparecio midiendo, no leyendo.** La primera prueba del camino de fallo no dio un 500: dio un
+     cliente agotado a los 40 s. Sin ejecutarlo, esos dos minutos no se habrian visto nunca.
+PTSA reference: H-032, H-033 — las dos CERRADA con VoBo humano. H-030 revisada.

@@ -215,8 +215,23 @@ export class AuthService {
     // Generate tokens
     const tokens = await this.generateTokens(user);
 
-    // Send verification email
-    await this.emailService.sendVerificationEmail(user.email, emailVerificationToken);
+    // PT-183 (H-032) — **Aquí se captura a propósito, y por eso lleva escrito el motivo.**
+    //
+    // El envío ya no se come su propio error (lo absorbía `EmailService`, anulando el reintento de la cola).
+    // Ahora cada llamante decide, y en el registro la decisión es **no tumbarlo**: la cuenta está creada, los
+    // tokens emitidos, y hacer fallar un registro consumado porque el SMTP esté caído sería peor que no
+    // enviar el correo — el usuario tiene la vía de reenvío, que desde PT-182 funciona de verdad.
+    //
+    // Lo que no se hace es callar: queda `error` en el log con el destinatario. Una captura razonada no es el
+    // defecto de H-032; el defecto era la captura que decidía en nombre de todos los llamantes.
+    try {
+      await this.emailService.sendVerificationEmail(user.email, emailVerificationToken);
+    } catch (error: any) {
+      this.log.error('Verification email failed on register; the user can request a resend', {
+        error: error?.message,
+        userId: user.id,
+      } as any);
+    }
 
     return {
       user: this.mapUserToResponse(user),
@@ -514,8 +529,24 @@ export class AuthService {
       { actorUserId: user.id },
     );
 
-    // Send password reset email
-    await this.emailService.sendPasswordResetEmail(user.email, resetToken);
+    // PT-183 (H-032) — **Aquí se captura por seguridad, no por comodidad.**
+    //
+    // La respuesta de este endpoint es **opaca a propósito**: contesta lo mismo exista o no la dirección, para
+    // no revelar quién tiene cuenta. Propagar el fallo de envío rompería esa opacidad — durante una caída del
+    // SMTP daría **500 para las direcciones que existen y 200 para las que no**, que es un oráculo de
+    // enumeración servido por un incidente de infraestructura.
+    //
+    // Queda `error` en el log con el destinatario: quien opera puede ver a quién no le llegó, y el usuario
+    // puede volver a pedirlo. Es la única de las cuatro decisiones de H-032 que se toma por el lado del
+    // atacante y no del usuario.
+    try {
+      await this.emailService.sendPasswordResetEmail(user.email, resetToken);
+    } catch (error: any) {
+      this.log.error('Password reset email failed; the opaque response is preserved on purpose', {
+        error: error?.message,
+        userId: user.id,
+      } as any);
+    }
   }
 
   // ===========================================

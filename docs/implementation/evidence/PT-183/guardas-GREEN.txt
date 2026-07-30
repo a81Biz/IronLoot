@@ -1,0 +1,55 @@
+PASS test/unit/notifications/fallo-de-envio-propagado.spec.ts (5.236 s)
+  EmailService propaga el fallo de envío — H-032 (PT-183)
+    ✓ C1: si el envío de verificación falla, la excepción SALE (17 ms)
+    ✓ C2: si el envío de recuperación falla, la excepción SALE (2 ms)
+    ✓ C3: el error se registra ANTES de propagarse — no se cambia rastro por excepción (6 ms)
+    casos de control
+      ✓ AC-01: un envío que funciona sigue resolviendo sin ruido (3 ms)
+      ✓ AC-02: el enlace sigue construyéndose desde BASE_URL, no desde un localhost (1 ms)
+  Las dos capturas razonadas siguen en pie — H-032 (PT-183)
+    ✓ C4: el registro captura el fallo del correo y NO tumba la cuenta ya creada
+    ✓ C5: la recuperacion de contrasena captura, y su motivo es la opacidad de la respuesta
+    ✓ C6: el worker de la cola relanza en el camino del CORREO, no en otro (4 ms)
+
+PASS test/unit/notifications/email.service.spec.ts
+  EmailService
+    sendVerificationEmail
+      ✓ should generate verification URL pointing to BASE_URL (4 ms)
+      ✓ propaga el fallo del envío — PT-183 (H-032) (6 ms)
+    sendPasswordResetEmail
+      ✓ should generate reset-password URL pointing to BASE_URL (1 ms)
+      ✓ propaga el fallo del envío — PT-183 (H-032) (1 ms)
+    BASE_URL configuration
+      ✓ lee BASE_URL de ConfigService, sin valor de reserva propio (PT-089) (1 ms)
+      ✓ los enlaces de correo NUNCA apuntan a un localhost con puerto (PT-089) (2 ms)
+
+PASS test/unit/notifications/notifications.service.spec.ts
+  NotificationsService
+    create
+      ✓ should create a notification (3 ms)
+    markAsRead
+      ✓ should mark as read if exists and belongs to user (1 ms)
+      ✓ should throw NotFound if not belongs to user (4 ms)
+    getUnreadCount
+      ✓ should return count (2 ms)
+
+PASS test/unit/notifications/topes-del-transporte.spec.ts
+  El transporte de correo declara sus topes — H-033 (PT-183)
+    ✓ C1: los tres topes existen y ninguno llega al minuto (1 ms)
+    ✓ C2: están CABLEADOS en el transporte, no sólo definidos (1 ms)
+    ✓ C3: el tope de sesión no es menor que el de conexión
+    casos de control
+      ✓ AC-01: el resto del transporte sigue en pie
+      ✓ AC-02: los valores son del orden de los que el sistema ya usa con terceros (1 ms)
+
+PASS test/unit/notifications/tipo-de-aviso-al-cerrar.spec.ts
+  El tipo de aviso identifica el evento (PT-117)
+    ✓ TA-01: el catalogo tiene un tipo propio para la venta (1 ms)
+    ✓ TA-02: comprar y vender son eventos distintos, con tipos distintos
+    ✓ TA-03: el catalogo conserva los tipos que ya existian (1 ms)
+
+Test Suites: 5 passed, 5 total
+Tests:       26 passed, 26 total
+Snapshots:   0 total
+Time:        6.091 s
+Ran all test suites matching /unit\/notifications/i.

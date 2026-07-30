@@ -1,0 +1,10 @@
+=== H-032/H-033 en vivo: con el SMTP parado, el reenvio NO puede responder Â«enviadoÂ» ===
+
+registro (Mailhog en pie)   HTTP 201
+Mailhog parado
+reenvio con SMTP caido      HTTP 500
+  {"success": false, "error": {"code": "INTERNAL_ERROR", "message": "Connection timeout", "status": 500, "timestamp": "2026-07-30T02:14:18.603Z", "traceId": "ab14243c-5e3d-47e5-9aa2-205627d6a9b2", "path": "/api/v1/users/me
+Mailhog restaurado
+(medido con tope de cliente de 200 s)
+
+OK — el fallo llega al usuario (500). Antes: 200 «Verification email sent».

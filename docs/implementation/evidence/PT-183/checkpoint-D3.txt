@@ -1,0 +1,15 @@
+
+> iron-loot-api@0.5.1 audit:observability
+> ts-node scripts/observability-check.ts
+
+=== D3 — Observabilidad y recuperacion ===
+
+  silent_failure_count = 25   (linea base: 25)
+
+  trace_completeness = 100%
+    2 de 2 ciclos liquidados con la traza completa
+
+  prompt_provenance  = NO_APLICA (sistema determinista, sin LLM)
+  fallback_quality   = evaluacion documentada (no automatizable, [R57])
+
+  OK — sin silencios nuevos.

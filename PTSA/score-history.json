@@ -962,6 +962,65 @@
         "FUERA_DE_ALCANCE_V1": 1
       },
       "nota": "Tercera emision consecutiva en la que un barrido dirigido encuentra defectos que ninguna prueba senalaba. Los tres son de la misma forma —un control que APARENTA estar puesto—: un guard de reCAPTCHA que comprobaba que el token existiera y no que fuese valido (H-029, D2); un reenvio de verificacion que respondia «Verification email sent» con la llamada de envio comentada (H-030, D1, ALTA — es el camino de recuperacion de una cuenta que no se puede activar); y la reserva de SETTLEMENT_HOLDBACK_HOURS a 0 en docker-compose, que dejaba sin ventana de proteccion al comprador en cualquier despliegue que no declarase la variable (H-031, D2). H-031 lo introduje yo mismo unas horas antes en PT-174 y se registra igual: esconderlo en la prosa de una evidencia lo dejaria fuera del recuento, y el recuento es lo que se lee. H-029 y H-030 llevaban MESES. Los avisos de S-005 siguen vigentes uno por uno, y el tercero se refuerza: cero hallazgos activos mide lo que se ha buscado, no lo que hay."
+    },
+    {
+      "session": "S-007",
+      "date": "2026-07-29",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 100,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "health": 100.0,
+        "risk": 0,
+        "confidence": 91.0
+      },
+      "classification": "A",
+      "classification_without_cap": "A",
+      "cap_reason": null,
+      "cap_note": "Sin cap. Tercera emision consecutiva con los mismos cuatro numeros, y la tercera vez que un barrido dirigido encuentra defectos entre una emision y la siguiente. La estabilidad del 100 mide que se cierra lo que se encuentra, NO que no haya nada que encontrar.",
+      "score_freshness": {
+        "last_verified": "2026-07-29",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "risk_detail": {
+        "risk_bruto": 0,
+        "detalle": "Cero hallazgos activos. Los 33 del registro estan CERRADA."
+      },
+      "coverage_detail": {
+        "D1": 100,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "D5": 0,
+        "motivo": "Sin cambios: D1/D2/D3/D4 al 100 %, D5 al 0 % por MUESTRA INSUFICIENTE (2 ciclos frente a 20). Este delta sync no amplia cobertura de dimension, pero SI amplia lo que se ha mirado: el camino de FALLO de la capa de correo, que nunca se habia ejecutado. Ahi estaban los dos hallazgos."
+      },
+      "trigger": "Barrido de la capa de correo al comprobar el cierre de H-030, por instruccion del humano («si hay un hallazgo nuevo lo tratas hasta cerrarlo» / «revisa de nuevo que falta»).",
+      "findings_changes": {
+        "nuevos": [
+          "H-032",
+          "H-033"
+        ],
+        "revisados": [
+          "H-030"
+        ],
+        "cerrados": [
+          "H-032",
+          "H-033"
+        ]
+      },
+      "evidencias_nuevas": [
+        "E-036"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "FUERA_DE_ALCANCE_V1": 1
+      },
+      "nota": "Los dos hallazgos salieron de comprobar el cierre del hallazgo anterior, y uno de ellos DESMIENTE parte de ese cierre. H-030 afirmaba que el reenvio de verificacion «propaga el fallo»; el `catch` existia una capa mas abajo, dentro de EmailService (H-032, ALTA). Se comprobo ejecutando que el correo SALIA y se dio por bueno POR LECTURA que el fallo se propagaba: una afirmacion se ejecuto y la otra se supuso, y la supuesta era la falsa — es [A1] incumplido por mi. H-030 no se reabre (lo que reclamaba esta cumplido y verificado) pero queda anotado, [A6]. H-032 tambien anulaba TRES capas de recuperacion: el `catch` del worker de la cola, su contador de intentos y la politica de reintentos de BullMQ — un envio fallido marcaba el trabajo como completado. Familia de H-014/H-015/H-027. Y habia una prueba VERDE sosteniendo el defecto: `should not throw when mailerService fails`, dos veces. H-033 (MEDIA, preexistente) aparecio MIDIENDO: el transporte no declaraba topes y con el SMTP caido la peticion se colgaba 121 s, en el reenvio y en el registro. Estaba tapado por H-032, que respondia 200 tras la espera. Ahora corta en ~5 s. Tres cosas propias mas: mis casos de control C4/C5/C6 no supieron fallar hasta la TERCERA version; el checkpoint D3 cazo por tercera vez en la jornada un `catch` mudo mio de PT-182, cuya justificacion escrita era falsa; y el Delta Log de las convenciones declaraba ser el registro incremental con 12 de 34 reglas."
     }
   ]
 }

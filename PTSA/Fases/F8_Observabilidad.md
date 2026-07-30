@@ -343,3 +343,57 @@ Corregido por PT-180 con `MUESTRA_MINIMA = 20`, **derivada de los umbrales del p
 no en un veredicto inventado.
 
 Evidencia: **E-033**.
+
+---
+
+## Update U-011 — 2026-07-29 (S-007, delta sync): un fallo que no llegaba a nadie
+
+Los dos hallazgos de esta corrida son de D3 y salieron de **ejecutar el camino de fallo**, no de leer código.
+El camino feliz del correo estaba probado desde siempre; el otro, nunca.
+
+### H-032 (ALTA) — tres capas de recuperación anuladas por la de abajo
+
+`EmailService` capturaba cualquier error de envío y no lo relanzaba, llevando su propia duda escrita al lado:
+
+```ts
+// Don't rethrow to avoid breaking registration flow?
+// Ideally should queue or retry. For now log error.
+```
+
+Había `log.error`, así que **no era un silencio**. Lo que hacía era peor de medir: el flujo continuaba como si
+el correo hubiera salido.
+
+`notification-queue.worker.ts` tiene un `catch` que cuenta intentos, los registra y **relanza para que BullMQ
+reintente**. Ese `catch` **no podía ejecutarse nunca**, así que un envío fallido marcaba el trabajo como
+**completado con éxito**. Familia de **H-014**, **H-015** y **H-027** — *un mecanismo que no se ejecuta no avisa
+de nada*, y aquí eran tres: el `catch`, el contador y la política de reintentos.
+
+La corrección es de reparto de responsabilidad, no de manejo de errores: **el servicio no decide por sus
+llamantes** (→ **RULE-36**). Los cuatro llamantes declaran su decisión con el motivo escrito; dos propagan
+—reenvío y cola— y dos capturan —registro, porque la cuenta ya existe, y recuperación de contraseña, porque su
+respuesta es **opaca a propósito** y propagar convertiría una caída del SMTP en un **oráculo de enumeración**.
+
+### H-033 (MEDIA, preexistente) — 121 s colgado
+
+El transporte no declaraba **ningún** tope, así que nodemailer aplicaba el suyo: dos minutos para conectar.
+Medido con Mailhog parado: `real 2m1.490s`. Afectaba al reenvío **y al registro**.
+
+Estaba **tapado por H-032**: los dos minutos ya pasaban, pero al final se respondía `200`, así que nadie
+relacionaba la lentitud con el correo. **Corregir H-032 no creó la espera: la hizo visible.**
+
+`MAIL_TIMEOUTS_MS` — 5 000 / 5 000 / 10 000 ms, **derivados** de lo que este sistema ya espera de un tercero
+(5 000 ms para Google en el guard de reCAPTCHA, 2 000 ms para Redis). Corta en ~5 s.
+
+### El checkpoint D3 cazó, por tercera vez en la jornada, un `catch` mudo del día
+
+```
+silent_failure_count = 26   (linea base: 25)   →  FALLA
+  src/api/src/modules/auth/guards/recaptcha.guard.ts  (linea 97)
+```
+
+Escrito por **PT-182**, unas horas antes, con una justificación mía que era **falsa**: *«no se registra porque
+este guard no tiene el logger inyectado y añadirlo cambiaría su firma en todos los llamantes»*. Un guard recibe
+sus dependencias **por inyección**. El argumento sonaba a razón técnica y era comodidad. Logger inyectado →
+vuelta a **25**.
+
+**D3 sigue en 100**: los dos hallazgos abrieron y cerraron dentro de esta corrida. Evidencia `E-036`.
