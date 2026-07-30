@@ -1,17 +1,16 @@
 # PTSA V3 — RESUMEN DE AUDITORÍA
 ## IronLoot Auction Platform v1.0.0
 
-**Sesión**: S-008 — **delta sync** (`resume PTSA`) | **Fecha**: 2026-07-29
-**Disparador**: barrido de patrones derivado de **la recomendación que S-007 dejó escrita** — *«ejercitar
-caminos de fallo… los candidatos siguientes son los otros terceros: la pasarela de pago, Redis, el
-almacenamiento»*. El primero de la lista tenía el defecto.
+**Sesión**: S-009 — **delta sync** (`resume PTSA`) | **Fecha**: 2026-07-29
+**Disparador**: cerrar la lista que dejó S-008 — mirar los **dos terceros que faltaban**, Redis y el
+almacenamiento de ficheros.
 **auditoria_estado**: CERRADA_SIN_HALLAZGOS_ACTIVOS
 
 ---
 
 ## SCORES — CLASE A
 
-| Métrica | S-007 | **S-008** | Cambio |
+| Métrica | S-008 | **S-009** | Cambio |
 |---|---|---|---|
 | **Health Score** | 100.0 | **100 / 100** | — |
 | **Risk Score** | 0 | **0 / 100** | — |
@@ -68,7 +67,7 @@ que nunca se había ejecutado. El camino feliz estaba probado; el otro, nunca.
 
 ## SCORES POR DIMENSIÓN
 
-| Dimensión | S-007 | **S-008** | Penaliza hoy |
+| Dimensión | S-008 | **S-009** | Penaliza hoy |
 |---|---|---|---|
 | D1 Alineación de Dominio | 100 | **100** | — |
 | D2 Integridad Arquitectónica | 100 | **100** | — |
@@ -82,62 +81,65 @@ Alucinación y drift `NO_APLICA` (sistema determinista).
 
 ## LO QUE CERRÓ ESTA CORRIDA
 
-**Un hallazgo**, y lo encontró aplicar al camino del dinero el patrón que se acababa de corregir en el correo.
+**Un hallazgo, y la lista de terceros queda cerrada.** Los dos que faltaban se miraron, y el resultado es
+distinto en cada uno — que es exactamente por qué había que mirarlos y no suponerlos.
 
-### H-034 (MEDIA) — las seis llamadas a las pasarelas, sin tope
+### El almacenamiento: se miró y NO aplica
 
+`upload.service.ts` escribe con `writeFile` **en disco local**. No hay S3 ni servicio remoto en v1.0, así que el
+patrón de H-034 no tiene dónde darse: no hay nada a lo que esperar por red.
+
+**«Queda por mirar» y «se miró y no aplica» son estados distintos**, y sólo el segundo cierra un pendiente.
+
+### Redis: el defecto no era el que se fue a buscar
+
+Se buscaba un tope. Los dos clientes `ioredis` no declaran topes propios pero **la biblioteca trae los suyos**
+—10 s de conexión, reintentos acotados—, así que aquí no hay un equivalente a los dos minutos de nodemailer.
+
+Lo que apareció al mirar fue otra cosa, de otra dimensión:
+
+### H-035 (D2, MEDIA) — la reserva que RULE-17 prohíbe, sobreviviendo en un fichero
+
+```ts
+// distributed-lock.service.ts:12
+const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
 ```
-paypal.provider.ts:111        OAuth2 token
-paypal.provider.ts:153        crear orden / capturar     ← por aquí pasa la captura
-mercadopago.provider.ts:364   consulta de la vía garantizada
-heybanco.provider.ts:41 · :77 · :115
-```
 
-Ninguna declaraba `signal`, y no había un `AbortController` en todo el directorio.
+**Y lo que vale de este hallazgo no es el defecto: es su causa.** La guarda de RULE-17
+—`variables-de-entorno-declaradas.spec.ts`— comprueba que toda variable que el código lee esté **declarada** en un
+`.env.example`. Funciona. Pero el texto de la regla dice, en negrita y como su afirmación central:
 
-**Severidad MEDIA, y el motivo hay que decirlo:** por diseño de PT-087 **ningún pago cobrado queda sin
-acreditar** —vía garantizada, reapertura del ciclo, asiento idempotente por referencia—, así que **el dinero no
-se pierde por esto**. Lo que se degrada es el tiempo de respuesta y la ocupación de recursos: una petición de
-depósito colgada mientras el usuario mira la pantalla, y una consulta de la vía garantizada que retiene su
-ejecución.
+> *The fallback was the problem, not the variable.*
 
-Cerrado con `gateway-timeouts.ts`: **8 s para consultar, 20 s para operar**. La asimetría es **del dominio**:
-consultar puede cortarse pronto porque la vía garantizada volverá; **crear o capturar** no, porque abandonar algo
-que quizá se completó al otro lado deja un cobro sin saber qué pasó. Mismo razonamiento que hizo `socketTimeout`
-mayor que `connectionTimeout` en H-033.
+**Esa mitad no la comprobaba nadie.** La regla nació de cinco contenedores caídos: se vigiló la parte fácil de
+medir —¿está declarada?— y quedó sin vigilar la que causó el incidente —¿tiene reserva?—.
+
+Por eso este `||` pasó por **PT-137**, por **PT-147** y por todas las corridas de la suite, mientras el cliente de
+al lado llevaba escrito *«PT-137 — Mismo defecto que las colas: reserva a `localhost`»*. **Había una guarda con el
+nombre correcto mirando otra cosa** — la familia de H-031, donde la guarda del holdback miraba el servicio y el
+agujero estaba en el compose.
+
+Lo que costaba: el cerrojo es lo que impide que dos instancias procesen el mismo cierre de subasta. Un despliegue
+sin `REDIS_URL` **arranca**, apunta a un `localhost` que en el contenedor no es nadie, `acquireLock` relanza y
+**ninguna subasta se cierra**.
+
+**La corrección vale por la guarda nueva más que por el arreglo**: `conexiones-sin-reserva.spec.ts` cubre las
+**tres** formas de escribir una reserva —`||`, `??` y el segundo argumento de `config.get`, que es la que produjo
+el incidente original— y **se vio acusar al fichero correcto, y sólo a ése**, antes de arreglarlo.
 
 ### Lo que esta emisión NO afirma
 
-**No se ha observado una llamada colgada contra una pasarela real.** A diferencia de H-033 —donde los 121 s **se
-midieron** parando Mailhog— aquí el defecto está comprobado **leyendo** las seis llamadas y el directorio
-completo, y su consecuencia se infiere del comportamiento de `fetch` sin señal. `[A1]` exige la distinción, y la
-ficha del hallazgo la hace con las mismas palabras.
-
-**Y quedan dos terceros sin mirar**: Redis y el almacenamiento de ficheros. Siguen escritos como siguiente paso
-en vez de darse por hechos.
-
-### Once capturas que NO son hallazgo
-
-El barrido encontró **11 `catch` sin `throw` ni registro** y ninguno es un defecto: están **declarados** en la
-línea base del checkpoint D3, que exige motivo escrito por entrada. Los dos más sensibles están razonados en
-`CLAUDE.md` — `payment-trace.service.ts` y `audit-persistence.service.ts` no lanzan porque *«un apunte de
-trazabilidad no puede costarle el depósito al usuario»*.
-
-Se dice porque **el número por sí solo alarma**: once capturas sin `throw` suenan a once defectos y son once
-decisiones. **La diferencia la hace el motivo escrito** — que es exactamente lo que faltaba en H-032, donde la
-captura no tenía un motivo sino una **pregunta sin responder**.
-
-### Y mis dos casos de control no supieron fallar a la primera
-
-Segunda vez en dos PT. **C2** se contentaba con que el fichero *contuviera* `conSenalDeAborto`, y bastaba la línea
-del `import`: pasaba con el defecto puesto. **C1** tenía el error simétrico — recortaba una ventana fija de 500
-caracteres y el cuerpo de `POST /payments` de HeyBanco es más largo, así que **acusaba una llamada ya
-corregida**; un falso positivo enseña a desconfiar de la guarda, que es la forma silenciosa de perderla.
+- **Que se haya observado el fallo.** `docker-compose` declara `REDIS_URL`, así que la reserva no se usaba en
+  ningún entorno existente. El daño era **potencial**, como en H-029 y H-031.
+- **Que no queden reservas fuera del API.** La guarda mira `src/api/src`. **ADMIN, BASE y CLIENT no están
+  cubiertos**, y ADMIN tuvo este mismo defecto en PT-147: es el sitio más probable para el siguiente.
+- **Que la lista de variables de conexión esté completa.** Son seis. Una nueva que nadie añada a esa lista **no se
+  vigilará** — debilidad conocida de la guarda, no descuido.
 
 ### Lo que cerraron las corridas anteriores, para referencia
 
-**S-007**: H-032 (el fallo de envío que no llegaba a nadie, ALTA) y H-033 (121 s colgado). **S-006**: H-029, H-030
-y H-031. Evidencias `E-034`, `E-035`, `E-036`.
+**S-008**: H-034 (las pasarelas sin tope). **S-007**: H-032 (el fallo de envío que no llegaba a nadie, ALTA) y
+H-033 (121 s colgado). **S-006**: H-029, H-030, H-031. Evidencias `E-034` … `E-037`.
 
 ---
 
@@ -156,13 +158,13 @@ Sin cambios respecto a S-005. **Este delta sync no amplía cobertura: confirma c
 **D5 al 0 % sigue siendo la afirmación más importante de esta tabla.** No es que el sistema sea poco fiable:
 es que **no se puede afirmar que lo sea**. Subirlo exige volumen de ciclos de pago, no otra corrida igual.
 
-Suite completa en verde al cerrar: **966 pruebas / 119 suites**.
+Suite completa en verde al cerrar: **973 pruebas / 120 suites**.
 
 ---
 
 ## HALLAZGOS
 
-**Activos: 0.** **Cerrados: 34** — H-001 … H-034. **H-030 revisada**, no reabierta.
+**Activos: 0.** **Cerrados: 35** — H-001 … H-035. **H-030 revisada**, no reabierta.
 
 Ninguno se cerró por inferencia: los técnicos, ejecutando; H-005, por decisión humana fechada y con la
 declaración de valor enmendada a la vez. Y cuando una parte de un cierre resultó falsa —H-030— **se anotó en su
@@ -187,12 +189,12 @@ factura, `P-012` vuelve y **H-005 se reabre con él**. `[A6]`: no se degrada ni 
 2. **La decisión fiscal, cuando haya PAC.** Los tres modelos siguen medidos en
    `evidence/PT-155/hallazgos.md`. La opción C es subconjunto de la B, y la B exige datos que **no se pueden
    pedir retroactivamente**.
-3. **Terminar la lista de terceros: quedan Redis y el almacenamiento de ficheros.** La pasarela de pago era
-   el primero de los tres y tenía el defecto (H-034). Los otros dos **no se han mirado**, y merece la pena
-   hacerlo pronto: la recomendación acertó a la primera, así que la probabilidad de que acierte otra vez no es
-   baja.
-   Y con Redis hay una diferencia que la hace más valiosa: se puede **parar** en desarrollo —ya se hizo en
-   PT-178— así que ahí el fallo se puede **medir**, no sólo leer. Es lo que separó a H-033 de H-034.
+3. **Llevar la guarda de reservas a ADMIN, BASE y CLIENT.** `conexiones-sin-reserva.spec.ts` mira
+   `src/api/src` y nada más. **ADMIN tuvo exactamente este defecto en PT-147**, así que es el sitio más probable
+   para el siguiente — y hoy no hay nada que lo impida. Es el pendiente más concreto que deja esta jornada.
+4. **La pregunta que abrió H-035, aplicada al resto de las reglas:** ¿qué otra `RULE-NN` tiene guarda para la
+   parte fácil de medir y no para la que causó su incidente? Es la forma más productiva que ha aparecido hoy: no
+   buscar código sospechoso, sino **guardas que miran al lado del agujero**.
 4. **Y seguir mirando dónde el código promete algo.** Un nombre que dice «verifica», una respuesta que dice
    «enviado», una variable que declara una espera, **una prueba que dice «no lanza»**. Ahí un defecto puede
    vivir años sin que nada se ponga rojo — y una de esas cuatro formas era, hoy, una prueba nuestra.

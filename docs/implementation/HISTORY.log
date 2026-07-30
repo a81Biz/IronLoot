@@ -3310,3 +3310,41 @@ Delta (real vs planned): tres cosas.
   once defectos y son once decisiones: **la diferencia la hace el motivo escrito**, que es justo lo que faltaba
   en H-032 — alli la captura no tenia motivo, tenia una pregunta sin responder.
 PTSA reference: H-034 — CERRADA con VoBo humano.
+
+## PT-185 — BUG: la mitad principal de RULE-17 no tenia guarda, y un fichero conservaba la reserva (H-035)
+Date: 2026-07-29
+Status: DONE
+Branch: fix/PT-185-la-mitad-de-rule-17-sin-guarda
+Objective: cerrar el hallazgo que salio de mirar los dos terceros que S-008 dejo en la lista — Redis y el
+  almacenamiento de ficheros.
+Root cause: **habia una guarda con el nombre correcto mirando otra cosa.**
+  `variables-de-entorno-declaradas.spec.ts` comprueba que toda variable que el codigo lee este **declarada** en un
+  `.env.example`. Funciona. Pero el texto de RULE-17 dice, en negrita y como su afirmacion central, *«The fallback
+  was the problem, not the variable»* — y **nadie comprobaba esa mitad**. La regla nacio de cinco contenedores
+  caidos: se vigilo la parte facil de medir y quedo sin vigilar la que causo el incidente.
+  Por eso `distributed-lock.service.ts:12` conservo su `process.env.REDIS_URL || 'redis://localhost:6379'` a
+  traves de PT-137, de PT-147 y de todas las corridas de la suite. El cliente de al lado —el del rate limiting—
+  lleva escrito *«PT-137 — Mismo defecto que las colas: reserva a localhost»*. **Ese se corrigio; este se quedo.**
+Solution:
+  - El cerrojo recibe la URL por `ConfigService` y la valida con `redisUrlObligatoria(...)`. El comentario que
+    estaba ahi —«should be injected in real implementation»— describia la correccion desde el principio.
+  - **`conexiones-sin-reserva.spec.ts`**: cubre las **tres** formas de escribir una reserva —`||`, `??` y el
+    segundo argumento de `config.get`— porque vigilar solo una ensena a usar las otras. C4 es la forma que produjo
+    el incidente original. C6 descarta comentarios, **por precedente**: la guarda de RULE-17 se acuso a si misma
+    la primera vez que corrio. C7 deja fuera lo que no es conexion.
+  - **Se vio acusar al fichero correcto y solo a ese** antes del arreglo.
+Modified files:
+  src/api/src/common/redis/distributed-lock.service.ts · distributed-lock.service.spec.ts
+  src/api/test/unit/config/conexiones-sin-reserva.spec.ts (nuevo, 7 casos)
+  PTSA/Hallazgos/H-035.md (nuevo) · PTSA/Evidencias/E-038.md
+Evidence: docs/implementation/evidence/PT-185/
+Delta (real vs planned): dos cosas.
+  1. **Del almacenamiento de ficheros no salio hallazgo, y eso tambien es un resultado.** `upload.service.ts` usa
+     `writeFile` local: no hay S3 ni servicio remoto en v1.0, asi que el patron de H-034 **no aplica** — no hay
+     nada a lo que esperar por red. «Queda por mirar» y «se miro y no aplica» son estados distintos, y el segundo
+     cierra el pendiente.
+  2. **En Redis el defecto no era el que se fue a buscar.** Se fue a buscar un tope y los dos clientes `ioredis`
+     traen los suyos (10 s de conexion, reintentos acotados): no hay aqui un equivalente a los dos minutos de
+     nodemailer. Lo que aparecio al mirar fue **la reserva**, que es un defecto distinto y de otra dimension.
+     Buscar una cosa y encontrar otra solo pasa si se mira de verdad.
+PTSA reference: H-035 — CERRADA con VoBo humano.

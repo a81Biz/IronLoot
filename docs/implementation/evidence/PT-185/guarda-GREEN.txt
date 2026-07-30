@@ -1,0 +1,82 @@
+PASS test/unit/config/conexiones-sin-reserva.spec.ts (5.913 s)
+  Ninguna variable de conexion se lee con reserva — RULE-17, la otra mitad (PT-185)
+    ✓ C1: ningun fichero de `src/api/src` da un valor por defecto a una conexion (1258 ms)
+    casos de control
+      ✓ C2: `||` se detecta
+      ✓ C3: `??` tambien — vigilar solo `||` ensena a usar el otro
+      ✓ C4: el segundo argumento de `config.get` tambien es una reserva
+      ✓ C5: leer la variable SIN reserva no se acusa (1 ms)
+      ✓ C6: una reserva en un COMENTARIO no cuenta — la guarda no se acusa a si misma
+      ✓ C7: una variable que NO es de conexion no se acusa
+
+[31m[Nest] 1381  - [39m07/30/2026, 2:50:15 AM [31m  ERROR[39m [38;5;3m[DistributedLockService] [39m[31mFailed to acquire lock test-lock[39m
+[31m[Nest] 1381  - [39m07/30/2026, 2:50:15 AM [31m  ERROR[39m [38;5;3m[DistributedLockService] [39mError: Redis connection failed
+    at Object.<anonymous> [90m(/app/[39msrc/common/redis/distributed-lock.service.spec.ts:61:39[90m)[39m
+    at Promise.then.completed [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:298:28[90m)[39m
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:231:10[90m)[39m
+    at _callCircusTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:316:40[90m)[39m
+    at _runTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:252:3[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:126:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at run [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:71:3[90m)[39m
+    at runAndTransformResultsToJestFormat [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21[90m)[39m
+    at jestAdapter [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapter.js:79:19[90m)[39m
+    at runTestInternal [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:367:16[90m)[39m
+    at runTest [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:444:34[90m)[39m
+[31m[Nest] 1381  - [39m07/30/2026, 2:50:15 AM [31m  ERROR[39m [38;5;3m[DistributedLockService] [39m[31mFailed to release lock test-lock[39m
+[31m[Nest] 1381  - [39m07/30/2026, 2:50:15 AM [31m  ERROR[39m [38;5;3m[DistributedLockService] [39mError: Redis Lua script failed
+    at Object.<anonymous> [90m(/app/[39msrc/common/redis/distributed-lock.service.spec.ts:86:40[90m)[39m
+    at Promise.then.completed [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:298:28[90m)[39m
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:231:10[90m)[39m
+    at _callCircusTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:316:40[90m)[39m
+    at _runTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:252:3[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:126:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at run [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:71:3[90m)[39m
+    at runAndTransformResultsToJestFormat [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21[90m)[39m
+    at jestAdapter [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapter.js:79:19[90m)[39m
+    at runTestInternal [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:367:16[90m)[39m
+    at runTest [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:444:34[90m)[39m
+[31m[Nest] 1381  - [39m07/30/2026, 2:50:15 AM [31m  ERROR[39m [38;5;3m[DistributedLockService] [39m[31mFailed to check lock status test-lock[39m
+[31m[Nest] 1381  - [39m07/30/2026, 2:50:15 AM [31m  ERROR[39m [38;5;3m[DistributedLockService] [39mError: Redis connection failed
+    at Object.<anonymous> [90m(/app/[39msrc/common/redis/distributed-lock.service.spec.ts:113:42[90m)[39m
+    at Promise.then.completed [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:298:28[90m)[39m
+    at new Promise (<anonymous>)
+    at callAsyncCircusFn [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/utils.js:231:10[90m)[39m
+    at _callCircusTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:316:40[90m)[39m
+    at _runTest [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:252:3[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:126:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at _runTestsForDescribeBlock [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:121:9[90m)[39m
+    at run [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/run.js:71:3[90m)[39m
+    at runAndTransformResultsToJestFormat [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapterInit.js:122:21[90m)[39m
+    at jestAdapter [90m(/app/[39mnode_modules/[4mjest-circus[24m/build/legacy-code-todo-rewrite/jestAdapter.js:79:19[90m)[39m
+    at runTestInternal [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:367:16[90m)[39m
+    at runTest [90m(/app/[39mnode_modules/[4mjest-runner[24m/build/runTest.js:444:34[90m)[39m
+PASS src/common/redis/distributed-lock.service.spec.ts
+  DistributedLockService
+    acquireLock
+      ✓ should acquire lock successfully when key does not exist (9 ms)
+      ✓ should return null when lock is already held (2 ms)
+      ✓ should throw error on Redis failure (9 ms)
+    releaseLock
+      ✓ should release lock successfully with correct lock value (2 ms)
+      ✓ should return false when lock value does not match (2 ms)
+      ✓ should throw error on Redis failure (2 ms)
+    isLocked
+      ✓ should return true when lock exists (2 ms)
+      ✓ should return false when lock does not exist (1 ms)
+      ✓ should return false on Redis failure (2 ms)
+    distributed lock behavior
+      ✓ should acquire and release lock in sequence (2 ms)
+      ✓ should prevent acquisition while lock is held (1 ms)
+
+Test Suites: 2 passed, 2 total
+Tests:       18 passed, 18 total
+Snapshots:   0 total
+Time:        6.52 s
+Ran all test suites matching /conexiones-sin-reserva|distributed-lock/i.

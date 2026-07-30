@@ -1,16 +1,38 @@
 import { Injectable, Logger, OnModuleDestroy } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Redis } from 'ioredis';
 import { randomUUID as uuid } from 'node:crypto';
+import { redisUrlObligatoria } from '../config/redis-url';
 
 @Injectable()
 export class DistributedLockService implements OnModuleDestroy {
   private readonly logger = new Logger(DistributedLockService.name);
   private redis: Redis;
 
-  constructor() {
-    // Initialize Redis client (should be injected in real implementation)
-    const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-    this.redis = new Redis(redisUrl);
+  /**
+   * PT-185 (H-035) — **Aquí había la reserva que RULE-17 prohíbe.**
+   *
+   * ```ts
+   * // Initialize Redis client (should be injected in real implementation)
+   * const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+   * ```
+   *
+   * Es literalmente el defecto que PT-137 corrigió: el cliente de al lado —el del rate limiting— lleva escrito
+   * *«PT-137 — Mismo defecto que las colas: reserva a `localhost`»*. **Ése se corrigió; éste se quedó**, y
+   * sobrevivió a PT-137, a PT-147 y a todas las corridas de la suite porque la guarda de RULE-17 comprobaba que
+   * las variables estuvieran **declaradas**, no que no tuvieran **reserva** — que es la mitad que la propia
+   * regla llama, en negrita, el problema.
+   *
+   * Lo que costaba: este servicio es lo que impide que dos instancias procesen el mismo cierre de subasta. Con
+   * la reserva puesta, un despliegue sin `REDIS_URL` **arranca** y apunta a un `localhost` que dentro del
+   * contenedor no es nadie; `acquireLock` relanza, el cron propaga y **ninguna subasta se cierra** — desde
+   * fuera, subastas que nunca terminan.
+   *
+   * Y el comentario que estaba aquí —*«should be injected in real implementation»*— describía la corrección
+   * desde el principio. Ahora está hecha.
+   */
+  constructor(config: ConfigService) {
+    this.redis = new Redis(redisUrlObligatoria(config.get<string>('REDIS_URL')));
   }
 
   /**

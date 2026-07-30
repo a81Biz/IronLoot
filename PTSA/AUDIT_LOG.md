@@ -1008,3 +1008,54 @@ nada que encontrar.
 **medir** —se para en desarrollo, como en PT-178—, y eso es lo que separo a H-033 de H-034.
 
 **Estado de la corrida:** CERRADA_SIN_HALLAZGOS_ACTIVOS — **34 hallazgos, todos CERRADA**.
+
+---
+
+## S-009 — 2026-07-29 — DELTA SYNC: la lista de terceros cerrada, y una guarda que miraba al lado del agujero
+
+**Disparador:** cerrar la lista que dejo S-008 — mirar los **dos terceros que faltaban**, Redis y el almacenamiento
+de ficheros. Los dos se miraron, y **el resultado es distinto en cada uno**, que es por que habia que mirarlos y no
+suponerlos.
+
+- **Almacenamiento:** se miro y **NO aplica**. `upload.service.ts` usa `writeFile` en disco local; sin servicio
+  remoto en v1.0, el patron de H-034 no tiene donde darse. *«Queda por mirar»* y *«se miro y no aplica»* son
+  estados distintos, y solo el segundo cierra un pendiente.
+- **Redis:** el defecto **no era el que se fue a buscar**. Se buscaba un tope —ioredis trae los suyos: 10 s de
+  conexion, reintentos acotados— y aparecio **la reserva**. Buscar una cosa y encontrar otra solo pasa si se mira
+  de verdad.
+
+| Hallazgo | Dim | Sev | Que pasaba |
+|---|:--:|:--:|---|
+| **H-035** | D2 | MEDIA | `distributed-lock.service.ts:12` leia `process.env.REDIS_URL \|\| 'redis://localhost:6379'` — la reserva que **RULE-17 prohibe**, sobreviviendo a PT-137, a PT-147 y a todas las corridas de la suite |
+
+**CERRADA** en PT-185. Y lo que vale de este hallazgo **no es el defecto: es su causa.**
+
+`variables-de-entorno-declaradas.spec.ts` comprueba que toda variable que el codigo lee este **declarada** en un
+`.env.example`. Funciona. Pero el texto de RULE-17 dice, en negrita y como afirmacion central: *«The fallback was
+the problem, not the variable.»* **Esa mitad no la comprobaba nadie.** La regla nacio de cinco contenedores caidos:
+se vigilo la parte facil de medir y quedo sin vigilar la que causo el incidente.
+
+**Habia una guarda con el nombre correcto mirando otra cosa** — la familia de H-031, donde la guarda del holdback
+miraba el servicio y el agujero estaba en el compose. Mientras tanto, el cliente de al lado llevaba escrito
+*«PT-137 — Mismo defecto que las colas: reserva a localhost»*.
+
+La correccion vale **por la guarda nueva mas que por el arreglo**: `conexiones-sin-reserva.spec.ts` cubre las tres
+formas de escribir una reserva —`||`, `??` y el segundo argumento de `config.get`, que es la del incidente
+original— y **se vio acusar al fichero correcto, y solo a ese**, antes de arreglarlo. Un solo acusado: una guarda
+que acusa a medio repositorio la primera vez suele estar midiendo mal.
+
+**Lo que NO se afirma:** el fallo no se ha observado —el compose declara `REDIS_URL`, asi que la reserva no se
+usaba en ningun entorno existente—; el daño era **potencial**, como en H-029 y H-031. Y la guarda **solo cubre
+`src/api/src`**: ADMIN, BASE y CLIENT quedan fuera, y **ADMIN tuvo este mismo defecto en PT-147**.
+
+**Scores:** Health **100** · Risk **0** · Confidence **91.0** · Clase **A**. Los mismos por **quinta** vez.
+
+**Cuatro intervalos entre emisiones, y en cada uno trabajo real: 3 · 2 · 1 · 1.** Siete defectos, todos cerrados
+antes de emitir. Y **cada hallazgo lo encontro el cierre del anterior** — no es una racha, es una cadena: el sitio
+donde buscar lo dijo el trabajo previo, no una intuicion.
+
+**Siguiente, y es lo mas concreto que deja la jornada:** llevar la guarda de reservas a ADMIN, BASE y CLIENT. Y la
+pregunta que abrio H-035, aplicada al resto: **¿que otra `RULE-NN` vigila la parte facil de medir y no la que causo
+su incidente?** No buscar codigo sospechoso, sino **guardas que miran al lado del agujero**.
+
+**Estado de la corrida:** CERRADA_SIN_HALLAZGOS_ACTIVOS — **35 hallazgos, todos CERRADA**.
