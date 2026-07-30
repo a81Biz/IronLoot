@@ -10,6 +10,7 @@ import { UnauthorizedException, ValidationException } from '../../../common/obse
 import { PaymentTraceService } from '../payment-trace.service';
 import { depositReturnUrl } from '../return-urls';
 import { GATEWAY_TIMEOUTS_MS, conSenalDeAborto } from './gateway-timeouts';
+import { clientOrigin } from '../../../common/config/public-origins';
 
 /** Margen de seguridad para renovar el token antes de que expire realmente. */
 const TOKEN_REFRESH_MARGIN_MS = 60_000;
@@ -308,7 +309,10 @@ export class PaypalProvider implements PaymentProvider {
     amount: number,
     codigo: string,
   ): Promise<{ orderId: string; approvalUrl: string }> {
-    const clientUrl = process.env.CLIENT_URL || 'http://client.ironloot.local';
+    // PT-186 (H-035) — Esto duplicaba la reserva en vez de usar `clientOrigin()`, que es la fuente unica que
+    // PT-088/PT-089 dejaron para las URLs publicas. Duplicar una reserva es peor que tenerla: cuando alguien
+    // cambie la del helper, esta se queda atras y nadie lo nota.
+    const clientUrl = clientOrigin();
     const endpoint = `${this.apiBaseUrl}/v2/checkout/orders`;
 
     const peticion = {

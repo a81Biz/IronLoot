@@ -23,8 +23,11 @@ import {
 } from "./common/bff/bids-view";
 import { toItems } from "./common/bff/list-view";
 
-const API_URL = process.env.API_URL || "http://localhost:3000";
-const BASE_URL = process.env.BASE_URL || "http://localhost:5174";
+import { variableObligatoria } from "./common/config/variable-obligatoria";
+
+// PT-186 (H-035) — Sin reserva. Ver `common/config/variable-obligatoria.ts`.
+const API_URL = variableObligatoria("API_URL");
+const BASE_URL = variableObligatoria("BASE_URL");
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
 
 async function apiGet<T>(token: string, path: string): Promise<T | null> {

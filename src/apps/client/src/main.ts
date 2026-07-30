@@ -13,6 +13,7 @@ import helmet from "helmet";
 import { createProxyMiddleware } from "http-proxy-middleware";
 import { injectAuthHeader } from "./common/bff/inject-auth-header";
 import cookieParser from "cookie-parser";
+import { variableObligatoria } from "./common/config/variable-obligatoria";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -78,7 +79,8 @@ async function bootstrap() {
   // BFF proxy (PT-038 / AUD-003) — forwards /api requests to the REST API and injects the
   // Bearer token from the HttpOnly access_token cookie, so client-side writes authenticate
   // without exposing the token to browser JS. Mirrors BASE (base/src/main.ts).
-  const apiTarget = process.env.API_URL || "http://localhost:3000";
+  // PT-186 (H-035) — El destino del proxy del BFF, sin reserva: ver `app.controller.ts`.
+  const apiTarget = variableObligatoria("API_URL");
   app.use(
     "/api",
     createProxyMiddleware({

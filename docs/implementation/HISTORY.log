@@ -3348,3 +3348,48 @@ Delta (real vs planned): dos cosas.
      nodemailer. Lo que aparecio al mirar fue **la reserva**, que es un defecto distinto y de otra dimension.
      Buscar una cosa y encontrar otra solo pasa si se mira de verdad.
 PTSA reference: H-035 — CERRADA con VoBo humano.
+
+## PT-186 — BUG: el cierre de H-035 cubria la mitad, y la lista de la guarda lo tapaba
+Date: 2026-07-29
+Status: DONE
+Branch: fix/PT-186-h035-completo
+Objective: reabrir H-035 por decision del humano —«reabrir y cerrarlo completo»— y cerrarlo cubriendo los
+  cuatro servicios en vez de declarar tres como pendientes.
+Root cause: **declarar un alcance no es medirlo.** H-035 se cerro diciendo que la guarda mira `src/api/src` y
+  que ADMIN, BASE y CLIENT «quedan fuera, escrito como pendiente». Eso era mejor que callarlo y **peor que
+  medirlo**: al medirlo aparecieron **SEIS** reservas, no las cuatro estimadas.
+  Y una estaba **en el propio API**, que H-035 declaro limpio: `paypal.provider.ts:311` duplicaba la reserva de
+  `clientOrigin()`. No la vio nadie porque la lista de variables de conexion de la guarda tenia seis nombres y
+  **`CLIENT_URL` no estaba**. `E-038` habia declarado esa debilidad con estas palabras —*«una variable de
+  conexion nueva que nadie anada a esa lista no se vigilara»*— y **se cumplio en la corrida siguiente**.
+  Declarar una debilidad no la cierra.
+Solution:
+  - BASE y CLIENT usan `variableObligatoria(nombre)`, que **aborta nombrando la variable**. Comprobado en vivo.
+  - El API pasa a `clientOrigin()`, la fuente unica de PT-088/PT-089, en vez de duplicar su reserva.
+  - La guarda cubre **los cuatro servicios**, con **un caso por servicio** —para que el nombre del que falla
+    diga cual— y un `C1-cobertura` que impide que la lista se estreche otra vez.
+  - `API_URL`, `BASE_URL` y `CLIENT_URL` entran en la lista: **en un SSR, a donde llamar es una conexion.**
+  Las dos mas caras eran las del **proxy del BFF** (`main.ts` de los dos sitios): sin `API_URL`, el sitio manda
+  TODAS sus llamadas a su propio contenedor y **arranca `healthy` sin funcionar**.
+  Esto ya estaba escrito en `public-origins.ts` desde PT-089 —*«un valor de reserva con puerto es peor que no
+  tener valor: no falla al arrancar, falla en silencio y en produccion»*—. PT-089 lo quito del API; los dos SSR
+  conservaron los suyos.
+Modified files:
+  src/apps/base/src/common/config/variable-obligatoria.ts (nuevo) · app.controller.ts · main.ts
+  src/apps/client/src/common/config/variable-obligatoria.ts (nuevo) · app.controller.ts · main.ts
+  src/apps/client/src/common/guards/client-auth.guard.ts
+  src/api/src/modules/payments/providers/paypal.provider.ts
+  src/api/test/unit/config/conexiones-sin-reserva.spec.ts (los cuatro servicios, 11 casos)
+  PTSA/Hallazgos/H-035.md (revision + cierre completo) · PTSA/Evidencias/E-039.md
+Evidence: docs/implementation/evidence/PT-186/
+Delta (real vs planned): tres cosas.
+  1. **Seis reservas, no cuatro.** Mi medicion previa con un script suelto encontro 4; la guarda, que mira mas
+     variables, encontro 6 — incluida una en el API. **El instrumento bueno encontro mas que mi estimacion**, y
+     eso es el argumento entero de por que se mide en vez de declarar.
+  2. **Se conserva una reserva a proposito, y se declara.** `public-origins.ts` mantiene el subdominio de
+     desarrollo por decision escrita de PT-089. La guarda no la acusa porque no se escribe con `||`. **No es un
+     cabo suelto: es una decision que se vio y se dejo** — y es discutible, porque un despliegue que olvide
+     `BASE_URL` mandaria correos con enlaces a un dominio que para el usuario no existe. Anotado en la ficha.
+  3. **No esta en `@ironloot/core`.** BASE, CLIENT y ADMIN no dependen de el, y anadir la dependencia por veinte
+     lineas metria la libreria de dominio en tres despliegues que no la necesitan. El coste de duplicarlas esta
+     escrito en los dos ficheros.
