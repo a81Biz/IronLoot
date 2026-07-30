@@ -4,119 +4,63 @@
 
 **Rama**: `master`, árbol limpio, cero ramas sin fusionar. **Sin subir a `origin`.**
 
-**Pruebas**: **1159** unitarias en verde — API **906** (112 suites) · CORE **134** · CLIENT **103** ·
+**Pruebas**: **1179** unitarias en verde — API **926** (114 suites) · CORE **134** · CLIENT **103** ·
 ADMIN **13** · BASE **3**.
 
 **Reglas duras**: **33** `RULE-NN`. **Guardas de documentación**: **12** suites / **135** pruebas.
 
 ---
 
-## Lo último: la recepción la confirma quien recibe (PT-173 … PT-176)
+## Estado: un solo pendiente, y no es de código
 
-**Esperan tu validación cuatro PT.** Detalle y evidencia en [`PENDING_TASKS.md`](PENDING_TASKS.md).
+**Cero trabajo FDGE pendiente. Cero hallazgos corregibles abiertos.**
 
-**El defecto de fondo, encontrado al verificar antes de escribir:** `shipments.service.ts:114` daba al
-**vendedor** la llave de todos los estados, incluido `DELIVERED`; y el cron liberaba el holdback en cuanto
-el pedido estaba entregado. Encadenado: **el vendedor marcaba entregado su propio envío y liberaba su
-propio dinero**, sin enviar nada y sin que nadie confirmara. El holdback protege al comprador durante la
-ventana de disputa, y lo desactivaba la parte de la que protege. Y el comprador **no tenía ninguna vía**
-para confirmar — ni endpoint, ni permiso, ni interfaz.
+`PT-166 … PT-179` **cerrados con VoBo humano** el 2026-07-29 — catorce PT. Y los **tres hallazgos
+corregibles cerrados**, cada uno verificado **ejecutando**:
 
-| PT | Qué cierra |
-|---|---|
-| **PT-173** | `shipments` se saltaba `OrderStateMachine`, que ya existía y ya decía lo correcto: dos puertas al mismo estado, una sin cerradura |
-| **PT-174** | La llave se parte por transición: el vendedor envía, **el comprador confirma**. El dinero espera **72 h** desde la confirmación, y el vencimiento de 14 días se conserva **y se declara** |
-| **PT-175** | Fase 35: la cadena completa **sin un solo `INSERT`** — 0 escrituras, frente a las 6 de la fase 60 que siembra |
-| **PT-176** | El click de PayPal (un `div` suyo tapa `#btnLogin`) y **H-027**: el resumen que omitía la fase caída |
+| Hallazgo | PT | Cómo se comprobó |
+|---|---|---|
+| **H-025** — el veredicto de coherencia sin denominador | PT-177 | Dice `0 de 1`, marca `sin filas que comparar` y **sale con 1** |
+| **H-026** — Redis no observable | PT-178 | En vivo: en pie → `healthy`; parado → `unhealthy` + «PING sin respuesta en 2000 ms» |
+| **H-027** — el resumen omitía la fase caída | PT-176 | En vivo: diez fases sin salida → diez `*** FALLO / NO EJECUTADA ***` y exit 1 |
 
-**Decisión de negocio aplicada: opción B, 72 h**, declarada como supuesto revocable y confirmada. Es un
-parámetro (`SETTLEMENT_HOLDBACK_HOURS`), no una política incrustada.
+### Lo único que queda: H-005, y no se cierra con código
 
-**Las dos mentiras, ahora las dos contempladas.** El vendedor ya no puede mentir al enviar: no tiene la
-llave. Y el comprador no puede bloquear el dinero negando la recepción: a los `DISPUTE_WINDOW_DAYS` se
-libera igual. Antes eso existía por accidente, como el otro brazo de un `OR`.
+Necesita **contratar un PAC ante el SAT** y **decidir el modelo fiscal**. Dos vías de cierre, las dos
+tuyas: decidir el modelo (A/B/C de `evidence/PT-155/hallazgos.md`), o aceptarlo como limitación declarada
+de v1.0 — el PRD ya lo lleva en Out-of-Scope. **No hay implementación que sustituya a un proveedor
+certificado.**
 
-**Y una corrección a mi informe anterior:** dije que la vía garantizada de PayPal quedó sin verificar.
-**Engañoso.** Quedó sin ejercer *en esa corrida*; está probada en **PT-087**, con aprobación en el checkout
-real y **captura** (321.50 → 643.00, sin un solo webhook). Lo que se rompió es el harness contra una UI
-ajena.
+Y queda **un `resume PTSA`**, que sólo dispara el humano: los scores se midieron con cuatro hallazgos
+activos y hoy hay uno.
 
 ---
 
-## Hallazgos de auditoría: tres, y uno ya corregido
+## El trabajo de la jornada, y por qué aparecieron cosas
 
-### Cerrado con VoBo humano
+La pregunta fue: *«no entiendo cómo es que salen cosas nuevas si no se ha implementado nada»*. De los
+**siete hallazgos**, **cinco ya estaban en el código desde antes**:
 
-**PT-166 … PT-172 → `CLOSED`** el 2026-07-29, con VoBo explícito del humano. Cada uno con su evidencia
-ejecutada bajo [`evidence/`](evidence/). **Cero trabajo FDGE pendiente.**
+| Hallazgo | Desde |
+|---|---|
+| El vendedor liberaba su propio holdback | desde que existe el módulo de envíos |
+| El `*.js` del `.gitignore` se comía ficheros nuevos | desde PT-088 — **cuarta reincidencia** |
+| Un 422 de la pasarela salía como 500 nuestro | desde PT-076 |
+| El veredicto de coherencia sin denominador | desde que existe el checkpoint |
+| Redis inobservable en `/health/detailed` | desde que existe el endpoint |
 
-> **PT-166 y PT-167 no estaban en ninguna lista, y ése era el defecto.** El cierre en bloque anterior
-> enumeró PT-148…165; PT-166 entró después y PT-167 **no tenía ni entrada en `HISTORY.log`** — sólo su
-> mensaje de commit. Este fichero afirmaba «Nada más está pendiente» y era falso. Sin PT-169 no habría
-> habido nada que validar, porque nada los nombraba. Lo vigila ahora **RULE-34**.
+**Dos los causó la jornada** —la CLABE que rompió la fase 60 y el Chrome huérfano— y los dos están
+corregidos. **Ninguno de los siete lo trajo una implementación nueva: los trajo ejecutar y mirar.**
 
-### Bloqueado por un tercero
+### La cadena que ahora se recorre entera
 
-**H-005 — la facturación fiscal.** Falta **contratar un PAC** ante el SAT y **decidir quién emite la
-factura**. Sin proveedor no hay nada que implementar. Es el **único hallazgo que ningún PT puede cerrar**;
-mantiene D1 en 85 y `P-012` en `IDENTIFICADO`. Los tres modelos, con sus consecuencias técnicas medidas, están en
-`evidence/PT-155/hallazgos.md`.
+`PT-173 … PT-176` cerraron el defecto de fondo: **la recepción la confirma quien recibe**. Hasta entonces
+el vendedor marcaba entregado su propio envío y liberaba su propio dinero, sin enviar nada. Y la **fase
+35** recorre la cadena completa —cierre → envío → recepción → liberación → retiro— **con cero escrituras a
+la base**, frente a las seis que siembra la fase 60.
 
-### El `resume PTSA` — ejecutado, y encontró dos cosas
-
-**S-004 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
-
-| Métrica | S-003 | **S-004** |
-|---|---|---|
-| Health | 88.9 | **89.5** |
-| Risk | 100 | **100** — saturado por un punto (`Risk_bruto` = 26) |
-| Confidence | 87.0 | **83.6** |
-| Clase | B | **B** |
-
-**El Health apenas se movió aunque se cerraron cuatro hallazgos**, porque aparecieron dos:
-
-- **H-025 (D2, ALTA)** — `cross_coherence_verified = verificado` **sobre una base con cero filas**. Las
-  cinco comprobaciones cubren dinero y devuelven «0 incoherencias» porque no hay nada que comparar. Es
-  H-021 con otra ropa: PT-149 arregló el caso «no pude conectar» y dejó el caso «no había datos», y el
-  docstring **declara la protección que el código no implementa**.
-- **H-026 (D3, MEDIA)** — `/health/detailed` dice `degraded` siempre y **una caída real de Redis diría lo
-  mismo**. RULE-17 protegió el arranque; la degradación en caliente quedó sin cubrir.
-
-**Y después se cerró el hueco de cobertura — S-004-M.** `run-all.sh` generó salida real y **se midió en la
-misma sesión**, sin cortar:
-
-| | S-004 | **S-004-M** |
-|---|---|---|
-| Reglas de dominio medidas | 1 de 14 | **12 de 14, las 12 cumplen** |
-| D5 (Success / Retry / Failure) | `SIN_DATOS` | **medido**: 100 % / 0 % / 0 % |
-| `trace_completeness` | SIN CICLOS | **100 %** |
-| Confidence | 83.6 | **97.9** |
-| Health | 89.5 | **88.0** |
-
-**Health 88.0 y Confidence 97.9.** La Confianza sube 14.3 porque se cerró la cobertura; el Health baja 1.5
-porque la propia medición encontró **H-027**. Es la auditoría funcionando, no una regresión.
-
-**Y por primera vez §15.6 no ata:** la Confianza supera el ≥ 90 que exige para clasificar A. Lo que faltan
-son **2 puntos de Health**, y los tienen los cuatro hallazgos. La clase ya depende sólo de defectos, no de
-lo que la auditoría no pudo mirar.
-
-- **H-027 (D3, MEDIA)** — el `RESUMEN FINAL` de la suite QA **omite la fase que falla**. La fase 71 (vía
-  garantizada de PayPal) se cayó y el resumen listó nueve fases «todas PASS». Séptima aparición del patrón
-  de la casa, por **omisión**: no miente, calla.
-
-**Lo que la sesión demuestra sobre el método:** medir en la misma sesión que genera los datos vale 14.3
-puntos de Confianza y permitió evaluar D5 por primera vez. Las dos veces anteriores se midió en la
-siguiente y la salida ya no estaba.
-
-**D4 vuelve a 100**: es lo que confirma que la tanda PT-168…PT-172 sirvió.
-
-**Los tres hallazgos nuevos —H-025, H-026, H-027— no los cierra el agente** (`[R44]`) y **no están
-corregidos**: son trabajo para el próximo ciclo FDGE, y **ninguno depende de terceros**. Manda
-`PTSA/Hallazgos/H-XXX.md`; convertirlos en PT es decisión tuya.
-
-**Hay además un cuarto pendiente que no es un hallazgo**: ampliar la suite QA para que **cierre una
-subasta**. Es el único hueco que queda en D1 (`R-5.1a`, `R-5.1d`) y daría filas reales a las cuatro
-comprobaciones de coherencia que hoy comparan cero — la mitad de lo que hace grave a H-025.
+Visto pasar en navegador real: **17/17**, con la contabilidad cerrando sola —950 → 95 de comisión → 855
+retenido → 855 liberado → 855 disponible— y `QA-CL-07` comprobando que el vendedor recibe **403**.
 
 ---
 

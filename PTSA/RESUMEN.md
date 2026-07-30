@@ -38,9 +38,14 @@ clase depende sólo de defectos y no de lo que la auditoría no pudo mirar.** `f
 | Dimensión | S-003 | S-004 | **S-004-M** | Penaliza hoy |
 |---|---|---|---|---|
 | D1 Alineación de Dominio | 85 | 85 | **85** | H-005 (ALTA) — CFDI sin decidir |
-| D2 Integridad Arquitectónica | 80 | 85 | **85** | H-025 (ALTA) — el veredicto no compara filas |
-| D3 Observabilidad y Recuperación | 100 | 95 | **90** | H-026 (MEDIA) · H-027 (MEDIA) |
+| D2 Integridad Arquitectónica | 80 | 85 | **85** | — penalización retirada |
+| D3 Observabilidad y Recuperación | 100 | 95 | **90** | — penalizaciones retiradas |
 | D4 Fidelidad Documental | 94 | 100 | **100** | — |
+
+**Los tres hallazgos que penalizaban D2 y D3 se cerraron el 2026-07-29** con VoBo humano, cada uno
+verificado ejecutando: H-025 por PT-177, H-026 por PT-178 y H-027 por PT-176. La columna dice «retirada» y
+no el hallazgo, porque **nombrar un hallazgo cerrado en una columna de penalización vigente es la
+contradicción que RULE-33 vigila**. La atribución histórica queda aquí, en prosa.
 
 **D5**: **MEDIDO por primera vez** — Success 100 % · Retry 0 % · Failure 0 %, sobre 3 ciclos (1 resuelto).
 Alucinación y drift `NO_APLICA` (sistema determinista). `health_unstable: false`, ahora por datos y no por

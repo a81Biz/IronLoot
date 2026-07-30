@@ -4,52 +4,18 @@
 
 ---
 
-## Esperando validación humana
+## Cero trabajo FDGE pendiente
 
-`[R44]` y STATE 6 prohíben al agente cerrar bugs. **Estos cuatro esperan tu palabra, no trabajo:**
+**Los catorce PT que esperaban validación se cerraron con VoBo humano el 2026-07-29**: PT-166 … PT-179.
+Detalle en `HISTORY.log` § «CIERRE CON VoBo HUMANO — PT-166 … PT-179 y H-025 / H-026 / H-027».
 
-| PT | Qué es | Evidencia |
+**Y los tres hallazgos corregibles están `CERRADA`**, cada uno verificado **ejecutando**:
+
+| Hallazgo | PT | Cómo se comprobó |
 |---|---|---|
-| **PT-173** | `shipments` se saltaba `OrderStateMachine`: un pedido `PAID` saltaba a `DELIVERED` | `evidence/PT-173/` |
-| **PT-174** | **La recepción la confirma quien recibe**, y el dinero espera 72 h desde esa confirmación | `evidence/PT-174/` |
-| **PT-175** | Fase 35: la cadena completa —cierre → envío → recepción → liberación → retiro— **sin sembrar** | `evidence/PT-175/` |
-| **PT-176** | El click de PayPal, y el resumen de la suite que omitía la fase caída (**H-027**) | `evidence/PT-176/` |
-
-**El de peso es PT-174, y conviene saber qué cambia**: hasta ahora **el vendedor podía marcar entregado su
-propio envío y liberar su propio holdback**, sin enviar nada y sin que nadie confirmara. El holdback
-protege al comprador durante la ventana de disputa, y lo desactivaba la parte de la que protege.
-
-**Decisión de negocio aplicada: opción B, 72 h** — declarada como supuesto revocable en `PLAN_ACTUAL.md` y
-confirmada con tu «adelante». Es un parámetro (`SETTLEMENT_HOLDBACK_HOURS`), no una política incrustada.
-
-**`H-027` pasa a `CORREGIDA`**, no a `CERRADA`: la cierras tú.
-
----
-
-## Cero trabajo FDGE pendiente aparte de eso
-
-**Los siete que esperaban validación se cerraron con VoBo humano el 2026-07-29**: PT-166, PT-167,
-PT-168, PT-169, PT-170, PT-171 y PT-172. Detalle y evidencia en `HISTORY.log` § «CIERRE CON VoBo HUMANO
-— PT-166 … PT-172», que es append-only y manda para lo terminado.
-
-**Dos de ellos no estaban en ninguna lista cuando empezó la jornada** —PT-166 entró después del cierre
-en bloque anterior y PT-167 no tenía ni entrada en `HISTORY.log`— y ése fue el defecto F-167-F. Sin
-PT-169 no habría habido nada que validar, porque nada los nombraba. Lo vigila ahora
-`rastro-de-trabajo-completo.spec.ts` (**RULE-34**).
-
-**Cero PT abiertos.** Pero el delta sync **S-004** y la medición dirigida **S-004-M**, ejecutados justo
-después, **abrieron tres hallazgos** que sí son trabajo de este repositorio y que todavía **no tienen
-PT**:
-
-| Hallazgo | Dim | Sev | Qué |
-|---|:--:|---|---|
-| **H-025** | D2 | ALTA | `cross_coherence_verified = verificado` sin comparar filas — confirmado también con la base poblada |
-| **H-026** | D3 | MEDIA | `/health/detailed` dice `degraded` siempre; una caída real de Redis diría lo mismo |
-| **H-027** | D3 | MEDIA | El `RESUMEN FINAL` de la suite QA omite la fase que falla — se leyeron nueve fases «todas PASS» de diez |
-
-Manda `PTSA/Hallazgos/H-XXX.md`. **Convertirlos en PT es una decisión tuya** — vía FPGE
-(`promote FPGE`) o pidiéndolo directamente. No se anotan aquí como tarea porque **todavía no son
-trabajo aprobado**, y esa distinción es la que este fichero perdió una vez (PT-140).
+| **H-025** | PT-177 | El veredicto dice `0 de 1`, marca `sin filas que comparar` y sale con **1** |
+| **H-026** | PT-178 | En vivo: Redis en pie → `healthy`; Redis parado → `unhealthy` + «PING sin respuesta en 2000 ms» |
+| **H-027** | PT-176 | En vivo: diez fases sin salida → diez `*** FALLO / NO EJECUTADA ***` y exit 1 |
 
 ---
 
@@ -70,8 +36,19 @@ presentes cuando llegue el proveedor:
   y C no. Este repositorio ya sabe lo que cuesta poner algo frágil en la ruta de un pago (ADR-038).
 
 Mientras tanto `H-005` sigue `ABIERTA`, mantiene **D1 en 85** y deja `P-012 (CfdiRecord)` en
-`IDENTIFICADO`. Es el **único de los cuatro hallazgos activos que ningún PT puede cerrar**: los otros tres
-(H-025, H-026, H-027) son trabajo de este repositorio.
+`IDENTIFICADO`. **Es el único hallazgo activo del sistema**, y el único que ningún PT puede cerrar: los
+otros tres se corrigieron y se cerraron el 2026-07-29.
+
+**Las dos vías de cierre, y las dos son tuyas:**
+
+1. **Decidir el modelo fiscal** (A, B o C de `evidence/PT-155/hallazgos.md`). Con la decisión tomada, lo
+   implementable se implementa y H-005 queda reducida a «esperando credenciales del PAC», que es TD-002 y
+   ya está registrado así.
+2. **Aceptarlo como limitación declarada de v1.0.** Es una decisión legítima —el PRD ya lo lleva en
+   Out-of-Scope— y cierra el hallazgo por decisión, no por código.
+
+**Lo que no se puede hacer es cerrarlo escribiendo código**, y por eso sigue abierto: no hay
+implementación que sustituya a un proveedor certificado ante el SAT.
 
 **Bloqueado por lo mismo**: TD-001 (CFDI/PAC). Y TD-002 (Stripe y HeyBanco) espera credenciales de
 ambas pasarelas — también un tercero, también fuera del repositorio.

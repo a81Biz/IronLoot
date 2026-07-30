@@ -1,0 +1,15 @@
+PASS test/unit/payments/respuesta-de-pasarela-no-es-averia.spec.ts (5.352 s)
+  Un 4xx de la pasarela no es una averia nuestra — F-176-C (PT-179)
+    ✓ C1: un 422 —orden ya capturada— es negocio, no averia (1 ms)
+    ✓ C2: un 404 de la pasarela tambien es negocio
+    ✓ C3: un 5xx de la pasarela SI es averia — y el reintento es legitimo
+    ✓ C4: una excepcion de negocio se marca como tal y NO sale con 5xx (1 ms)
+    casos de control
+      ✓ AC-01: el limite esta en 500, no en 400 — un 499 sigue siendo negocio
+      ✓ AC-02: el status de la pasarela viaja en los detalles, no se pierde
+
+Test Suites: 1 passed, 1 total
+Tests:       6 passed, 6 total
+Snapshots:   0 total
+Time:        5.559 s
+Ran all test suites matching /respuesta-de-pasarela/i.

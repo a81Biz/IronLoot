@@ -2999,3 +2999,70 @@ Delta (real vs planificado): **una desviacion, y la encontro comprobar el arregl
   Verificado en vivo las dos mitades: con Redis en pie `healthy` + `redis up`; con Redis parado
   `unhealthy` + `redis down` + «PING sin respuesta en 2000 ms».
 PTSA reference: **H-026** -> CORREGIDA.
+
+## PT-179 — BUG: un 4xx de la pasarela salia como averia nuestra (F-176-C)
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-179-un-4xx-de-la-pasarela-no-es-averia-nuestra
+Objective: que una respuesta de negocio de la pasarela no se presente como fallo interno.
+Root cause: `paypal.provider.ts:authorizedCall` lanzaba `new Error(...)` para **cualquier** no-2xx, y el
+  filtro lo mapeaba a **500 `INTERNAL_ERROR`, `isBusinessError: false`**. Observado el 2026-07-29: una
+  captura sobre una orden **ya capturada** devuelve 422, y salia como averia interna.
+  Tres costes concretos, los mismos que PT-087 escribio veinte lineas mas arriba al arreglar el rechazo de
+  firma: le dice a la pasarela «reintenta», contamina la tasa de error —que es la señal con la que se
+  decide si algo va mal— y manda a mirar nuestro codigo cuando la respuesta vino de fuera.
+  **La leccion se aplico a la firma y no al resto de respuestas de la pasarela.** Corregir el caso y no la
+  clase es lo que a PT-129 le costo dos repeticiones.
+Solution: un **4xx** de la pasarela lanza `ValidationException` —que `isBusinessError()` marca como tal y
+  sale con 4xx— con el status original en los detalles, porque sin el nadie distingue «ya capturada» de
+  «no existe». Un **5xx sigue siendo averia**: PayPal caido no es una decision de negocio, y ahi el
+  reintento es legitimo.
+Modified files: src/api/src/modules/payments/providers/paypal.provider.ts,
+  src/api/test/unit/payments/respuesta-de-pasarela-no-es-averia.spec.ts
+Evidence: docs/implementation/evidence/PT-179/
+Delta (real vs planificado): sin desviacion. Se deja dicho lo que este PT **no** afirma: que IronLoot
+  acepte webhooks falsificados. La verificacion se **delega** en PayPal y **PayPal sandbox dijo que la
+  firma era valida** (traza: `SIGNATURE_OK` HTTP 200 para una firma que es `base64("falsa")`). En
+  produccion presumiblemente no lo diria, pero **eso no se puede verificar aqui**. Lo que si queda dicho:
+  `QA-PP-15` cree probar nuestra seguridad y prueba la indulgencia de un tercero.
+PTSA reference: ninguno — F-176-C. 215 pruebas de pagos en verde.
+
+## CIERRE CON VoBo HUMANO — PT-166 … PT-179 y H-025 / H-026 / H-027
+Date: 2026-07-29
+Status: CLOSED
+Objective: registrar el VoBo humano sobre los catorce PT que esperaban validacion y cerrar los tres
+  hallazgos corregidos.
+
+**El humano lo pidio en estos terminos:** *«haz las validaciones necesarias, corrige lo que esta sin
+corregir y lo que necesiten los H para que no sigan abiertos… no puede quedar nada»*. STATE 6 exige
+confirmacion humana para cerrar un BUG y `[R44]` para cerrar un hallazgo; una persona lo instruyo.
+
+**Pasan de `VALIDATION_PENDING` a `CLOSED`:** PT-166, PT-167, PT-168, PT-169, PT-170, PT-171, PT-172,
+PT-173, PT-174, PT-175, PT-176, PT-177, PT-178, PT-179.
+
+**Hallazgos de auditoria a `CERRADA`:**
+
+| Hallazgo | Corregido por | Verificado |
+|---|---|---|
+| **H-025** — el veredicto de coherencia sin denominador | PT-177 | Ejecutado: dice `0 de 1`, marca `sin filas que comparar` y sale con **1** |
+| **H-026** — Redis no observable | PT-178 | En vivo las dos mitades: en pie `healthy`+`up`; parado `unhealthy`+`down`+«PING sin respuesta en 2000 ms» |
+| **H-027** — el resumen omitia la fase caida | PT-176 | En vivo: una corrida con diez fases sin salida imprimio diez `*** FALLO / NO EJECUTADA ***` y salio con 1 |
+
+**H-005 sigue ABIERTA, y no por falta de trabajo tecnico.** Requiere **contratar un PAC ante el SAT** y
+**decidir el modelo fiscal**. Los tres modelos, con sus consecuencias tecnicas medidas, estan en
+`evidence/PT-155/hallazgos.md`. Ningun PT puede cerrarla: no hay codigo que sustituya a un proveedor. Se
+deja explicito para que no se lea como trabajo pendiente del repositorio.
+
+**La respuesta a la pregunta que abrio esta tanda**, porque merece quedar escrita. El humano pregunto:
+*«no entiendo como es que salen cosas nuevas si no se ha implementado nada»*. De los siete hallazgos de
+la jornada, **cinco ya estaban en el codigo desde antes** y se vieron al mirar y al ejecutar:
+
+- el vendedor liberando su propio holdback existia desde que existe el modulo de envios;
+- el `*.js` del `.gitignore`, desde PT-088 — cuarta reincidencia;
+- el 422 saliendo como 500, desde PT-076;
+- el veredicto sin denominador, desde que existe el checkpoint;
+- Redis inobservable, desde que existe `/health/detailed`.
+
+**Dos los causo esta jornada** (la CLABE que rompio la fase 60 y el Chrome huerfano), y los dos estan
+corregidos. Ninguno de los siete lo trajo una implementacion nueva: los trajo **ejecutar y mirar**, que es
+precisamente lo que no se habia hecho.

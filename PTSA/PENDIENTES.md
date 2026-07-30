@@ -22,11 +22,11 @@
 
 | # | Pendiente | Responsable |
 |---|---|---|
-| 1 | **H-025 — el veredicto de coherencia se declara `verificado` sin comparar filas.** Confirmado **con la base poblada**: sigue diciendo «5 de 5 medidas» y **cuatro de las cinco comparan cero filas**. Sexta aparición del patrón; el docstring declara la protección que el código no implementa. ALTA, D2 | Agente, bajo FDGE |
-| 2 | **H-026 — Redis no se puede observar.** `/health/detailed` dice `degraded` siempre, y una caída real de Redis diría lo mismo. MEDIA, D3 | Agente, bajo FDGE |
-| 3 | **H-027 — el `RESUMEN FINAL` de la suite QA omite la fase que falla.** La fase 71 (vía garantizada de PayPal) se cayó y el resumen listó nueve fases «todas PASS». Séptima aparición del patrón, por omisión. MEDIA, D3 | Agente, bajo FDGE |
-| 4 | **Ampliar la suite QA para que CIERRE una subasta.** Es el único hueco que queda en D1 (`R-5.1a`, `R-5.1d`) y daría filas reales a las cuatro comprobaciones de coherencia que hoy comparan cero — la mitad de lo que hace grave a H-025 | Agente, bajo FDGE |
-| 5 | **H-005 — quién emite la factura.** Tres opciones en `F-1 § U-005`, con sus consecuencias técnicas medidas en `evidence/PT-155/hallazgos.md`. Mantiene D1 en 85 y bloquea P-012. **Ningún PT puede resolverlo** | Humano (negocio + fiscal) |
+| 1 | **H-005 — quién emite la factura.** Tres modelos en `evidence/PT-155/hallazgos.md`. Mantiene D1 en 85 y bloquea P-012. **Ningún PT puede resolverlo**: no hay código que sustituya a un PAC certificado ante el SAT | Humano (negocio + fiscal) |
+| 2 | **Un `resume PTSA` que recalcule y emita.** Los scores se midieron con cuatro hallazgos activos y hoy hay uno; la aritmética daría D2 = 100 y D3 = 100. Y es buen momento: la base tiene salida real | Humano (disparador PTSA) |
+
+**Es todo.** Los tres hallazgos corregibles —H-025, H-026, H-027— se cerraron el 2026-07-29 con VoBo
+humano, cada uno verificado ejecutando y no leyendo.
 
 ---
 

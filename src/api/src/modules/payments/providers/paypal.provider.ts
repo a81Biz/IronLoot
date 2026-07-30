@@ -6,7 +6,7 @@ import {
   WebhookResult,
   FindPaymentContext,
 } from '../interfaces';
-import { UnauthorizedException } from '../../../common/observability';
+import { UnauthorizedException, ValidationException } from '../../../common/observability';
 import { PaymentTraceService } from '../payment-trace.service';
 import { depositReturnUrl } from '../return-urls';
 
@@ -164,6 +164,29 @@ export class PaypalProvider implements PaymentProvider {
     }
 
     if (!res.ok) {
+      // PT-179 (F-176-C) — **Un 4xx de PayPal no es una averia nuestra.**
+      //
+      // Esto lanzaba `Error` generico para cualquier no-2xx, y el filtro lo mapeaba a **500
+      // INTERNAL_ERROR**. Observado el 2026-07-29: una captura sobre una orden **ya capturada** devuelve
+      // 422, y salia como averia interna. Tres costes, los mismos que PT-087 escribio veinte lineas mas
+      // arriba al arreglar el rechazo de firma:
+      //
+      //   - le dice a la pasarela «reintenta», y reintentara;
+      //   - contamina la tasa de error, que es la señal con la que se decide si algo va mal;
+      //   - manda a mirar nuestro codigo cuando la respuesta vino de fuera.
+      //
+      // La leccion se aplico a la firma y no al resto de respuestas. Corregir el caso y no la clase es
+      // lo que a PT-129 le costo dos repeticiones.
+      //
+      // **Un 5xx si sigue siendo averia**: PayPal caido no es una decision de negocio, y ahi el
+      // reintento es legitimo.
+      if (res.status < 500) {
+        throw new ValidationException(`PayPal respondio ${res.status}`, {
+          status: res.status,
+          url,
+        });
+      }
+
       throw new Error(`PayPal request to ${url} failed with status ${res.status}`);
     }
 
