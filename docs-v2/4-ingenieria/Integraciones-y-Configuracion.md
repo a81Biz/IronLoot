@@ -33,7 +33,7 @@ Tres `.env.example` (raíz, `src/api`, `src/admin`). Marcadas 🔒=secreto, ⚠�
 `DATABASE_URL`🔒 · `DB_HOST/PORT/NAME/USER` · `DB_PASSWORD`🔒 · `REDIS_URL`/`REDIS_HOST`/`REDIS_PORT` · `REDIS_PASSWORD`🔒(opc).
 
 ### Auth / sesión
-`JWT_SECRET`🔒⚠️(min 32) · `JWT_ACCESS_EXPIRY`(15m) · `JWT_REFRESH_EXPIRY`(7d) · `BCRYPT_SALT_ROUNDS`(12) · `SESSION_SECRET`🔒 · `ADMIN_SESSION_SECRET`🔒 · `ADMIN_API_KEY`🔒(default `dev-admin-key` **en desarrollo**; en producción el arranque aborta si sigue puesto — AUD-004 corregido) · `ADMIN_USERNAME`/`ADMIN_PASSWORD`🔒(default `admin`/`admin`, **AUD-004**) · `COOKIE_DOMAIN`(`.ironloot.local`) · `COOKIE_SAMESITE`(Lax) · `COOKIE_SECURE`⚠️ · `RATE_LIMIT_TTL/MAX`(60/100–200, inconsistente entre ejemplos).
+`JWT_SECRET`🔒⚠️(min 32) · `JWT_ACCESS_EXPIRY`(15m) · `JWT_REFRESH_EXPIRY`(7d) · `ROTATION_GRACE_SEC`(30, **sin reserva**: sin ella el API aborta nombrándola — RULE-17) · `BCRYPT_SALT_ROUNDS`(12) · `SESSION_SECRET`🔒 · `ADMIN_SESSION_SECRET`🔒 · `ADMIN_API_KEY`🔒(default `dev-admin-key` **en desarrollo**; en producción el arranque aborta si sigue puesto — AUD-004 corregido) · `ADMIN_USERNAME`/`ADMIN_PASSWORD`🔒(default `admin`/`admin`, **AUD-004**) · `COOKIE_DOMAIN`(`.ironloot.local`) · `COOKIE_SAMESITE`(Lax) · `COOKIE_SECURE`⚠️ · `RATE_LIMIT_TTL/MAX`(60/100–200, inconsistente entre ejemplos).
 
 ### Pagos
 `MERCADO_PAGO_ACCESS_TOKEN`🔒 · `MERCADO_PAGO_WEBHOOK_SECRET`🔒 · `PAYPAL_CLIENT_ID/SECRET`🔒 · `PAYPAL_BUSINESS_EMAIL` · `PAYPAL_MODE`(sandbox) · `HEY_BANCO_API_URL/CLIENT_ID/CLIENT_SECRET/WEBHOOK_SECRET`🔒 (**no en ningún `.env.example`**, AUD-023) · `API_BASE_URL`.

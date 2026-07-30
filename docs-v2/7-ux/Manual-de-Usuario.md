@@ -22,6 +22,15 @@
 
 > No podrás iniciar sesión hasta **verificar tu email**. Si tu cuenta está suspendida o baneada, el acceso queda bloqueado.
 
+**Cuánto dura tu sesión.** Hasta **siete días** sin volver a escribir la contraseña, y se renueva sola
+mientras uses el portal. *(Antes de julio de 2026 duraba quince minutos: el mecanismo de renovación
+estaba escrito y no se llamaba.)*
+
+**Si te devuelve al login de golpe**, normalmente es una de tres: pasaron los siete días, cerraste
+sesión en otro sitio, o el sistema detectó que **tu sesión se estaba usando desde dos lugares a la
+vez**. En ese último caso se cierra por seguridad — también para ti, porque no hay forma de saber cuál
+de los dos accesos es el tuyo. Vuelve a entrar y, si no fuiste tú, **cambia la contraseña**.
+
 ## 2. Explorar y ver subastas (público)
 
 - **Catálogo** `/auctions` — lista paginada con búsqueda.

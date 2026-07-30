@@ -35,7 +35,7 @@
 |---|---|---|---|
 | POST | /auth/register | Public+Recaptcha | 5(prod)/60(dev)/60s |
 | POST | /auth/login | Public | 5/60/60s |
-| POST | /auth/refresh | Public | default |
+| POST | /auth/refresh | Public | default | **Rota** el refresh token: el que devuelve **no es el que se envió** (PT-196). Un cliente que ignore ese campo deja de funcionar en su segundo refresco. Presentar uno ya rotado fuera de `ROTATION_GRACE_SEC` **revoca la sesión** |
 | POST | /auth/logout | JWT | default |
 | POST | /auth/verify-email | Public | default |
 | POST | /auth/forgot-password | Public | default |

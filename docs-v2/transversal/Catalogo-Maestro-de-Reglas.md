@@ -18,7 +18,7 @@
 | ID | Regla | Estado real (código) | Evidencia | Hallazgo |
 |---|---|---|---|---|
 | RN-01 | Contraseñas con bcrypt, saltRounds=12. | ✅ Cumple | `auth.service.ts:52` | — |
-| RN-02 | Token de acceso JWT 15m; refresh 7d (persistido como Session). | ✅ Cumple | `auth.service.ts:70` | AUD-035 (cookie 7d/30d ≠ TTL) |
+| RN-02 | Token de acceso JWT 15m; refresh 7d (persistido como `Session`). **La sesión efectiva dura los 7 días**: el CLIENT refresca por los dos caminos —navegación y llamadas del navegador— desde PT-194. Antes duraba **quince minutos**, porque el refresco existía y no lo llamaba nadie. Y las cookies **ya no sobreviven a sus tokens**: derivan de `JWT_ACCESS_EXPIRY` / `JWT_REFRESH_EXPIRY` (PT-192). | ✅ Cumple | `auth.service.ts`, `client-auth.guard.ts`, `vida-de-sesion.ts` | AUD-035 corregido · TD-025 cerrada |
 | RN-03 | Usuario no verificado no puede iniciar sesión (`USER_NOT_VERIFIED`). | ✅ Cumple | `auth.service.ts:733` | — |
 | RN-04 | Usuario SUSPENDED/BANNED bloqueado en login/validación. | ✅ Cumple | `auth.service.ts:636,733` | — |
 | RN-05 | `forgot-password` nunca revela existencia del email (siempre 200). | ✅ Cumple | `auth.service.ts:480` | — |
@@ -45,6 +45,7 @@
 | ID | Regla | Estado real | Evidencia | Hallazgo |
 |---|---|---|---|---|
 | RN-20 | `balance >= 0` siempre. | ✅ Cumple | `07-Database:224` | — |
+| RN-02b | **El refresh token rota en cada refresco, y su reuso revoca la sesión.** Presentar el anterior **dentro de `ROTATION_GRACE_SEC`** (30 s) devuelve los vigentes sin rotar —es una carrera de dos peticiones del mismo navegador—; **fuera** de esa ventana es **reuso**: hay dos copias en circulación y se revoca la sesión entera, **incluido el usuario legítimo**, porque no se sabe cuál de las dos es la suya. | ✅ Cumple | `auth.service.ts`, `rotation-grace.ts` | ADR-059 · PT-196 |
 | RN-21 | Fondos retenidos: `held` no puede exceder el balance **al momento de bloquear**; tras bloquear **puede** exceder el restante (corregido PT-032). | ✅ Cumple | `wallet-calculation.ts:9`, `02-PRD AC-3.2` | **AUD-015** (PTSA F-1 aún lo enuncia mal) |
 | RN-22 | Bloqueo de fondos hold-first: verifica disponibilidad, wallet activa, mueve balance→held atómicamente. | ✅ Cumple | `wallet.service.ts:164-215` | AUD-013 (race no probado) |
 | RN-23 | Superado libera fondos del líder anterior + notificación BID_OUTBID. | ✅ Cumple | `bids.service.ts:137` | — |

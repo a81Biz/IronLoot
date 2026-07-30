@@ -30,7 +30,7 @@
 |---|---|---|---|---|---|
 | **User** | `users` | PK uuid; 1:1 Profile/Wallet; 1:N Auction/Bid/Order/Notification/PaymentMethod | — | ✅ | `schema.prisma:40` |
 | **Profile** | `profiles` | 1:1 User (Cascade) | — | ✅ | `:104` |
-| **Session** | `sessions` | N:1 User (Cascade); refreshToken único | — | ✅ | `:131` |
+| **Session** | `sessions` | N:1 User (Cascade); `refreshToken` y `previousRefreshToken` únicos | `rotatedAt` marca la última rotación; la ventana de gracia se mide desde ahí, **no** desde `lastUsedAt` (lección de H-011) | ✅ | `:131` |
 | **UserPaymentMethod** | `user_payment_methods` | N:1 User (Cascade); unique(userId,referenceId) | — | ✅ (mig.14) | `:885` **AUD-019** (no documentado antes) |
 | **Auction** | `auctions` | N:1 seller; 1:N Bid; 1:1 Order | `startingPrice`,`currentPrice` Decimal(10,2) | ✅ | `:160` |
 | **Bid** | `bids` | N:1 Auction/User; idx (auctionId,amount DESC) | `amount` Decimal(10,2) | ✅ | `:199` |

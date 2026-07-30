@@ -98,7 +98,8 @@ entra un patrón arquitectónico nuevo, pasan más de 3 meses sin ejecución, o 
 
 **Generado:** 2026-06-23 (Foundation Protocol 1.0, primera ejecución) · **Acotado a contrato de
 agente:** 2026-07-29 (PT-141, ADR-049) · **Reglas al día:** 2026-07-29 (PT-189, **RULE-38**) ·
-**Inventarios medidos:** 2026-07-29 (PT-188)
+**Inventarios medidos:** 2026-07-29 (PT-188) · **Deuda al día:** 2026-07-30 (PT-196; abiertas
+**TD-002** y **TD-009**, las dos por terceros)
 **Alcance:** `src/` (api, apps/base, apps/client, admin, packages/core, nginx) + `docker-compose.yml`
 + `src/api/prisma/schema.prisma`
 **Decisión de referencia:** ADR-049 en [`docs-v2/transversal/Registro-Maestro-de-ADR.md`](../../docs-v2/transversal/Registro-Maestro-de-ADR.md)
