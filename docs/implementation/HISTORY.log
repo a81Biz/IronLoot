@@ -3477,6 +3477,64 @@ Delta (real vs planned): **el indice encontro un defecto de proceso mio en su pr
      Los dos se vieron fallar por su motivo correcto despues de arreglarlos.
 PTSA reference: ninguno — es deuda de registro, no un hallazgo de auditoria.
 
+## PT-188 — REFACTOR: la documentacion decia cosas que el codigo dejo de hacer
+Date: 2026-07-29
+Status: DONE
+Branch: docs/PT-188-documentacion-al-dia
+Objective: poner al dia toda la documentacion afectada por la jornada — y medirla antes, en vez de suponer que
+  estaba bien.
+Root cause: **nadie vigilaba los inventarios.** `11-Conventions.md` tiene guarda, `10-Technical-Debt.md` tiene
+  guarda, y los seis inventarios **no tenian ninguna**. Lo que no se vigila se desvia.
+Solution y lo que se encontro al medir:
+  - **`inventory/endpoints.md` mentia en las DOS direcciones.** Le faltaban **73 de 159 rutas** —todo el espacio
+    de ADMIN, diagnostico, KYC, el planificador y los `/users/me/*`— y documentaba **6 que no existen**, entre
+    ellas `/users/settings`: **la ruta fantasma de H-020**. El codigo se corrigio hace meses; el documento que un
+    agente lee para saber a donde llamar siguio diciendo la ruta equivocada. Reescrito con las 159 medidas, y con
+    **guarda en las dos direcciones**.
+  - **`inventory/entities.md`** decia «Total models: 27» y el esquema tiene **33**. Faltaban los tres del retiro
+    del vendedor (`WithdrawalRequest`, `UserPaymentMethod`, `AccountVerification`).
+  - **`inventory/routes.md`** no tenia dos paginas, y una era **la ruta de retorno de todas las pasarelas** —
+    justo lo que ADR-042 existe para que no se pierda.
+  - **`inventory/services.md`**: medido, **0 huecos**. Se dice porque «se miro y esta bien» es un resultado.
+  - **El Registro Maestro de ADR se quedo en ADR-049** sin citar **ni un PT** de la jornada. Se anaden
+    **ADR-050 … ADR-055**: la recepcion la confirma quien recibe; un servicio no decide por sus llamantes; todo
+    tercero declara su tope; ninguna variable de conexion tiene reserva; el registro append-only necesita indice;
+    y v1.0 no afirma que su fiabilidad este demostrada.
+  - **`Catalogo-Maestro-de-Reglas.md` describia el defecto como si fuera la regla**: `RN-64` decia que el
+    holdback se libera «cuando el pedido esta DELIVERED», que es **exactamente** lo que permitia al vendedor
+    liberar su propio dinero. Corregida, con `RN-64b` nueva y el motivo escrito.
+  - `Catalogo-de-API.md` decia «~118 endpoints» (son 159) y `~61` de ADMIN (son 80). Corregido **sin duplicar**
+    la tabla del inventario: mantener dos listas de 159 filas es el problema que ADR-049 resolvio.
+  - `Master-Test-Plan.md` decia «frontends: 0 suites, ninguna» — hay **3 suites y 119 casos**. Y no tenia la
+    fase 35.
+  - `Integraciones-y-Configuracion.md`, `CI-CD-Observabilidad-y-Operacion.md`, el README del contrato y
+    `CLAUDE.md`: los topes de espera, las variables sin reserva, RULE-36/37 y el indice de estado.
+Modified files:
+  docs/enterprise-documentation/inventory/endpoints.md (reescrito) · entities.md · routes.md · integrations.md
+  docs/enterprise-documentation/README.md · CLAUDE.md
+  docs-v2/transversal/Registro-Maestro-de-ADR.md (ADR-050…055) · Catalogo-Maestro-de-Reglas.md
+  docs-v2/4-ingenieria/Catalogo-de-API.md · Integraciones-y-Configuracion.md
+  docs-v2/5-qa/Master-Test-Plan.md · docs-v2/6-devops/CI-CD-Observabilidad-y-Operacion.md
+  src/api/scripts/rutas-declaradas.ts (nuevo, extractor compartido)
+  src/api/test/unit/documentacion/inventario-de-endpoints-completo.spec.ts (nuevo, 7 casos)
+Evidence: docs/implementation/evidence/PT-188/
+Delta (real vs planned): dos cosas, y la segunda es una decision de alcance.
+  1. **Intente deducir el nivel de autorizacion de cada ruta y lo retire.** `@Public()` aparece en tres sitios
+     segun el fichero —encima del verbo, debajo, y a nivel de clase— y `admin.controller.ts` declara
+     `@UseGuards(AdminDualAuthGuard)` **junto a** `@Public()`, que significa «no pases por el JWT global», no
+     «esto es publico». Cada heuristica acertaba en unos ficheros y fallaba en otros: una dio `JWT` a
+     `POST /auth/register` **teniendo `@Public()`**, y la siguiente dio por **publicos los ochenta endpoints de
+     administracion**. Un inventario que se lee para saber que esta protegido no puede apoyarse en eso: la
+     columna se cura a mano —19 controladores, no 159 rutas— y la guarda comprueba **lo que se puede medir sin
+     ambiguedad**. Prometer menos y cumplirlo es mejor que una guarda que a veces miente.
+  2. **El catalogo de `docs-v2` NO duplica la lista de 159.** Describe guard y limite por familia y apunta al
+     inventario para la enumeracion. Copiarla habria recreado el defecto que ADR-049 corrigio: cada PT pagando la
+     escritura doble.
+  Y una nota que evita una alarma: **el extractor de rutas se saco a `scripts/rutas-declaradas.ts`** porque ahora
+  lo usan dos guardas. Estaba dentro de la de los SSR, y dos copias del mismo criterio acaban discrepando — es la
+  leccion que esta jornada se llevo cuatro veces.
+PTSA reference: ninguno — deuda documental, no hallazgo de auditoria.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3488,7 +3546,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**139** encabezados · **0** realmente abiertos · **6** sin `Status:` declarado.
+**140** encabezados · **0** realmente abiertos · **6** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -3631,3 +3689,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-185 | 3314 | `DONE` | **DONE** | — |
 | PT-186 | 3352 | `DONE` | **DONE** | cerrado en la línea 3397 |
 | PT-187 | 3434 | `DONE` | **DONE** | — |
+| PT-188 | 3480 | `DONE` | **DONE** | — |

@@ -22,10 +22,41 @@
 | Capa | Suites | Bloques aprox | Cobertura |
 |---|---|---|---|
 | core dominio | 8 | 134 casos | Money, wallet-calc, FSM auction/order/dispute, bid-validation, HMAC, validador IPN (**obsoleto desde PT-076**), 4 use-cases |
-| api unit/integ | 30+ | ~175 | users(21), auctions(11), lock(11), auth(9), wallet(8→13), disputes(7), scheduler-lock(7)… **+retiro real (PT-069..072): kyc.service(4), clabe.util(3), settlement(2), withdrawals.service(5)** |
+| api unit/integ | **121 suites** | **985 casos** (medido 2026-07-29) | users(21), auctions(11), lock(11), auth(9), wallet(8→13), disputes(7), scheduler-lock(7)… **+retiro real (PT-069..072): kyc.service(4), clabe.util(3), settlement(2), withdrawals.service(5)** |
 | api e2e | 15 | ~79 | watchlist(9), auth(8), settings(7), bids(7), auctions(6), wallet(5), orders(5)… |
-| **QA navegador (Playwright)** | 1 harness | ~135 checks | smoke + bootstrap del mundo + 41 rutas autenticadas + E2E puja/superado + admin writes + **MP real (Orders API + webhook firmado)** + **historial** + **flujo de retiro end-to-end (KYC→método→venta→holdback→liberación→solicitud→admin approve/mark-paid)** |
-| frontends | 0 | 0 | **ninguna (unit)** |
+| **QA navegador (Playwright)** | 1 harness, **11 fases** | ~152 checks | smoke + bootstrap del mundo + 41 rutas autenticadas + E2E puja/superado + admin writes + **MP real (Orders API + webhook firmado)** + **historial** + **flujo de retiro end-to-end (KYC→método→venta→holdback→liberación→solicitud→admin approve/mark-paid)** |
+| frontends | **3** | **119 casos** | CLIENT 103 · ADMIN 13 · BASE 3. Decía «ninguna» |
+
+## 2.b Fase 35 — la cadena completa **sin sembrar** (PT-175)
+
+`tests/qa-browser-suite/35-cierre-y-liquidacion.js`, **17 casos**, va de la subasta cerrada al retiro de la
+ganancia **sin un solo `INSERT`**. Hay un caso —`QA-CL-15`— que **se lee a sí mismo** y falla si aparece uno.
+
+| Lo que recorre | Cómo |
+|---|---|
+| Cierre de la subasta | `POST /scheduler/expire-auction/:id` (sólo existe fuera de producción) |
+| Envío | El **vendedor** declara `SHIPPED` |
+| Recepción | El **comprador** confirma `DELIVERED`. `QA-CL-07` comprueba que el vendedor recibe **403** |
+| Liberación del holdback | `POST /scheduler/release-settlements` con `SETTLEMENT_HOLDBACK_HOURS=0` |
+| Retiro | Solicitud del vendedor y aprobación en ADMIN |
+
+Visto pasar en navegador real con la contabilidad cerrando sola: **950 → 95 de comisión → 855 retenido → 855
+liberado → 855 disponible**.
+
+**La fase 60 sigue sembrando el origen del dinero a propósito**: prueba el subsistema de retiro aislado. La
+diferencia entre las dos está escrita en las dos.
+
+**Y `SETTLEMENT_HOLDBACK_HOURS=0` es configurar, no falsear**: se ejecuta el mismo código y sólo se adelanta el
+reloj. Desde PT-186 QA **declara** ese 0 en su `.env` en vez de heredarlo de la reserva del compose, que es 72 —
+la protegida.
+
+## 2.c Lo que la suite ya no puede hacer, y por qué importa
+
+| Guarda | Impide |
+|---|---|
+| `orders-flow.e2e-spec` sin truncados | Que una suite borre los datos de las demás mientras corren en paralelo (RULE-23). Producía `404` en suites sanas y fallos que **cambiaban de sitio entre corridas** |
+| `TestApp` sin imponer `DATABASE_URL` | Que las pruebas pisen `ironloot_db`, la base que sostiene las validaciones PTSA (PT-143) |
+| Límite de memoria verificado en CI | Que la suite e2e completa se dé por buena cuando sus workers mueren por `SIGKILL` contra el límite de 1 GB |
 
 ## 3. Mapa de cobertura por módulo (estado real)
 

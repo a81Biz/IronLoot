@@ -151,3 +151,41 @@ All external services and third-party integrations.
 - **Status:** Dev only
 - **Command:** `npm run db:studio` (in `src/api/`)
 - **Purpose:** Visual DB browser
+
+---
+
+## Topes de espera de cada tercero (PT-183 / PT-184 / PT-188)
+
+**Toda llamada que sale del sistema declara cuánto se le espera.** Antes de esta jornada lo declaraban **dos**
+ficheros del API, y los dos se escribieron el mismo día.
+
+| Tercero | Tope | De dónde sale el número |
+|---|---|---|
+| **SMTP** (nodemailer) | conexión 5 s · saludo 5 s · sesión 10 s | `MAIL_TIMEOUTS_MS`. Sin declararlos, nodemailer aplica **dos minutos**: con el SMTP caído, el reenvío de verificación **y el registro** se colgaban 121 s. Medido (H-033) |
+| **Pasarelas de pago** (PayPal, Mercado Pago, HeyBanco) | consultar 8 s · **operar 20 s** | `GATEWAY_TIMEOUTS_MS`. La asimetría es **del dominio**: consultar puede cortarse pronto porque la vía garantizada volverá a preguntar; **crear o capturar** no, porque abandonar algo que quizá se completó al otro lado deja un cobro sin saber qué pasó (H-034) |
+| **Google reCAPTCHA** | 5 s | `recaptcha.guard.ts`. Y **si Google no responde, no se deja pasar**: un timeout no puede ser una puerta accionable por quien sepa provocarlo (H-029) |
+| **Redis** (ioredis) | los de la biblioteca (10 s de conexión, reintentos acotados) | No se declaran propios: se midió y ioredis **sí trae** los suyos, a diferencia de nodemailer. Lo que faltaba en Redis era otra cosa — la reserva a `localhost` del cerrojo distribuido (H-035) |
+| **Almacenamiento de ficheros** | no aplica | `writeFile` en **disco local**. No hay servicio remoto en v1.0, así que no hay nada a lo que esperar |
+
+**Los valores se derivan, no se eligen**: 5 s es lo que ya se esperaba de Google, 2 s lo que se espera de Redis en
+la comprobación de salud. El correo es el más lento por naturaleza y se queda en el techo de esa banda.
+
+## Y el fallo de un tercero llega a quien llamó (RULE-36)
+
+`EmailService` absorbía cualquier error de envío. Con eso caían **tres capas de recuperación**: el `catch` del
+worker de la cola, su contador de intentos y la política de reintentos de BullMQ — un envío fallido marcaba el
+trabajo como **completado** (H-032).
+
+Ahora propaga, y **cada llamante declara qué hace con el fallo**:
+
+| Llamante | Qué hace | Por qué |
+|---|---|---|
+| Reenvío de verificación | **propaga** | Es lo único que hace el endpoint |
+| Cola de notificaciones | **propaga** | Su reintento existe para esto, y ahora se alcanza |
+| Registro | **captura y registra** | La cuenta ya está creada; hay vía de reenvío |
+| Recuperación de contraseña | **captura y registra** | Su respuesta es **opaca a propósito**: propagar convertiría una caída del SMTP en un **oráculo de enumeración** — 500 para las direcciones que existen, 200 para las que no |
+
+## Credenciales que faltan (TD-002)
+
+**Stripe y HeyBanco tienen su código de adaptador escrito y no tienen credenciales.** El registro de deuda decía
+que faltaba el código, y eso era falso (PT-181). Lo que falta es de negocio, no de ingeniería.

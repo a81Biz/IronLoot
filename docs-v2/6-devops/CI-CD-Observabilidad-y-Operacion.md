@@ -51,6 +51,13 @@ Retención efectiva = **30 días** (gana el más estricto). El log "inmutable" s
 
 - Cierre de subasta protegido por lock Redis (`lock:auction-close`, TTL 60s) → idempotente multi-instancia.
 - Sesión admin en Redis con **fallback a memoria** si Redis cae (aviso dev-only).
+- **El cerrojo recibe su URL por inyección y sin reserva** (ADR-053, PT-185). Conservaba
+  `process.env.REDIS_URL || 'redis://localhost:6379'` a través de PT-137 y PT-147: un despliegue sin `REDIS_URL`
+  **arrancaba**, apuntaba a un `localhost` que en el contenedor no es nadie, `acquireLock` relanzaba y
+  **ninguna subasta se cerraba**. Desde fuera, subastas que nunca terminan.
+- **Y la guarda que debía impedirlo miraba otra cosa**: comprobaba que las variables estuvieran *declaradas*, no
+  que carecieran de *reserva* — que es la mitad que RULE-17 llama, en negrita, el problema. Ahora
+  `conexiones-sin-reserva.spec.ts` cubre los cuatro servicios.
 
 ## 7. Checklist de despliegue (propuesto)
 
@@ -65,3 +72,39 @@ Retención efectiva = **30 días** (gana el más estricto). El log "inmutable" s
 ## 8. Release notes
 
 Fuente histórica: `CHANGELOG.md` (hasta 0.5.1). **Recomendación:** retomar el changelog incorporando PT-026..PT-035 y el estado v1.0.0.
+
+---
+
+## 9. Checkpoints de auditoría (D1 · D2 · D3 · D5)
+
+Cinco comandos. **Los tres primeros corren solos en CI y van sin `needs`**: un job roto no debe poder ocultarlos
+— es lo que le pasó a `build` y `docker`, que no se ejecutaron **nunca** porque colgaban de un job que no podía
+terminar (H-015).
+
+| Comando | Mide | En CI |
+|---|---|---|
+| `npm run audit:schema` | Que las migraciones reproduzcan `schema.prisma` | job `schema-drift` |
+| `npm run audit:check` | Vulnerabilidades contra `security-baseline.json` | job `security-audit` |
+| `npm run audit:observability` | `catch` mudos contra línea base + traza completa | job `observabilidad` |
+| `npm run audit:domain` | 14 reglas de dominio **sobre salida real** | delta sync (necesita base con historia) |
+| `npm run audit:reliability` | Success/Retry/Failure de los ciclos de pago | delta sync |
+
+**`audit:schema` necesita una base sombra y en local no la crea nadie.** CI crea la suya; en desarrollo hay que
+crearla una vez, **y después de cada `run-all.sh`** porque el reseteo se la lleva. Sin ella el checkpoint dice
+`FALLA — No se pudo comprobar la deriva del esquema`: **eso es correcto y es a propósito** —un error de ejecución
+no es un aprobado— pero se lee igual que una deriva real. El comando está en `CLAUDE.md`.
+
+**Los instrumentos declaran la base de su afirmación.** `audit:domain` imprime el denominador de cada
+comprobación y sale con **1** cuando no puede medir (H-025); `audit:reliability` exige **muestra mínima de 20** y
+por debajo dice `SIN_DATOS` en vez de dar verde o rojo (H-028). *Lo que distingue un instrumento de auditoría de
+un test es que declara la base de su afirmación.*
+
+**Y la fiabilidad operacional de v1.0 NO está demostrada** (ADR-055): hacen falta 20 ciclos de pago resueltos y
+hay 2. Está declarado, no pendiente.
+
+## 10. El estado del trabajo se lee en un índice generado
+
+`npm run indice:estado` regenera el **ÍNDICE DE ESTADO** al final de `HISTORY.log`. Existe porque el log es
+append-only: la línea `Status:` de una entrada es **histórica**, y **102 entradas dicen `VALIDATION_PENDING`
+estando cerradas**. Es una herramienta de **host** —el contenedor monta el repo `:ro` a propósito— y vive en la
+raíz junto a `lock:*`.

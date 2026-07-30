@@ -1,6 +1,6 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181 … PT-187)
+**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181 … PT-188)
 
 ---
 
@@ -35,6 +35,21 @@ Los veintiocho anteriores estaban ya cerrados; detalle en `PTSA/RESUMEN.md` § S
 enmendando la declaración de valor a la vez: el producto ya **no promete** emitir CFDI y `P-012` pasa a
 `FUERA_DE_ALCANCE_V1`. **El sistema sigue sin emitir facturas** — el cierre es por el lado de la declaración,
 y así está escrito. Si v1.1 lo vuelve a prometer, `P-012` vuelve y **H-005 se reabre con él**.
+
+---
+
+## Lo que PT-188 deja escrito, y no es trabajo pendiente sino una debilidad conocida
+
+**Cinco de los seis inventarios siguen sin guarda.** `endpoints.md` la tiene desde PT-188, en las dos
+direcciones; `routes.md`, `entities.md`, `components.md`, `services.md` e `integrations.md` no. Hoy están al día
+porque se midieron uno a uno — **nada lo mantiene**.
+
+Se anota aquí y no en la lista de trabajo porque no tiene un final reconocible: no es «escribir cinco guardas», es
+saber que lo que no se vigila se desvía. La prueba es que **el inventario de endpoints documentaba una ruta
+fantasma meses después de que H-020 demostrara que no existe**.
+
+**Y `docs-v2/1-negocio`, `2-producto`, `3-arquitectura` y `7-ux` no se contrastaron contra el código** en PT-188.
+Se midió lo que la jornada tocaba.
 
 ---
 

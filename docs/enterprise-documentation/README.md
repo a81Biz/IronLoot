@@ -1,5 +1,17 @@
 # `docs/enterprise-documentation/` — El contrato de agente
 
+> **Actualizado el 2026-07-29 (PT-188).** El inventario de endpoints **mentía en las dos direcciones**: le
+> faltaban **73 de 159 rutas** —todo el espacio de ADMIN, diagnóstico, el planificador y los `/users/me/*`— y
+> documentaba **6 que no existen**, entre ellas `/users/settings`, **la ruta fantasma de H-020**. El código se
+> corrigió hace meses; el documento que un agente lee para saber a dónde llamar siguió diciendo la ruta
+> equivocada. Ahora se mide y hay guarda.
+>
+> Al inventario de entidades le faltaban **tres modelos** y su total decía «27» sobre 33. Al de rutas, dos
+> páginas — una de ellas **la ruta de retorno de todas las pasarelas**.
+>
+> **Los otros cuatro inventarios siguen sin guarda.** Se dice aquí en vez de dejarlo implícito: lo que no se
+> vigila se desvía, y esto es la prueba.
+
 **Esto no es la documentación del producto.** La documentación del producto es **[`docs-v2/`](../../docs-v2/)**:
 negocio, producto, arquitectura, ingeniería, UX y el Registro Maestro de ADR. Está escrita y mantenida
 por personas, es más rica, y es la que hay que leer para entender IronLoot.
@@ -9,17 +21,17 @@ automático no puede romper.
 
 | Documento | Qué es | Quién lo vigila |
 |---|---|---|
-| **[`11-Conventions.md`](./11-Conventions.md)** | Las reglas `RULE-NN`. Estructura, nomenclatura, patrones, y **treinta reglas duras**, cada una con su porqué y el fallo real que la originó. | `reglas-citadas-existen.spec.ts` (RULE-27) y, una a una, las guardas que cada regla nombra |
+| **[`11-Conventions.md`](./11-Conventions.md)** | Las reglas `RULE-NN`. Estructura, nomenclatura, patrones, y **treinta y cinco reglas duras**, cada una con su porqué y el fallo real que la originó. | `reglas-citadas-existen.spec.ts` (RULE-27) y, una a una, las guardas que cada regla nombra |
 | **[`10-Technical-Debt.md`](./10-Technical-Debt.md)** | El registro `TD-XXX`. Cerrar una deuda son **dos escrituras**: el código y esta tabla. | `coherencia-deuda-tecnica.spec.ts` (RULE-08), `coherencia-de-registros.spec.ts` (RULE-20) |
-| **[`inventory/`](./inventory/)** | Seis inventarios derivables del código: rutas, endpoints, entidades, componentes, servicios, integraciones. | — |
+| **[`inventory/`](./inventory/)** | Seis inventarios derivables del código: rutas, endpoints, entidades, componentes, servicios, integraciones. | `inventario-de-endpoints-completo.spec.ts` (endpoints, PT-188). **Los otros cinco no tienen guarda** — y eso es lo que permitió que este inventario se desviara |
 
 ## Inventario
 
 | Fichero | Contenido |
 |---|---|
 | [inventory/routes.md](./inventory/routes.md) | Rutas de frontend (BASE + CLIENT + ADMIN) |
-| [inventory/endpoints.md](./inventory/endpoints.md) | Endpoints REST del API |
-| [inventory/entities.md](./inventory/entities.md) | Modelos y enums de Prisma |
+| [inventory/endpoints.md](./inventory/endpoints.md) | Los **159** endpoints REST del API, medidos. Vigilado en las dos direcciones |
+| [inventory/entities.md](./inventory/entities.md) | Los **33** modelos de Prisma y sus enums |
 | [inventory/components.md](./inventory/components.md) | Módulos NestJS por servicio |
 | [inventory/services.md](./inventory/services.md) | Servicios inyectables |
 | [inventory/integrations.md](./inventory/integrations.md) | Integraciones externas |
@@ -85,7 +97,8 @@ entra un patrón arquitectónico nuevo, pasan más de 3 meses sin ejecución, o 
 ---
 
 **Generado:** 2026-06-23 (Foundation Protocol 1.0, primera ejecución) · **Acotado a contrato de
-agente:** 2026-07-29 (PT-141, ADR-049) · **Reglas al día:** 2026-07-29 (PT-165, RULE-32)
+agente:** 2026-07-29 (PT-141, ADR-049) · **Reglas al día:** 2026-07-29 (PT-187, **RULE-37**) ·
+**Inventarios medidos:** 2026-07-29 (PT-188)
 **Alcance:** `src/` (api, apps/base, apps/client, admin, packages/core, nginx) + `docker-compose.yml`
 + `src/api/prisma/schema.prisma`
 **Decisión de referencia:** ADR-049 en [`docs-v2/transversal/Registro-Maestro-de-ADR.md`](../../docs-v2/transversal/Registro-Maestro-de-ADR.md)

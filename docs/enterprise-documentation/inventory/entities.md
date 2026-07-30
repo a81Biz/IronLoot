@@ -62,7 +62,9 @@ All Prisma models and enums from `src/api/prisma/schema.prisma`.
 | `SeoConfig` | `seo_config` | (standalone, key: page) |
 | `CmsContent` | `cms_content` | (standalone, key: key) |
 
-**Total models: 27** (including observability and backoffice tables)
+**Total models: 33** — medido el 2026-07-29. Decía «27», y faltaban los tres del retiro del vendedor (al final
+de este fichero) además de los tres del ciclo de pago. Un total que no se recuenta al añadir filas es una cifra
+que se lee con confianza y es falsa.
 
 
 ## Ciclo de pago (PT-076 / PT-078 / PT-080)
@@ -79,3 +81,20 @@ All Prisma models and enums from `src/api/prisma/schema.prisma`.
 > PT-085 `orderId` es opcional, la fila lleva `reference` al ciclo, y el ciclo la escribe al
 > cerrarse. Lo mismo se aplicó a `RefundRequest`, para que un cobro duplicado pueda generar su
 > solicitud de reembolso. **TD-008 cerrada.**
+
+## Retiro del vendedor y verificación de cuenta (PT-069 … PT-072, PT-188)
+
+Tres modelos que faltaban en este inventario. Se añaden **medidos contra `schema.prisma`**, no de memoria: el
+recuento de arriba decía «27» cuando el esquema tiene **33 modelos**.
+
+| Entidad | Tabla | Propósito |
+|---|---|---|
+| `UserPaymentMethod` | `user_payment_methods` | La CLABE (o equivalente) a la que se dispersa el retiro. `referenceId` es la referencia del método en la pasarela; `isActive` permite retirarlo sin borrar el historial de retiros que lo usaron. |
+| `WithdrawalRequest` | `withdrawal_requests` | Solicitud de retiro del vendedor. Lleva **quién la revisó y cuándo** (`reviewedBy`, `reviewedAt`), cuándo se pagó (`paidAt`) y la referencia de la dispersión (`payoutReference`). La dispersión de v1.0 es **manual/SPEI**: el registro existe para que el pago tenga rastro aunque el movimiento lo haga una persona. |
+| `AccountVerification` | `account_verifications` | Verificación de titularidad del método de pago: un cargo pequeño con un código que el titular tiene que leer en su propio estado de cuenta. `movementRef`, `refundRef` y `refundPending` cierran el círculo — **el cargo se devuelve**, y hasta que se devuelve queda marcado. `sentAt` / `verifiedAt` son las dos mitades del proceso. |
+
+**Por qué el cargo con código y no un formulario**: aprobarlo exige que el titular vea su propio movimiento. Es
+lo mismo que hace `createVerificationCharge` en PayPal — prueba de una vez que la cuenta existe, que opera y que
+**es suya**.
+
+**Total real: 33 modelos** — medido el 2026-07-29 sobre `src/api/prisma/schema.prisma`.
