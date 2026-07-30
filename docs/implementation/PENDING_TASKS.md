@@ -1,6 +1,6 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (PT-192 cerrado con VoBo humano)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-193 — TD-024 decidida y cerrada)
 
 ---
 
@@ -13,8 +13,10 @@ veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
 **PT-192 cerrado con VoBo humano** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37). Con él,
 **los 144 PT del registro están cerrados**: el índice de estado dice **0 realmente abiertos**.
 
-**Cero trabajo FDGE pendiente.** Lo único abierto es deuda técnica: TD-002 y TD-009 (terceros),
-**TD-024** (decisión de arquitectura pendiente) y **TD-025** (el refresco sin cablear).
+**Cero trabajo FDGE pendiente.** **TD-024 cerrada** por PT-193 (ADR-058): 15 símbolos retirados, 8
+conservados por ADR-033 y 2 que eran falsos positivos de medir por nombre. Queda deuda técnica en
+**TD-002** y **TD-009** (terceros: credenciales y PAC) y **TD-025** (el refresco de sesión sin cablear
+— la sesión efectiva del portal dura quince minutos).
 
 ---
 

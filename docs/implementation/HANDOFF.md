@@ -2,7 +2,7 @@
 
 **FDGE V3** · **2026-07-30** · Se **sobrescribe**: es el estado de ahora, no la historia.
 
-**Rama**: `master`, árbol limpio, **al día con `origin`** y sin una sola rama suelta en local ni en remoto.
+**Rama**: `refactor/PT-193-retirar-la-superficie-huerfana`, pendiente de fusionar.
 
 **Pruebas**: **1288** unitarias en verde — API **1076** (133 suites) · CORE **93** (6) · CLIENT **103** ·
 ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
@@ -60,8 +60,8 @@ esta corrida vivían en el **camino de fallo**, que nunca se había ejecutado.
 ## Esperan tu validación: nada
 
 **PT-192 cerrado con tu VoBo** el 2026-07-30, con constancia en `HISTORY.log`. Con él, **los 144 PT del
-registro están cerrados**. Lo único abierto es deuda técnica: TD-002 y TD-009 (terceros), **TD-024**
-(decisión de arquitectura pendiente) y **TD-025** (el refresco sin cablear).
+registro están cerrados**. **TD-024 se decidió y cerró en PT-193** (ADR-058). Queda deuda técnica en
+TD-002 y TD-009 (terceros) y **TD-025** (el refresco sin cablear: la sesión efectiva dura 15 minutos).
 
 **PT-191 cerrado con tu VoBo** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37: un BUG `DONE` sin
 bloque de VoBo que lo nombre no está cerrado). Con él, **los 143 PT del registro están cerrados** — el

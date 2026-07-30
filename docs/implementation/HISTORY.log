@@ -3802,6 +3802,42 @@ directos. El contenido es el correcto y esta subido; la rama `fix/PT-192-los-qui
 llego a apuntar al trabajo. Se anota en vez de disimularlo: un registro que dice «rama X» cuando no
 la hubo es de la misma familia que todo lo que este PT ha estado corrigiendo.
 
+## PT-193 — REFACTOR: TD-024, la superficie huerfana de `core` — y 8 de los 24 ya estaban decididos
+Date: 2026-07-30
+Status: DONE
+Branch: refactor/PT-193-retirar-la-superficie-huerfana
+Objective: decidir y ejecutar `TD-024`, los 24 simbolos que `@ironloot/core` exportaba sin un solo
+  consumidor fuera del paquete.
+Root cause: **PT-191 abrio TD-024 sobre los 24 «como si estuvieran sin decidir», y 8 ya lo estaban.**
+  `ADR-033` los conserva desde su fecha —los cuatro `I*Repository` y sus `*Summary`— «marcados como
+  previstos-no-adoptados», con criterio de revision escrito: *cuando exista mas de una implementacion
+  de persistencia, o cuando el dominio deba probarse sin base de datos*. Abrir una deuda sin
+  comprobar si ya habia decision produce trabajo duplicado y una lista que exagera lo pendiente: el
+  numero «24» circulo como si fuera todo trabajo por hacer, y solo 15 lo eran.
+Solution:
+  - **15 retirados** (ADR-058): `integrations/` entero (9 simbolos), cuatro eventos que nadie emitia
+    —`AuctionClosedEvent` se queda, el scheduler SI lo emite— y los dos DTO de paginacion. Con ellos
+    `shared/` se quedo sin contenido propio y se retiro tambien.
+  - **8 conservados** por ADR-033, ahora declarados como tal en la guarda en vez de como pendiente.
+  - **2 falsos positivos** declarados: `BidValidationContext` y `BidValidationResult` son tipos de
+    `validateBid()`, que SI se usa; no se nombran en la llamada porque TypeScript es estructural.
+  - **ADR-033 enmendada**: afirmaba que *«PT-080 si revivio `IPaymentProvider` porque habia una
+    necesidad real»*. Medido: **cero implementadores**. PT-080 escribio un contrato **nuevo** en el
+    API, que es el que los cuatro adaptadores implementan; no revivio este. La decision de conservar
+    los puertos no cambia — dejaba de apoyarse en un hecho que no ocurrio.
+  El caso que decidio la retirada fue `IPaymentProvider`: un contrato de pasarela **sin
+  implementadores** que quien leyera `core` para aprender el sistema tomaba por bueno. Eso no es
+  codigo muerto —que se ignora—: es **documentacion falsa ejecutable**, la familia de H-016.
+Modified files: src/packages/core/src/{index.ts, events/*, domain/index.ts}, integrations/ y shared/
+  retirados enteros, docs-v2/transversal/Registro-Maestro-de-ADR.md (ADR-058 + enmienda de ADR-033),
+  10-Technical-Debt.md (TD-024 cerrada), CLAUDE.md,
+  src/api/test/unit/dominio/core-sin-superficie-huerfana.spec.ts (lista 24 -> 10)
+Evidence: docs/implementation/evidence/PT-193/
+Delta (real vs planned): el plan era «retirar los 24». **Ocho no habia que retirarlos: habia que leer
+  la ADR que ya los decidia**, y dos eran un limite de mi propia medicion. La decision del humano fue
+  sobre 15, no sobre 24, y esa diferencia sale de medir antes de ejecutar.
+PTSA reference: TD-024 cerrada; AUD-012 ya estaba corregido por PT-191.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3813,7 +3849,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**144** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**145** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -3961,3 +3997,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-190 | 3589 | `DONE` | **DONE** | — |
 | PT-191 | 3621 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3670 |
 | PT-192 | 3708 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3761 |
+| PT-193 | 3805 | `DONE` | **DONE** | — |
