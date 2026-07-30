@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { EmailService } from './email.service';
+import { MAIL_TIMEOUTS_MS } from './mail-timeouts';
 import { EventsGateway } from './events.gateway';
 import { NOTIFICATION_QUEUE } from './notification-queue.producer';
 import { NotificationQueueProducer } from './notification-queue.producer';
@@ -23,6 +24,9 @@ import { NotificationQueueWorker } from './notification-queue.worker';
           port: config.get('MAIL_PORT'),
           secure: false,
           ignoreTLS: true,
+          // PT-183 (H-033) — Sin estos topes nodemailer aplica los suyos: **dos minutos para conectar**. Con
+          // el SMTP caído, el reenvío y el registro se quedaban colgados 121 s antes de contestar. Medido.
+          ...MAIL_TIMEOUTS_MS,
           auth: {
             user: config.get('MAIL_USER'),
             pass: config.get('MAIL_PASSWORD'),

@@ -1,6 +1,7 @@
 import { ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { RecaptchaGuard } from '@/modules/auth/guards/recaptcha.guard';
+import { StructuredLogger } from '@/common/observability';
 
 /**
  * PT-182 (H-029) — **El guard de reCAPTCHA falla cerrado.**
@@ -36,7 +37,15 @@ describe('El guard de reCAPTCHA falla cerrado — H-029 (PT-182)', () => {
   const config = (vals: Record<string, unknown>) =>
     ({ get: (k: string, def?: unknown) => (k in vals ? vals[k] : def) }) as ConfigService;
 
-  const guard = (vals: Record<string, unknown>) => new RecaptchaGuard(config(vals));
+  /**
+   * PT-183 — El guard lleva logger desde que el checkpoint D3 delato su `catch` mudo (silencio nº 26 contra
+   * una linea base de 25). Aqui se le pasa un doble: lo que se comprueba en este fichero son las salidas del
+   * guard, no lo que registra — de eso responde el propio checkpoint, que ya lo vio fallar.
+   */
+  const registro = { error: jest.fn(), info: jest.fn(), warn: jest.fn() };
+  const logger = { child: jest.fn().mockReturnValue(registro) } as unknown as StructuredLogger;
+
+  const guard = (vals: Record<string, unknown>) => new RecaptchaGuard(config(vals), logger);
 
   afterEach(() => {
     (global.fetch as unknown) = undefined;

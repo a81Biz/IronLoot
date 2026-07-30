@@ -1,5 +1,6 @@
 import { Injectable, CanActivate, ExecutionContext, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { StructuredLogger, ChildLogger } from '../../../common/observability';
 
 /** Endpoint de verificación de Google. */
 const SITEVERIFY = 'https://www.google.com/recaptcha/api/siteverify';
@@ -9,7 +10,15 @@ const TIMEOUT_MS = 5000;
 
 @Injectable()
 export class RecaptchaGuard implements CanActivate {
-  constructor(private readonly configService: ConfigService) {}
+  private readonly log: ChildLogger;
+
+  constructor(
+    private readonly configService: ConfigService,
+    // PT-183 — Este logger faltaba, y el `catch` de abajo era el silencio nº 26 que el checkpoint D3 delató.
+    logger: StructuredLogger,
+  ) {
+    this.log = logger.child('RecaptchaGuard');
+  }
 
   /**
    * PT-182 (H-029) — **Este guard falla cerrado.**
@@ -94,10 +103,21 @@ export class RecaptchaGuard implements CanActivate {
 
       const datos = (await res.json()) as { success?: boolean };
       return datos.success === true;
-    } catch {
-      // No se registra con el logger porque este guard no lo tiene inyectado y añadirlo cambiaría su
-      // firma en todos los llamantes. El rechazo llega al cliente como 403 y queda en `request_logs`
-      // con su `traceId`, así que **no es un silencio**: hay rastro de que la verificación no pasó.
+    } catch (error: any) {
+      // PT-183 — **Aquí había un `catch` mudo, con una justificación mía que era falsa.** Decía que no se
+      // registraba «porque este guard no tiene el logger inyectado y añadirlo cambiaría su firma en todos
+      // los llamantes». Un guard recibe sus dependencias **por inyección**: añadir una no toca a ningún
+      // llamante. El argumento sonaba a razón técnica y era una comodidad.
+      //
+      // Lo delató el checkpoint D3 el mismo día: silencio nº 26 contra una línea base de 25. Es la tercera
+      // vez en esta jornada que ese checkpoint caza trabajo mío de hace horas.
+      //
+      // El 403 en `request_logs` dice que la verificación no pasó, pero **no dice por qué**: un timeout, un
+      // 500 de Google y un secreto rechazado se ven idénticos desde fuera, y son tres incidentes distintos
+      // con tres respuestas distintas.
+      this.log.error('CAPTCHA verification could not be completed', {
+        error: error?.message ?? String(error),
+      } as any);
       return false;
     } finally {
       clearTimeout(reloj);
