@@ -2,7 +2,7 @@
 
 **FDGE V3** · **2026-07-30** · Se **sobrescribe**: es el estado de ahora, no la historia.
 
-**Rama**: `fix/PT-192-los-quince-medidos`, pendiente de fusionar. Sólo existe `master` además de ella.
+**Rama**: `master`, árbol limpio, **al día con `origin`** y sin una sola rama suelta en local ni en remoto.
 
 **Pruebas**: **1288** unitarias en verde — API **1076** (133 suites) · CORE **93** (6) · CLIENT **103** ·
 ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
@@ -11,7 +11,7 @@ con sus 41 casos: eran pruebas verdes sobre código que no corría en producció
 **Reglas duras**: **36** `RULE-NN` (RULE-38 nueva). **Guardas de documentación**: **15** suites / **159** pruebas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **144 encabezados · 1 realmente abierto** (PT-192, `VALIDATION_PENDING`).
+`npm run indice:estado`. **144 encabezados · 0 realmente abiertos.**
 
 ---
 
@@ -57,9 +57,11 @@ esta corrida vivían en el **camino de fallo**, que nunca se había ejecutado.
 
 ---
 
-## Esperan tu validación: **PT-192**
+## Esperan tu validación: nada
 
-Son cinco BUG y el agente no cierra bugs (FDGE STATE 6).
+**PT-192 cerrado con tu VoBo** el 2026-07-30, con constancia en `HISTORY.log`. Con él, **los 144 PT del
+registro están cerrados**. Lo único abierto es deuda técnica: TD-002 y TD-009 (terceros), **TD-024**
+(decisión de arquitectura pendiente) y **TD-025** (el refresco sin cablear).
 
 **PT-191 cerrado con tu VoBo** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37: un BUG `DONE` sin
 bloque de VoBo que lo nombre no está cerrado). Con él, **los 143 PT del registro están cerrados** — el

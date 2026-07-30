@@ -3758,6 +3758,50 @@ PTSA reference: AUD-015, AUD-019, AUD-020, AUD-021, AUD-022, AUD-024, AUD-026, A
   veredictos. Recuento final: **35 corregidos · 0 abiertos · 1 limitacion declarada · 0 sin
   verificar**. La lista tiene final.
 
+## CIERRE CON VoBo HUMANO — PT-192
+Date: 2026-07-30
+Status: registro
+Objective: registrar el VoBo humano sobre PT-192, que cerro los quince AUD «sin verificar».
+
+**Instruccion literal:** *«de nuevo PT-192 tienen mi VoBo, cierralos»*. Con eso PT-192 pasa de
+`VALIDATION_PENDING` a **CLOSED**, y con el los quince hallazgos que median.
+
+**El resultado, que es lo que conviene recordar de este PT:** de los quince, **diez ya estaban
+corregidos y nadie lo sabia**; cinco seguian abiertos. El coste de dejar una casilla en «no lo se» no
+es solo no arreglar — es **no saber que esta arreglado**, y con esos diez se arrastraba el unico
+grave de la lista.
+
+  AUD-015  una regla de dominio que decia lo contrario del sistema, **codificada como CRITICA** en el
+           checkpoint D1.N1 y lista para acusar al sistema de un fallo inexistente
+  AUD-026  el CLIENT verificaba sesiones con `JWT_SECRET || ""`: arrancaba `healthy` y rebotaba al
+           login a todo el mundo, sin error en ningun log
+  AUD-035  las cookies sobrevivian a sus tokens (7 dias contra 15 minutos, 30 contra 7)
+  AUD-034  cinco versiones divergentes que no significaban nada -> ADR-056
+  AUD-031  el CHANGELOG parado desde el 12-ene, y no era olvido -> ADR-057
+
+**Recuento final de la tabla de veredictos: 35 corregidos · 0 abiertos · 1 limitacion declarada · 0
+sin verificar.** La lista tiene final. Lo unico que queda es `AUD-016` (CFDI), que depende de
+contratar un PAC — un tercero, no codigo.
+
+**Lo que queda abierto y por que**, para que el siguiente no lo busque:
+
+  TD-002  credenciales de Stripe y HeyBanco — tercero
+  TD-009  riesgo aceptado por PT-080
+  TD-024  los 24 simbolos huerfanos de `@ironloot/core` — **decision de arquitectura pendiente**
+  TD-025  el refresco de sesion existe, tiene su cookie de 30 dias y no lo llama nadie: la sesion
+          efectiva del portal dura **quince minutos**
+
+Verificacion en el cierre: API **1076** pruebas en 133 suites · CORE **93** en 6 · CLIENT 103 ·
+ADMIN 13 · BASE 3 = **1288**. Arbol limpio, `master` al dia con `origin`, y solo `master` — ni una
+rama suelta en local ni en remoto.
+
+**Nota de proceso, porque el registro tiene que poder leerse literalmente.** El trabajo de PT-192
+quedo en `master` **sin commit de fusion**: un `;` en un comando compuesto ejecuto `git checkout
+master` despues de que el hook de pre-commit rechazara un commit, y los commits siguientes fueron
+directos. El contenido es el correcto y esta subido; la rama `fix/PT-192-los-quince-medidos` nunca
+llego a apuntar al trabajo. Se anota en vez de disimularlo: un registro que dice «rama X» cuando no
+la hubo es de la misma familia que todo lo que este PT ha estado corrigiendo.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3769,7 +3813,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**144** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
+**144** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -3916,4 +3960,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-189 | 3538 | `DONE` | **DONE** | — |
 | PT-190 | 3589 | `DONE` | **DONE** | — |
 | PT-191 | 3621 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3670 |
-| PT-192 | 3708 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |
+| PT-192 | 3708 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3761 |
