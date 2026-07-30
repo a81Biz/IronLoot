@@ -14,6 +14,8 @@ All NestJS modules across all services.
 | `AppModule` | `src/api/src/app.module.ts` | Root module; wires all modules + global guards |
 | `ConfigModule` | `@nestjs/config` (global) | Loads `.env`, validates env vars |
 | `ThrottlerModule` | `@nestjs/throttler` (global) | Rate limiting |
+| `ThrottlerRedisModule` | `common/redis/` | Almacén de rate limiting en Redis (PT-030): sin él las cuotas viven en memoria y **cada instancia cuenta la suya** |
+| `ThrottlerRedisService` | `common/redis/` | El almacén propiamente dicho, sobre `REDIS_URL` |
 | `ObservabilityModule` | `src/api/src/common/observability/` | Logger, metrics, error handling, context middleware |
 | `DatabaseModule` | `src/api/src/database/` | PrismaService provider |
 | `AuditModule` | `src/api/src/modules/audit/` | Persists audit/error/request log events |
@@ -113,3 +115,12 @@ No NestJS modules — pure TypeScript library. Architecture layers:
 | Events | `src/events/` | Domain event classes |
 | Integrations | `src/integrations/` | External service interfaces |
 | Shared | `src/shared/` | DTOs (MoneyDto, PaginationDto) |
+
+> **Completado el 2026-07-30 (PT-198).** Faltaban `ThrottlerRedisModule` y `ThrottlerRedisService`. No
+> es un detalle de catálogo: **son los que hacen que el rate limiting sea compartido entre instancias**.
+> Un inventario que no los nombra sugiere que la cuota es la de `@nestjs/throttler` por defecto —en
+> memoria, por proceso—, que es justo lo que PT-030 corrigió.
+>
+> Las entradas de terceros (`@nestjs/config`, `@nestjs/bullmq`, `@nestjs/throttler`…) se conservan **a
+> propósito**: un inventario de módulos que sólo liste los propios no dice de qué depende el arranque.
+> La guarda lo tiene en cuenta y sólo exige cobertura de los **locales**.

@@ -1,7 +1,15 @@
 # Inventory — Routes
 
-All frontend routes across BASE, CLIENT, and ADMIN services.  
-**Source:** `src/apps/base/src/app.controller.ts`, `src/apps/client/src/app.controller.ts`, `src/admin/src/app.controller.ts`
+All frontend routes across BASE, CLIENT, and ADMIN services.
+**Source:** `src/apps/base/src/**/*.controller.ts`, `src/apps/client/src/**/*.controller.ts`,
+`src/admin/src/**/*.controller.ts`
+
+> **Alcance corregido el 2026-07-30 (PT-198).** El título decía *«all frontend routes»* y la línea
+> de origen citaba **tres ficheros**: los `app.controller.ts`. ADMIN declara la mayoría de sus rutas
+> en los controladores de sus dieciocho módulos, así que el documento nombraba **63 de 110** y **se
+> leía como completo**. Las dos frases no podían ser ciertas a la vez.
+>
+> Lo vigila `inventarios-completos.spec.ts`.
 
 ---
 
@@ -122,3 +130,80 @@ que ADR-042 existe para que no vuelva a pasar.
 | `/` (catch-all) | `http://base.ironloot.local$uri` | 301 |
 
 Source: `src/nginx/nginx.conf:116-140`
+
+## ADMIN — rutas de módulo (`src/admin/src/modules/`)
+
+Las declaradas fuera de `app.controller.ts`, una fila por decorador. **Todas exigen sesión de
+administrador** (`AdminDualAuthGuard`); no se repite en cada fila.
+
+| Método | Ruta | Controlador |
+|---|---|---|
+| GET | `/auctions` | `modules/auctions/auctions.controller.ts` |
+| GET | `/auctions/:id` | `modules/auctions/auctions.controller.ts` |
+| POST | `/auctions/:id/approve` | `modules/auctions/auctions.controller.ts` |
+| POST | `/auctions/:id/cancel` | `modules/auctions/auctions.controller.ts` |
+| POST | `/auctions/:id/force-close` | `modules/auctions/auctions.controller.ts` |
+| POST | `/auctions/:id/reject` | `modules/auctions/auctions.controller.ts` |
+| POST | `/auctions/:id/reopen` | `modules/auctions/auctions.controller.ts` |
+| POST | `/auctions/:id/suspend` | `modules/auctions/auctions.controller.ts` |
+| GET | `/audit` | `modules/audit/audit.controller.ts` |
+| GET | `/audit/export` | `modules/audit/audit.controller.ts` |
+| GET | `/cfdi` | `modules/cfdi/cfdi.controller.ts` |
+| GET | `/cfdi/:orderId/download/:format` | `modules/cfdi/cfdi.controller.ts` |
+| POST | `/cfdi/:orderId/cancel` | `modules/cfdi/cfdi.controller.ts` |
+| POST | `/cfdi/:orderId/generate` | `modules/cfdi/cfdi.controller.ts` |
+| GET | `/cms` | `modules/cms/cms.controller.ts` |
+| POST | `/cms/:key` | `modules/cms/cms.controller.ts` |
+| GET | `/commissions` | `modules/commissions/commissions.controller.ts` |
+| POST | `/commissions/config/:id/delete` | `modules/commissions/commissions.controller.ts` |
+| POST | `/commissions/config/global` | `modules/commissions/commissions.controller.ts` |
+| POST | `/commissions/config/seller` | `modules/commissions/commissions.controller.ts` |
+| POST | `/commissions/records/:id/mark-collected` | `modules/commissions/commissions.controller.ts` |
+| GET | `/configuration/cfdi` | `modules/configuration/configuration.controller.ts` |
+| GET | `/configuration/platform` | `modules/configuration/configuration.controller.ts` |
+| GET | `/settings` | `modules/configuration/configuration.controller.ts` |
+| POST | `/configuration/cfdi` | `modules/configuration/configuration.controller.ts` |
+| POST | `/configuration/platform` | `modules/configuration/configuration.controller.ts` |
+| POST | `/settings/payment-config` | `modules/configuration/configuration.controller.ts` |
+| POST | `/settings/storage` | `modules/configuration/configuration.controller.ts` |
+| GET | `/disputes` | `modules/disputes/disputes.controller.ts` |
+| GET | `/disputes/:id` | `modules/disputes/disputes.controller.ts` |
+| POST | `/disputes/:id/resolve-buyer` | `modules/disputes/disputes.controller.ts` |
+| POST | `/disputes/:id/resolve-seller` | `modules/disputes/disputes.controller.ts` |
+| GET | `/kyc` | `modules/kyc/kyc.controller.ts` |
+| GET | `/kyc/:id` | `modules/kyc/kyc.controller.ts` |
+| POST | `/kyc/:id/approve` | `modules/kyc/kyc.controller.ts` |
+| POST | `/kyc/:id/reject` | `modules/kyc/kyc.controller.ts` |
+| POST | `/kyc/:id/request-correction` | `modules/kyc/kyc.controller.ts` |
+| GET | `/lots` | `modules/lots/lots.controller.ts` |
+| GET | `/lots/:id` | `modules/lots/lots.controller.ts` |
+| POST | `/lots/:id/block` | `modules/lots/lots.controller.ts` |
+| POST | `/lots/:id/unblock` | `modules/lots/lots.controller.ts` |
+| POST | `/lots/:id/update` | `modules/lots/lots.controller.ts` |
+| POST | `/lots/:id/update-category` | `modules/lots/lots.controller.ts` |
+| GET | `/moderation` | `modules/moderation/moderation.controller.ts` |
+| POST | `/moderation/:id/approve` | `modules/moderation/moderation.controller.ts` |
+| POST | `/moderation/:id/reject` | `modules/moderation/moderation.controller.ts` |
+| GET | `/notifications` | `modules/notifications/notifications.controller.ts` |
+| POST | `/notifications/send` | `modules/notifications/notifications.controller.ts` |
+| GET | `/orders` | `modules/orders/orders.controller.ts` |
+| GET | `/payments` | `modules/payments/payments.controller.ts` |
+| GET | `/reconciliation` | `modules/reconciliation/reconciliation.controller.ts` |
+| GET | `/reconciliation/export` | `modules/reconciliation/reconciliation.controller.ts` |
+| GET | `/refunds` | `modules/refunds/refunds.controller.ts` |
+| POST | `/refunds/:id/status` | `modules/refunds/refunds.controller.ts` |
+| POST | `/refunds/create` | `modules/refunds/refunds.controller.ts` |
+| GET | `/reports` | `modules/reports/reports.controller.ts` |
+| GET | `/reports/download/:type` | `modules/reports/reports.controller.ts` |
+| GET | `/seo` | `modules/seo/seo.controller.ts` |
+| POST | `/seo/:page` | `modules/seo/seo.controller.ts` |
+| GET | `/users` | `modules/users/users.controller.ts` |
+| GET | `/users/:id` | `modules/users/users.controller.ts` |
+| POST | `/users/:id/ban` | `modules/users/users.controller.ts` |
+| POST | `/users/:id/disable-seller` | `modules/users/users.controller.ts` |
+| POST | `/users/:id/enable-seller` | `modules/users/users.controller.ts` |
+| POST | `/users/:id/suspend` | `modules/users/users.controller.ts` |
+| POST | `/users/:id/unban` | `modules/users/users.controller.ts` |
+| GET | `/api/dashboard/extended-stats` | `app.controller.ts` |
+| GET | `/api/dashboard/revenue-by-day` | `app.controller.ts` |
+| GET | `/api/dashboard/users-by-day` | `app.controller.ts` |

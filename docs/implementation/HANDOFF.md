@@ -56,7 +56,7 @@ esta corrida vivían en el **camino de fallo**, que nunca se había ejecutado.
 
 ---
 
-## Esperan tu validación: **PT-197**
+## Esperan tu validación: nada
 
 **PT-196 cerrado con tu VoBo** el 2026-07-30. **Cero trabajo FDGE pendiente.**
 

@@ -1,7 +1,16 @@
 # Inventory — Integrations
 
 All external services and third-party integrations.  
-**Source:** `src/api/package.json`, `docker-compose.yml`, `.env.example`, `src/packages/core/src/integrations/`
+**Source:** `src/api/package.json`, `docker-compose.yml`, `.env.example`,
+`src/api/src/modules/payments/interfaces/`
+
+> **Fuente corregida el 2026-07-30 (PT-198).** Citaba `src/packages/core/src/integrations/`, un
+> directorio que **PT-193 retiró**: declaraba `IPaymentProvider` y compañía sin un solo
+> implementador, mientras el contrato vivo lo declara el API (ADR-058). La cita sobrevivió a la
+> retirada y mandaba a un sitio que ya no existe — la familia de H-016.
+>
+> El contrato real de una pasarela está en `modules/payments/interfaces/`, que es lo que los
+> cuatro adaptadores implementan.
 
 ---
 

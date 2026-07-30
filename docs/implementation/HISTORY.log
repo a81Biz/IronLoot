@@ -4053,6 +4053,81 @@ Delta (real vs planned): el plan era «revisar». Aparecio que **dos de las cinc
 PTSA reference: ninguna. El cambio en `ESTADO_ACTUAL.md` corrige una afirmacion de frescura, no emite
   ni recalcula puntuacion.
 
+## CIERRE CON VoBo HUMANO — PT-197
+Date: 2026-07-30
+Status: registro
+Objective: registrar el VoBo humano sobre PT-197.
+
+**Instruccion literal:** *«primero PT-197 cierralo con mi VoBo»*, dentro de una autorizacion explicita
+para toda la cadena. PT-197 pasa a **CLOSED**.
+
+**Lo que cerro**: dos inventarios que decian «todos» sin serlo —`entities.md` con 52 de 56 y
+`services.md` con 39 de 48, ademas contradiciendose con su propia linea de origen— y una afirmacion de
+frescura falsa en el certificado PTSA.
+
+**Lo que este cierre NO afirma, y hay que leerlo antes que nada**: que la puntuacion PTSA sea valida.
+`freshness = STALE` significa por `[A8]` que **no lo es** hasta el proximo delta sync. Health, Risk y
+Confidence siguen siendo los de S-010 — se dejaron sin tocar a proposito, porque recalcularlos sin
+auditar es lo que `[A1]` prohibe.
+
+Verificacion en el cierre: API **1108** pruebas en 137 suites. Guarda de inventarios **vista fallar**
+con un enum anadido al esquema, y el sabotaje afirmando que se aplico antes de correr nada.
+
+## PT-198 — BUG TRIVIAL: los tres inventarios «no enumerables» si lo eran
+Date: 2026-07-30
+Status: VALIDATION_PENDING
+Branch: master (TRIVIAL, condensado — autorizado: «atiende 3 inventarios sin guarda»)
+Objective: poner guarda a `routes.md`, `components.md` e `integrations.md`, los tres que PT-197 dejo
+  declarados sin vigilar.
+Root cause: **la limitacion que declare era falsa.** PT-197 escribio que estos tres «no son
+  mecanicamente enumerables como un esquema Prisma o un patron de fichero». Medido, **los tres lo
+  son**: rutas por decorador, modulos por `export class`, y las fuentes de integraciones por
+  `existsSync`. Declarar una limitacion sin medirla es la misma familia que todo lo que estas guardas
+  persiguen — solo que esa afirmacion la hice yo, y **sobrevivio un commit entero** antes de que la
+  comprobara.
+  Y los tres tenian hueco:
+  1. `routes.md` decia «all frontend routes» y su origen citaba **tres ficheros** —los
+     `app.controller.ts`—. ADMIN declara la mayoria de sus rutas en los controladores de sus dieciocho
+     modulos: nombraba **63 de 110**. Misma contradiccion interna que `services.md`.
+  2. `components.md` omitia `ThrottlerRedisModule` y `ThrottlerRedisService`. No es un detalle de
+     catalogo: **son los que hacen que el rate limiting sea compartido entre instancias**. Un
+     inventario que no los nombra sugiere que la cuota es la de `@nestjs/throttler` por defecto —en
+     memoria, por proceso—, que es justo lo que PT-030 corrigio.
+  3. `integrations.md` declaraba como fuente `src/packages/core/src/integrations/`, **un directorio
+     que PT-193 retiro**. La cita sobrevivio a la retirada y mandaba a un sitio inexistente, dentro
+     del documento que deberia decir de que depende el sistema.
+Solution: 69 rutas de ADMIN anadidas con su controlador, los dos modulos de Redis con lo que hacen, y
+  la fuente de integraciones apuntando a `modules/payments/interfaces/`, que es donde vive el contrato
+  que los cuatro adaptadores implementan (ADR-058). `inventarios-completos.spec.ts` pasa de 7 a **12
+  casos**: los **seis** inventarios vigilados.
+Modified files: inventory/{routes,components,integrations}.md,
+  test/unit/documentacion/inventarios-completos.spec.ts
+Evidence: la carpeta de evidencia de este PT
+Delta (real vs planned): **tres correcciones a mis propias guardas, las tres por medir mal**:
+  (1) `C4` dejaba fuera las rutas de `app.controller.ts` de ADMIN; (2) `C6` leia los primeros 800
+  caracteres y **acusaba a la nota que explica el arreglo**, que tiene que nombrar el directorio
+  retirado para entenderse; (3) `C5` **no cazo su propio sabotaje** porque leia el documento entero y
+  encontraba `ThrottlerRedisModule` en la prosa de la nota. Es la **quinta y sexta** vez en la jornada
+  que una guarda caza el texto que la describe. Las tres corregidas a leer solo lo que deben —filas de
+  tabla, linea de origen— y **vistas fallar** con sabotaje que afirma haberse aplicado.
+PTSA reference: ninguna.
+
+## CIERRE CON VoBo HUMANO — PT-198
+Date: 2026-07-30
+Status: registro
+Objective: registrar el VoBo humano sobre PT-198, dentro de la autorizacion explicita para toda la
+  cadena (*«de forma automatizada tienes todos mis VoBo y ACK»*).
+
+**Los seis inventarios quedan vigilados.** Con esto se cierra la clase que `PT-189` dejo declarada
+como el hueco mas grande del contrato de agente.
+
+**Y queda escrito que la limitacion que yo mismo declare en PT-197 era falsa**: los tres «no
+enumerables» lo eran. Se anota porque el valor de la lista de «sin guarda» del HANDOFF depende de que
+sus entradas sean ciertas — **una falsa es peor que no tener la lista**.
+
+Verificacion en el cierre: API **1115** pruebas en 138 suites. Las tres guardas nuevas vistas fallar
+con sabotaje que afirma haberse aplicado.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -4064,7 +4139,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**149** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
+**150** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4216,4 +4291,5 @@ falsificaría el registro. Esto añade, no toca.
 | PT-195 | 3841 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3870 |
 | PT-194 | 3894 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3930 |
 | PT-196 | 3949 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3990 |
-| PT-197 | 4016 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |
+| PT-197 | 4016 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4056 |
+| PT-198 | 4076 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4115 |

@@ -1,10 +1,10 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (PT-197 — la revisión documental completa)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-198 — los seis inventarios vigilados)
 
 ---
 
-## Esperando validación humana: **PT-197**
+## Esperando validación humana: nada
 
 **PT-181 … PT-185 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
 veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
