@@ -3946,6 +3946,73 @@ gana valor, y es el trabajo que el humano abre a continuacion (**PT-196**).
 Verificacion en el cierre: API **1082** pruebas en 134 suites · CLIENT **134** en 11 (eran 103 en 8) ·
 CORE 93 · ADMIN 13 · BASE 3. Cada guarda vista fallar con sabotaje dirigido.
 
+## PT-196 — FEATURE: el refresh token rota, y su reuso revoca la sesion
+Date: 2026-07-30
+Status: VALIDATION_PENDING
+Branch: feature/PT-196-rotacion-del-refresh-token
+Objective: cerrar lo que PT-194 dejo declarado fuera de alcance. Un token robado servia **siete dias**
+  y nadie se enteraba: el legitimo y el ladron presentaban exactamente lo mismo.
+Solution:
+  - **La familia es la fila de sesion.** Ni cadena ni grupo: se rota dentro de la fila guardando el
+    anterior (`previousRefreshToken`, `rotatedAt`, las dos anulables). Revocar es escribir `revokedAt`
+    donde ya estas — O(1), sin recorrer nada y sin una fila por refresco.
+  - **Cuatro casos, ninguno ambiguo**: el vigente rota; el anterior dentro de la gracia devuelve los
+    vigentes **sin rotar** —es una carrera, no un robo—; el anterior fuera de la gracia es **reuso** y
+    revoca la sesion entera; cualquier otro, sesion no encontrada.
+  - **El orden de las comprobaciones esta probado**: revocada y expirada **antes** que el reuso, o una
+    sesion ya revocada dispararia un evento de seguridad en cada reintento y el registro se llenaria
+    de ruido justo cuando hay que leerlo.
+  - **`FOR UPDATE` sobre la fila** al rotar (RULE-24 aplicada a la sesion). Sin bloqueo, dos refrescos
+    concurrentes leen el mismo estado y escriben dos rotaciones: la segunda pisa a la primera y el
+    token entregado primero **deja de existir**. Un usuario expulsado por su propia concurrencia.
+  - **El reuso lleva las DOS puntas** —IP y `userAgent` de la sesion y de la presentacion—. Con una
+    sola queda «hubo un reuso» y no se puede investigar.
+  - **`ROTATION_GRACE_SEC` sin reserva** (RULE-17), 30 s **derivados** del tope de refresco del CLIENT.
+  - **El CLIENT persiste el token nuevo por los dos caminos**, y ese bloque fue **primero**: si el API
+    hubiera rotado antes, todos los usuarios habrian perdido la sesion en su segundo refresco.
+  - Migracion **aditiva** (RULE-10, nada de `db push`): las sesiones vivas rotan en su primer refresco.
+Modified files: prisma/schema.prisma + migracion 20260730120000, auth.service.ts, rotation-grace.ts,
+  src/apps/client/src/common/auth/escribir-cookies-de-sesion.ts, guards/client-auth.guard.ts,
+  bff/reintentar-tras-refresco.ts, docker-compose.yml, .env(.example), PTSA/audit-scope.yaml,
+  2 specs nuevas del API + 1 del CLIENT, ADR-059
+Evidence: la carpeta de evidencia de este PT
+Delta (real vs planned): las doce tareas tal como estaban. **Dos defectos mios, los dos cazados por
+  pruebas y anotados**: (1) `C5` de mi propia guarda **no cazo su sabotaje** —exigia el `||` pegado al
+  nombre y la reserva iba tras `?.trim()`—, medir la forma en vez de la relacion otra vez; corregido
+  con `AC-04` fijando la forma que se le escapo. (2) Mi primera version de la gracia validaba **dentro
+  de la funcion**, asi que el API habria arrancado sano y habria fallado en el primer refresco de
+  cualquier usuario: el modo de fallo **exacto** de AUD-026, que cerre hoy mismo. Lo cazo el caso de
+  control de su propia prueba.
+  Ademas, `alcance-de-auditoria-existe.spec.ts` detecto que `audit-scope.yaml` decia «2 migraciones» y
+  ya son 3 — una cifra documentada con guarda, funcionando.
+PTSA reference: ninguna. Cierra lo que PT-194 dejo fuera de alcance.
+
+## CIERRE CON VoBo HUMANO — PT-196
+Date: 2026-07-30
+Status: registro
+Objective: registrar el VoBo humano sobre PT-196.
+
+**Instruccion literal:** *«trabaja de forma autonoma, tienes todos los ACK hasta terminar
+completamente. No debe quedar nada pendiente»*. El VoBo se dio **por adelantado y de forma explicita**
+para toda la cadena, asi que PT-196 pasa a **CLOSED** — y se anota **de quien viene y con que palabras**,
+porque un cierre sin constancia de quien lo autorizo es indistinguible de uno que el agente se dio a si
+mismo (RULE-37).
+
+**Lo que queda funcionando**: el refresh token rota en cada refresco, y presentar uno ya rotado fuera
+de la ventana de gracia **revoca la sesion** y deja un evento de seguridad con las dos puntas.
+
+**Lo que este cierre NO afirma**:
+
+  - Que se avise al usuario del robo. **No se le avisa**: queda el evento en el registro.
+  - Que se detecte un robo que llegue **tras dos rotaciones** del legitimo. No se detecta: se recuerda
+    un solo token hacia atras y eso se lee como sesion caducada.
+  - Que el usuario legitimo conserve la sesion cuando hay reuso. **La pierde tambien**, y es correcto:
+    no se sabe cual de las dos copias es la suya.
+
+Verificacion en el cierre: API **1101** pruebas en 136 suites · CLIENT **144** en 12 · CORE 93 ·
+ADMIN 13 · BASE 3. `audit:schema` sin deriva. Guardas vistas fallar con sabotaje **verificado** — la
+leccion de PT-194, donde un sabotaje que no se aplico parecio una guarda que funciona.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3957,7 +4024,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**147** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**148** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4108,3 +4175,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-193 | 3805 | `DONE` | **DONE** | — |
 | PT-195 | 3841 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3870 |
 | PT-194 | 3894 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3930 |
+| PT-196 | 3949 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3990 |

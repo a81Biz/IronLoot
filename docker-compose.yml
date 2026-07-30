@@ -167,6 +167,10 @@ services:
       - BASE_URL=${PUBLIC_SCHEME:-http}://base.${PUBLIC_DOMAIN:-ironloot.local}
       - CLIENT_URL=${PUBLIC_SCHEME:-http}://client.${PUBLIC_DOMAIN:-ironloot.local}
       - JWT_SECRET=${JWT_SECRET:-change-me-min-32-chars}
+      # PT-196 — Ventana de gracia de la rotacion del refresh token. **Sin reserva** (RULE-17): con 0
+      # se expulsa a usuarios legitimos por concurrencia, y con una cifra generosa se abre una ventana
+      # que nadie decidio. Las dos se ven como «funciona» y una es un agujero.
+      - ROTATION_GRACE_SEC=${ROTATION_GRACE_SEC:?ROTATION_GRACE_SEC es obligatoria}
     # Load additional env vars from project .env into the container
     env_file:
       - ./src/api/.env

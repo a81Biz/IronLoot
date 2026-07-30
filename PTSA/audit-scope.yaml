@@ -80,7 +80,7 @@ coverage_targets:
   # mitades eran falsas: son 2 —PT-127 las refundio en un `initial_schema`— y **las dos estan
   # aplicadas**, verificado en `_prisma_migrations` el 2026-07-29 (E-027). El comentario congelo el
   # estado de H-014 en el momento de detectarlo y nadie lo reviso al cerrarlo.
-  migrations: all      # 2 migraciones, las dos aplicadas y sin rollback (H-014 CERRADA)
+  migrations: all      # 3 migraciones, las tres aplicadas y sin rollback (H-014 CERRADA)
   # PT-157 (H-024) — Las cuatro rutas de abajo apuntaban a
   # `docs/enterprise-documentation/{02-PRD,03-TRD,09-Security-Architecture,06-Backend-Architecture}.md`
   # y **ninguna existia ya**: PT-141 las archivo el 2026-07-29 bajo ADR-049, y ese PT siguio las
