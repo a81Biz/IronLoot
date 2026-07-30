@@ -45,7 +45,7 @@
 1. `/disputes` → abrir la disputa.
 2. Pedir evidencia si es necesario.
 3. Resolver a favor del comprador o vendedor.
-4. ⚠️ **La resolución NO ejecuta el reembolso automáticamente** (`AUD-010`). Si procede devolver dinero, hazlo en **Refunds → crear reembolso**.
+4. ✅ **Resolver a favor del comprador ejecuta el reembolso en el mismo acto** (`AUD-010` corregido, PT-191). El importe **sale del vendedor**: de su holdback si la venta sigue retenida, y si ya se liberó le queda un descubierto que no podrá retirar hasta cubrir. No hay que hacer nada en **Refunds** después.
 
 ### Configurar comisiones ⚠️
 - Fija tasa **global** o **por vendedor** en `commissions`.
@@ -55,7 +55,7 @@
 - La generación de CFDI **no está operativa** (falta proveedor PAC, `AUD-016`). Configura `CFDI_*` cuando se seleccione el PAC.
 
 ### Moderar subastas
-- Aprobar/rechazar/suspender desde `auctions`. ⚠️ Estas acciones cambian el estado directamente sin pasar por las reglas de transición de dominio (`AUD-011`) — usar con criterio.
+- Aprobar/rechazar/suspender desde `auctions`. ✅ Las seis acciones pasan por `AuctionStateMachine` (`AUD-011` corregido, PT-191): una transición imposible —aprobar algo que ya corre, reabrir una cerrada— se rechaza nombrando las dos puntas, en vez de aplicarse en silencio.
 
 ### Aprobar KYC del vendedor (PT-069)
 1. `kyc` → revisar los documentos de la solicitud (estado PENDING).

@@ -1,8 +1,12 @@
 # Inventory — API Endpoints
 
-**159 rutas** en `src/api` bajo el prefijo `/api/v1/`.
-**Medido** el 2026-07-29 (PT-188) sobre `src/api/src/modules/**/*.controller.ts`, y contrastado con las 159 rutas
-que Nest declara montadas en el arranque.
+**157 rutas** en `src/api` bajo el prefijo `/api/v1/`.
+**Medido** el 2026-07-29 (PT-188) y actualizado el 2026-07-30 (PT-191) sobre
+`src/api/src/modules/**/*.controller.ts`.
+
+**Eran 159.** `GET` y `PUT /admin/configuration/smtp` se retiraron en PT-191: servían a un formulario del panel
+que guardaba unas claves **que el mailer nunca leía** (AUD-027). Retirado el formulario, se quedaron sin
+llamantes — ADR-047.
 
 ## Cómo leer la columna «Autorización»
 
@@ -10,7 +14,7 @@ que Nest declara montadas en el arranque.
 |---|---|
 | `Public` | Sin autenticación. Son 14 y están revisadas una a una: catálogo, flujos de entrada, salud, el webhook de la pasarela y la reputación pública |
 | `JWT` | El guard global. **Es el valor por defecto**: una ruta sin `@Public()` está protegida sin declarar nada (Pattern 1 de `11-Conventions.md`) |
-| `AdminDualAuthGuard` | Sesión de ADMIN **o** `ADMIN_API_KEY`. Son 79 |
+| `AdminDualAuthGuard` | Sesión de ADMIN **o** `ADMIN_API_KEY`. Son 77 |
 | `DevelopmentOnlyGuard + DevOnly` | **No existen en producción**. Son 11: los 9 de diagnóstico y los 2 disparadores del planificador |
 
 **`@Public()` no significa «sin autorización»: significa «no pases por el JWT global».** `admin.controller.ts`
@@ -45,7 +49,7 @@ Global **100/min**. Excepciones medidas:
 
 ---
 
-## Admin — 80 rutas
+## Admin — 78 rutas
 
 Todo el panel va por `AdminDualAuthGuard` (sesión de ADMIN **o** `ADMIN_API_KEY`) y lleva `@SkipThrottle()`.
 
@@ -73,8 +77,6 @@ Todo el panel va por `AdminDualAuthGuard` (sesión de ADMIN **o** `ADMIN_API_KEY
 | PUT | `/admin/configuration/cfdi` | AdminDualAuthGuard | — |
 | GET | `/admin/configuration/platform` | AdminDualAuthGuard | — |
 | PUT | `/admin/configuration/platform` | AdminDualAuthGuard | — |
-| GET | `/admin/configuration/smtp` | AdminDualAuthGuard | — |
-| PUT | `/admin/configuration/smtp` | AdminDualAuthGuard | — |
 | GET | `/admin/configuration/storage` | AdminDualAuthGuard | — |
 | PUT | `/admin/configuration/storage` | AdminDualAuthGuard | — |
 | GET | `/admin/dashboard/extended-stats` | AdminDualAuthGuard | — |

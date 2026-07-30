@@ -38,15 +38,8 @@ export class ConfigurationService {
     });
   }
 
-  getSmtpConfig() {
-    return this.apiClient.call("GET", "/admin/configuration/smtp");
-  }
-  updateSmtpConfig(updates: Record<string, string>, adminUser: string) {
-    return this.apiClient.call("PUT", "/admin/configuration/smtp", {
-      updates,
-      adminUser,
-    });
-  }
+  // PT-191 (AUD-027) — `getSmtpConfig` / `updateSmtpConfig` retirados: el mailer nunca leyo esas claves.
+  // El correo se configura por `MAIL_*` en el entorno. Motivo completo en `system-config.service.ts`.
 
   getStorageConfig() {
     return this.apiClient.call("GET", "/admin/configuration/storage");

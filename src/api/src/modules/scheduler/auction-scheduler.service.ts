@@ -3,7 +3,7 @@ import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../database/prisma.service';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { WalletService } from '../wallet/wallet.service';
-import { AuctionStatus, OrderStatus, NotificationType } from '@prisma/client';
+import { AuctionStatus, OrderStatus, NotificationType, DisputeStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { DistributedLockService } from '../../common/redis/distributed-lock.service';
 import { SystemConfigService } from '../system-config/system-config.service';
@@ -307,6 +307,40 @@ export class AuctionSchedulerService {
       where: {
         sellerSettledAt: null,
         sellerNet: { not: null },
+        // PT-191 (AUD-010) — **Una disputa viva congela la liquidación.**
+        //
+        // Esta condición no estaba, y su ausencia era la mitad cara del hallazgo. El holdback existe
+        // *exactamente* para proteger al comprador durante la ventana de disputa (PT-174), y el cron lo
+        // soltaba igual con la disputa abierta encima de la mesa: a las 72 h de la entrega el dinero se
+        // iba, y cuando llegaba la resolución a favor del comprador ya no había de dónde sacarlo.
+        //
+        // `RESOLVED` y `CLOSED` no aparecen a propósito: una disputa resuelta a favor del vendedor debe
+        // dejar fluir la liquidación, y una resuelta a favor del comprador ya revirtió la venta —el
+        // pedido queda `REFUNDED` y `sellerNet` ya no le pertenece—.
+        //
+        // Es la contrapartida de `reversarVenta()`: sin esta línea, aquélla acabaría escribiendo
+        // descubiertos en vez de mover holdback, que es lo mismo pero cobrándoselo a la plataforma.
+        //
+        // **La forma importa.** Se escribe `NOT: { dispute: { is: {...} } }` y no `dispute: { is: null }`
+        // ni `isNot`: `is: null` congelaría también los pedidos cuya disputa ya se resolvió —el dinero
+        // no se liberaría **nunca**—, y la semántica de `isNot` sobre una relación opcional ausente no
+        // es evidente sobre una relación ausente.
+        //
+        // **Verificado leyendo el SQL que genera Prisma**, no la documentación — y no con un conteo,
+        // porque la base local está vacía y un `0 === 0` habría dado un verde hueco (la lección de
+        // PT-122). Lo que emite es:
+        //
+        //     LEFT JOIN disputes j1 ON j1.order_id = orders.id
+        //     WHERE NOT ( j1.status IN ('OPEN','IN_MEDIATION') AND j1.id IS NOT NULL )
+        //
+        // Con la lógica ternaria de SQL: **sin disputa** → `NULL AND FALSE` = FALSE → `NOT` → **pasa**;
+        // **disputa viva** → `TRUE AND TRUE` → **congela**; **disputa resuelta** → `FALSE AND TRUE` =
+        // FALSE → **pasa**. El `j1.id IS NOT NULL` que Prisma añade es exactamente lo que salva el caso
+        // nulo: sin él, `NULL AND TRUE` = NULL, `NOT NULL` = NULL, y **ningún** pedido sin disputa
+        // pasaría el filtro. Es decir: la liquidación se habría parado entera, en silencio.
+        NOT: {
+          dispute: { is: { status: { in: [DisputeStatus.OPEN, DisputeStatus.IN_MEDIATION] } } },
+        },
         OR: [
           // Confirmado por el comprador, y ya pasaron las horas de retencion.
           { shipment: { deliveredAt: { lte: confirmCutoff } } },

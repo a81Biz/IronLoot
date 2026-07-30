@@ -7,7 +7,16 @@ import { NotificationsService } from './notifications.service';
 import { NotificationsController } from './notifications.controller';
 import { EmailService } from './email.service';
 import { MAIL_TIMEOUTS_MS } from './mail-timeouts';
-import { EventsGateway } from './events.gateway';
+// PT-191 (AUD-006) — `EventsGateway` retirado.
+//
+// Era un **segundo namespace publico y sin autenticar** (`events`), con el mismo nombrado de salas que
+// `AuctionsGateway` (`auction:${id}`), un emisor **generico** que aceptaba cualquier objeto… y **cero
+// llamantes**: ningun servicio emitia por el y ningun navegador se conectaba (el unico `io()` del
+// frontend apunta a `/auctions`). Dos puertas publicas a la misma sala y solo una vigilada — el patron
+// de PT-173 y de AUD-011.
+//
+// Un emisor generico ademas hace **indecidible** la guarda del canal publico: la carga deja de estar en
+// el codigo y pasa a estar en quien llame.
 import { NOTIFICATION_QUEUE } from './notification-queue.producer';
 import { NotificationQueueProducer } from './notification-queue.producer';
 import { NotificationQueueWorker } from './notification-queue.worker';
@@ -49,10 +58,9 @@ import { NotificationQueueWorker } from './notification-queue.worker';
   providers: [
     NotificationsService,
     EmailService,
-    EventsGateway,
     NotificationQueueProducer,
     NotificationQueueWorker,
   ],
-  exports: [NotificationsService, EmailService, EventsGateway, NotificationQueueProducer],
+  exports: [NotificationsService, EmailService, NotificationQueueProducer],
 })
 export class NotificationsModule {}

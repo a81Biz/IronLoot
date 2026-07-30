@@ -168,6 +168,136 @@ export class WalletService {
   }
 
   /**
+   * PT-191 (AUD-010) — **Devuelve al comprador el importe de una venta, quitándoselo al vendedor.**
+   *
+   * ## Por qué existe: reembolsar sin cargar es imprimir dinero
+   *
+   * `RefundsService.createRefund` sólo **acreditaba al comprador**. Enganchar la resolución de disputas
+   * a ese método sin más —que es lo que el enunciado de AUD-010 pedía— habría dado al comprador su
+   * importe **sin quitárselo a nadie**: dos monederos con el mismo dinero y un ledger que no cuadra.
+   *
+   * El defecto no estaba en el enunciado del hallazgo. Sale de preguntar *de dónde sale el dinero*, que
+   * es lo que obliga a hacer la trazabilidad inversa (A3): `Producto ← Transformación ← Servicio ← Regla`.
+   *
+   * ## De dónde se toma, y en qué orden
+   *
+   * 1. **`pendingBalance` primero** — el holdback de PT-071/PT-174. Existe exactamente para esto:
+   *    retener el neto del vendedor mientras el comprador puede reclamar. Si la disputa llega a tiempo,
+   *    el dinero sigue ahí y la reversa es limpia.
+   * 2. **`balance` después** — si el holdback ya venció y se liberó.
+   * 3. **Descubierto** — si el vendedor ya retiró.
+   *
+   * ## El descubierto es una decisión, no un descuido
+   *
+   * Se deja el saldo del vendedor **en negativo** en vez de negar el reembolso. El derecho del comprador
+   * no depende de la solvencia del vendedor, y negar el pago por saldo insuficiente **premiaría a quien
+   * retire rápido**: bastaría con vaciar el monedero antes de que se resuelva la disputa. Queda como
+   * deuda, con su asiento, y `withdraw()` no deja retirar sobre un saldo negativo.
+   *
+   * Lo que reduce la frecuencia del descubierto no es esta función: es que el cron de liquidación **ya no
+   * suelte el holdback con una disputa abierta** (la otra mitad de AUD-010, en
+   * `auction-scheduler.service.ts`).
+   *
+   * ## Y toca dos monederos, así que se bloquean los dos en orden fijo
+   *
+   * RULE-24 / PT-146. Dos transacciones que pidan los mismos cerrojos en orden distinto se quedan
+   * esperándose. Un interbloqueo no aparece en desarrollo: aparece en producción, de noche, como
+   * peticiones colgadas.
+   */
+  async reversarVenta(
+    buyerId: string,
+    sellerId: string,
+    amount: number,
+    referenceId: string,
+    outerTx?: Prisma.TransactionClient,
+  ): Promise<{ tomadoDeRetenido: number; tomadoDeDisponible: number; descubierto: number }> {
+    // PT-142 (RULE-22) — Fuera de la transacción, con el único camino atómico que hay. El comprador
+    // puede no tener monedero (nunca depositó, pagó por pasarela), y `createRefund` lo resolvía con un
+    // `if (buyerWallet)` que dejaba el pedido REFUNDED **sin pagar nada**, en silencio.
+    await this.asegurarMonedero(buyerId, true);
+    await this.asegurarMonedero(sellerId, true);
+
+    const run = async (tx: Prisma.TransactionClient) => {
+      await this.bloquearDosMonederos(tx, buyerId, sellerId);
+
+      const buyer = await tx.wallet.findUnique({ where: { userId: buyerId } });
+      const seller = await tx.wallet.findUnique({ where: { userId: sellerId } });
+      if (!buyer) throw new NotFoundException('Buyer wallet not found');
+      if (!seller) throw new NotFoundException('Seller wallet not found');
+
+      const total = new Decimal(amount);
+
+      // ── 1. El cargo al vendedor: holdback primero, disponible después, descubierto al final ──
+      const retenido = new Decimal(seller.pendingBalance);
+      const deRetenido = Decimal.min(retenido, total);
+      const restante = total.minus(deRetenido);
+
+      const disponible = new Decimal(seller.balance);
+      // Sólo se toma de lo que hay; el resto se convierte en deuda, no en un saldo inventado.
+      const deDisponible = Decimal.max(new Decimal(0), Decimal.min(disponible, restante));
+      const descubierto = restante.minus(deDisponible);
+
+      const saldoVendedorAntes = disponible;
+      // El descubierto ES el negativo: se resta el importe completo que no cubrió el holdback.
+      const saldoVendedorDespues = disponible.minus(restante);
+
+      await tx.ledger.create({
+        data: {
+          walletId: seller.id,
+          type: LedgerType.ADJUSTMENT,
+          amount: total,
+          balanceBefore: saldoVendedorAntes,
+          balanceAfter: saldoVendedorDespues,
+          referenceId,
+          referenceType: 'DISPUTE_REVERSAL',
+          description: descubierto.greaterThan(0)
+            ? `Sale reversed for ${referenceId} — uncovered ${descubierto.toFixed(2)} left as debt`
+            : `Sale reversed for ${referenceId}`,
+        },
+      });
+
+      await tx.wallet.update({
+        where: { id: seller.id },
+        data: {
+          balance: saldoVendedorDespues,
+          pendingBalance: retenido.minus(deRetenido),
+        },
+      });
+
+      // ── 2. El abono al comprador, por el importe entero ──────────────────────────────────────
+      const saldoCompradorAntes = new Decimal(buyer.balance);
+      const saldoCompradorDespues = saldoCompradorAntes.plus(total);
+
+      await tx.ledger.create({
+        data: {
+          walletId: buyer.id,
+          type: LedgerType.REFUND,
+          amount: total,
+          balanceBefore: saldoCompradorAntes,
+          balanceAfter: saldoCompradorDespues,
+          referenceId,
+          referenceType: 'DISPUTE_REFUND',
+          description: `Dispute refund for ${referenceId}`,
+        },
+      });
+
+      await tx.wallet.update({
+        where: { id: buyer.id },
+        data: { balance: saldoCompradorDespues, isActive: true },
+      });
+
+      return {
+        tomadoDeRetenido: deRetenido.toNumber(),
+        tomadoDeDisponible: deDisponible.toNumber(),
+        descubierto: descubierto.toNumber(),
+      };
+    };
+
+    if (outerTx) return run(outerTx);
+    return this.prisma.$transaction(run);
+  }
+
+  /**
    * PT-071 — Libera el neto de una venta desde pendingBalance a disponible (balance),
    * al confirmarse la recepción o vencer la ventana de disputa. Registra SETTLEMENT_RELEASE.
    */

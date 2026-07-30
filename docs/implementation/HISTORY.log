@@ -3618,6 +3618,55 @@ Delta (real vs planned): **no se abrio ninguno de los cinco AUD abiertos, y es d
   Quedan declarados, con evidencia y con su coste estimado, en el sitio donde se leen.
 PTSA reference: ninguno. Los cinco AUD abiertos viven en el registro de la auditoria de julio, no en el de PTSA.
 
+## PT-191 — BUG: Los cinco AUD abiertos, cerrados hasta el final
+Date: 2026-07-30
+Status: VALIDATION_PENDING
+Branch: fix/PT-191-cerrar-los-aud-abiertos
+Objective: cerrar AUD-006, AUD-010, AUD-011, AUD-012 y AUD-027 —los cinco que la tabla de veredictos
+  de PT-189 declaraba abiertos— cada uno hasta el final y con guarda.
+Root cause: ninguno era lo que su enunciado decia. AUD-027 no eran «dos rutas de config» sino un
+  formulario del panel que guardaba, respondia «guardado» y **no configuraba nada** (el mailer lee
+  MAIL_* del entorno). AUD-011 no era una mencion ausente sino **seis** puertas al estado sin
+  cerradura, con la maquina **incompleta** debajo. AUD-010 no era un paso manual sino **tres**
+  defectos: la resolucion no pagaba, el cron soltaba el holdback con la disputa abierta, y
+  createRefund solo acreditaba —cablearlo sin mas habria **impreso dinero**—. AUD-012 nombraba un
+  simbolo y eran **30 de 42**. AUD-006 era cierto y deliberado; lo que faltaba era que la decision
+  fuera comprobable.
+Solution:
+  - AUD-027 — retiradas las cinco claves SMTP_* de SystemConfig, el formulario del panel, su
+    POST /settings/smtp y los dos endpoints del API que quedaron huerfanos (ADR-047). Inventario
+    159 -> 157 rutas. Guarda: una-sola-ruta-de-correo.spec.ts.
+  - AUD-011 — puerta unica transicionar() en admin.service.ts, con las seis operaciones cableadas.
+    **Antes hubo que completar la maquina** con cuatro transiciones legitimas que le faltaban
+    (PENDING_MODERATION -> DRAFT entre ellas, el flujo central de moderacion). Guarda:
+    admin-pasa-por-la-maquina.spec.ts.
+  - AUD-010 — WalletService.reversarVenta(): una transaccion que bloquea los dos monederos en orden
+    fijo (RULE-24), toma del vendedor primero del holdback y luego del disponible, y acredita al
+    comprador. El descubierto es una decision declarada. createRefund deja de mover saldo por su
+    cuenta —era una octava via fuera de WalletService, sin FOR UPDATE y con un if (buyerWallet) que
+    no pagaba a quien no tuviera monedero—. Y **una disputa viva congela la liquidacion**, que es lo
+    que evita el descubierto. Guarda: resolver-mueve-dinero.spec.ts.
+  - AUD-012 — retirados Money (+ errores + MoneyDto) y el validador de IPN de **PayPal**, que
+    describia un protocolo que la plataforma no usa. Medido el conjunto: 30/42 huerfanos -> TD-024.
+    Guarda: core-sin-superficie-huerfana.spec.ts.
+  - AUD-006 — retirados EventsGateway (segundo namespace publico, cero llamantes, emisor generico) y
+    emitAuctionEnded (difundia winnerId, cero llamantes). Guarda:
+    emisiones-publicas-sin-datos-privados.spec.ts.
+Modified files: admin.service.ts, refunds.service.ts, refunds.module.ts, wallet.service.ts,
+  auction-scheduler.service.ts, auctions.gateway.ts, notifications.module.ts,
+  system-config.service.ts, admin/configuration.{controller,service}.ts, admin/views/settings.html,
+  core: domain/{index,money/*,payment/ipn-validator*} + shared/{index,money.dto},
+  5 guardas nuevas + 3 ajustadas, 13 documentos de docs-v2, 10-Technical-Debt.md, CLAUDE.md
+Evidence: docs/implementation/evidence/PT-191/
+Delta (real vs planned): el plan era «cerrar cinco hallazgos». Aparecieron **seis defectos que no
+  estaban en ningun enunciado**: la maquina de estados incompleta (AUD-011), el cron que soltaba el
+  holdback con disputa abierta y createRefund como octava via al saldo (AUD-010), el validador de IPN
+  que mentia y los 30 simbolos huerfanos (AUD-012), y EventsGateway entero (AUD-006). Todos tratados
+  hasta cerrarlos salvo los 24 huerfanos restantes, que son TD-024 **porque retirarlos es abandonar
+  el diseno hexagonal y eso pide una ADR**, no un borrado al final de una sesion.
+PTSA reference: AUD-006, AUD-010, AUD-011, AUD-012, AUD-027 — los cinco a «corregido» en la tabla de
+  veredictos de docs-v2/transversal/Registro-de-Hallazgos.md. Recuento: 20 / 0 / 1 / 15.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3629,7 +3678,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**142** encabezados · **0** realmente abiertos · **6** sin `Status:` declarado.
+**143** encabezados · **1** realmente abiertos · **6** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -3775,3 +3824,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-188 | 3480 | `DONE` | **DONE** | — |
 | PT-189 | 3538 | `DONE` | **DONE** | — |
 | PT-190 | 3589 | `DONE` | **DONE** | — |
+| PT-191 | 3621 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |

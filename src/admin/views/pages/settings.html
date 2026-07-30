@@ -46,53 +46,11 @@
   {% endif %}
 </div>
 
-<!-- ── SMTP ─────────────────────────────────────────────────────────── -->
-<div class="settings-section mt-4">
-  <h2 class="section-title">
-    <span class="material-symbols-outlined">mail</span>
-    Configuración SMTP
-  </h2>
-  <p class="section-desc">Servidor de correo saliente para notificaciones de la plataforma. Los cambios se aplican sin redeployment.</p>
-
-  <form action="/settings/smtp" method="POST" class="settings-form">
-    <div class="form-grid">
-      <div class="form-group">
-        <label>Host SMTP</label>
-        {% set smtpHost = '' %}
-        {% for item in smtpConfig %}{% if item.key == 'SMTP_HOST' %}{% set smtpHost = item.value %}{% endif %}{% endfor %}
-        <input type="text" name="SMTP_HOST" value="{{ smtpHost }}" class="form-input" placeholder="smtp.gmail.com">
-      </div>
-      <div class="form-group">
-        <label>Puerto</label>
-        {% set smtpPort = '587' %}
-        {% for item in smtpConfig %}{% if item.key == 'SMTP_PORT' %}{% set smtpPort = item.value %}{% endif %}{% endfor %}
-        <input type="number" name="SMTP_PORT" value="{{ smtpPort }}" class="form-input" placeholder="587">
-      </div>
-      <div class="form-group">
-        <label>Usuario</label>
-        {% set smtpUser = '' %}
-        {% for item in smtpConfig %}{% if item.key == 'SMTP_USER' %}{% set smtpUser = item.value %}{% endif %}{% endfor %}
-        <input type="email" name="SMTP_USER" value="{{ smtpUser }}" class="form-input" placeholder="user@domain.com">
-      </div>
-      <div class="form-group">
-        <label>Contraseña</label>
-        <input type="password" name="SMTP_PASSWORD" value="" class="form-input" placeholder="Dejar vacío para no cambiar">
-        <span class="form-hint">El valor actual está enmascarado por seguridad</span>
-      </div>
-      <div class="form-group">
-        <label>Remitente (From)</label>
-        {% set smtpFrom = '' %}
-        {% for item in smtpConfig %}{% if item.key == 'SMTP_FROM' %}{% set smtpFrom = item.value %}{% endif %}{% endfor %}
-        <input type="email" name="SMTP_FROM" value="{{ smtpFrom }}" class="form-input" placeholder="noreply@ironloot.com">
-      </div>
-    </div>
-    <div class="form-actions mt-4">
-      <button type="submit" class="btn btn-primary">
-        <span class="material-symbols-outlined">save</span> Guardar SMTP
-      </button>
-    </div>
-  </form>
-</div>
+<!-- ── SMTP: retirado en PT-191 (AUD-027) ──────────────────────────────
+     Aqui habia un formulario de servidor de correo que guardaba en SystemConfig y respondia «guardado».
+     El mailer construye su transporte con MAIL_* del entorno, asi que **no configuraba nada**.
+     El correo se configura por entorno; el motivo completo esta en system-config.service.ts.
+─────────────────────────────────────────────────────────────────────── -->
 
 <!-- ── Storage ───────────────────────────────────────────────────────── -->
 <div class="settings-section mt-4">

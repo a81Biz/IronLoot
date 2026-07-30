@@ -78,7 +78,7 @@
 
 ## 5. Disputas
 
-Si hay un problema tras la entrega, abre una **disputa dentro de 14 días**. El equipo de soporte la mediará y resolverá. ⚠️ El reembolso, cuando procede, lo ejecuta el administrador (`AUD-010`).
+Si hay un problema tras la entrega, abre una **disputa dentro de 14 días**. El equipo de soporte la mediará y resolverá. Si se resuelve a tu favor, **el reembolso entra en tu monedero en ese mismo momento** (`AUD-010` corregido, PT-191).
 
 ## 6. Notas y limitaciones actuales (transparencia)
 

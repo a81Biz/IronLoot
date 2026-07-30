@@ -17,13 +17,13 @@
 | **PayPal** (Orders v2 + Webhooks) | `paypal.provider.ts` | ✅ verify-webhook-signature (PT-076) |
 | **HeyBanco** | `heybanco.provider.ts` | ✅ documentado y declarado en `src/api/.env.example`. **Falta la credencial, no el código** (TD-002). AUD-023 corregido |
 | Stripe | referencia condicional | ⚠️ etiqueta Graphify obsoleta; sin SDK real |
-| **Email (SMTP/Mailhog)** | `notifications.module.ts` | ⚠️ dos rutas config `MAIL_*` vs `SMTP_*` (AUD-027) |
+| **Email (SMTP/Mailhog)** | `notifications.module.ts` | ✅ una sola ruta: `MAIL_*` del entorno. Las claves `SMTP_*` y su formulario en el panel se retiraron — **no configuraban nada** (`AUD-027` corregido, PT-191) |
 | **Transportista** | `shipments/*` | ✗ sin API real; campos manuales (AUD-024) |
 | **CFDI/PAC** | `cfdi/*`, `ICfdiPacProvider` | ✗ stub, sin proveedor (AUD-016) |
 | **KYC** | `kyc/*` | manual admin; sin proveedor externo |
 | **Storage** | `upload/*`, `IStorageService` | LOCAL\|S3\|MINIO por config |
 | **Redis** | lock, sesión admin, BullMQ | ✅ |
-| **Socket.io** | gateways `auctions`/`events` | ⚠️ sin auth (AUD-006) |
+| **Socket.io** | gateway `auctions` (el de `events` se retiró: sin llamantes) | ✅ público a propósito, con las cargas acotadas por prueba (`AUD-006` corregido, PT-191) |
 
 ## 2. Variables de entorno (catálogo)
 
@@ -42,7 +42,7 @@ Tres `.env.example` (raíz, `src/api`, `src/admin`). Marcadas 🔒=secreto, ⚠�
 `AUCTION_SOFT_CLOSE_WINDOW_SEC`(120) · `PAYMENT_EXPIRATION_HOURS`(72) · `DISPUTE_WINDOW_DAYS`(14) · `REQUIRE_AUCTION_MODERATION`(false) · `AUCTION_MIN_INCREMENT_AMOUNT`(10, **aplicado**; AUD-009 corregido) · `AUCTION_MIN/MAX_DURATION_HOURS`(1/720) · `REQUIRE_EMAIL_VERIFICATION`(true) · `REQUIRE_KYC_FOR_SELLERS`(true).
 
 ### Email / Storage / CFDI
-`MAIL_*` (usado por NotificationsModule) · `SMTP_*` (seed SystemConfig) — duplicado (AUD-027). · `STORAGE_PROVIDER/BUCKET/REGION` · `STORAGE_ACCESS_KEY/SECRET_KEY`🔒 · `CFDI_RFC_EMISOR` · `CFDI_PAC_URL` · `CFDI_PAC_API_KEY`🔒.
+`MAIL_*` (usado por NotificationsModule; **única ruta de configuración del correo** desde PT-191) · `STORAGE_PROVIDER/BUCKET/REGION` · `STORAGE_ACCESS_KEY/SECRET_KEY`🔒 · `CFDI_RFC_EMISOR` · `CFDI_PAC_URL` · `CFDI_PAC_API_KEY`🔒.
 
 ### URLs / CORS / Logging
 `BASE_URL`/`CLIENT_URL`/`ADMIN_URL`/`API_URL` · `ALLOWED_ORIGINS`⚠️(vacío en prod falla) · `BASE/CLIENT/ADMIN_ENABLED` · `LOG_LEVEL` · `TRACE_ENABLED`.

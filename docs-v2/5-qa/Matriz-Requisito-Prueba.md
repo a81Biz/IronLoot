@@ -20,25 +20,25 @@
 | RN-10/11 | crear/publicar subasta desde DRAFT | auctions.service.spec (11) + e2e (6) | ✅ | — |
 | RN-13/15 | puja >actual, no-vendedor | bid-validation.spec (6) | ✅ (core) | — |
 | RN-14 | incremento mínimo | `bids.service.ts` | ✅ | AUD-009 corregido |
-| RN-16 | estado válido de puja (PUBLISHED/ACTIVE) | — (divergencia no fijada) | ✗ | AUD-012 |
+| RN-16 | estado válido de puja (PUBLISHED/ACTIVE) | — (divergencia API↔core no fijada) | ✗ | pendiente propio (AUD-012 corregido) |
 | RN-17 | soft-close | scheduler/bids (parcial) | ✅ | AUD-002 corregido |
 | RN-22 | hold-first fondos | wallet.service.spec (8) + wallet-calculation.spec (12) | ✅ | AUD-013 corregido |
 | RN-23 | liberar al superado | bids.service.spec (4) | ✅ | AUD-013 corregido |
 | RN-24 | depósito monto verificado | payments.service.spec (6) + wallet.controller.spec | ⚠️ | — |
 | RN-25 | límite retiro | wallet.controller.spec (5) | ⚠️ | — |
 | RN-26 | ledger inmutable | wallet.service.spec | ✅ | — |
-| RN-30 | cierre + captura | auction-scheduler.spec (3) + scheduler-lock (7) | ⚠️ | AUD-012 |
+| RN-30 | cierre + captura | auction-scheduler.spec (3) + scheduler-lock (7) | ✅ | AUD-012 corregido (ADR-033) |
 | RN-31 | comisión | `commissions.service` | ✅ | AUD-005 corregido · AUD-013 sin verificar |
 | RN-34 | envío requiere PAID | shipments.service.spec (6) + e2e (4) | ✅ | — |
 | RN-40 | disputa 14 días | dispute-state-machine.spec (7) + disputes.service.spec (7) | ✅ | — |
-| RN-41 | resolución disputa | — | ✗ | AUD-010 |
-| RN-42 | reembolso | ProcessRefundUseCase.spec (8) **no cableado** | ✗ prod | AUD-012/013 |
+| RN-41 | resolución disputa | resolver-mueve-dinero.spec (12) | ✅ | AUD-010 corregido (PT-191) |
+| RN-42 | reembolso | refunds.service.spec (5) + resolver-mueve-dinero.spec (12) | ✅ | AUD-012/013 corregidos |
 | RN-43 | rating DELIVERED | ratings.service.spec (6) + e2e (6) | ✅ | — |
 | RN-50 | webhook: validación de firma | webhook-sig.spec (7) + ipn.spec (11, **obsoleto PT-076**) + paypal-webhook.spec (10, API) | ✅ | — |
 | RN-51 | acredita si COMPLETED | payments.service.spec (6) | ⚠️ idempotencia | — |
 | RN-52 | rate limiting | config + `validate-startup-config.spec` | ✅ | AUD-004 corregido |
 | RN-54 | CSRF | postura declarada (Bearer + SameSite) | ✅ | AUD-014 corregido; sin ADR propia |
-| RN-55 | WS auth | — | ✗ | AUD-006 |
+| RN-55 | WS: canal público sin datos privados | emisiones-publicas-sin-datos-privados.spec (7) | ✅ | AUD-006 corregido (PT-191) |
 | RN-56 | onboarding vendedor | users.service.spec (21) | ✅ | — |
 
 ## Cobertura faltante prioritaria

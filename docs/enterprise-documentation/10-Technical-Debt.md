@@ -196,14 +196,23 @@ podían ser relativas. Lo eran, **porque el proxy existe** — y este `ND` decí
 **Nota:** el `ND` pedía «inventariar», y eso se cierra mirando. Costaba un `grep`.
 
 ### ND-001 — WebSocket event payload schemas
-**Status:** ✅ **CERRADA 2026-07-29 por PT-181 — los gateways son dos y están localizados.**  
-**Evidence:** `src/api/src/modules/auctions/auctions.gateway.ts` y
-`src/api/src/modules/notifications/events.gateway.ts`. Los eventos que `CLAUDE.md` nombra —`bid.new`,
-`auction.extended`, `auction.closed`— viven en el primero.
+**Status:** ✅ **CERRADA 2026-07-29 por PT-181 — el gateway público está localizado.**  
+**Evidence:** `src/api/src/modules/auctions/auctions.gateway.ts`. Los eventos que `CLAUDE.md` nombra
+—`bid.new`, `auction.extended`— viven ahí, y sus cargas están ahora **acotadas por prueba**:
+`src/api/test/unit/seguridad/emisiones-publicas-sin-datos-privados.spec.ts` falla si una emisión nueva
+lleva un campo identificativo.
 **Lo que este cierre NO afirma:** que los esquemas de payload estén *documentados*. No lo están, y eso es
 una tarea de documentación con dueño (`docs-v2/`, que mantienen personas — ADR-049), no un «no
-determinado». **La incógnita se resolvió: los gateways existen y son dos.** Lo que quede es trabajo, no
-desconocimiento, y mezclarlos es lo que mantuvo este `ND` abierto seis semanas.
+determinado». **La incógnita se resolvió: el gateway existe y sus cargas están medidas.** Lo que quede es
+trabajo, no desconocimiento, y mezclarlos es lo que mantuvo este `ND` abierto seis semanas.
+
+> **Revisión 2026-07-30 (PT-191, AUD-006).** Esta entrada decía *«los gateways son dos»* y citaba
+> `events.gateway.ts`, que **ya no existe**: era un segundo namespace público, sin autenticar, con el
+> mismo nombrado de salas, un emisor genérico y **cero llamantes**. Se retiró al cerrar AUD-006.
+> Se **reescribe la frase, no el símbolo** (RULE-38): cambiar sólo la cita habría dejado un cierre que
+> afirma un hecho falso con aval de evidencia. Lo delató la guarda de RULE-35, que comprueba que toda
+> ruta citada por un `ND` existe — es decir, **el registro se acusó a sí mismo**, que es para lo que
+> están esas guardas.
 
 ### ND-005 — Feature flags implementation
 **Status:** ✅ **CERRADA 2026-07-29 por PT-181 — inspeccionada, y lo que hay merece decirse.**  
@@ -548,3 +557,37 @@ que el contenedor del API murió al arrancar y con él los otros cuatro.
 **Lo que NO se afirma.** `npm ci` **no** habría evitado el defecto: instala el lock, y el lock estaba
 mal. Lo que lo impide es el `preinstall`; lo que lo caza es la guarda. `npm ci` sirve para otra cosa —
 que el fichero mande de verdad.
+
+---
+
+### TD-024 — `@ironloot/core` es en su mayor parte una librería que nadie importa
+**Abierta 2026-07-30 · PT-191 (al cerrar AUD-006/AUD-010/AUD-012) · Severidad: MEDIA · Esfuerzo: M**
+
+**La cifra, que es de lo que trata esta entrada.** Al cerrar AUD-012 —que nombraba *un* símbolo
+huérfano, el VO `Money`— se midió el conjunto: **30 de los 42 símbolos exportados por `core` no tenían
+un solo consumidor fuera de `core`.** El hallazgo no describía un descuido puntual; describía el 71 % de
+la librería. Tras retirar lo que este PT retiró quedan **24**, contados y declarados uno a uno en
+`src/api/test/unit/dominio/core-sin-superficie-huerfana.spec.ts`.
+
+**Qué son los 24.** Las *puertas* de una arquitectura hexagonal cuyos adaptadores no se escribieron
+nunca: los cuatro `I*Repository` con sus `*Summary`, los contratos de integración (`IPaymentProvider`,
+`IEmailService`, `IStorageService`, CFDI), cuatro eventos que nadie emite y dos DTO de paginación. PT-042
+ya retiró la otra mitad de ese diseño —los cuatro casos de uso— con la razón escrita en
+`src/packages/core/src/index.ts`: *«tested but never wired into the API»*.
+
+**Por qué NO se retiran aquí.** Retirar los puertos es **abandonar formalmente el diseño hexagonal**, y
+eso es una decisión de arquitectura que se toma con una ADR y con el humano delante, no con un borrado al
+final de una sesión larga. Lo que sí se hizo es lo que faltaba para poder decidirlo: **medirlo**.
+
+**Por qué no es cosmético.** Un contrato muerto no se ignora como el código muerto: **se lee**.
+`core/integrations/payment-provider.interface.ts` declara qué debe cumplir una pasarela… y el contrato
+vivo es otro, el del API (`modules/payments/interfaces/`). Quien lea `core` para aprender el sistema
+obtiene una respuesta que no se aplica en ninguna parte y que puede divergir sin que nada proteste. Es la
+familia de **H-016**: *un documento con citas rotas se lee con confianza y es falso.*
+
+**Lo que ya está protegido.** La guarda impide que la cifra **crezca**: un símbolo exportado nuevo sin
+consumidores rompe la prueba con su nombre y su fichero, y un declarado que deja de serlo también
+(`AC-02`), para que la lista no acabe describiendo un pasado.
+
+**Cómo comprobar el estado:** `npx jest --testPathPattern="core-sin-superficie" --no-coverage` — el caso
+`C3` imprime la cuenta viva.

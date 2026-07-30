@@ -1,5 +1,23 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'fs';
 import { join } from 'path';
+
+/**
+ * PT-191 (AUD-006) — Todos los `*.gateway.ts` bajo un árbol. Ver `VU-04` para el motivo de descubrir
+ * en vez de enumerar.
+ */
+function descubrirGateways(raiz: string): string[] {
+  const salida: string[] = [];
+  const recorrer = (dir: string) => {
+    for (const e of readdirSync(dir)) {
+      if (e === 'node_modules' || e === 'dist') continue;
+      const p = join(dir, e);
+      if (statSync(p).isDirectory()) recorrer(p);
+      else if (e.endsWith('.gateway.ts')) salida.push(p);
+    }
+  };
+  recorrer(raiz);
+  return salida;
+}
 
 /**
  * PT-110 (PTSA H-008) — `engine.io` no vuelve al rango vulnerable.
@@ -63,13 +81,18 @@ describe('Dependencias vulnerables (PT-110 / H-008)', () => {
     expect(estaEnRangoVulnerable('4.0.9')).toBe(false);
   });
 
-  it('VU-04: los dos gateways publicos declaran cota de conexion', () => {
-    // El namespace `auctions` es publico SIN autenticar, y `events` tampoco autentica. El
-    // `@nestjs/throttler` global cubre HTTP, **no sockets**: si no hay cota aqui, no hay cota.
-    const gateways = [
-      join(__dirname, '..', '..', '..', 'src', 'modules', 'auctions', 'auctions.gateway.ts'),
-      join(__dirname, '..', '..', '..', 'src', 'modules', 'notifications', 'events.gateway.ts'),
-    ];
+  it('VU-04: todo gateway publico declara cota de conexion', () => {
+    // El namespace `auctions` es publico SIN autenticar. El `@nestjs/throttler` global cubre HTTP,
+    // **no sockets**: si no hay cota aqui, no hay cota.
+    //
+    // PT-191 (AUD-006) — **Los gateways se DESCUBREN, no se enumeran.** Esta lista nombraba dos
+    // ficheros por ruta fija, y al retirarse `events.gateway.ts` la guarda no dijo «ya no hay que
+    // vigilarlo»: reviento con `ENOENT`. Peor habria sido lo contrario —anadir un gateway nuevo y que
+    // esta prueba siguiera verde sin mirarlo—, que es el modo silencioso del mismo defecto. Es la
+    // familia de H-016: **lo que se cita a mano se desincroniza; lo que se descubre, no.**
+    const gateways = descubrirGateways(join(__dirname, '..', '..', '..', 'src'));
+
+    expect(gateways.length).toBeGreaterThan(0); // control: si no encuentra ninguno, no esta midiendo
 
     const sinCota = gateways
       .filter((g) => !/maxHttpBufferSize/.test(readFileSync(g, 'utf8')))

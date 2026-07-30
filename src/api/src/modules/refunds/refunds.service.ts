@@ -2,11 +2,35 @@ import { Injectable, NotFoundException, BadRequestException } from '@nestjs/comm
 import { PrismaService } from '../../database/prisma.service';
 import { RefundStatus, OrderStatus } from '@prisma/client';
 import { OrderStateMachine, OrderStatus as CoreOrderStatus } from '@ironloot/core';
+import { WalletService } from '../wallet/wallet.service';
 
 @Injectable()
 export class RefundsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly walletService: WalletService,
+  ) {}
 
+  /**
+   * PT-191 (AUD-010) — **El movimiento de dinero sale de aquí y pasa por `WalletService`.**
+   *
+   * ## Lo que hacía este método, y por qué era la octava vía al saldo
+   *
+   * Acreditaba al comprador con `findUnique` + `update({ balance: { increment } })`, **sin `FOR UPDATE`**.
+   * Es exactamente el defecto que PT-146 (RULE-24) corrigió en siete caminos — pero los siete estaban
+   * dentro de `WalletService`, y **éste está fuera**, así que aquella medición no lo vio. Dos puertas al
+   * mismo saldo y sólo una con cerradura, otra vez.
+   *
+   * Y peor: `if (buyerWallet) { … }`. Un comprador **sin monedero** —nunca depositó, pagó por pasarela—
+   * dejaba el pedido en `REFUNDED` y **no cobraba nada**, sin error y sin traza. `asegurarMonedero()`
+   * (RULE-22) existe exactamente para eso desde PT-142.
+   *
+   * ## Y sólo acreditaba: no cargaba a nadie
+   *
+   * Ése es el defecto caro. El importe aparecía en el monedero del comprador **sin salir del monedero
+   * del vendedor**: dinero impreso y un ledger que no cuadra. Ahora el movimiento entero es
+   * `WalletService.reversarVenta()`, que bloquea los dos monederos en orden fijo y conserva el importe.
+   */
   async createRefund(orderId: string, amount: number, reason: string, initiatedBy: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
@@ -46,29 +70,15 @@ export class RefundsService {
         data: { status: OrderStatus.REFUNDED },
       });
 
-      const buyerWallet = await tx.wallet.findUnique({ where: { userId: order.buyerId } });
-      if (buyerWallet) {
-        const balanceBefore = buyerWallet.balance;
-        const balanceAfter = Number(balanceBefore) + amount;
-
-        await tx.wallet.update({
-          where: { userId: order.buyerId },
-          data: { balance: { increment: amount } },
-        });
-
-        await tx.ledger.create({
-          data: {
-            walletId: buyerWallet.id,
-            type: 'REFUND' as any,
-            amount,
-            balanceBefore,
-            balanceAfter,
-            referenceId: orderId,
-            referenceType: 'REFUND',
-            description: `Refund for order ${orderId}`,
-          },
-        });
-      }
+      // PT-191 (AUD-010) — El dinero se mueve por un solo sitio, y ese sitio tiene el cerrojo.
+      // Sale del vendedor (holdback primero) y entra al comprador: el importe se conserva.
+      const reversa = await this.walletService.reversarVenta(
+        order.buyerId,
+        order.sellerId,
+        amount,
+        orderId,
+        tx,
+      );
 
       await tx.auditEvent.create({
         data: {
@@ -81,7 +91,9 @@ export class RefundsService {
           traceId: `refund-${Date.now()}`,
           env: process.env.NODE_ENV ?? 'development',
           service: 'admin',
-          payload: { orderId, amount, reason },
+          // El descubierto se deja escrito en la traza: es una deuda del vendedor, y quien
+          // audite el reembolso tiene que poder verla sin recalcularla.
+          payload: { orderId, amount, reason, ...reversa },
         },
       });
 

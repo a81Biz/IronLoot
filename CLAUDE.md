@@ -116,7 +116,7 @@ npm run lint             # ESLint with auto-fix
 
 ```bash
 npm run build            # Compile to dist/
-npm test                 # 8 suites / 134 tests (no NestJS, no DB)
+npm test                 # 6 suites / 93 tests (no NestJS, no DB)
 ```
 
 ### Running a Single Test
@@ -385,15 +385,43 @@ Each SSR site follows the same convention:
   *todas* sus llamadas a su propio contenedor y **arrancara `healthy` sin funcionar**. Lo vigila
   `conexiones-sin-reserva.spec.ts` en API, ADMIN, BASE y CLIENT. **Excepción declarada**:
   `public-origins.ts` conserva el **subdominio** de desarrollo (nunca un puerto) por ADR-045.
+- **Reembolsar sin cargar es imprimir dinero** (PT-191, AUD-010). Resolver una disputa a favor del
+  comprador **le devuelve el importe**, y el importe **sale del vendedor**: `WalletService.reversarVenta()`
+  bloquea los dos monederos en orden fijo (RULE-24), toma primero del `pendingBalance` —el holdback existe
+  exactamente para esto— y luego del `balance`. **El descubierto es una decisión declarada**: si el
+  vendedor ya retiró, su saldo queda en negativo en vez de negarse el reembolso, porque el derecho del
+  comprador no depende de su solvencia y negarlo premiaría a quien retire rápido. La contrapartida es que
+  **una disputa viva congela la liquidación**: el cron ya no suelta el holdback con la disputa abierta, que
+  es lo que hacía que el dinero se hubiera ido cuando llegaba la resolución. Antes de esto, `createRefund`
+  era una **octava vía al saldo fuera de `WalletService`** —sin `FOR UPDATE`, y con un `if (buyerWallet)`
+  que dejaba el pedido `REFUNDED` sin pagar a un comprador sin monedero—. PT-146 arregló siete caminos;
+  los siete estaban dentro de `WalletService`, y por eso no vio éste.
+- **El canal público difunde menos de lo que el REST público ya sirve** (PT-191, AUD-006). El namespace
+  `auctions` **no autentica el handshake y es a propósito**: la puja en vivo tiene que verse sin cuenta.
+  Eso deja de ser una afirmación y pasa a ser comprobable —`emisiones-publicas-sin-datos-privados.spec.ts`
+  falla si una emisión lleva `bidderId`, `email`, `balance`…—. Se retiraron las dos armas cargadas que
+  apuntaban ahí, ambas con **cero llamantes**: `emitAuctionEnded` (difundía `winnerId`) y `EventsGateway`
+  entero, un segundo namespace público con el mismo nombrado de salas y un emisor **genérico**, que hacía
+  la guarda indecidible. Y **los gateways se descubren, no se enumeran**: la lista fija de
+  `dependencias-vulnerables.spec.ts` reventó al retirar uno, cuando el modo peligroso es el contrario.
+- **Lo que `@ironloot/core` exporta, alguien lo usa; y lo que no, está declarado y contado** (PT-191,
+  AUD-012). AUD-012 nombraba un símbolo (`Money`); medido el conjunto eran **30 de 42 sin un solo
+  consumidor fuera de `core`**. Un contrato muerto no se ignora como el código muerto: **se lee** — `core`
+  declara un `IPaymentProvider` que no aplica en ninguna parte mientras el vivo lo declara el API. Quedan
+  24, uno a uno en `core-sin-superficie-huerfana.spec.ts`, y son `TD-024`: retirarlos es abandonar el
+  diseño hexagonal y eso pide una ADR. Lo que la guarda impide es que **crezcan**.
 - **Una afirmación de estado sobre un hallazgo lleva veredicto, y «sin verificar» vale** (RULE-38, PT-189).
   Los 36 `AUD-XXX` de la auditoría de julio tienen su estado en la **tabla de veredictos** de
   `docs-v2/transversal/Registro-de-Hallazgos.md`: `corregido` · `abierto` · `limitación declarada` ·
   **`sin verificar`**. Ningún documento puede presentar como defecto vivo algo que la tabla declara
   corregido. Nació de medir **74 líneas en 22 documentos** que declaraban vigentes nueve hallazgos
   arreglados hacía meses — y una de ellas, `RN-64`, **describía el defecto como si fuera la regla de
-  negocio**. El registro decía «36/36 corregidos» y cinco no lo estaban. **El recuento honesto es 15
+  negocio**. El registro decía «36/36 corregidos» y cinco no lo estaban; el recuento real era **15
   corregidos · 5 abiertos · 1 limitación · 15 sin verificar**: una lista con final, en vez de un «36/36»
-  que nunca fue cierto. Y al corregir una de estas líneas, **reescribe la frase, no el símbolo**: cambiar
+  que nunca fue cierto. **PT-191 cerró los cinco abiertos** —y ninguno era lo que su enunciado decía—,
+  así que hoy son **20 · 0 · 1 · 15**. Los quince sin verificar siguen siendo deuda **de medición**: no
+  se declaran corregidos sin medirlos, porque eso es justo lo que produjo el «36/36».
+  Y al corregir una de estas líneas, **reescribe la frase, no el símbolo**: cambiar
   `⚠️` por `✅` dejando el texto del defecto produce una línea que se contradice a sí misma, que es peor
   que una obsoleta.
 - **El estado real de un PT se lee en el ÍNDICE DE ESTADO**, al final de `HISTORY.log`

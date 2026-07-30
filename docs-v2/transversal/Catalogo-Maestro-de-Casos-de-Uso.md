@@ -30,7 +30,7 @@
 | UC-03 Recuperar/restablecer contraseña | ✔ | | | | ✔ | `auth.controller.ts:183` | ✅ |
 | UC-04 Explorar catálogo y ver detalle | ✔ | ✔ | | | | BASE `app.controller.ts:48` | ✅ |
 | UC-05 **Pujar en subasta** | | ✔ | | | | `bids.controller.ts:18` (API) | ✅ (AUD-002 corregido: UI + Socket.io) |
-| UC-06 Ganar subasta / cierre automático | | ✔ | ✔ | | ✔ | `auction-scheduler.service.ts:127` | ⚠️ (AUD-012) |
+| UC-06 Ganar subasta / cierre automático | | ✔ | ✔ | | ✔ | `auction-scheduler.service.ts:127` | ✅ (AUD-012 corregido, ADR-033) |
 | UC-07 Añadir/quitar de watchlist | | ✔ | | | | `watchlist.controller.ts:38` | ✅ (AUD-003 corregido: el CLIENT proxya por BFF) |
 | UC-08 Depositar en wallet | | ✔ | ✔ | | ✔ | `wallet.controller.ts:83` | ✅ (AUD-003 corregido) |
 | UC-09 Retirar de wallet | | ✔ | ✔ | | | `wallet.controller.ts:113` | ✅ (AUD-003 corregido) |
@@ -44,8 +44,8 @@
 | UC-18 **Confirmar recepción** (comprador) | | ✔ | | | | `shipments.controller.ts` | ✅ **sólo el comprador**; arranca el reloj del holdback (PT-174) |
 | UC-16 Abrir/gestionar disputa | | ✔ | ✔ | | | `disputes.controller.ts:16` | ✅ (AUD-003 corregido) |
 | UC-17 Confirmar pago vía webhook | | | | | ✔ | `payments.controller.ts:45` | ✅ |
-| UC-18 Moderar subastas/lotes/usuarios | | | | ✔ | | `admin.controller.ts:97` | ⚠️ salta FSM (AUD-011) |
-| UC-19 Resolver disputa | | | | ✔ | | `admin.service.ts:868` | ✗ no mueve dinero (AUD-010) |
+| UC-18 Moderar subastas/lotes/usuarios | | | | ✔ | | `admin.controller.ts:97` | ✅ pasa por la FSM (AUD-011 corregido, PT-191) |
+| UC-19 Resolver disputa | | | | ✔ | | `admin.service.ts:868` | ✅ reembolsa al resolver (AUD-010 corregido, PT-191) |
 | UC-20 Procesar reembolso | | | | ✔ | | `refunds.service.ts` | ✅ con pruebas (AUD-013 corregido) |
 | UC-21 Configurar comisiones | | | | ✔ | | `commissions.controller.ts` | ✅ cableado al cierre (AUD-005 corregido) |
 | UC-22 Revisar KYC | | | | ✔ | | `kyc.service.ts` | ⚠️ manual |
@@ -60,7 +60,7 @@
 1. **Onboarding:** UC-01 → UC-02 → (UC-11 para vender).
 2. **Compra:** UC-04 → UC-08 → UC-05 → UC-06 → UC-13 → UC-15. *(Roto en UC-05 por AUD-002.)*
 3. **Venta:** UC-11 → UC-12 → UC-06 → UC-14 → UC-15.
-4. **Conflicto:** UC-16 → UC-19 → UC-20. *(UC-19 no mueve dinero, AUD-010.)*
+4. **Conflicto:** UC-16 → UC-19 → UC-20. *(UC-19 reembolsa al resolver desde PT-191.)*
 5. **Operación admin:** UC-18/UC-21/UC-22/UC-24/UC-26.
 
-> **Cobertura de casos (revisada 2026-07-29).** El recuento original —10 operables, 12 parciales «mayormente por AUD-003», 5 con eslabón roto— **ya no describe el sistema**: `AUD-003` (auth UI) y `AUD-002` (UC-05, sin UI de puja) están corregidos y verificados. Siguen con eslabón roto **UC-19** (resolver disputa no mueve dinero, `AUD-010`) y **UC-23** (CFDI, `AUD-016`). El recuento exacto no se rehace aquí: hacerlo a ojo sería sustituir una cifra obsoleta por otra sin medir. Todos con respaldo en código o marcados como pendientes explícitos.
+> **Cobertura de casos (revisada 2026-07-29).** El recuento original —10 operables, 12 parciales «mayormente por AUD-003», 5 con eslabón roto— **ya no describe el sistema**: `AUD-003` (auth UI) y `AUD-002` (UC-05, sin UI de puja) están corregidos y verificados. **UC-19** dejó de tenerlo en PT-191 (`AUD-010` corregido: resolver reembolsa). Sigue con eslabón roto **UC-23** (CFDI, `AUD-016`, limitación declarada de v1.0). El recuento exacto no se rehace aquí: hacerlo a ojo sería sustituir una cifra obsoleta por otra sin medir. Todos con respaldo en código o marcados como pendientes explícitos.

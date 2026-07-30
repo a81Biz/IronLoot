@@ -347,17 +347,10 @@ export class AdminController {
     return this.adminService.updatePlatformConfig(body.updates, body.adminUser ?? 'admin');
   }
 
-  @Get('configuration/smtp')
-  @ApiOperation({ summary: 'Get SMTP configuration (secrets masked)' })
-  getSmtpConfig() {
-    return this.adminService.getSmtpConfig();
-  }
-
-  @Put('configuration/smtp')
-  @ApiOperation({ summary: 'Update SMTP configuration' })
-  updateSmtpConfig(@Body() body: { updates: Record<string, string>; adminUser?: string }) {
-    return this.adminService.updateSmtpConfig(body.updates, body.adminUser ?? 'admin');
-  }
+  // PT-191 (AUD-027) — `GET`/`PUT /admin/configuration/smtp` retirados. Servian al formulario SMTP del panel,
+  // que guardaba unas claves que **el mailer no leia**: el transporte se construye con `MAIL_*` del entorno.
+  // Retirado el formulario, estos endpoints se quedaron sin llamantes — ADR-047: *un endpoint sin llamantes se
+  // retira, no se pule*. El correo se configura por entorno; el motivo largo, en `system-config.service.ts`.
 
   @Get('configuration/storage')
   @ApiOperation({ summary: 'Get storage configuration (secrets masked)' })

@@ -86,13 +86,13 @@ marcado aquí `corregido`, la prueba falla. Y si alguien cita un `AUD` que no es
 | AUD-003 | corregido | verificado el 2026-07-29 contra código o base |
 | AUD-004 | corregido | verificado el 2026-07-29 contra código o base |
 | AUD-005 | corregido | verificado el 2026-07-29 contra código o base |
-| **AUD-006** | **abierto** | el WebSocket no autentica el handshake; sólo emite datos de subasta, que ya son públicos |
+| AUD-006 | **corregido** | PT-191 (2026-07-30). El handshake **sigue sin autenticar y es a propósito** —la puja en vivo se ve sin cuenta—, pero eso ya no es una afirmación: se retiró `EventsGateway` (segundo namespace público, cero llamantes) y `emitAuctionEnded` (difundía `winnerId`, cero llamantes), y `emisiones-publicas-sin-datos-privados.spec.ts` falla si una emisión lleva un campo identificativo |
 | AUD-007 | corregido | verificado el 2026-07-29 contra código o base |
 | AUD-008 | corregido | verificado el 2026-07-29 contra código o base |
 | AUD-009 | corregido | verificado el 2026-07-29 contra código o base |
-| **AUD-010** | **abierto** | resolver una disputa no mueve dinero — el reembolso es un paso manual aparte |
-| **AUD-011** | **abierto** | `admin.service.ts` no pasa por `AuctionStateMachine` |
-| **AUD-012** | **abierto** | el VO `Money` de `core` no lo importa ningún servicio del API |
+| AUD-010 | **corregido** | PT-191 (2026-07-30). Eran **tres** defectos: la resolución no pagaba, el cron soltaba el holdback con la disputa abierta, y `createRefund` sólo acreditaba —cablearlo sin más habría **impreso dinero**—. `WalletService.reversarVenta()` conserva el importe; `resolver-mueve-dinero.spec.ts`, 12 casos |
+| AUD-011 | **corregido** | PT-191 (2026-07-30). Seis operaciones escribían `status` a mano; dos ni llamaban a `assertAuctionModifiable`. Puerta única `transicionar()`, y hubo que **completar la máquina** con cuatro transiciones legítimas que le faltaban. `admin-pasa-por-la-maquina.spec.ts`, 13 casos |
+| AUD-012 | **corregido** | PT-191 (2026-07-30). `Money` retirado (no puede representar el descubierto, y su aritmética es peor que `Decimal`), y con él el validador de IPN de **PayPal**, que describía un protocolo que la plataforma no usa. Al medir el conjunto: **30 de 42 símbolos de `core` sin consumidor** → `TD-024`, con guarda que impide que crezca |
 | AUD-013 | corregido | verificado el 2026-07-29 contra código o base |
 | AUD-014 | corregido | verificado el 2026-07-29 contra código o base |
 | AUD-015 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
@@ -107,7 +107,7 @@ marcado aquí `corregido`, la prueba falla. Y si alguien cita un `AUD` que no es
 | AUD-024 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
 | AUD-025 | corregido | verificado el 2026-07-29 contra código o base |
 | AUD-026 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
-| **AUD-027** | **abierto** | `SMTP_*` sigue existiendo junto a `MAIL_*` en `system-config` |
+| AUD-027 | **corregido** | PT-191 (2026-07-30). No eran «dos rutas de config»: el panel tenía un formulario SMTP completo que guardaba y decía «guardado», y **el mailer lee `MAIL_*` del entorno** — no configuraba nada. Retirado con su formulario y sus dos endpoints huérfanos. `una-sola-ruta-de-correo.spec.ts` |
 | AUD-028 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
 | AUD-029 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
 | AUD-030 | corregido | verificado el 2026-07-29 contra código o base |
@@ -118,7 +118,19 @@ marcado aquí `corregido`, la prueba falla. Y si alguien cita un `AUD` que no es
 | AUD-035 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
 | AUD-036 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
 
-**Recuento: 15 corregidos · 5 abiertos · 1 limitación declarada · 15 sin verificar.**
+**Recuento: 20 corregidos · 0 abiertos · 1 limitación declarada · 15 sin verificar.**
+
+> **Actualizado el 2026-07-30 por PT-191.** Los cinco que estaban abiertos —AUD-006, AUD-010, AUD-011,
+> AUD-012 y AUD-027— se cerraron en un solo ciclo, y **ninguno resultó ser lo que su enunciado decía**:
+> AUD-027 no eran «dos rutas de config» sino un formulario que no configuraba nada; AUD-011 no era un
+> cable suelto sino seis, con la máquina de estados **incompleta** debajo; AUD-010 no era un paso manual
+> sino tres defectos encadenados, uno de los cuales **imprimía dinero**; AUD-012 nombraba un símbolo y
+> eran treinta. Ésa es la razón por la que revisar «qué falta» leyendo enunciados nunca terminaba: **el
+> enunciado de un hallazgo es su síntoma, no su tamaño.**
+>
+> Los **15 sin verificar** siguen ahí, y siguen siendo deuda de medición. No se tocan aquí porque
+> declararlos corregidos sin medirlos es exactamente lo que produjo el «36/36» que este registro existe
+> para desmentir.
 
 Los 15 sin verificar son deuda **de medición**, no de código: puede que estén todos corregidos. Lo que no se
 puede es seguir diciendo «36/36» sobre ellos.

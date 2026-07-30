@@ -36,7 +36,7 @@
 | RN-13 | Puja debe ser estrictamente `> currentPrice`. | ✅ Cumple | `bid-validation.ts:35` | — |
 | RN-14 | **Incremento mínimo de puja** (config `AUCTION_MIN_INCREMENT_AMOUNT`, default 10 MXN). | ✅ **Aplicado** — `bids.service.ts:92-98` exige `currentPrice + AUCTION_MIN_INCREMENT_AMOUNT`, leído de `SystemConfig`. | `system-config.service.ts:29`, `bid-validation.ts:35` | **AUD-009** |
 | RN-15 | Vendedor no puede pujar su propia subasta; ni auto-superarse siendo líder. | ✅ Cumple | `bid-validation.ts:31`, `bids.service.ts:85` | — |
-| RN-16 | Puja sólo sobre subasta no expirada. **Estado real:** el API acepta PUBLISHED **y** ACTIVE (core sólo ACTIVE). | ⚠️ Divergencia API↔core | `bids.service.ts:59,78` | AUD-012 |
+| RN-16 | Puja sólo sobre subasta no expirada. **Estado real:** el API acepta PUBLISHED **y** ACTIVE (core sólo ACTIVE). | ⚠️ Divergencia API↔core | `bids.service.ts:59,78` | pendiente propio (AUD-012 corregido) |
 | RN-17 | Soft-close: puja en los últimos 120s extiende `endsAt` en esa ventana. | ✅ Cumple | `bids.service.ts:100` | — |
 | RN-18 | Primera puja fuerza estado ACTIVE. | ✅ Cumple | `bids.service.ts:126` | — |
 
@@ -57,10 +57,10 @@
 
 | ID | Regla | Estado real | Evidencia | Hallazgo |
 |---|---|---|---|---|
-| RN-30 | Al cierre: se elige la puja más alta como ganadora, se crea orden PAID, se captura del ganador y se liberan los perdedores, en una TX con lock Redis. | ✅ Cumple | `auction-scheduler.service.ts:127-160,45` | AUD-012 (core use-case no cableado) |
+| RN-30 | Al cierre: se elige la puja más alta como ganadora, se crea orden PAID, se captura del ganador y se liberan los perdedores, en una TX con lock Redis. | ✅ Cumple | `auction-scheduler.service.ts:127-160,45` | AUD-012 corregido — los use-cases se retiraron por ADR-033 |
 | RN-31 | **Comisión de plataforma.** | ✅ **Una sola fuente** — el cierre llama a `commissionsService.resolveRatePercent(sellerId)` (override vendedor→global) y con esa tasa calcula el neto. PT-042. | `wallet.service.ts:285`, `commissions.service.ts:37-47` | **AUD-005** |
 | RN-32 | Una orden por subasta (`auction_id` UNIQUE, 1:1). | ✅ Cumple | `schema.prisma:253` | — |
-| RN-33 | Orden sigue FSM: PENDING_PAYMENT→PAID→SHIPPED→DELIVERED (+REFUNDED/CANCELLED). **Y `shipments` también pasa por ella** desde PT-173: escribía `order.status` a mano, así que había **dos puertas al mismo estado y sólo una con cerradura** — un pedido `PAID` saltaba directo a `DELIVERED`. | ✅ Cumple (servicio y envíos); admin la salta | `order-state-machine.ts:5`, `shipments.service.ts` | AUD-011 · **PT-173** |
+| RN-33 | Orden sigue FSM: PENDING_PAYMENT→PAID→SHIPPED→DELIVERED (+REFUNDED/CANCELLED). **Y `shipments` también pasa por ella** desde PT-173: escribía `order.status` a mano, así que había **dos puertas al mismo estado y sólo una con cerradura** — un pedido `PAID` saltaba directo a `DELIVERED`. | ✅ Cumple (servicio, envíos **y admin**) | `order-state-machine.ts:5`, `shipments.service.ts`, `admin.service.ts` | AUD-011 corregido · **PT-173** · **PT-191** |
 | RN-34 | Envío requiere orden PAID + vendedor; un envío por orden; estado cascada a la orden. | ✅ Cumple | `shipments.service.ts:34-48,103` | — |
 | RN-35 | Sin integración de transportista real: `carrier`/`trackingNumber` son campos manuales. | ⚠️ Doc lo sobredimensiona | `create-shipment.dto.ts:24` | **AUD-024** |
 
@@ -69,7 +69,7 @@
 | ID | Regla | Estado real | Evidencia | Hallazgo |
 |---|---|---|---|---|
 | RN-40 | Disputa: ventana 14 días desde entrega; orden PAID/SHIPPED/DELIVERED; una por orden; sólo participante. | ✅ Cumple | `disputes.service.ts:34-59` | — |
-| RN-41 | Resolución de disputa (admin). | ⚠️ **No mueve dinero**: sólo cambia estado + nota "iniciar refund manual". | `admin.service.ts:868` | **AUD-010** |
+| RN-41 | Resolución de disputa (admin). | ✅ **Reembolsa al resolver**: el importe sale del vendedor y entra al comprador en una transacción (`reversarVenta`). Una disputa viva además **congela la liquidación**. | `admin.service.ts`, `wallet.service.ts` | **AUD-010 corregido (PT-191)** |
 | RN-42 | Reembolso: 0<monto≤total; uno por orden; acredita al comprador; orden→REFUNDED; asiento REFUND; todo en TX. | ✅ Cumple (servicio) | `refunds.service.ts:17-89` | AUD-013 (sin tests) |
 | RN-43 | Calificación: requiere envío DELIVERED; sólo participante; una por autor; objetivo = contraparte. | ✅ Cumple | `ratings.service.ts:33-55` | — |
 
@@ -82,7 +82,7 @@
 | RN-52 | Rate limit global 100/min; estricto en auth (5/60s), wallet deposit (10/60s), withdraw (5/60s), webhook (20/60s). | ✅ Cumple; login admin sin throttle en master → **PT-036 (VALIDATION_PENDING)** añade 10/min | `auth.controller.ts:18`, `wallet.controller.ts:41` | AUD-004 |
 | RN-53 | Puerta de secretos en prod: `JWT_SECRET`/`SESSION_SECRET`/`ADMIN_API_KEY`/`ALLOWED_ORIGINS` no placeholder o `process.exit(1)`. | ✅ **Completa** — `validateStartupConfig` aborta con placeholders, con `ADMIN_USERNAME` = `admin` y con secretos conocidos. PT-036 **cerrado con VoBo**; AUD-004 corregido. Texto original: PT-036 añade el gate de `ADMIN_USERNAME/PASSWORD`. | `main.ts`, `common/config/validate-startup-config.ts` | **AUD-004** |
 | RN-54 | CSRF. | ✅ **Postura única y escrita:** CSRF mitigado por **JWT Bearer + `SameSite`** (ADMIN usa `SameSite=Lax`); **los tokens de doble envío no se usan, a propósito**. Y ADMIN **sí** tiene Helmet+CSP. AUD-014 corregido. La contradicción doc↔código ya no existe. | `09-Security §6`, `admin/src/main.ts` | **AUD-014, AUD-007** |
-| RN-55 | Gateways WebSocket. | ⚠️ **Sin autenticación** (guard comentado). | `auctions.gateway.ts:9` | **AUD-006** |
+| RN-55 | Gateways WebSocket. | ✅ **Público a propósito**, y acotado: el handshake no autentica para que la puja en vivo se vea sin cuenta, y ninguna emisión puede llevar un campo identificativo (prueba). | `auctions.gateway.ts` | **AUD-006 corregido (PT-191)** |
 | RN-56 | Onboarding vendedor: aceptar términos, estado ACTIVE, email verificado, displayName, dirección/ciudad/país **y KYC APPROVED (PT-069, obligatorio)**. | ✅ Cumple | `users.service.ts:377-414` + gate KYC en `enableSeller` | PT-069 (cierra OBS-01) |
 
 ## Reglas de retención / operación

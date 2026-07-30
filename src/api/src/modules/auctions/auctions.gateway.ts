@@ -73,7 +73,14 @@ export class AuctionsGateway {
     this.server.to(`auction:${auctionId}`).emit('auction:extended', { newEndsAt });
   }
 
-  emitAuctionEnded(auctionId: string, winnerId: string, amount: number) {
-    this.server.to(`auction:${auctionId}`).emit('auction:ended', { winnerId, amount });
-  }
+  // PT-191 (AUD-006) — `emitAuctionEnded(auctionId, winnerId, amount)` retirado.
+  //
+  // **Cero llamantes**, y era el unico emisor de este gateway que difundia un **id de usuario** por un
+  // canal sin autenticar. Un emisor sin llamantes no es inofensivo cuando lo que hace es filtrar: es un
+  // arma cargada apuntando al hallazgo que este PT cierra. Precedente ADR-047 — *un endpoint sin
+  // llamantes se retira, no se pule*.
+  //
+  // Quien necesite anunciar el cierre lo escribira a proposito y chocara con
+  // `emisiones-publicas-sin-datos-privados.spec.ts`, que es exactamente cuando conviene pararse: el
+  // ganador se anuncia por notificacion al interesado, no a la sala.
 }
