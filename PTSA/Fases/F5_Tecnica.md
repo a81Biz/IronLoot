@@ -301,3 +301,53 @@ guarda inútil sin dejar de existir. Se vio fallar **por el motivo correcto** de
 
 **D2 sigue en 100**: los dos abrieron y cerraron dentro de esta corrida. Evidencias `E-034` (los defectos) y
 `E-035` (los cierres).
+
+---
+
+## Update U-010 — 2026-07-29 (S-009, delta sync): una guarda con el nombre correcto mirando otra cosa
+
+### H-035 (MEDIA)
+
+```ts
+// distributed-lock.service.ts:12
+const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
+```
+
+Es **el defecto que PT-137 corrigió**, sobreviviendo en un fichero. El cliente de al lado —el del rate limiting—
+lleva escrito el comentario que lo nombra: *«PT-137 — Mismo defecto que las colas: reserva a `localhost`»*. Ése se
+corrigió; éste se quedó.
+
+**Y lo que importa es por qué pudo quedarse.** La guarda de RULE-17 comprueba que toda variable que el código lee
+esté **declarada** en un `.env.example`. El texto de la regla dice, en negrita y como afirmación central:
+
+> *The fallback was the problem, not the variable.*
+
+**Esa mitad no la comprobaba nadie.** La regla nació de cinco contenedores caídos: se vigiló lo fácil de medir
+—¿está declarada?— y quedó sin vigilar lo que causó el incidente —¿tiene reserva?—. Por eso este `||` pasó por
+PT-137, por PT-147 y por todas las corridas de la suite.
+
+Es la familia de **H-031**: allí la guarda del holdback miraba el servicio y el agujero estaba en el compose. La
+forma se repite lo suficiente para nombrarla — **una guarda puede existir, tener el nombre correcto y mirar al lado
+del agujero.**
+
+### Lo que costaba
+
+`DistributedLockService` impide que dos instancias procesen el mismo cierre de subasta. Con la reserva, un
+despliegue sin `REDIS_URL` **arranca**, apunta a un `localhost` que en el contenedor no es nadie, `acquireLock`
+entra en su `catch` y **relanza**: el cron propaga y **ninguna subasta se cierra**. Desde fuera, subastas que nunca
+terminan.
+
+No hay doble procesamiento —eso lo salva el `throw`—, pero el ciclo de vida se detiene. Es el precio que RULE-17
+describe: *«un valor por defecto convierte "mal configurado" en "configurado hacia ninguna parte", y el proceso
+arranca»*.
+
+### El cierre
+
+URL por inyección validada con `redisUrlObligatoria(...)`, y **`conexiones-sin-reserva.spec.ts`** para la mitad de
+la regla que no tenía guarda: las tres formas de escribir una reserva, con C4 cubriendo la del incidente original
+(`config.get('REDIS_HOST', 'localhost')`) y C6 descartando comentarios **por precedente** — la guarda de RULE-17 se
+acusó a sí misma la primera vez que corrió.
+
+**Vista acusar al fichero correcto, y sólo a ése**, antes del arreglo.
+
+**D2 sigue en 100**: el hallazgo abrió y cerró dentro de esta corrida. Evidencia `E-038`.

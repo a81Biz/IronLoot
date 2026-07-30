@@ -1076,6 +1076,61 @@
         "FUERA_DE_ALCANCE_V1": 1
       },
       "nota": "La recomendacion de S-007 encontro un hallazgo en el primer sitio donde se aplico. H-034: las SEIS llamadas de los tres adaptadores de pasarela usaban `fetch` sin `signal`, y no habia un AbortController en todo el directorio — el patron de H-033 en el camino del dinero. Antes de hoy solo DOS ficheros del API declaraban un tope, y los dos se escribieron hoy: no era un descuido puntual, era la forma de este sistema al hablar con un tercero. Severidad MEDIA y el motivo se dice: por diseno de PT-087 ningun pago cobrado queda sin acreditar —via garantizada, reapertura del ciclo, asiento idempotente por referencia—, asi que el dinero no se pierde por esto; lo que se degrada es el tiempo de respuesta y la ocupacion de recursos. Y lo que NO se afirma, [A1]: no se ha observado una llamada colgada contra una pasarela real. A diferencia de H-033, donde los 121 s se MIDIERON parando Mailhog, aqui el defecto esta comprobado por codigo y la consecuencia se infiere. Dos notas de metodo: el barrido encontro 11 `catch` sin `throw` ni registro y NINGUNO es hallazgo —estan declarados en la linea base de D3 con motivo escrito, y los dos mas sensibles estan razonados en CLAUDE.md; la diferencia entre once defectos y once decisiones la hace el motivo escrito, que es justo lo que faltaba en H-032. Y mis casos C1 y C2 no supieron fallar a la primera: C2 se contentaba con que el fichero contuviera una cadena (bastaba el `import`) y C1 acusaba una llamada ya corregida por recortar una ventana fija. Segunda vez en dos PT."
+    },
+    {
+      "session": "S-009",
+      "date": "2026-07-29",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 100,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "health": 100.0,
+        "risk": 0,
+        "confidence": 91.0
+      },
+      "classification": "A",
+      "classification_without_cap": "A",
+      "cap_reason": null,
+      "cap_note": "Sin cap. QUINTA emision consecutiva con los mismos cuatro numeros. La estabilidad del 100 mide que se cierra lo que se encuentra, NO que no haya nada que encontrar: 3, 2, 1 y 1 hallazgos en los cuatro intervalos.",
+      "score_freshness": {
+        "last_verified": "2026-07-29",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "risk_detail": {
+        "risk_bruto": 0,
+        "detalle": "Cero hallazgos activos. Los 35 del registro estan CERRADA."
+      },
+      "coverage_detail": {
+        "D1": 100,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "D5": 0,
+        "motivo": "D1/D2/D3/D4 al 100 %, D5 al 0 % por MUESTRA INSUFICIENTE (2 ciclos frente a 20). **La lista de terceros queda cerrada**: la pasarela tenia el defecto (H-034), Redis tenia OTRO distinto (H-035) y el almacenamiento NO aplica —es `writeFile` local, no hay servicio remoto en v1.0—. «Queda por mirar» y «se miro y no aplica» son estados distintos, y el segundo cierra el pendiente."
+      },
+      "trigger": "Cierre de la lista que dejo S-008: mirar los dos terceros que faltaban, Redis y el almacenamiento de ficheros.",
+      "findings_changes": {
+        "nuevos": [
+          "H-035"
+        ],
+        "revisados": [],
+        "cerrados": [
+          "H-035"
+        ]
+      },
+      "evidencias_nuevas": [
+        "E-038"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "FUERA_DE_ALCANCE_V1": 1
+      },
+      "nota": "H-035 (D2, MEDIA) es el hallazgo mas util de la jornada, y no por el defecto sino por su causa: **habia una guarda con el nombre correcto mirando otra cosa.** La guarda de RULE-17 comprueba que las variables esten DECLARADAS; el texto de la regla dice, en negrita y como afirmacion central, «The fallback was the problem, not the variable» — y esa mitad no la comprobaba nadie. Se vigilo lo facil de medir y quedo sin vigilar lo que causo el incidente del que nacio la regla (cinco contenedores caidos). Por eso `distributed-lock.service.ts:12` conservo su `process.env.REDIS_URL || 'redis://localhost:6379'` a traves de PT-137, de PT-147 y de todas las corridas de la suite, mientras el cliente de al lado llevaba escrito «PT-137 — Mismo defecto que las colas: reserva a localhost». Familia de H-031: alli la guarda del holdback miraba el servicio y el agujero estaba en el compose. La correccion vale por la guarda nueva mas que por el arreglo: cubre las TRES formas de escribir una reserva y se vio acusar al fichero correcto, y solo a ese, antes de arreglarlo. Y en Redis el defecto NO era el que se fue a buscar: se buscaba un tope —ioredis trae los suyos— y aparecio la reserva. Buscar una cosa y encontrar otra solo pasa si se mira de verdad. Lo que sigue sin cubrir y se dice para que no se de por hecho: la guarda mira src/api/src; ADMIN, BASE y CLIENT no estan cubiertos, y ADMIN tuvo este mismo defecto en PT-147."
     }
   ]
 }

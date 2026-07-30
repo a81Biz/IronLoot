@@ -1,5 +1,5 @@
 # ESTADO ACTUAL — PTSA V3
-**Última actualización**: 2026-07-29 | **Sesión**: S-008 (delta sync)
+**Última actualización**: 2026-07-29 | **Sesión**: S-009 (delta sync)
 
 ---
 
@@ -19,17 +19,16 @@ Cobertura:      PARCIAL        D1/D2/D3/D4 al 100 % · D5 al 0 % (muestra insufi
 
 ---
 
-## Los mismos cuatro números por CUARTA vez, y eso es lo que hay que leer
+## Los mismos cuatro números por QUINTA vez, y eso es lo que hay que leer
 
-En cada intervalo entre emisiones ha aparecido trabajo real: tres hallazgos entre S-005 y S-006, dos entre S-006
-y S-007 —uno ALTA—, **uno entre S-007 y S-008**. Seis defectos reales, todos cerrados antes de emitir, y los
-cuatro números sin moverse.
+Cuatro intervalos entre emisiones, y en cada uno apareció trabajo real: **3 · 2 · 1 · 1**. Siete defectos, todos
+cerrados antes de emitir, y los cuatro números sin moverse.
 
 **La estabilidad de este 100 mide que se cierra lo que se encuentra, no que no haya nada que encontrar.**
 
-Y el de esta corrida **lo encontró la recomendación de la anterior**: S-007 dijo que los candidatos siguientes
-eran los otros terceros —la pasarela de pago, Redis, el almacenamiento—, y **el primero de la lista tenía el
-defecto**. No es mérito del barrido: es la señal de que el patrón se repite.
+Y **cada hallazgo lo encontró el cierre del anterior**: H-032/H-033 al comprobar H-030, H-034 con la recomendación
+de S-007, **H-035 con la lista que dejó S-008**. No es una racha, es una cadena — el sitio donde buscar lo dijo el
+trabajo previo, no una intuición.
 
 Los tres avisos siguen vigentes:
 
@@ -53,8 +52,8 @@ había ejecutado. El camino feliz estaba probado; el otro, nunca.
 | Dim | Score | Estado | Penaliza hoy |
 |---|---:|---|---|
 | D1 Alineación de Dominio | 100 | Estable — H-030 revisada, no reabierta | — |
-| D2 Integridad Arquitectónica | 100 | Estable desde S-006 | — |
-| D3 Observabilidad y Recuperación | **100** | H-034 abierta y cerrada dentro de esta corrida (y H-032/H-033 en la anterior) | — |
+| D2 Integridad Arquitectónica | **100** | H-035 abierta y cerrada dentro de esta corrida | — |
+| D3 Observabilidad y Recuperación | 100 | Estable — H-032/H-033/H-034 cerradas en las corridas previas | — |
 | D4 Fidelidad Documental | 100 | Estable | — |
 | D5 Fiabilidad Operacional | `SIN_DATOS` | **Por muestra insuficiente**, no por falta de datos | — |
 
@@ -64,34 +63,34 @@ había ejecutado. El camino feliz estaba probado; el otro, nunca.
 
 ## Hallazgos activos: 0
 
-**Cerrados: 34** — H-001 … H-034. Ninguno reabierto; **H-030 revisada** (`[A6]`: se anota, no se reescribe).
+**Cerrados: 35** — H-001 … H-035. Ninguno reabierto; **H-030 revisada** (`[A6]`: se anota, no se reescribe).
 
 ---
 
-## Lo que cerró esta corrida (S-008)
+## Lo que cerró esta corrida (S-009), y la lista de terceros queda cerrada
 
 | Hallazgo | Dim | Sev | Qué pasaba | Cierre |
 |---|:--:|:--:|---|---|
-| **H-034** | D3 | MEDIA | Las **seis** llamadas de los tres adaptadores de pasarela usaban `fetch` **sin ningún tope**, y no había un `AbortController` en todo el directorio. El patrón de H-033 en el camino del dinero | `gateway-timeouts.ts`: **8 s** consultar · **20 s** operar. 7 casos, con **C1 y C2 vistos fallar** |
+| **H-035** | D2 | MEDIA | `distributed-lock.service.ts:12` leía `process.env.REDIS_URL \|\| 'redis://localhost:6379'` — **la reserva que RULE-17 prohíbe**, sobreviviendo a PT-137 y PT-147 | URL por inyección + **guarda nueva** para la mitad de RULE-17 que no la tenía. **Vista acusar al fichero correcto, y sólo a ése** |
 
-**MEDIA y no ALTA, y el motivo se dice:** por diseño de PT-087 ningún pago cobrado queda sin acreditar —vía
-garantizada, reapertura del ciclo, asiento idempotente—, así que **el dinero no se pierde por esto**. Lo que se
-degrada es el tiempo de respuesta y la ocupación de recursos.
+**Lo que vale no es el defecto: es su causa.** La guarda de RULE-17 comprueba que las variables estén
+**declaradas**; el texto de la regla dice, en negrita, *«the fallback was the problem, not the variable»* — y esa
+mitad no la comprobaba nadie. Se vigiló lo fácil de medir y quedó sin vigilar lo que causó el incidente del que
+nació la regla. **Había una guarda con el nombre correcto mirando otra cosa**, como en H-031.
 
-**Lo que NO se afirma:** no se ha observado una llamada colgada contra una pasarela real. A diferencia de H-033
-—donde los 121 s **se midieron**— aquí el defecto se comprobó **leyendo** y la consecuencia se infiere. `[A1]`.
+**Los otros dos terceros de la lista:**
 
-**Y once capturas que no son hallazgo:** el barrido encontró 11 `catch` sin `throw` ni registro, todos
-**declarados** en la línea base de D3 con motivo escrito. Once capturas sin `throw` suenan a once defectos y son
-once decisiones — **la diferencia la hace el motivo escrito**, que es justo lo que faltaba en H-032, donde la
-captura tenía una pregunta sin responder en vez de una razón.
+- **El almacenamiento**: se miró y **no aplica**. `writeFile` local, sin servicio remoto en v1.0. «Queda por
+  mirar» y «se miró y no aplica» son estados distintos.
+- **Redis**: el defecto **no era el que se fue a buscar**. Se buscaba un tope —ioredis trae los suyos— y apareció
+  la reserva. Buscar una cosa y encontrar otra sólo pasa si se mira de verdad.
 
-**Mis dos casos de control no supieron fallar a la primera** (segunda vez en dos PT): C2 se contentaba con que el
-fichero contuviera una cadena —bastaba el `import`— y C1 acusaba una llamada ya corregida por recortar una ventana
-fija.
+**Lo que NO se afirma:** el fallo no se ha observado (el compose declara `REDIS_URL`, así que la reserva no se
+usaba). Y la guarda **sólo cubre el API**: ADMIN, BASE y CLIENT quedan fuera, y ADMIN tuvo este mismo defecto en
+PT-147.
 
-Evidencia: `E-037`, `evidence/PT-184/`. Las corridas anteriores: H-032/H-033 en `E-036` y `evidence/PT-183/`;
-H-029/H-030/H-031 en `E-034`, `E-035` y `evidence/PT-182/`.
+Evidencia: `E-038`, `evidence/PT-185/`. Anteriores: H-034 en `E-037`; H-032/H-033 en `E-036`; H-029/H-030/H-031 en
+`E-034` y `E-035`.
 
 ---
 
@@ -131,11 +130,11 @@ desde H-025 y H-028 los instrumentos **lo dicen** en vez de dar verde.
 1. **Volumen de ciclos de pago** — lo único que sube D5 y saca la Confianza del filo de 91.
 2. **La decisión fiscal, cuando haya PAC.** Tres modelos medidos en `evidence/PT-155/hallazgos.md`. La C es
    subconjunto de la B; la B exige datos que **no se pueden pedir retroactivamente**.
-3. **Terminar la lista de terceros: quedan Redis y el almacenamiento de ficheros.** La pasarela era el primero
-   y tenía el defecto. Con Redis, además, el fallo se puede **medir**: se para en desarrollo, como ya se hizo en
-   PT-178. Es lo que separó a H-033 (medido) de H-034 (leído).
-4. **Y seguir mirando dónde el código promete algo**: un nombre que dice «verifica», una respuesta que dice
-   «enviado», una variable que declara una espera, **una prueba que dice «no lanza»**.
+3. **Llevar la guarda de reservas a ADMIN, BASE y CLIENT.** Hoy mira sólo `src/api/src`, y **ADMIN tuvo
+   exactamente este defecto en PT-147**. Es el pendiente más concreto que deja la jornada.
+4. **La pregunta que abrió H-035, aplicada al resto de las reglas:** ¿qué otra `RULE-NN` vigila la parte fácil de
+   medir y no la que causó su incidente? Es la forma más productiva que ha aparecido hoy: no buscar código
+   sospechoso, sino **guardas que miran al lado del agujero**.
 
 > **Este fichero es un derivado.** Manda `PTSA/Hallazgos/H-XXX.md`. Lo vigila
 > `estado-de-hallazgos-coherente.spec.ts` (**RULE-33**), que hoy lo pilló mintiendo.
