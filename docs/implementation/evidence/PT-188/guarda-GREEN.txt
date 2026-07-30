@@ -1,0 +1,16 @@
+PASS test/unit/documentacion/inventario-de-endpoints-completo.spec.ts
+  El inventario de endpoints esta completo y no inventa rutas — PT-188
+    ✓ C1: ninguna ruta montada falta en el inventario (2 ms)
+    ✓ C2: ninguna ruta documentada deja de existir — la mitad de H-020 (1 ms)
+    ✓ C3: el recuento que el inventario anuncia es el real
+    ✓ C4: las rutas que solo existen en desarrollo estan marcadas como tales (5 ms)
+    casos de control
+      ✓ AC-01: el extractor lee las rutas de un controlador con DOS `@Controller` (1 ms)
+      ✓ AC-02: `documentadas` no confunde una fila de tabla con prosa que cite una ruta
+      ✓ AC-03: el inventario no esta vacio — una guarda sobre un fichero vacio pasa sin comprobar nada (1 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       7 passed, 7 total
+Snapshots:   0 total
+Time:        4.968 s
+Ran all test suites matching /inventario-de-endpoints/i.

@@ -4,10 +4,10 @@
 
 **Rama**: `master`, árbol limpio, cero ramas sin fusionar. **Sin subir a `origin`.**
 
-**Pruebas**: **1238** unitarias en verde — API **985** (121 suites) · CORE **134** · CLIENT **103** ·
+**Pruebas**: **1245** unitarias en verde — API **992** (122 suites) · CORE **134** · CLIENT **103** ·
 ADMIN **13** · BASE **3**.
 
-**Reglas duras**: **35** `RULE-NN` (RULE-37 nueva). **Guardas de documentación**: **13** suites / **144** pruebas.
+**Reglas duras**: **35** `RULE-NN`. **Guardas de documentación**: **14** suites / **151** pruebas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
 `npm run indice:estado`. **139 encabezados · 0 realmente abiertos.**
@@ -63,7 +63,50 @@ Lista en [`PENDING_TASKS.md`](PENDING_TASKS.md).
 
 ---
 
-## Lo último: las tres decisiones (PT-186, PT-187)
+## Lo último: la documentación decía cosas que el código dejó de hacer (PT-188)
+
+Fui a añadir lo de la jornada y **medí primero**. Lo que había:
+
+| Documento | Decía | Es |
+|---|---|---|
+| `inventory/endpoints.md` | 86 rutas, incluida `/users/settings` | **159**, y esa ruta **no existe** — es la fantasma de **H-020** |
+| `inventory/entities.md` | «Total models: 27» | **33** |
+| `Catalogo-de-API.md` | «~118 endpoints», ADMIN «~61» | **159** y **80** |
+| `Catalogo-Maestro-de-Reglas.md` `RN-64` | El holdback se libera «cuando el pedido está DELIVERED» | Eso **era el defecto**: así el vendedor liberaba su propio dinero |
+| `Master-Test-Plan.md` | «frontends: 0 suites, ninguna» | **3 suites, 119 casos** |
+| Registro Maestro de ADR | Se quedaba en ADR-049 | Faltaban **seis** decisiones de la jornada |
+
+**La peor es `RN-64`**: no estaba incompleta, **describía el comportamiento defectuoso como si fuera la regla de
+negocio**. Quien la leyera para entender la liberación del holdback entendía justo lo que PT-174 tuvo que
+corregir.
+
+**Y la de `endpoints.md` es la que más enseña.** H-020 costó que «Configuración» no cargara para nadie. El código
+se arregló hace meses; **el documento que un agente lee para saber a dónde llamar siguió diciendo la ruta
+equivocada**. Así vuelve H-020.
+
+### Dónde estaba la causa
+
+`11-Conventions.md` tiene guarda. `10-Technical-Debt.md` tiene guarda. **Los seis inventarios no tenían
+ninguna** — y son los que se desviaron. Ahora `endpoints.md` la tiene en las dos direcciones; **los otros cinco
+siguen sin ella y está escrito**, no dado por hecho.
+
+### Y volví a retirar una promesa en vez de afinarla
+
+Intenté deducir el nivel de autorización de cada ruta. Tres versiones, tres resultados distintos — una dio `JWT` a
+`POST /auth/register` **teniendo `@Public()`**, y otra dio por **públicos los ochenta endpoints de
+administración**, porque `admin.controller.ts` declara `@UseGuards(AdminDualAuthGuard)` **junto a** `@Public()`.
+
+La cuarta funcionaba, y **la retiré igual**. Esa columna se cura a mano —19 controladores, no 159 rutas— y la
+guarda comprueba sólo lo que se mide sin ambigüedad. **Prometer menos y cumplirlo es mejor que una guarda que a
+veces miente.**
+
+Añadidas **ADR-050 … ADR-055** al Registro Maestro: la recepción la confirma quien recibe · un servicio no decide
+por sus llamantes · todo tercero declara su tope · ninguna variable de conexión tiene reserva · el registro
+append-only necesita índice · **v1.0 no afirma que su fiabilidad esté demostrada**.
+
+---
+
+## Antes de eso: las tres decisiones (PT-186, PT-187)
 
 **1. H-035 reabierta y cerrada completa.** Su cierre anterior declaraba que ADMIN, BASE y CLIENT quedaban fuera
 «escrito como pendiente». Medido: **seis** reservas a `localhost`, no las cuatro que estimé —API 1, BASE 3,

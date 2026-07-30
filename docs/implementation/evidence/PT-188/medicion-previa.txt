@@ -1,0 +1,9 @@
+=== lo que estaba desactualizado, medido antes de tocar nada ===
+
+--- endpoints: 159 montadas, 73 sin documentar, 6 documentadas que no existen
+159 rutas montadas · 0 sin documentar
+
+
+--- rutas que el inventario declara y NO estan montadas:
+
+--- (la salida completa del diff quedo en el scratchpad de la sesion)
