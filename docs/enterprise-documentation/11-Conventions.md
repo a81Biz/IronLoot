@@ -773,6 +773,35 @@ read prose: a guard that forces a particular wording teaches people to write for
 the document stops telling the truth. Its parser understands grouped headers (`## PT-090 … PT-104`)
 because a noisy guard gets disabled, and a disabled guard also stops catching what it did detect.
 
+### RULE-36: A shared service never decides what its callers do with a failure
+**What:** a service used from more than one call site **propagates** its errors. Swallowing is the
+caller's decision, taken at the call site, **with the reason written next to it**. Logging and
+rethrowing is fine; logging *instead of* rethrowing is what this rule forbids.
+**Why:** measured 2026-07-29 (H-032). `EmailService` caught every send failure and did not rethrow,
+carrying its own doubt in a comment: *"Don't rethrow to avoid breaking registration flow?"*. The doubt
+was right; answering it **once, for every caller**, could not be — the correct answer differs per call
+site, and the service cannot know which one it is serving.
+**What it absorbed was three layers of recovery.** `notification-queue.worker.ts` has a `catch` that
+counts attempts, logs the number and **rethrows so BullMQ retries**. That `catch` was **unreachable**: a
+failed send marked the job **completed**. Family of H-014/H-015/H-027 — *a mechanism that never runs
+warns of nothing* — and the reason `resendVerificationEmail` still answered "check your inbox" after
+H-030 was closed. The four decisions, each written at its call site:
+`resend` **propagates** (it is the endpoint's only job) · the **queue** propagates (its retry exists for
+this) · **register** catches (the account already exists, and the resend path works) · **password
+reset** catches, because its response is **deliberately opaque** and propagating would turn an SMTP
+outage into an **enumeration oracle** — 500 for addresses that exist, 200 for those that do not.
+**A green test was holding the defect in place:** `email.service.spec.ts` asserted `should not throw
+when mailerService fails`, twice. Same shape as the `BASE_URL` case in that very file, which demanded
+the `localhost:5174` fallback until PT-089.
+**And declare the timeouts** of anything that talks to a third party. The mail transport declared none,
+so nodemailer applied two minutes: register and resend hung **121 s** with the SMTP down (H-033). The
+values are derived from what this system already waits for — 5 000 ms for Google, 2 000 ms for Redis —
+not chosen.
+**Enforced by:** `fallo-de-envio-propagado.spec.ts` (C4/C5 pin each reasoned catch *and its stated
+reason*; C6 pins the queue's rethrow inside `processEmail`) and `topes-del-transporte.spec.ts`. Read
+`E-036` before touching them: the first two versions of C4/C5/C6 **did not know how to fail**, and the
+third was verified failing for its own reason.
+
 ### RULE-35: An `ND-XXX` asserting an absence is checked like a `TD-XXX`
 **What:** `10-Technical-Debt.md` also holds a `NOT DETERMINED` section. An `ND` entry that asserts
 something is absent, or cites a path, is verified: the fact that closed it must still hold, and the
@@ -892,3 +921,32 @@ When adding a new required environment variable:
 | 2026-07-29 | RULE-34 — the work trail has no gaps, both directions (from F-167-C/E/F) | PT-169 |
 | 2026-07-29 | RULE-31 widened — a citation to a folder is checked too (from F-167-D) | PT-170 |
 | 2026-07-29 | RULE-35 — an `ND-XXX` asserting an absence is checked (from F-167-G) | PT-171 |
+| 2026-07-29 | RULE-17 corollary — a business-rule default must be the **protective** value (from H-031) | PT-182 |
+| 2026-07-29 | RULE-36 — a shared service never decides what its callers do with a failure (from H-032/H-033) | PT-183 |
+
+**Backfill (PT-183).** This log claimed to be *the* incremental record and held **12 of 34 rules**. Twenty-two
+were missing, so a reader checking when a rule arrived — and against which defect — found nothing and had no
+way to know the table was incomplete. **It is H-016's shape applied to itself:** a register trusted because it
+looks complete.
+
+The rows below are **reconstructed**, and the provenance is stated because it is weaker than the rows above:
+each date and PT comes from the matching entry in `HISTORY.log`, not from this log. `RULE-01…06` and the
+sections that precede them come from the initial Foundation run; they first appear in git at PT-112, which is
+when this documentation started being versioned (H-009), **not when they were written**.
+
+| Date | Change | PT-ID |
+|---|---|---|
+| 2026-06-23 | RULE-01 · RULE-02 · RULE-03 · RULE-04 · RULE-05 · RULE-06 — folder logic, naming, patterns, module registration | — *(initial run)* |
+| 2026-07-28 | RULE-15 — `npm` runs in the container, never on the host (from PT-129/PT-135) | PT-135 |
+| 2026-07-28 | RULE-16 — closing a debt is two writes; the second one is the register | PT-136 |
+| 2026-07-29 | RULE-17 — no connection variable has a default (from F-135-A) | PT-137 |
+| 2026-07-29 | RULE-19 — every `{% block %}` must exist in its layout (from PT-139) | PT-139 |
+| 2026-07-29 | RULE-20 — the work registers do not contradict each other (from PT-140) | PT-140 |
+| 2026-07-29 | RULE-25, RULE-27 — citations and generated docs (from PT-141) | PT-141 |
+| 2026-07-28 | RULE-22 — lazy wallet creation is atomic (from PT-142) | PT-142 |
+| 2026-07-29 | RULE-23 — no test deletes without a filter (from PT-143) | PT-143 |
+| 2026-07-29 | RULE-24 — every balance move locks its row, in fixed order (from PT-146) | PT-146 |
+| 2026-07-29 | RULE-26 — a hostname fallback from one network is not a default (from PT-147) | PT-147 |
+| 2026-07-29 | RULE-28, RULE-29 — audit instruments declare what they measured (from PT-154) | PT-154 |
+| 2026-07-29 | RULE-30 — every `data-accion` a template declares has a handler | PT-159 |
+| 2026-07-29 | RULE-32 — every pattern in `test:guardas` matches a suite | PT-163 |
