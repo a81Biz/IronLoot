@@ -1,0 +1,27 @@
+=== los cinco checkpoints, al cierre de la jornada ===
+
+--- D2 esquema (tras crear la base sombra que el reseteo se llevo):
+[audit:schema] OK — las migraciones reproducen `schema.prisma`.
+
+--- D2 dependencias:
+[audit:check] 0 paquete(s) con aviso propio en produccion.
+[audit:check] Linea base de 2026-07-27: 0 — PT-126 cerro TD-015. Los cuatro servicios NestJS pasaron a la 11 con Express 5, y los avisos que quedaban de la cadena del mailer se fijaron por override a sus versiones parcheadas. La linea base esta VACIA a proposito: no queda ningun aviso triado pendiente.
+
+--- D3 observabilidad:
+  silent_failure_count = 25   (linea base: 25)
+  trace_completeness = 100%
+  OK — sin silencios nuevos.
+
+--- D1 dominio:
+  rubric_compliance_score = 100
+  Todas las reglas aplicables se cumplen
+  cross_coherence_verified = sin_datos
+
+--- D5 fiabilidad:
+  Success Rate         50%   SIN_DATOS
+                 1 de 2 ciclos resueltos sin necesitar la via garantizada · MUESTRA INSUFICIENTE (<20): el semaforo no se pronuncia
+  Retry Rate           50%   SIN_DATOS
+  Failure Rate          0%   SIN_DATOS
+  Hallucination Rate = NO_APLICA (sistema determinista, sin LLM)
+  Un Retry Rate alto significa «las pasarelas no notifican», no «el sistema falla».
+  health_unstable = false

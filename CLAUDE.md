@@ -51,6 +51,19 @@ Los tres de CI van **sin `needs`**: un job roto no debe poder ocultarlos. Es lo 
 `build` y `docker`, que no se ejecutaron nunca porque colgaban de un job que no podía terminar
 (H-015).
 
+**`audit:schema` necesita una base sombra, y en local no la crea nadie.** CI crea la suya
+(`ironloot_test_shadow_check`); en una máquina de desarrollo hay que crearla una vez, y **después de
+cada `run-all.sh`**, porque el reseteo se la lleva:
+
+```bash
+docker exec ironloot-db psql -U ironloot -d postgres -c 'CREATE DATABASE ironloot_db_shadow_check;'
+```
+
+Sin ella el checkpoint imprime `FALLA — No se pudo comprobar la deriva del esquema` y sale con 1.
+**Eso es correcto y es a propósito** —un error de ejecución no es un aprobado, la lección de PT-154—,
+pero se lee igual que una deriva real. No lo es: el mensaje nombra la base sombra, y crearla da el
+veredicto de verdad. Se anota aquí porque el que lo encuentre estará mirando D2 y pensando lo peor.
+
 **El workflow dispara en `master` y admite ejecución manual** (`workflow_dispatch`). Hasta PT-136
 disparaba en `dev/qa/prep/prod` — cuatro ramas que **nunca han existido** en este repositorio— y el
 resultado fue que los **ocho** jobs no se ejecutaron **ni una sola vez**: `actions/runs` devolvía
