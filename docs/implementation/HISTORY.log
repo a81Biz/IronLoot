@@ -3393,3 +3393,241 @@ Delta (real vs planned): tres cosas.
   3. **No esta en `@ironloot/core`.** BASE, CLIENT y ADMIN no dependen de el, y anadir la dependencia por veinte
      lineas metria la libreria de dominio en tres despliegues que no la necesitan. El coste de duplicarlas esta
      escrito en los dos ficheros.
+PTSA reference: H-035 — reabierta y CERRADA completa con VoBo humano.
+## CIERRE CON VoBo HUMANO — PT-181 … PT-186
+Date: 2026-07-29
+Status: registro
+Objective: registrar el VoBo humano sobre los seis ultimos PT de la jornada — y corregir el registro de cinco
+  de ellos, que se escribio saltandose un paso.
+
+**El humano lo instruyo dos veces:** *«cierra los PT con mi VoBo»* y, antes, *«si hay un hallazgo nuevo lo
+tratas hasta cerrarlo»*. Con eso, los seis quedan cerrados:
+
+  PT-181  seis entradas del registro de deuda desmentidas por el codigo
+  PT-182  tres controles que aparentaban estar puestos (H-029 / H-030 / H-031)
+  PT-183  el fallo de envio no llegaba a nadie (H-032 / H-033)
+  PT-184  las seis llamadas a las pasarelas sin tope (H-034)
+  PT-185  la mitad principal de RULE-17 sin guarda (H-035)
+  PT-186  el cierre de H-035 cubria la mitad (H-035, reabierta y cerrada completa)
+
+**Y aqui hay un defecto de proceso que este bloque existe para corregir.**
+
+`PT-181` se quedo en `VALIDATION_PENDING` **sin bloque de cierre**: el VoBo se anoto en `PENDING_TASKS.md` y
+nunca en `HISTORY.log`, que es el registro que manda para lo terminado. Lo delato el **indice de estado** en su
+primera ejecucion (PT-187), que es exactamente para lo que se escribio.
+
+Peor: `PT-182 … PT-186` se escribieron con **`Status: DONE` directamente**, y los cinco son BUG. FDGE STATE 6 es
+explicito — *«el agente no cierra bugs; van a VALIDATION_PENDING y el humano confirma»*. El resultado era
+correcto porque **el VoBo estaba dado de antemano**, pero el registro se salto el paso y con el la prueba de que
+alguien valido. **Un cierre sin la constancia de quien lo autorizo es indistinguible de un cierre que el agente
+se dio a si mismo**, y esa distincion es la razon de ser de STATE 6.
+
+Este bloque es esa constancia. No se reescriben las cinco lineas `Status:` —el log es append-only y reescribirlas
+borraria el momento en que se supo cada cosa—: se anade el cierre donde tiene que estar y el indice lo refleja.
+
+Lo vigila desde ahora `indice-de-estado-al-dia.spec.ts`: **un BUG no puede figurar `DONE` sin un bloque de VoBo
+que lo nombre.**
+
+Verificacion en el cierre: 977 pruebas del API en 121 suites, CLIENT 103, CORE 134, ADMIN 13, BASE 3; los tres
+servicios `healthy`; arbol limpio.
+
+## PT-187 — REFACTOR: el registro append-only decia «pendiente» de 102 cosas cerradas
+Date: 2026-07-29
+Status: DONE
+Branch: docs/PT-187-indice-de-estado
+Objective: que el estado real de un PT se pueda leer sin recorrer 3.400 lineas, sin reescribir el registro.
+Root cause: **`HISTORY.log` es append-only, asi que la linea `Status:` es historica y no el estado de hoy.** El
+  cierre se anota mas abajo, en un bloque de VoBo. Resultado medido: **102 entradas dicen
+  `Status: VALIDATION_PENDING` estando cerradas.**
+  Costo tiempo real: se reporto **PT-147 como pendiente** cuando llevaba cerrado desde el 2026-07-29, y el humano
+  lo señalo — *«¿por que PT-147 sigue pendiente si se ha pedido mas de una vez que se cierre?»*. **No seguia
+  pendiente.** Lo decia el fichero, y yo repeti el fichero en vez de medirlo. La guarda de RULE-34 ya recorre el
+  log cronologicamente y **compensa** ese desfase; un lector humano no tiene esa compensacion.
+Solution:
+  - `npm run indice:estado` genera un **INDICE DE ESTADO** al final del fichero: por cada PT, el `Status:`
+    escrito, el estado **real** y la linea donde consta el cierre. **Anade, no toca** — reescribir las 102 lineas
+    se leeria mejor y **falsificaria el registro**, porque borraria el momento en que se supo cada cosa, que es
+    justo lo que la regla append-only existe para preservar.
+  - Es una herramienta de **host** y su script vive en la raiz, como `lock:*`: el contenedor monta el repo con
+    `:ro` a proposito, y no se le quita.
+  - **RULE-37** nueva, y su segunda mitad vale mas que el indice: *un BUG con `Status: DONE` sin bloque de VoBo
+    que lo nombre no esta cerrado.*
+Modified files:
+  src/api/scripts/indice-de-estado.ts (nuevo) · package.json (raiz: `indice:estado`)
+  src/api/test/unit/documentacion/indice-de-estado-al-dia.spec.ts (nuevo, 8 casos)
+  docs/implementation/HISTORY.log (bloque de cierre PT-181…PT-186 + el indice)
+  docs/enterprise-documentation/11-Conventions.md (RULE-37 + Delta Log)
+Evidence: docs/implementation/evidence/PT-187/
+Delta (real vs planned): **el indice encontro un defecto de proceso mio en su primera ejecucion**, que es para
+  lo que se escribio.
+  1. **PT-181 estaba `VALIDATION_PENDING` sin bloque de cierre**: su VoBo se anoto en `PENDING_TASKS.md` y nunca
+     en `HISTORY.log`, que es el registro que manda para lo terminado.
+  2. **PT-182 … PT-186 se escribieron con `Status: DONE` directamente, y los cinco son BUG.** FDGE STATE 6 es
+     explicito: *el agente no cierra bugs*. El resultado era correcto —el VoBo estaba dado de antemano— pero el
+     registro se salto el paso y con el la constancia. **Un cierre sin constancia de quien lo autorizo es
+     indistinguible de uno que el agente se dio a si mismo**, y esa distincion es la razon de ser de STATE 6.
+     Corregido con el bloque «CIERRE CON VoBo HUMANO — PT-181 … PT-186», que es la constancia que faltaba.
+  3. **Y mi propia guarda midio mal dos veces antes de medir bien** — tercera y cuarta vez en la jornada:
+     - `C4` extraia los bloques de VoBo con un regex terminado en `(?=
+## |$)` **con la bandera `m`**, donde `$`
+       casa fin de **linea**: cada bloque se cortaba en su encabezado, asi que comprobaba titulos y acusaba a
+       cinco PT nombrados en el cuerpo del bloque de al lado. Ahora es una funcion con nombre.
+     - `C3` trataba `SIN_DECLARAR` como «abierto» y acusaba a seis entradas de formato anterior al campo
+       `Status:` (PT-039…PT-044). **Un desconocido no es un pendiente**, y tratarlo como tal es inventar trabajo.
+     Los dos se vieron fallar por su motivo correcto despues de arreglarlos.
+PTSA reference: ninguno — es deuda de registro, no un hallazgo de auditoria.
+
+---
+
+## ÍNDICE DE ESTADO — generado, no escrito a mano
+
+**No edites esta sección a mano.** La genera `npm run indice:estado` desde el propio fichero, y la vigila
+`indice-de-estado-al-dia.spec.ts`.
+
+Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, en un bloque de VoBo, así que la
+línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
+falsificaría el registro. Esto añade, no toca.
+
+**139** encabezados · **0** realmente abiertos · **6** sin `Status:` declarado.
+
+| PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
+|---|---:|---|---|---|
+| PT-035 | 7 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-031 | 34 | `DONE` | **DONE** | cerrado en la línea 1524 |
+| PT-032 | 45 | `DONE` | **DONE** | cerrado en la línea 1524 |
+| PT-028 | 55 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-029 | 79 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-026 | 100 | `DONE` | **DONE** | cerrado en la línea 1524 |
+| PT-030 | 111 | `DONE` | **DONE** | cerrado en la línea 1524 |
+| PT-031 | 121 | `DONE` | **DONE** | cerrado en la línea 1524 |
+| PT-032 | 131 | `DONE` | **DONE** | cerrado en la línea 1524 |
+| PT-034 | 148 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-033 | 160 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-036 | 172 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-037 | 185 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-038 | 198 | `CLOSED` | **CLOSED** | cerrado en la línea 248 |
+| PT-039 | 211 | `SIN_DECLARAR` | **SIN_DECLARAR** | cerrado en la línea 212 |
+| PT-040 | 219 | `SIN_DECLARAR` | **SIN_DECLARAR** | cerrado en la línea 1524 |
+| PT-041 | 226 | `SIN_DECLARAR` | **SIN_DECLARAR** | cerrado en la línea 1524 |
+| PT-042 | 233 | `SIN_DECLARAR` | **SIN_DECLARAR** | cerrado en la línea 1524 |
+| PT-043 | 240 | `SIN_DECLARAR` | **SIN_DECLARAR** | cerrado en la línea 1524 |
+| PT-044 | 247 | `SIN_DECLARAR` | **SIN_DECLARAR** | cerrado en la línea 1524 |
+| PT-047 | 261 | `DONE` | **DONE** | cerrado en la línea 1524 |
+| PT-048 | 284 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-049 | 296 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-050 | 306 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-051 | 316 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 442 |
+| PT-052 | 326 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-053 | 336 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-054 | 345 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-055 | 354 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-056 | 363 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-057 | 373 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-058 | 393 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 451 |
+| PT-059 | 404 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 451 |
+| PT-060 | 415 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 451 |
+| PT-061 | 426 | `CLOSED` | **CLOSED** | cerrado en la línea 452 |
+| PT-062 | 437 | `CLOSED` | **CLOSED** | cerrado en la línea 452 |
+| PT-063 | 454 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 497 |
+| PT-064 | 464 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-065 | 474 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-066 | 484 | `CLOSED` | **CLOSED** | cerrado en la línea 497 |
+| PT-067 | 500 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-068 | 510 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 517 |
+| PT-073 | 520 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-074 | 531 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-075 | 542 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-077 | 560 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-077 | 578 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-079 | 584 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-078 | 601 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-080 | 627 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-078 / PT-079 / PT-080 | 662 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-083 | 670 | `DONE` | **DONE** | cerrado en la línea 1524 |
+| PT-082 | 681 | `DONE` | **DONE** | cerrado en la línea 1524 |
+| PT-084 | 694 | `DONE` | **DONE** | cerrado en la línea 1524 |
+| PT-085 | 707 | `DONE` | **DONE** | cerrado en la línea 1524 |
+| PT-087 | 725 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-088 | 765 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-089 | 804 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-090 | 837 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-091 | 857 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-092 | 876 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-096 | 904 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-101 | 952 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-102 | 972 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-103 | 1012 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-104 | 1050 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-105 | 1121 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-106 | 1145 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-107 | 1162 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-108 | 1177 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-109 | 1210 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-110 | 1245 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-111 | 1265 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-112 | 1285 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-113 | 1299 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-114 | 1315 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-115 | 1333 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-116 | 1347 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-117 | 1364 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-118 | 1394 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-119 | 1416 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-120 | 1435 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-121 | 1451 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-122 | 1467 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1524 |
+| PT-123 | 1482 | `CLOSED` | **CLOSED** | cerrado en la línea 1524 |
+| PT-124 | 1537 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1637 |
+| PT-125 | 1564 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1637 |
+| PT-126 | 1586 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 1637 |
+| PT-127 | 1657 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-128 | 1706 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-131 | 1763 | `DONE` | **DONE** | cerrado en la línea 2492 |
+| PT-132 | 1796 | `DONE` | **DONE** | cerrado en la línea 2492 |
+| PT-133 | 1827 | `DONE` | **DONE** | cerrado en la línea 2492 |
+| PT-134 | 1851 | `DONE` | **DONE** | cerrado en la línea 2492 |
+| PT-135 | 1873 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-129 | 1965 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-130 | 1989 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-076 | 2009 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-086 | 2021 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-136 | 2036 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-137 | 2054 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-138 | 2067 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-139 | 2080 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-142 | 2092 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-143 | 2103 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-145 | 2113 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-146 | 2124 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-147 | 2136 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-140 | 2147 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-141 | 2173 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-149 / PT-153 | 2243 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-148 | 2264 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-154 / PT-157 | 2288 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-159 / PT-160 / PT-162 | 2312 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-152 / PT-151 | 2342 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2344 |
+| PT-150 / PT-161 | 2370 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2372 |
+| PT-158 / PT-155 / PT-156 | 2404 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2406 |
+| PT-163 / PT-164 / PT-165 | 2446 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
+| PT-166 | 2517 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2629 |
+| PT-168 | 2536 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2629 |
+| PT-167 | 2574 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2629 |
+| PT-169 | 2598 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2629 |
+| PT-170 | 2639 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2770 |
+| PT-171 | 2677 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2770 |
+| PT-172 | 2713 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2751 |
+| PT-174 | 2785 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3119 |
+| PT-175 / PT-176 | 2832 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3119 |
+| PT-173 | 2873 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3119 |
+| PT-177 | 2949 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3102 |
+| PT-178 | 2976 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3110 |
+| PT-179 | 3003 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3030 |
+| PT-180 | 3070 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3102 |
+| PT-181 | 3122 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3397 |
+| PT-182 | 3159 | `DONE` | **DONE** | — |
+| PT-183 | 3215 | `DONE` | **DONE** | — |
+| PT-184 | 3271 | `DONE` | **DONE** | — |
+| PT-185 | 3314 | `DONE` | **DONE** | — |
+| PT-186 | 3352 | `DONE` | **DONE** | cerrado en la línea 3397 |
+| PT-187 | 3434 | `DONE` | **DONE** | — |

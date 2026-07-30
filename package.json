@@ -12,6 +12,7 @@
     "lock:root": "node scripts/regenerar-lock.js .",
     "lock:api": "node scripts/regenerar-lock.js src/api",
     "lock:admin": "node scripts/regenerar-lock.js src/admin",
+    "indice:estado": "node --require ts-node/register/transpile-only src/api/scripts/indice-de-estado.ts",
     "test": "npm run test:api && npm run test:client && npm run test:core && npm run test:admin && npm run test:base",
     "test:api": "npm --prefix ./src/api run test",
     "test:client": "npm --prefix ./src/apps/client run test",

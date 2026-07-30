@@ -1059,3 +1059,59 @@ pregunta que abrio H-035, aplicada al resto: **¿que otra `RULE-NN` vigila la pa
 su incidente?** No buscar codigo sospechoso, sino **guardas que miran al lado del agujero**.
 
 **Estado de la corrida:** CERRADA_SIN_HALLAZGOS_ACTIVOS — **35 hallazgos, todos CERRADA**.
+
+---
+
+## S-010 — 2026-07-29 — DELTA SYNC: tres decisiones, y una cambia lo que el sistema afirma de si mismo
+
+**Disparador:** el humano señalo que *«de nuevo faltan muchas cosas»* y pidio **resolver antes de decidir**. Se
+midio, y de las cinco cosas que el agente habia listado como «falta», **dos eran falsas**:
+
+| Lo que el agente reporto | La medicion |
+|---|---|
+| «PT-147 sigue pendiente» | **CERRADO** con VoBo el 2026-07-29, linea 2492. Su entrada dice `VALIDATION_PENDING` porque el log es append-only — y **102 entradas estan asi** |
+| «nada se ha subido a origin» | **`origin/master == master`**. El agente repitio el `HANDOFF.md` sin verificarlo |
+| «D5 no se ha corrido» | **Se corrio cuatro veces**. No puede pronunciarse sobre `n = 2`: hay 2 ciclos resueltos y el umbral exige 20, cada uno con aprobacion manual en la pasarela |
+| «ADMIN, BASE y CLIENT sin cubrir» | **Cierto, y peor de lo estimado**: seis reservas, no cuatro, **una en el propio API** |
+| «CFDI» | **Cierto.** Sigue siendo el unico bloqueo por un tercero |
+
+**El humano tenia razon en lo esencial**: la lista estaba inflada por dos afirmaciones que el agente no midio.
+
+### Las tres decisiones
+
+**1. H-035 reabierta y cerrada completa** (PT-186). Su cierre anterior declaraba tres servicios fuera «escrito
+como pendiente, no dado por hecho» — mejor que callarlo y **peor que medirlo**. Al medir: **6** reservas, y la del
+API la ocultaba **la propia guarda**, cuya lista de variables no incluia `CLIENT_URL`. `E-038` habia declarado esa
+debilidad textualmente y **se cumplio en la corrida siguiente**: *declarar una debilidad no la cierra*.
+Las dos caras son las del **proxy del BFF**: sin `API_URL`, el sitio arranca `healthy` y manda todas sus llamadas
+a su propio contenedor.
+
+**2. D5 aceptada como limitacion declarada de v1.0** (`F-1 § U-007`). El producto **no afirma** que su fiabilidad
+operacional este demostrada. **El numero no mejora por declararlo** —la Confianza sigue en 91.0— y eso es lo que
+hace honesta la declaracion: la diferencia con H-005, donde la aceptacion **si** subio D1 porque el producto dejo
+de prometer la factura. Reapertura declarada: con volumen real de produccion los 20 ciclos aparecen solos.
+
+**3. Indice de estado en `HISTORY.log`** (PT-187), generado y no escrito a mano. **Anade, no reescribe**:
+reescribir las 102 lineas se leeria mejor y borraria el momento en que se supo cada cosa, que es lo que la regla
+append-only existe para preservar.
+
+### Y el indice encontro un defecto de proceso del agente en su primera ejecucion
+
+`PT-181` estaba `VALIDATION_PENDING` **sin bloque de cierre** —su VoBo vivia solo en `PENDING_TASKS.md`— y
+`PT-182 … PT-186` se escribieron con **`Status: DONE` directamente**, siendo los cinco BUG. FDGE STATE 6 es
+explicito: *el agente no cierra bugs*. El VoBo estaba dado de antemano, asi que el resultado era correcto; lo que
+faltaba era **la constancia**. Y **un cierre sin constancia de quien lo autorizo es indistinguible de uno que el
+agente se dio a si mismo** — esa distincion es la razon de ser de STATE 6. De ahi **RULE-37**.
+
+### Cuatro veces en la jornada, las guardas del agente midieron otra cosa
+
+Hoy dos mas: un regex terminado en `$` con la bandera `m` —que casa fin de **linea**— cortaba cada bloque de VoBo
+en su encabezado, asi que la guarda comprobaba **titulos**; y `SIN_DECLARAR` se trataba como «abierto», acusando a
+seis entradas anteriores al campo `Status:`. **Un desconocido no es un pendiente.**
+
+El patron es siempre el mismo: **comprobar que exista una cadena en vez de una relacion.**
+
+**Scores:** Health **100** · Risk **0** · Confidence **91.0** · Clase **A**. Sin cambios — **y esta vez es
+correcto que no cambien**: no se cerro ningun hallazgo nuevo y la declaracion de D5 no compra puntos.
+
+**Estado de la corrida:** CERRADA_SIN_HALLAZGOS_ACTIVOS — **35 hallazgos, todos CERRADA**.

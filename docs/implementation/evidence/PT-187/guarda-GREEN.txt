@@ -1,0 +1,17 @@
+PASS test/unit/documentacion/indice-de-estado-al-dia.spec.ts
+  El indice de estado de HISTORY.log esta al dia — PT-187
+    ✓ C1: el indice existe (1 ms)
+    ✓ C2: el indice esta REGENERADO — coincide con lo que produce el generador (8 ms)
+    ✓ C3: ningun PT queda realmente abierto sin figurar en PENDING_TASKS.md (7 ms)
+    ✓ C4: un BUG no figura DONE sin un bloque de VoBo que lo nombre (6 ms)
+    casos de control
+      ✓ AC-01: una entrada CERRADA por un bloque posterior se lee como CLOSED
+      ✓ AC-02: una entrada SIN cierre posterior sigue abierta — el indice no regala cierres
+      ✓ AC-03: un bloque ANTERIOR no cierra un PT posterior (1 ms)
+      ✓ AC-04: un encabezado agrupado cuenta como varios PT
+
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        4.864 s
+Ran all test suites matching /indice-de-estado/i.

@@ -4,19 +4,21 @@
 
 **Rama**: `master`, árbol limpio, cero ramas sin fusionar. **Sin subir a `origin`.**
 
-**Pruebas**: **1226** unitarias en verde — API **973** (120 suites) · CORE **134** · CLIENT **103** ·
+**Pruebas**: **1238** unitarias en verde — API **985** (121 suites) · CORE **134** · CLIENT **103** ·
 ADMIN **13** · BASE **3**.
 
-**Reglas duras**: **34** `RULE-NN` (RULE-36 nueva, RULE-17 con corolario). **Guardas de documentación**: **12**
-suites / **136** pruebas.
+**Reglas duras**: **35** `RULE-NN` (RULE-37 nueva). **Guardas de documentación**: **13** suites / **144** pruebas.
+
+**Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
+`npm run indice:estado`. **139 encabezados · 0 realmente abiertos.**
 
 ---
 
 ## Estado: CERTIFICADO Clase A · cero hallazgos activos
 
-**S-009 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
+**S-010 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
 
-| Métrica | S-008 | **S-009** |
+| Métrica | S-009 | **S-010** |
 |---|---|---|
 | Health | 100.0 | **100 / 100** |
 | Risk | 0 | **0 / 100** |
@@ -61,41 +63,28 @@ Lista en [`PENDING_TASKS.md`](PENDING_TASKS.md).
 
 ---
 
-## Lo último: una guarda con el nombre correcto mirando otra cosa (PT-185)
+## Lo último: las tres decisiones (PT-186, PT-187)
 
-Cerré la lista que dejó S-008 —los dos terceros que faltaban— y el resultado es distinto en cada uno, que es por
-qué había que mirarlos y no suponerlos:
+**1. H-035 reabierta y cerrada completa.** Su cierre anterior declaraba que ADMIN, BASE y CLIENT quedaban fuera
+«escrito como pendiente». Medido: **seis** reservas a `localhost`, no las cuatro que estimé —API 1, BASE 3,
+CLIENT 3; ADMIN estaba limpio—. **Las dos caras son las del proxy del BFF**: sin `API_URL`, el sitio arranca
+`healthy` y manda *todas* sus llamadas a su propio contenedor.
 
-- **El almacenamiento**: se miró y **no aplica**. `writeFile` en disco local, sin servicio remoto en v1.0.
-  «Queda por mirar» y «se miró y no aplica» son estados distintos, y sólo el segundo cierra un pendiente.
-- **Redis**: el defecto **no era el que fui a buscar**. Iba por un tope, y `ioredis` trae los suyos. Lo que
-  apareció al mirar fue otra cosa.
+Y la del API **la ocultó la propia guarda**: su lista de variables no incluía `CLIENT_URL`. `E-038` había
+declarado esa debilidad con esas palabras y **se cumplió en la corrida siguiente**. *Declarar una debilidad no la
+cierra* — que es la misma lección que *declarar un alcance no es medirlo*.
 
-### H-035 — la reserva que RULE-17 prohíbe, sobreviviendo en un fichero
+**2. D5, limitación declarada.** Ver arriba.
 
-```ts
-// distributed-lock.service.ts:12
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-```
+**3. Índice de estado en `HISTORY.log`.** 102 entradas mostraban un `Status:` histórico, y eso hizo que te
+reportara PT-147 como pendiente. Ahora hay un índice **generado** al final del fichero: añade, no reescribe —
+reescribir las 102 líneas se leería mejor y borraría el momento en que se supo cada cosa.
 
-**Lo que vale no es el defecto: es su causa.** La guarda de RULE-17 comprueba que las variables estén
-**declaradas**. El texto de la regla dice, en negrita y como su afirmación central: *«the fallback was the problem,
-not the variable»* — **y esa mitad no la comprobaba nadie**. Se vigiló lo fácil de medir y quedó sin vigilar lo que
-causó el incidente del que nació la regla: cinco contenedores caídos.
-
-Por eso este `||` pasó por **PT-137**, por **PT-147** y por todas las corridas de la suite, mientras el cliente de
-al lado llevaba escrito *«PT-137 — Mismo defecto que las colas: reserva a `localhost`»*.
-
-Es la **segunda vez hoy** que aparece esta forma: H-031 tenía la guarda del holdback mirando el servicio cuando el
-agujero estaba en el compose. Aparece lo suficiente para nombrarla — **una guarda puede existir, tener el nombre
-correcto y mirar al lado del agujero.**
-
-Lo que costaba: el cerrojo impide que dos instancias cierren la misma subasta. Sin `REDIS_URL`, el proceso
-**arranca**, apunta a un `localhost` que no es nadie, `acquireLock` relanza y **ninguna subasta se cierra**.
-
-**La corrección vale por la guarda nueva más que por el arreglo**: cubre las tres formas de escribir una reserva
-—`||`, `??` y el segundo argumento de `config.get`, que es la del incidente original— y **se vio acusar al fichero
-correcto, y sólo a ése**, antes de arreglarlo.
+**Y en su primera ejecución encontró un defecto de proceso mío:** cinco BUG —PT-182 … PT-186— escritos con
+`Status: DONE` **directamente**, cuando FDGE STATE 6 dice que el agente no cierra bugs. Tu VoBo estaba dado, así
+que el resultado era correcto; faltaba **la constancia**. Un cierre sin registro de quién lo autorizó es
+indistinguible de uno que el agente se dio a sí mismo. Corregido con el bloque de cierre que faltaba, y vigilado
+por **RULE-37**.
 
 ---
 
@@ -258,17 +247,16 @@ con la contabilidad cerrando sola —950 → 95 de comisión → 855 retenido �
 
 ## Siguiente
 
-1. **`git push origin master`**. Nada se ha subido.
+1. **`git push origin master`** de lo de esta tanda. Lo anterior ya está en `origin`.
 2. **Volumen de ciclos de pago.** Es lo único que sube D5 del 0 % y saca la Confianza del filo de 91. No lo
    cierra otra corrida igual: hacen falta 20 ciclos resueltos.
 3. **H-005**: cuando haya PAC. Los tres modelos están medidos en `evidence/PT-155/hallazgos.md`; la opción C
    es subconjunto de la B, y la B exige datos que **no se pueden pedir retroactivamente**.
-4. **Llevar la guarda de reservas a ADMIN, BASE y CLIENT.** `conexiones-sin-reserva.spec.ts` mira sólo
-   `src/api/src`, y **ADMIN tuvo exactamente este defecto en PT-147**. Es el pendiente más concreto que deja la
-   jornada, y hoy no hay nada que impida que vuelva por ahí.
-5. **La pregunta que abrió H-035, aplicada al resto de las reglas:** ¿qué otra `RULE-NN` vigila la parte fácil de
-   medir y no la que causó su incidente? Es la forma más productiva que ha salido hoy — no buscar código
-   sospechoso, sino **guardas que miran al lado del agujero**.
+4. **La pregunta que abrió H-035, aplicada al resto de las reglas:** ¿qué otra `RULE-NN` vigila la parte fácil de
+   medir y no la que causó su incidente? Ya ha dado dos hallazgos. No es buscar código sospechoso: es buscar
+   **guardas que miran al lado del agujero**.
+5. **La lista de variables de conexión es el límite de su guarda, y ya mordió una vez.** Cualquier variable nueva
+   que apunte a un servicio hay que añadirla ahí, y **no hay nada que lo recuerde**.
 5. **Y seguir mirando dónde el código promete algo**: un nombre que dice «verifica», una respuesta que dice
    «enviado», una variable que declara una espera, **una prueba que dice «no lanza»**. Una de esas cuatro formas
    era, hoy, una prueba nuestra.
