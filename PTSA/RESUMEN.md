@@ -1,16 +1,16 @@
 # PTSA V3 — RESUMEN DE AUDITORÍA
 ## IronLoot Auction Platform v1.0.0
 
-**Sesión**: S-009 — **delta sync** (`resume PTSA`) | **Fecha**: 2026-07-29
-**Disparador**: cerrar la lista que dejó S-008 — mirar los **dos terceros que faltaban**, Redis y el
-almacenamiento de ficheros.
+**Sesión**: S-010 — **delta sync** (`resume PTSA`) | **Fecha**: 2026-07-29
+**Disparador**: tres decisiones del humano tras señalar que *«de nuevo faltan muchas cosas»* — reabrir H-035 y
+cerrarlo completo, **aceptar D5 como limitación declarada**, y añadir un índice de estado a `HISTORY.log`.
 **auditoria_estado**: CERRADA_SIN_HALLAZGOS_ACTIVOS
 
 ---
 
 ## SCORES — CLASE A
 
-| Métrica | S-008 | **S-009** | Cambio |
+| Métrica | S-009 | **S-010** | Cambio |
 |---|---|---|---|
 | **Health Score** | 100.0 | **100 / 100** | — |
 | **Risk Score** | 0 | **0 / 100** | — |
@@ -54,9 +54,10 @@ legitima ese cierre es que **la declaración de valor se corrigió a la vez** (`
 y lo entregado— se cerró **por el lado de la declaración**. El sistema sigue sin emitir facturas.
 
 **2. La Confianza está a UN punto del umbral de A.** 91.0 contra un mínimo de 90. La baja **la cobertura de
-D5, que es 0 %**: la fiabilidad operacional **no está demostrada**. Dos ciclos de pago no son una serie, y
-desde PT-180 el instrumento lo dice en vez de inventarse un veredicto. Cualquier pérdida de cobertura tumba
-la Clase A.
+D5, que es 0 %** — y desde esta emisión eso es una **limitación declarada** (`F-1 § U-007`), no un pendiente: la
+fiabilidad operacional **no está demostrada** y se dice. Dos ciclos no son una serie, y desde PT-180 el
+instrumento se niega a pronunciarse en vez de inventarse un veredicto. Cualquier pérdida de cobertura tumba la
+Clase A.
 
 **3. Cero hallazgos activos no es cero defectos: es cero defectos CONOCIDOS.** Tercera emisión consecutiva en
 que un barrido dirigido encuentra defectos que **ninguna prueba señalaba**. Un `0` en esta columna mide lo que
@@ -67,7 +68,7 @@ que nunca se había ejecutado. El camino feliz estaba probado; el otro, nunca.
 
 ## SCORES POR DIMENSIÓN
 
-| Dimensión | S-008 | **S-009** | Penaliza hoy |
+| Dimensión | S-009 | **S-010** | Penaliza hoy |
 |---|---|---|---|
 | D1 Alineación de Dominio | 100 | **100** | — |
 | D2 Integridad Arquitectónica | 100 | **100** | — |
@@ -81,65 +82,66 @@ Alucinación y drift `NO_APLICA` (sistema determinista).
 
 ## LO QUE CERRÓ ESTA CORRIDA
 
-**Un hallazgo, y la lista de terceros queda cerrada.** Los dos que faltaban se miraron, y el resultado es
-distinto en cada uno — que es exactamente por qué había que mirarlos y no suponerlos.
+**Ningún hallazgo nuevo. Un hallazgo reabierto, una limitación declarada y una deuda de registro.**
 
-### El almacenamiento: se miró y NO aplica
+### H-035 — reabierta, y el motivo es el propio cierre
 
-`upload.service.ts` escribe con `writeFile` **en disco local**. No hay S3 ni servicio remoto en v1.0, así que el
-patrón de H-034 no tiene dónde darse: no hay nada a lo que esperar por red.
+Se cerró en S-009 diciendo que la guarda mira `src/api/src` y que ADMIN, BASE y CLIENT quedaban fuera **«escrito
+como pendiente, no dado por hecho»**. Eso era mejor que callarlo y **peor que medirlo**:
 
-**«Queda por mirar» y «se miró y no aplica» son estados distintos**, y sólo el segundo cierra un pendiente.
+| Servicio | Reservas a `localhost` |
+|---|---|
+| **API** | **1** — `paypal.provider.ts:311`, que S-009 declaró limpio |
+| ADMIN | 0 |
+| **BASE** | **3** — dos en el controlador y **una en el proxy del BFF** |
+| **CLIENT** | **3** — dos en el controlador y una en el guard de sesión |
 
-### Redis: el defecto no era el que se fue a buscar
+**Seis, no cuatro.** Y la del API la ocultó **la propia guarda**: su lista de variables de conexión tenía seis
+nombres y `CLIENT_URL` no estaba. `E-038` había declarado esa debilidad con estas palabras —*«una variable de
+conexión nueva que nadie añada a esa lista no se vigilará»*— y **se cumplió en la corrida siguiente**. Declarar
+una debilidad no la cierra.
 
-Se buscaba un tope. Los dos clientes `ioredis` no declaran topes propios pero **la biblioteca trae los suyos**
-—10 s de conexión, reintentos acotados—, así que aquí no hay un equivalente a los dos minutos de nodemailer.
+**Las dos caras son las del proxy del BFF:** sin `API_URL`, el sitio manda *todas* sus llamadas a su propio
+contenedor y **arranca `healthy` sin funcionar**.
 
-Lo que apareció al mirar fue otra cosa, de otra dimensión:
+Cerrada: `variableObligatoria()` **aborta nombrando la variable** —comprobado en vivo—, el API pasa a
+`clientOrigin()`, y la guarda cubre **los cuatro servicios** con un caso por servicio.
 
-### H-035 (D2, MEDIA) — la reserva que RULE-17 prohíbe, sobreviviendo en un fichero
+### D5 — limitación declarada de v1.0
 
-```ts
-// distributed-lock.service.ts:12
-const redisUrl = process.env.REDIS_URL || 'redis://localhost:6379';
-```
+Cuatro corridas del checkpoint, el mismo resultado: `SIN_DATOS` por muestra insuficiente. Se declara en
+`F-1 § U-007` que **la fiabilidad operacional no está demostrada**, con su reapertura escrita: con volumen real
+de producción los 20 ciclos aparecen solos y la declaración caduca sin otra decisión.
 
-**Y lo que vale de este hallazgo no es el defecto: es su causa.** La guarda de RULE-17
-—`variables-de-entorno-declaradas.spec.ts`— comprueba que toda variable que el código lee esté **declarada** en un
-`.env.example`. Funciona. Pero el texto de la regla dice, en negrita y como su afirmación central:
+**Lo que no dice:** que el sistema sea poco fiable. Dice que **no se puede afirmar que lo sea**.
 
-> *The fallback was the problem, not the variable.*
+### PT-187 — el registro decía «pendiente» de 102 cosas cerradas
 
-**Esa mitad no la comprobaba nadie.** La regla nació de cinco contenedores caídos: se vigiló la parte fácil de
-medir —¿está declarada?— y quedó sin vigilar la que causó el incidente —¿tiene reserva?—.
+`HISTORY.log` es append-only, así que la línea `Status:` es histórica: **102 entradas dicen
+`VALIDATION_PENDING` estando cerradas**. Costó tiempo real — se reportó **PT-147 como pendiente** llevando horas
+cerrado, y el humano lo señaló con razón. **El fichero lo decía, y el agente repitió el fichero en vez de
+medirlo.**
 
-Por eso este `||` pasó por **PT-137**, por **PT-147** y por todas las corridas de la suite, mientras el cliente de
-al lado llevaba escrito *«PT-137 — Mismo defecto que las colas: reserva a `localhost`»*. **Había una guarda con el
-nombre correcto mirando otra cosa** — la familia de H-031, donde la guarda del holdback miraba el servicio y el
-agujero estaba en el compose.
+Resuelto con un índice **generado** al final del propio fichero: añade, no reescribe. Reescribir las 102 líneas
+se leería mejor y borraría el momento en que se supo cada cosa.
 
-Lo que costaba: el cerrojo es lo que impide que dos instancias procesen el mismo cierre de subasta. Un despliegue
-sin `REDIS_URL` **arranca**, apunta a un `localhost` que en el contenedor no es nadie, `acquireLock` relanza y
-**ninguna subasta se cierra**.
+**Y su primera ejecución encontró un defecto de proceso del agente**, que es para lo que se escribió: cinco BUG
+—PT-182 … PT-186— escritos con `Status: DONE` **directamente**, cuando FDGE STATE 6 dice que *el agente no cierra
+bugs*. El VoBo estaba dado de antemano, así que el resultado era correcto; lo que faltaba era **la constancia**.
+Y un cierre sin constancia de quién lo autorizó **es indistinguible de uno que el agente se dio a sí mismo**.
+De ahí **RULE-37**.
 
-**La corrección vale por la guarda nueva más que por el arreglo**: `conexiones-sin-reserva.spec.ts` cubre las
-**tres** formas de escribir una reserva —`||`, `??` y el segundo argumento de `config.get`, que es la que produjo
-el incidente original— y **se vio acusar al fichero correcto, y sólo a ése**, antes de arreglarlo.
+### Tres veces más, mis propias guardas midieron otra cosa
 
-### Lo que esta emisión NO afirma
-
-- **Que se haya observado el fallo.** `docker-compose` declara `REDIS_URL`, así que la reserva no se usaba en
-  ningún entorno existente. El daño era **potencial**, como en H-029 y H-031.
-- **Que no queden reservas fuera del API.** La guarda mira `src/api/src`. **ADMIN, BASE y CLIENT no están
-  cubiertos**, y ADMIN tuvo este mismo defecto en PT-147: es el sitio más probable para el siguiente.
-- **Que la lista de variables de conexión esté completa.** Son seis. Una nueva que nadie añada a esa lista **no se
-  vigilará** — debilidad conocida de la guarda, no descuido.
+Van cuatro en la jornada, y el patrón es siempre el mismo: **comprobar que exista una cadena en vez de una
+relación.** Hoy: un regex terminado en `$` con la bandera `m` —que casa fin de *línea*— cortaba cada bloque de
+VoBo en su encabezado, así que la guarda comprobaba títulos; y `SIN_DECLARAR` se trataba como «abierto», lo que
+acusaba a seis entradas anteriores al campo `Status:`. **Un desconocido no es un pendiente.**
 
 ### Lo que cerraron las corridas anteriores, para referencia
 
-**S-008**: H-034 (las pasarelas sin tope). **S-007**: H-032 (el fallo de envío que no llegaba a nadie, ALTA) y
-H-033 (121 s colgado). **S-006**: H-029, H-030, H-031. Evidencias `E-034` … `E-037`.
+**S-009**: H-035 (la reserva del cerrojo). **S-008**: H-034. **S-007**: H-032 y H-033. **S-006**: H-029, H-030,
+H-031. Evidencias `E-034` … `E-039`.
 
 ---
 
@@ -153,7 +155,7 @@ Sin cambios respecto a S-005. **Este delta sync no amplía cobertura: confirma c
 | D2 Integridad | 100 % | Esquema verificado en la base **y contra el modelo**; 0 vulnerabilidades |
 | D3 Observabilidad | 100 % | Silencios en línea base, `trace_completeness` 100 %, endpoints en vivo en los dos estados |
 | D4 Documental | 100 % | 135 pruebas en 12 guardas de documentación |
-| **D5 Fiabilidad** | **0 %** | **Muestra insuficiente**: 2 ciclos resueltos frente a los 20 que los umbrales exigen |
+| **D5 Fiabilidad** | **0 %** | **Limitación declarada de v1.0** (`F-1 § U-007`): 2 ciclos resueltos frente a 20, y cada uno exige aprobación manual en la pasarela |
 
 **D5 al 0 % sigue siendo la afirmación más importante de esta tabla.** No es que el sistema sea poco fiable:
 es que **no se puede afirmar que lo sea**. Subirlo exige volumen de ciclos de pago, no otra corrida igual.
@@ -189,12 +191,11 @@ factura, `P-012` vuelve y **H-005 se reabre con él**. `[A6]`: no se degrada ni 
 2. **La decisión fiscal, cuando haya PAC.** Los tres modelos siguen medidos en
    `evidence/PT-155/hallazgos.md`. La opción C es subconjunto de la B, y la B exige datos que **no se pueden
    pedir retroactivamente**.
-3. **Llevar la guarda de reservas a ADMIN, BASE y CLIENT.** `conexiones-sin-reserva.spec.ts` mira
-   `src/api/src` y nada más. **ADMIN tuvo exactamente este defecto en PT-147**, así que es el sitio más probable
-   para el siguiente — y hoy no hay nada que lo impida. Es el pendiente más concreto que deja esta jornada.
-4. **La pregunta que abrió H-035, aplicada al resto de las reglas:** ¿qué otra `RULE-NN` tiene guarda para la
-   parte fácil de medir y no para la que causó su incidente? Es la forma más productiva que ha aparecido hoy: no
-   buscar código sospechoso, sino **guardas que miran al lado del agujero**.
+3. **La pregunta que abrió H-035, aplicada al resto de las reglas:** ¿qué otra `RULE-NN` tiene guarda para la
+   parte fácil de medir y no para la que causó su incidente? Hoy ha dado dos hallazgos (H-035 y el alcance de su
+   propia guarda). No es buscar código sospechoso: es buscar **guardas que miran al lado del agujero**.
+4. **Y una que sale del PT-187:** la lista de variables de conexión de la guarda es su límite, y ya mordió una
+   vez. Cualquier variable nueva que apunte a un servicio hay que añadirla ahí — no hay nada que lo recuerde.
 4. **Y seguir mirando dónde el código promete algo.** Un nombre que dice «verifica», una respuesta que dice
    «enviado», una variable que declara una espera, **una prueba que dice «no lanza»**. Ahí un defecto puede
    vivir años sin que nada se ponga rojo — y una de esas cuatro formas era, hoy, una prueba nuestra.

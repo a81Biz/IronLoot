@@ -1131,6 +1131,61 @@
         "FUERA_DE_ALCANCE_V1": 1
       },
       "nota": "H-035 (D2, MEDIA) es el hallazgo mas util de la jornada, y no por el defecto sino por su causa: **habia una guarda con el nombre correcto mirando otra cosa.** La guarda de RULE-17 comprueba que las variables esten DECLARADAS; el texto de la regla dice, en negrita y como afirmacion central, «The fallback was the problem, not the variable» — y esa mitad no la comprobaba nadie. Se vigilo lo facil de medir y quedo sin vigilar lo que causo el incidente del que nacio la regla (cinco contenedores caidos). Por eso `distributed-lock.service.ts:12` conservo su `process.env.REDIS_URL || 'redis://localhost:6379'` a traves de PT-137, de PT-147 y de todas las corridas de la suite, mientras el cliente de al lado llevaba escrito «PT-137 — Mismo defecto que las colas: reserva a localhost». Familia de H-031: alli la guarda del holdback miraba el servicio y el agujero estaba en el compose. La correccion vale por la guarda nueva mas que por el arreglo: cubre las TRES formas de escribir una reserva y se vio acusar al fichero correcto, y solo a ese, antes de arreglarlo. Y en Redis el defecto NO era el que se fue a buscar: se buscaba un tope —ioredis trae los suyos— y aparecio la reserva. Buscar una cosa y encontrar otra solo pasa si se mira de verdad. Lo que sigue sin cubrir y se dice para que no se de por hecho: la guarda mira src/api/src; ADMIN, BASE y CLIENT no estan cubiertos, y ADMIN tuvo este mismo defecto en PT-147."
+    },
+    {
+      "session": "S-010",
+      "date": "2026-07-29",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 100,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "health": 100.0,
+        "risk": 0,
+        "confidence": 91.0
+      },
+      "classification": "A",
+      "classification_without_cap": "A",
+      "cap_reason": null,
+      "cap_note": "Sin cap. Sexta emision con los mismos cuatro numeros. La novedad de esta no es un score: es que **D5 pasa a ser una limitacion DECLARADA de v1.0** por decision del humano, con el mismo mecanismo que H-005/CFDI — se declara que la fiabilidad operacional NO esta demostrada, en vez de dejarla como pendiente perpetuo.",
+      "score_freshness": {
+        "last_verified": "2026-07-29",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "risk_detail": {
+        "risk_bruto": 0,
+        "detalle": "Cero hallazgos activos. Los 35 del registro estan CERRADA."
+      },
+      "coverage_detail": {
+        "D1": 100,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "D5": 0,
+        "motivo": "D1/D2/D3/D4 al 100 %. **D5 al 0 %, y desde esta emision es una LIMITACION DECLARADA de v1.0, no un pendiente**: se necesitan 20 ciclos de pago resueltos y hay 2, y cada ciclo exige aprobacion manual en el sitio del proveedor (PayPal y Mercado Pago). Fabricarlos sin pasar por la pasarela mediria nuestro codigo, no la fiabilidad de las pasarelas: seria falsear, y es lo que H-028 corrigio. Se declara que la fiabilidad operacional NO esta demostrada. Se reabre cuando haya volumen real de produccion, que es donde los 20 ciclos aparecen solos."
+      },
+      "trigger": "Tres decisiones del humano tras señalar que «de nuevo faltan muchas cosas»: reabrir H-035 y cerrarlo completo, aceptar D5 como limitacion declarada, y añadir un indice de estado a HISTORY.log.",
+      "findings_changes": {
+        "nuevos": [],
+        "revisados": [
+          "H-035"
+        ],
+        "cerrados": [
+          "H-035"
+        ]
+      },
+      "evidencias_nuevas": [
+        "E-039"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "FUERA_DE_ALCANCE_V1": 1
+      },
+      "nota": "Emision de decisiones, no de hallazgos nuevos. (1) **H-035 reabierta y cerrada completa.** Su cierre anterior declaraba que ADMIN, BASE y CLIENT quedaban fuera «escrito como pendiente, no dado por hecho» — mejor que callarlo y PEOR que medirlo. Medidos: SEIS reservas, no las cuatro estimadas, y una **en el propio API** que la lista corta de variables de la guarda ocultaba (`CLIENT_URL` no estaba en ella). E-038 habia declarado esa debilidad textualmente y se cumplio en la corrida siguiente: **declarar una debilidad no la cierra.** Las dos mas caras eran las del proxy del BFF: sin API_URL el sitio arranca `healthy` y manda todas sus llamadas a su propio contenedor. (2) **D5 aceptada como limitacion declarada de v1.0**, con el mecanismo de H-005: se declara lo que no esta demostrado en vez de arrastrarlo. La cobertura de D5 sigue en 0 % y la Confianza en 91 — el numero no mejora por declararlo, que es precisamente lo que hace honesta la declaracion. (3) **PT-187: HISTORY.log decia «pendiente» de 102 entradas cerradas**, y eso hizo que se reportara PT-147 como pendiente llevando horas cerrado. El indice generado lo resuelve sin reescribir el registro. Y su primera ejecucion encontro un defecto de proceso del agente: cinco BUG escritos `Status: DONE` directamente, cuando STATE 6 dice que el agente no cierra bugs. El VoBo estaba dado, pero no constaba — y un cierre sin constancia es indistinguible de uno auto-otorgado."
     }
   ]
 }

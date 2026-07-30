@@ -218,3 +218,52 @@ contexto de arriba**: sube porque el alcance se estrechó, no porque se implemen
 **Reapertura.** Si v1.1 vuelve a declarar la facturación como producto entregado, `P-012` vuelve al
 inventario y H-005 se reabre con él. La decisión está fechada y firmada para que se pueda revisar, no
 para que se olvide.
+
+---
+
+## Update U-007 — 2026-07-29: la fiabilidad operacional NO se declara demostrada en v1.0
+
+**Decisión del humano**, tomada tras cuatro corridas del checkpoint D5 dando el mismo resultado.
+
+### Qué se declara
+
+**v1.0 no afirma que su fiabilidad operacional esté demostrada.** El sistema tiene los mecanismos —vía
+garantizada, reapertura del ciclo, asiento idempotente por referencia, reintentos de cola— y cada uno está
+verificado por separado. Lo que **no** existe es la serie que permitiría decir «funciona el 95 % de las veces»:
+
+```
+Success Rate  50%  SIN_DATOS   1 de 2 ciclos · MUESTRA INSUFICIENTE (<20)
+Retry Rate    50%  SIN_DATOS
+Failure Rate   0%  SIN_DATOS
+health_unstable = false
+```
+
+### Por qué no se puede cerrar trabajando más
+
+Hacen falta **20 ciclos de pago resueltos** y hay **2**. El mínimo no se eligió: sale del propio umbral verde
+—con `>= 95 %`, un solo fallo entre `n` cumple `(n−1)/n >= 0.95` sólo si `n >= 20`—, y bajarlo devolvería el
+defecto que **H-028** corrigió: con `n` pequeño, un fallo fuerza ROJO y un acierto da VERDE, y ninguno de los dos
+significa nada.
+
+Y cada ciclo **exige aprobación manual en el sitio del proveedor** (PayPal, Mercado Pago). `run-all.sh` produce
+unos dos por corrida, así que veinte son unas nueve corridas con intervención humana en dos sandboxes.
+
+**Fabricarlos sin pasar por la pasarela no es una opción**: mediría nuestro código, no la fiabilidad de las
+pasarelas, que es lo que la métrica afirma. Sería falsear — la misma línea que separa *configurar* de *sembrar*
+en la fase 35.
+
+### Consecuencias, escritas
+
+- **La cobertura declarada de D5 es 0 %**, y con ella la Confianza se queda en **91.0**, a un punto del umbral de
+  Clase A. **El número no mejora por declararlo** — eso es precisamente lo que hace honesta la declaración, y la
+  diferencia con H-005, donde la aceptación **sí** subió D1 porque el producto dejó de prometer la factura.
+  Aquí el producto no promete fiabilidad demostrada: nunca lo prometió, y ahora está escrito.
+- **Ningún producto cambia de estado.** Esto no saca nada del inventario de v1.0.
+- **Reapertura declarada:** con volumen real de producción los 20 ciclos aparecen solos. Cuando existan, D5 se
+  mide y esta declaración caduca — sin necesidad de otra decisión.
+
+### Lo que esta declaración NO dice
+
+**No dice que el sistema sea poco fiable.** Dice que **no se puede afirmar que lo sea**, que es distinto y es la
+razón de que el semáforo esté en `SIN_DATOS` en vez de en verde o en rojo. El instrumento se niega a pronunciarse
+desde PT-180, y esta declaración es la consecuencia de tomarlo en serio.
