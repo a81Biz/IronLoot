@@ -50,6 +50,17 @@ const HECHOS_QUE_CIERRAN: {
   fichero: string;
   debeContener?: string;
   porque: string;
+  /**
+   * PT-181 — La entrada sigue **abierta** aunque su hecho este verificado.
+   *
+   * Lo destapo `TD-002`: su enunciado («no integration code confirmed») era falso —el adaptador existe y
+   * esta registrado— pero la deuda **sigue abierta por otro motivo**: faltan credenciales de la pasarela.
+   *
+   * Mi primera version confundia «el hecho esta verificado» con «la entrada esta cerrada», y C2 acusaba a
+   * `TD-002` por no declararse cerrada. El hecho **si** debe seguir vigilado —si `stripe.provider.ts`
+   * desaparece, el texto reescrito vuelve a ser falso—, pero la asercion de cierre no aplica.
+   */
+  abiertaConMotivo?: string;
 }[] = [
   {
     nd: 'ND-002',
@@ -67,6 +78,42 @@ const HECHOS_QUE_CIERRAN: {
     nd: 'ND-003',
     fichero: 'src/api/src/modules/notifications/templates/reset-password.hbs',
     porque: 'La segunda de las dos plantillas que ND-003 daba por no encontradas.',
+  },
+  // PT-181 — Cinco entradas mas que afirmaban una ausencia y estaban desmentidas por el codigo.
+  {
+    nd: 'ND-007',
+    fichero: 'src/apps/client/src/main.ts',
+    debeContener: 'createProxyMiddleware',
+    porque:
+      'ND-007 afirmaba que el CLIENT NO usa el proxy BFF, con el import delante desde PT-038. Si desaparece, la sesion deja de cruzar y el JS del navegador pierde su via al API.',
+  },
+  {
+    nd: 'ND-006',
+    fichero: 'src/api/src/modules/notifications/notifications.module.ts',
+    debeContener: 'registerQueue',
+    porque:
+      'ND-006 pedia inventariar las colas de BullMQ. Son dos, y esta es una: si deja de registrarse, las notificaciones dejan de encolarse.',
+  },
+  {
+    nd: 'ND-001',
+    fichero: 'src/api/src/modules/auctions/auctions.gateway.ts',
+    porque:
+      'ND-001 no localizaba los gateways de WebSocket. Este es el que emite bid.new, auction.extended y auction.closed, que CLAUDE.md nombra.',
+  },
+  {
+    nd: 'ND-005',
+    fichero: 'src/api/src/modules/feature-flags/feature-flags.service.ts',
+    debeContener: 'isEnabled',
+    porque:
+      'ND-005 no habia inspeccionado la implementacion. Son ocho lineas leyendo process.env y CERO llamantes: queda registrado como candidato a retirada, no como incognita.',
+  },
+  {
+    nd: 'TD-002',
+    fichero: 'src/api/src/modules/payments/providers/stripe.provider.ts',
+    porque:
+      'TD-002 decia «no integration code confirmed» y el adaptador existe y esta registrado. La diferencia entre «no hay codigo» y «hay codigo sin credenciales» son decisiones opuestas.',
+    abiertaConMotivo:
+      'Sigue abierta a proposito: faltan credenciales de Stripe y Hey Banco para ejercer el codigo contra el proveedor real, que es la unica prueba que cuenta para un cobro. Es un tercero, como el PAC de TD-001.',
   },
 ];
 
@@ -128,9 +175,11 @@ describe('Un `ND-XXX` que afirma una ausencia se comprueba — RULE-35 (PT-171)'
     // La otra direccion. Sin esto, el hecho puede ser cierto y el documento seguir diciendo
     // «not verified» — que es exactamente el estado en que estaba ND-002 desde PT-030.
     const cerradas = ndCerradas(md);
-    const pendientes = [...new Set(HECHOS_QUE_CIERRAN.map((h) => h.nd))].filter(
-      (nd) => !cerradas.has(nd),
-    );
+    // PT-181 — Las que declaran su motivo para seguir abiertas quedan fuera: su hecho esta verificado
+    // (C1 lo vigila) pero la entrada sigue viva por una razon distinta, escrita al lado.
+    const pendientes = [
+      ...new Set(HECHOS_QUE_CIERRAN.filter((h) => !h.abiertaConMotivo).map((h) => h.nd)),
+    ].filter((nd) => !cerradas.has(nd));
 
     expect(pendientes).toEqual([]);
   });
@@ -139,6 +188,14 @@ describe('Un `ND-XXX` que afirma una ausencia se comprueba — RULE-35 (PT-171)'
     const rotas = rutasCitadasPorND(md).filter((r) => !existsSync(join(RAIZ, r)));
 
     expect(rotas).toEqual([]);
+  });
+
+  it('C5: una entrada abierta con motivo lo explica — no basta con marcarla', () => {
+    // Sin esto, `abiertaConMotivo` seria una puerta de escape: bastaria ponerla para que C2 dejara de
+    // mirar. Con la exigencia de motivo, saltarse C2 cuesta escribir por que.
+    for (const h of HECHOS_QUE_CIERRAN.filter((x) => x.abiertaConMotivo)) {
+      expect((h.abiertaConMotivo as string).length).toBeGreaterThan(60);
+    }
   });
 
   it('C4: cada hecho declarado explica por que importa', () => {

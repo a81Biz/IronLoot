@@ -1,0 +1,8 @@
+PASS test/unit/documentacion/deuda-no-determinada-vigente.spec.ts
+PASS test/unit/documentacion/coherencia-deuda-tecnica.spec.ts
+
+Test Suites: 2 passed, 2 total
+Tests:       18 passed, 18 total
+Snapshots:   0 total
+Time:        4.85 s, estimated 5 s
+Ran all test suites matching /deuda-no-determinada|coherencia-deuda/i.

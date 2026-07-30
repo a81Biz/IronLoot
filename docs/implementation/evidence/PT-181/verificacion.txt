@@ -1,0 +1,28 @@
+=== PT-181 — El registro de deuda contra el codigo, 2026-07-29
+
+--- ND-007 decia: «CLIENT does not use the BFF proxy (no http-proxy-middleware)»
+13:import { createProxyMiddleware } from "http-proxy-middleware";
+83:    "/api",
+
+--- TD-002 decia: «no integration code confirmed»
+ 128 src/api/src/modules/payments/providers/stripe.provider.ts
+ 169 src/api/src/modules/payments/providers/heybanco.provider.ts
+ 297 total
+38:        stripe: StripeProvider,
+39:        heybanco: HeyBancoProvider,
+
+--- ND-006: las colas, inventariadas
+src/api/src/modules/notifications/notifications.module.ts:16:    BullModule.registerQueue({ name: NOTIFICATION_QUEUE }),
+src/api/src/modules/payments/payments.module.ts:22:    BullModule.registerQueue({ name: WEBHOOK_RETRY_QUEUE }),
+
+--- ND-001: los gateways
+src/api/src/modules/auctions/auctions.gateway.ts
+src/api/src/modules/notifications/events.gateway.ts
+
+--- ND-005: ocho lineas y cero llamantes
+8 src/api/src/modules/feature-flags/feature-flags.service.ts
+llamantes fuera de su carpeta: 0
+
+--- ND-004: no hay coverageThreshold
+0
+0

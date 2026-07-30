@@ -3098,3 +3098,60 @@ Delta (real vs planificado): no estaba planificado — **lo abrio el propio delt
   hallazgo VIVO caduca en cuanto ese hallazgo cambia de estado, y hace parecer roto el control cuando lo que
   cambio fue el mundo. Ahora usan un identificador sintetico.
 PTSA reference: **H-028** -> CERRADA. Y el checkpoint D3 vuelve a su linea base de 25.
+
+## CIERRE CON VoBo HUMANO — PT-177 … PT-180
+Date: 2026-07-29
+Status: CLOSED
+Objective: registrar el VoBo humano sobre los cuatro ultimos PT de la jornada.
+
+**El humano lo instruyo asi:** *«cierra los PT con mi VoBo»*. STATE 6 exige confirmacion humana para cerrar
+un BUG; una persona la dio.
+
+**Pasan de `VALIDATION_PENDING` a `CLOSED`:** PT-177, PT-178, PT-179, PT-180.
+
+| PT | Qué cerró | Verificado |
+|---|---|---|
+| **PT-177** | El veredicto de coherencia declara su denominador (**H-025**) | `0 de 1`, `sin filas que comparar`, exit 1 |
+| **PT-178** | Redis observable y la salud sin depender del limitador (**H-026**) | En vivo, los dos estados |
+| **PT-179** | Un 4xx de la pasarela no es averia nuestra (F-176-C) | 215 pruebas de pagos en verde |
+| **PT-180** | Una tasa sobre dos casos no es veredicto (**H-028**) + dos `catch` mudos | `SIN_DATOS` + silencios de vuelta a 25 |
+
+**Con esto, toda la validacion pendiente de la jornada queda cerrada.** Veintitres PT cerrados hoy
+(PT-158…PT-180) y **28 hallazgos con cero activos**.
+
+## PT-181 — BUG: seis entradas del registro de deuda desmentidas por el codigo
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-181-el-registro-de-deuda-al-dia
+Objective: que ninguna entrada de `10-Technical-Debt.md` afirme algo que el codigo contradice, y que las
+  que sigan abiertas lo esten por su motivo real.
+Root cause: al revisar «que falta» tras cerrar la jornada, **seis de las veinticuatro entradas mentian**:
+  - **TD-001** (CFDI) seguia como si la decision estuviera pendiente —«Risk: HIGH if platform targets
+    B2B»— cuando el humano la habia aceptado ese mismo dia como limitacion declarada. **El registro de
+    deuda contradecia el de hallazgos**, que es exactamente el patron que PT-171 corrigio con ND-002.
+  - **ND-007** afirmaba «CLIENT does not use the BFF proxy (no `http-proxy-middleware`)» **con el `import`
+    delante**: esta en `main.ts:13` desde PT-038, y el proxy en `:83`.
+  - **TD-002** decia «no integration code confirmed» y hay **stripe.provider.ts (128 lineas)** y
+    **heybanco.provider.ts (169)**, los dos **registrados** en `payments.module.ts:38-39` y cubiertos por
+    `provider-guarantees.spec` (6 pruebas en verde, PT-087 lo exige a todo adaptador registrado).
+  - **ND-001, ND-005, ND-006** eran incognitas que **se resolvian mirando**: dos gateways, dos colas, y una
+    implementacion de ocho lineas.
+  - **ND-004** decia «not confirmed»; se confirmo: **no hay `coverageThreshold`**.
+Solution: TD-001 refleja la decision y su reapertura declarada. ND-007, ND-001, ND-005, ND-006 y ND-004
+  cerradas con su cita verificada. **TD-002 se reescribe pero sigue ABIERTA**, y por su motivo real: faltan
+  credenciales, no codigo. La diferencia importa porque «no hay codigo» y «hay codigo sin credenciales»
+  llevan a decisiones opuestas — la primera manda a escribir lo que ya esta escrito.
+  **ND-005 no se retira**, aunque ADR-047 diria que un modulo sin llamantes se retira: esta citado en
+  `docs-v2/5-qa/Master-Test-Plan.md`, que mantienen personas (ADR-049). Queda registrado como candidato con
+  lo que es —ocho lineas leyendo `process.env`, cero llamantes— para que se decida sabiendolo.
+  RULE-35 se extiende a los cinco hechos nuevos.
+Modified files: docs/enterprise-documentation/10-Technical-Debt.md,
+  src/api/test/unit/documentacion/deuda-no-determinada-vigente.spec.ts
+Evidence: docs/implementation/evidence/PT-181/
+Delta (real vs planificado): **una desviacion, y la destapo mi propia guarda.** C2 de RULE-35 exigia que
+  toda entrada con hecho verificado estuviese declarada cerrada, y acuso a `TD-002`: su hecho **si** esta
+  verificado pero la entrada **sigue abierta** por otro motivo. Mi modelo confundia «el hecho es cierto» con
+  «la entrada esta cerrada». Ahora se distinguen, y `abiertaConMotivo` **exige escribir el motivo** (C5) para
+  que no sea una puerta de escape.
+PTSA reference: ninguno — deuda tecnica. Quedan **2 entradas abiertas de 24**: TD-002 (credenciales de
+  terceros) y TD-009 (riesgo aceptado por PT-080).
