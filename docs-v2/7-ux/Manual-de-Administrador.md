@@ -14,7 +14,7 @@
 ## 1. Acceso
 
 - Login en `/login` (usuario/contraseña; TOTP si `ADMIN_TOTP_SECRET` está configurado).
-- ⚠️ **Cambiar credenciales por defecto**: `ADMIN_USERNAME/PASSWORD` traen defaults `admin`/`admin` y la API-key `dev-admin-key` (`AUD-004`). No usar en producción sin sobrescribir.
+- ✅ **En producción el arranque las rechaza** (`AUD-004` corregido, PT-036): `validateStartupConfig` aborta si `ADMIN_USERNAME` es `admin`, si `ADMIN_PASSWORD` es un placeholder o si los secretos son conocidos. En desarrollo siguen siendo `admin`/`admin`, así que **cámbialas igual** antes de exponer el panel. No usar en producción sin sobrescribir.
 
 ## 2. Módulos del backoffice (18)
 
@@ -49,7 +49,7 @@
 
 ### Configurar comisiones ⚠️
 - Fija tasa **global** o **por vendedor** en `commissions`.
-- ⚠️ **Nota:** hoy el cobro real al cierre usa un **10% fijo** independiente de esta configuración (`AUD-005`). La configuración se refleja en registros/reportes pero no necesariamente en el cobro.
+- ✅ **Corregido (`AUD-005`, PT-042).** El cobro al cierre usa **esta** configuración: `auction-scheduler` resuelve la tasa con `commissionsService.resolveRatePercent(sellerId)` y con ella calcula el neto del vendedor.
 
 ### Emitir CFDI ✗
 - La generación de CFDI **no está operativa** (falta proveedor PAC, `AUD-016`). Configura `CFDI_*` cuando se seleccione el PAC.
@@ -70,12 +70,12 @@
 
 ## 4. Configuración de plataforma (runtime)
 
-Desde **configuration/platform** (persistido en SystemConfig): soft-close, moderación obligatoria, incremento mínimo (⚠️ no aplicado, `AUD-009`), duración de subasta, verificación de email, KYC obligatorio, expiración de pago, ventana de disputa. También SMTP, storage, pasarelas y CFDI.
+Desde **configuration/platform** (persistido en SystemConfig): soft-close, moderación obligatoria, incremento mínimo (`AUD-009` corregido: se aplica), duración de subasta, verificación de email, KYC obligatorio, expiración de pago, ventana de disputa. También SMTP, storage, pasarelas y CFDI.
 
 ## 5. Advertencias de seguridad (operación)
 
-- ⚠️ **Sin CSP ni CSRF** en el backoffice (`AUD-007`): evita sesiones admin en navegadores con pestañas no confiables; usa red segura.
-- ⚠️ Cambiar todas las credenciales/secretos por defecto antes de producción (`AUD-004`).
-- ⚠️ Restringir el panel de **diagnostics** en producción (`AUD-025`).
+- ✅ **Con Helmet y CSP** (`admin/src/main.ts:21-22`, `AUD-007` corregido). El CSRF se mitiga por `SameSite=Lax` en la sesión de ADMIN y Bearer hacia el API — **los tokens de doble envío no se usan, y es una decisión escrita**, no un olvido.
+- ✅ Cambiar credenciales y secretos por defecto: en producción **el arranque falla si no se hace** (`AUD-004` corregido).
+- ✅ **`diagnostics` no existe en producción**: todo el controlador va detrás de `DevelopmentOnlyGuard`. `AUD-025` corregido.
 
 Ver [FAQ y Mensajes](FAQ-y-Mensajes.md) y [Registro de Hallazgos](../transversal/Registro-de-Hallazgos.md).

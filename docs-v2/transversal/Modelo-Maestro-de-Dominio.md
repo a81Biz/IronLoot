@@ -9,7 +9,7 @@
 | **Código usado** | `prisma/schema.prisma` (896 líneas), `prisma/migrations/*` (14), `packages/core/src/domain/*` |
 | **Nivel de confianza** | Alto |
 
-> **Fuente única de entidades.** 24 modelos Prisma · 18 enums. La columna *Migración* marca el drift (AUD-001): ✅ tiene migración, ✗ sólo `db push`.
+> **Fuente única de entidades.** **33 modelos** Prisma · 18 enums (recontado el 2026-07-29; decía 24). La columna *Migración* nació para marcar el drift de `AUD-001`. **AUD-001 corregido: ya no hay deriva y no queda ninguna marca `✗`**: `audit:schema` verifica en CI que las migraciones reproducen `schema.prisma`, así que un modelo sin migración haría fallar el checkpoint (PT-127).
 
 ## 1. Bounded contexts (agrupación por dominio)
 
@@ -34,7 +34,7 @@
 | **UserPaymentMethod** | `user_payment_methods` | N:1 User (Cascade); unique(userId,referenceId) | — | ✅ (mig.14) | `:885` **AUD-019** (no documentado antes) |
 | **Auction** | `auctions` | N:1 seller; 1:N Bid; 1:1 Order | `startingPrice`,`currentPrice` Decimal(10,2) | ✅ | `:160` |
 | **Bid** | `bids` | N:1 Auction/User; idx (auctionId,amount DESC) | `amount` Decimal(10,2) | ✅ | `:199` |
-| **Watchlist** | `watchlist` | N:1 User/Auction; unique(userId,auctionId) | — | ✗ | `:222` **AUD-001** |
+| **Watchlist** | `watchlist` | N:1 User/Auction; unique(userId,auctionId) | — | ✅ | `:222` **AUD-001** |
 | **Order** | `orders` | 1:1 Auction; N:1 buyer/seller; 1:1 Shipment/Dispute/Refund | `totalAmount` Decimal(10,2) | ✅ | `:249` |
 | **Payment** | `payments` | N:1 Order | `amount` Decimal(10,2); `currency` (default DB `USD`) | ✅ | `:297` **AUD-008** |
 | **Shipment** | `shipments` | 1:1 Order | — | ✅ | `:345` |
@@ -45,16 +45,16 @@
 | **Ledger** | `ledger` | N:1 Wallet (Restrict) | `amount`,`balanceBefore`,`balanceAfter` Decimal(12,2) | ✅ | `:642` |
 | **WithdrawalRequest** | `withdrawal_requests` | N:1 User; ref `paymentMethodId` | `amount`; `status` WithdrawalStatus; FSM REQUESTED→APPROVED→PAID/REJECTED (PT-072) | ✅ | retiro real |
 | **UserPaymentMethod** | `user_payment_methods` | N:1 User | `clabe`(18, verificador RN-63),`holderName`,`bankName`,`isVerified` | ✅ | PT-070 |
-| **CommissionConfig** | `commission_config` | referenceId libre | `ratePercent` Decimal(5,2) | ✗ | `:684` **AUD-001** |
-| **CommissionRecord** | `commission_records` | orderId único (ref libre, sin FK) | `amount` Decimal(10,2) sin currency | ✗ | `:698` **AUD-001** |
-| **ModerationLog** | `moderation_log` | auctionId (ref libre) | — | ✗ | `:719` |
-| **CfdiRecord** | `cfdi_records` | orderId único (ref libre) | — | ✗ | `:741` |
-| **KycSubmission** | `kyc_submissions` | userId (ref libre) | — | ✗ | `:766` |
-| **NotificationCampaign** | `notification_campaigns` | — | — | ✗ | `:800` |
-| **RefundRequest** | `refund_requests` | 1:1 Order (única con relación real) | `amount` Decimal(10,2); `currency` MXN | ✗ | `:828` |
-| **SeoConfig** | `seo_config` | page único | — | ✗ | `:849` |
-| **CmsContent** | `cms_content` | key único | — | ✗ | `:873` |
-| **SystemConfig** | `system_config` | PK key | — | ✗ | `:586` |
+| **CommissionConfig** | `commission_config` | referenceId libre | `ratePercent` Decimal(5,2) | ✅ | `:684` **AUD-001** |
+| **CommissionRecord** | `commission_records` | orderId único (ref libre, sin FK) | `amount` Decimal(10,2) sin currency | ✅ | `:698` **AUD-001** |
+| **ModerationLog** | `moderation_log` | auctionId (ref libre) | — | ✅ | `:719` |
+| **CfdiRecord** | `cfdi_records` | orderId único (ref libre) | — | ✅ | `:741` |
+| **KycSubmission** | `kyc_submissions` | userId (ref libre) | — | ✅ | `:766` |
+| **NotificationCampaign** | `notification_campaigns` | — | — | ✅ | `:800` |
+| **RefundRequest** | `refund_requests` | 1:1 Order (única con relación real) | `amount` Decimal(10,2); `currency` MXN | ✅ | `:828` |
+| **SeoConfig** | `seo_config` | page único | — | ✅ | `:849` |
+| **CmsContent** | `cms_content` | key único | — | ✅ | `:873` |
+| **SystemConfig** | `system_config` | PK key | — | ✅ | `:586` |
 | **AuditEvent** | `audit_events` | refs libres (log inmutable) | — | ✅ | `:460` |
 | **ErrorEvent** | `error_events` | refs libres | — | ✅ | `:498` |
 | **RequestLog** | `request_logs` | refs libres | — | ✅ | `:543` |

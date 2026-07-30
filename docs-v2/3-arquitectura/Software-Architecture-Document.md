@@ -37,7 +37,7 @@ graph TB
   classDef ext fill:#eee,color:#151515
 ```
 
-- Proveedores externos: Mercado Pago, PayPal, **HeyBanco** (no documentado antes, `AUD-023`), SMTP; PAC para CFDI **pendiente** (`AUD-016`).
+- Proveedores externos: Mercado Pago, PayPal, **HeyBanco** (documentado en `Integraciones-y-Configuracion.md` y declarado en `src/api/.env.example`; `AUD-023` corregido — **falta credencial, no código**), SMTP; PAC para CFDI **pendiente** (`AUD-016`, aceptado como limitación de v1.0).
 
 ## 3. C4 — Nivel 2: Contenedores
 
@@ -71,7 +71,7 @@ graph TB
 | ADMIN | 3001 | Backoffice | **sin Helmet/CSP/CSRF** (`AUD-007`) |
 | API | 3000 | REST + WebSockets | prefijo `/api/v1`, 27 módulos |
 | core | — | Dominio compartido | FSM/validadores usados; use-cases/Money no (`AUD-012`) |
-| PostgreSQL | 5432 | Persistencia | Prisma; drift de migraciones (`AUD-001`) |
+| PostgreSQL | 5432 | Persistencia | Prisma; sin deriva — `audit:schema` verifica que las migraciones reproducen `schema.prisma` (`AUD-001` corregido, PT-127) |
 | Redis | 6379 | Lock/sesión/colas | lock de cierre, sesión admin, BullMQ |
 
 ## 4. C4 — Nivel 3: Componentes (API)
@@ -108,10 +108,10 @@ Request → nginx → (App SSR: BFF inyecta Authorization) → API
 
 | Atributo | Mecanismo | Estado |
 |---|---|---|
-| Seguridad | JWT+2FA, throttler, webhooks HMAC, secretos gated | ⚠️ AUD-004/006/007/014 |
-| Consistencia financiera | TX Prisma + lock Redis + Ledger inmutable | ⚠️ AUD-005/008/012 |
+| Seguridad | JWT+2FA, throttler, webhooks HMAC, secretos gated, Helmet+CSP en los cuatro SSR | ✅ AUD-004/007/014 corregidos · ⚠️ **AUD-006 abierto** (el WebSocket no autentica el handshake; sólo emite datos de subasta, que ya son públicos) |
+| Consistencia financiera | TX Prisma + lock Redis + Ledger inmutable + `SELECT … FOR UPDATE` (RULE-24) | ✅ AUD-005/008 corregidos · ⚠️ **AUD-012 abierto** |
 | Escalabilidad | Cierre idempotente con lock; stateless API | ✅ |
-| Observabilidad | Audit/Error/Request logs + traceId | ⚠️ AUD-018 |
+| Observabilidad | Audit/Error/Request logs + traceId | ✅ AUD-018 corregido (retención única, `LOG_RETENTION_DAYS`) |
 | Mantenibilidad | Dominio en core; convenciones | ⚠️ god-object admin; core infrautilizado |
 
 > Decisiones que sustentan esta arquitectura: [Registro Maestro de ADR](../transversal/Registro-Maestro-de-ADR.md).

@@ -34,7 +34,7 @@ Vendedor registra envío ──► entrega ──► Comprador califica
 |---|---|---|
 | `AUCTION_SOFT_CLOSE_WINDOW_SEC` | Ventana anti-sniping | 120 |
 | `REQUIRE_AUCTION_MODERATION` | Aprobación admin antes de publicar | false |
-| `AUCTION_MIN_INCREMENT_AMOUNT` | Incremento mínimo de puja **(no aplicado, `AUD-009`)** | 10 |
+| `AUCTION_MIN_INCREMENT_AMOUNT` | Incremento mínimo de puja **(aplicado en `bids.service.ts:92-98`; `AUD-009` corregido)** | 10 |
 | `AUCTION_MIN/MAX_DURATION_HOURS` | Límites de duración | 1 / 720 |
 | `REQUIRE_EMAIL_VERIFICATION` | Verificación para activar cuenta | true |
 | `REQUIRE_KYC_FOR_SELLERS` | KYC para vender | true |
@@ -62,4 +62,4 @@ Vendedor registra envío ──► entrega ──► Comprador califica
 - **Flujo:** depósito → held (puja) → DEBIT_ORDER (ganador) → CREDIT_SALE (vendedor) − FEE_PLATFORM → retiro (vendedor).
 - **Integridad:** todo movimiento queda en el Ledger inmutable (`RN-26`). Reconciliación con proveedores es parcial (`AUD-016`).
 
-> **Decisión pendiente de formalizar (ADR):** unificar el mecanismo de comisión (`AUD-005`) y definir la postura CSRF (`AUD-014`). Ambas deben pasar por FDGE.
+> **Decisión pendiente de formalizar (ADR):** la postura CSRF (`AUD-014`) — sigue sin ADR propia. El mecanismo de comisión **ya está unificado** (`AUD-005` corregido en PT-042: el cierre resuelve la tasa con `commissionsService.resolveRatePercent`).

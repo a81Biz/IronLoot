@@ -94,7 +94,7 @@
 - Health: `/health`, `/health/detailed` (Public).
 
 ## Admin (`/admin`) — **80** (79 `AdminDualAuthGuard` + `POST /admin/auth/login` público, que es el que emite el token)
-`POST /admin/auth/login` es **Public + @SkipThrottle** (`AUD-004`). Bloques: dashboard/stats · users · auctions(moderación) · lots · orders/payments · financial/commissions · reports(financial/operational/fiscal) · configuration(platform/smtp/storage/cfdi/payment) · disputes(resolve-buyer/seller/request-evidence) · audit-logs · moderation · kyc · **cfdi(generate ✗ stub)** · notifications/campaigns · refunds · **reconciliation (PT-080: operativa, lee `payment_cycles`)** · **payments/anomalies (PT-080: cola de revision)** · **payments/trace/:reference (PT-086: traza completa de la transaccion)** · seo/cms · queues. Detalle de rutas en `audit/raw/B §1`.
+`POST /admin/auth/login` es **Public** —es el endpoint que **emite** el token— **con `@Throttle` de 10/min** (`admin-auth.controller.ts:40`). Decía `@SkipThrottle`, y eso es del **resto** de `/admin/**`, no del login: medido el 2026-07-29, `AUD-004` corregido. Bloques: dashboard/stats · users · auctions(moderación) · lots · orders/payments · financial/commissions · reports(financial/operational/fiscal) · configuration(platform/smtp/storage/cfdi/payment) · disputes(resolve-buyer/seller/request-evidence) · audit-logs · moderation · kyc · **cfdi(generate ✗ stub)** · notifications/campaigns · refunds · **reconciliation (PT-080: operativa, lee `payment_cycles`)** · **payments/anomalies (PT-080: cola de revision)** · **payments/trace/:reference (PT-086: traza completa de la transaccion)** · seo/cms · queues. Detalle de rutas en `audit/raw/B §1`.
 
 ## Scheduler (`/scheduler`) — 2 (`DevOnly`)
 

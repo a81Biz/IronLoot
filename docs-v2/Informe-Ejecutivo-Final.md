@@ -41,7 +41,7 @@ Se ha generado **`docs-v2/`** como **única fuente de verdad oficial**, capaz de
 | Invariante held-funds errónea persistente (AUD-015) | Enunciada correctamente (RN-21) |
 | Módulos "27 vs 23" (AUD-022) | Aclarado: 27 dirs API reales |
 | Endpoints/rutas/entidades duplicados ×2–4 | Fuente única por dominio |
-| CSRF contradictorio (AUD-014) | Documentado como estado real + pendiente ADR |
+| CSRF (AUD-014) | **Resuelto**: la postura está escrita —CSRF mitigado por JWT Bearer + `SameSite`, sin tokens de doble envío— en `CLAUDE.md` y en el Registro de ADR. Queda **formalizarla como ADR propia**, no decidirla |
 | `UserPaymentMethod`/HeyBanco sin documentar | Incorporados (Dominio/Integraciones) |
 | Tech-debt obsoleto (AUD-020) | Reemplazado por Registro de Hallazgos vigente |
 

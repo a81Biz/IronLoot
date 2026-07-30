@@ -28,7 +28,7 @@ IronLoot es una **plataforma de subastas en línea** que conecta vendedores y co
 | BR-04 | Monetizar vía comisión configurable por vendedor/global. | CommissionsService (configurable). **Estado real: doble mecanismo.** | `RN-31`, **AUD-005** |
 | BR-05 | Aceptar depósitos por múltiples pasarelas de pago. | Mercado Pago, PayPal, HeyBanco. | `payments/providers/*`, **AUD-023** |
 | BR-06 | Cumplir obligaciones fiscales mexicanas (facturación CFDI). | Módulo cfdi. **Estado real: no funcional (stub).** | **AUD-016** |
-| BR-07 | Gestionar el cumplimiento post-venta (envío, entrega, reputación). | orders/shipments/ratings. | `RN-34`, `RN-43` |
+| BR-07 | Gestionar el cumplimiento post-venta (envío, entrega, reputación). **La recepción la confirma quien recibe**: el vendedor declara el envío, el comprador —y sólo él— confirma la entrega, y el neto de la venta espera 72 h desde esa confirmación. | orders/shipments/ratings. | `RN-34`, `RN-43`, **`RN-64`/`RN-64b`** |
 | BR-08 | Resolver conflictos comprador↔vendedor con ventana acotada. | disputes (14 días) + resolución admin. **Estado real: resolución no mueve dinero.** | `RN-40`, **AUD-010** |
 | BR-09 | Verificar identidad de vendedores (anti-fraude). | KYC (revisión manual admin). | `kyc/`, `REQUIRE_KYC_FOR_SELLERS` |
 | BR-10 | Operar el negocio desde un backoffice (moderación, finanzas, config). | App ADMIN, 18 módulos. | `src/admin` |
@@ -39,7 +39,7 @@ IronLoot es una **plataforma de subastas en línea** que conecta vendedores y co
 
 | ID | Restricción | Evidencia |
 |---|---|---|
-| BC-01 | **Moneda única MXN.** Toda la operación financiera es en pesos mexicanos. | `RN-27`; `AUD-008` (drift en payments) |
+| BC-01 | **Moneda única MXN.** Toda la operación financiera es en pesos mexicanos. | `RN-27`; `AUD-008` **corregido** — la base dice `MXN` en las cinco tablas con `currency` |
 | BC-02 | **Cumplimiento fiscal mexicano (CFDI/PAC)** requerido para operar comercialmente de forma legal. | `AUD-016` (bloqueante) |
 | BC-03 | **KYC obligatorio para vendedores** (configurable). | `REQUIRE_KYC_FOR_SELLERS=true` |
 | BC-04 | **Límite de retiro diario 5.000 MXN.** | `RN-25` |

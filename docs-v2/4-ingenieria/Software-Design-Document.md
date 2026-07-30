@@ -71,10 +71,10 @@ API → si COMPLETED & ref DEP-<user>-<ts> → WalletService acredita monto veri
 |---|---|---|
 | Nombres de archivo | `kebab-case.tipo.ts` (`auth.service.ts`) | ✅ |
 | Tablas/columnas | `snake_case` vía `@map` | ✅ |
-| Dinero | `Decimal`, nunca `Float`; MXN | ⚠️ Money VO no usado (AUD-012); payments USD (AUD-008) |
+| Dinero | `Decimal`, nunca `Float`; MXN | ⚠️ **Money VO sigue sin usarse (AUD-012, abierto)**; `payments` en `MXN` — **AUD-008 corregido** |
 | Webhooks | validar firma antes de procesar (HARD RULE) | ✅ |
 | Ledger | insert-only; corrección vía ADJUSTMENT (HARD RULE) | ✅ |
-| JS de frontend | *(CLAUDE.md decía `public/js/pages/*.js`)* | ✗ no existe; JS inline (AUD-030) |
+| JS de frontend | `public/js/pages/*.js` | ✅ 10 ficheros; el JS **inline está prohibido** y lo vigilan `plantillas-sin-js-inline.spec.ts` y `estilos-fuera-de-plantillas.spec.ts` (PT-096/PT-105). AUD-030 corregido |
 | Tests-first (FDGE) | test RED antes de código | (gobernanza) |
 
 ## 5. Configuración runtime

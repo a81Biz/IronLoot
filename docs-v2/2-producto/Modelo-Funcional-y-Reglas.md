@@ -47,8 +47,8 @@ Las reglas de negocio canónicas viven en el [Catálogo Maestro de Reglas](../tr
 | RF-UI-03 | SSO cross-subdominio: BASE fija cookie; CLIENT la lee vía `COOKIE_DOMAIN`. | `base/src/main.ts`, `client-auth.guard.ts` | ✅ |
 | RF-UI-04 | Las páginas de vendedor son accesibles a cualquier autenticado (el gate seller es API-side). | `D §5` | ⚠️ gap UI |
 | RF-UI-05 | ADMIN exige sesión `isAdmin`; un único rol plano. | `admin auth.guard.ts` | ⚠️ sin roles |
-| RF-UI-06 | Las escrituras de CLIENT deberían pasar por BFF; hoy llaman al API directo. | `D §3` | ✗ AUD-003 |
-| RF-UI-07 | El detalle de subasta ofrece "Pujar ahora" que enruta a CLIENT. | `detail.html:69` | ✗ AUD-002 (destino inexistente) |
+| RF-UI-06 | Las escrituras de CLIENT pasan por el BFF. | `client/src/main.ts:86` | ✅ AUD-003 corregido |
+| RF-UI-07 | El detalle de subasta ofrece "Pujar ahora" y la puja ocurre en la propia página. | `pages-auction-detail.js` | ✅ AUD-002 corregido |
 | RF-UI-08 | Notificaciones in-app: listar, contador no leídas, marcar leídas. | `notifications.controller.ts` | ✅ |
 
 ## 4. Reglas de validación de entrada (DTOs)
