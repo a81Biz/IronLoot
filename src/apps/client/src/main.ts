@@ -10,7 +10,11 @@ import * as nunjucks from "nunjucks";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 
 import helmet from "helmet";
-import { createProxyMiddleware } from "http-proxy-middleware";
+import {
+  createProxyMiddleware,
+  responseInterceptor,
+} from "http-proxy-middleware";
+import { interceptarRespuesta } from "./common/bff/reintentar-tras-refresco";
 import { injectAuthHeader } from "./common/bff/inject-auth-header";
 import cookieParser from "cookie-parser";
 import { variableObligatoria } from "./common/config/variable-obligatoria";
@@ -88,12 +92,24 @@ async function bootstrap() {
       changeOrigin: true,
       // Express strips '/api' before the middleware; re-add it so the API receives /api/v1/...
       pathRewrite: { "^/": "/api/" },
+      // PT-194 (TD-025) — **`selfHandleResponse` para poder reintentar un 401 tras refrescar.**
+      //
+      // Es el mismo patron que BASE usa desde hace meses, con la misma libreria y la misma version.
+      // El riesgo de este cambio **no son los 401**: es que cambia como se devuelve **toda**
+      // respuesta. Un fallo aqui no rompe el refresco — rompe el portal entero en silencio, con
+      // cuerpos truncados o binarios corrompidos. Por eso la logica vive en
+      // `reintentar-tras-refresco.ts`, donde se puede probar que un 200, un 404 y un cuerpo binario
+      // salen **identicos**.
+      selfHandleResponse: true,
       on: {
         proxyReq: (proxyReq, req) =>
           injectAuthHeader(
             proxyReq,
             req as { cookies?: Record<string, string | undefined> },
           ),
+        proxyRes: responseInterceptor(async (buffer, proxyRes, req, res) =>
+          interceptarRespuesta(buffer, proxyRes, req as never, res as never),
+        ),
       },
     }),
   );

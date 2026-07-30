@@ -30,6 +30,22 @@ const API_URL = variableObligatoria("API_URL");
 const BASE_URL = variableObligatoria("BASE_URL");
 const COOKIE_DOMAIN = process.env.COOKIE_DOMAIN || undefined;
 
+/**
+ * PT-194 (`TD-025`) — **El `null` sigue existiendo, pero ya no es mudo.**
+ *
+ * Esta función devolvía `null` ante *cualquier* fallo: un 401, un 404, un 500 y una red caída daban
+ * exactamente lo mismo. Con 28 llamadas, eso significa que una página podía renderizarse vacía y **no
+ * quedar rastro de por qué**. Es el `catch` mudo que persigue el checkpoint D3.
+ *
+ * **No se cambia la firma** —28 llamadas y cada página decidiría algo distinto ante un error; eso es
+ * otro PT—, pero sí se distingue el motivo en el registro. La diferencia práctica: cuando alguien
+ * pregunte *«¿por qué el panel sale vacío?»*, el log dirá si fue una sesión rechazada, un endpoint que
+ * no existe o el API caído.
+ *
+ * **El 401 ya no debería llegar aquí** desde PT-194: el guard refresca antes y actualiza
+ * `req.cookies` en la misma petición. Si aparece, es señal de algo — un token que el API rechaza por
+ * otro motivo, o el guard esquivado— y por eso se registra aparte.
+ */
 async function apiGet<T>(token: string, path: string): Promise<T | null> {
   try {
     const res = await fetch(`${API_URL}${path}`, {
@@ -38,9 +54,29 @@ async function apiGet<T>(token: string, path: string): Promise<T | null> {
         "Content-Type": "application/json",
       },
     });
-    if (!res.ok) return null;
+
+    if (!res.ok) {
+      if (res.status === 401) {
+        // Que esto aparezca significa que el refresco no cubrio el caso. No es «sin datos».
+        console.warn(
+          `[CLIENT] 401 en ${path} pese al refresco de sesion (PT-194). La pagina se renderizara ` +
+            `sin estos datos.`,
+        );
+      } else {
+        console.warn(
+          `[CLIENT] ${res.status} en ${path}; la pagina se renderizara sin estos datos.`,
+        );
+      }
+      return null;
+    }
+
     return res.json() as Promise<T>;
-  } catch {
+  } catch (error) {
+    // El API no contesto. Distinto de «respondio que no».
+    console.error(
+      `[CLIENT] No se pudo llamar a ${path}: ${(error as Error).message}. ` +
+        `La pagina se renderizara sin estos datos.`,
+    );
     return null;
   }
 }

@@ -1,10 +1,10 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (PT-195 — dos guardas que llevaban tiempo en rojo)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-194 — el refresco de sesión, cableado)
 
 ---
 
-## Esperando validación humana: nada
+## Esperando validación humana: **PT-194**
 
 **PT-181 … PT-185 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
 veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
@@ -17,9 +17,9 @@ veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
 evidencia deja escrito lo que **no** se pudo determinar —desde cuándo fallaban— en vez de una
 explicación cómoda.
 
-**En curso**: **PT-194** (cablear el refresco de sesión, `TD-025`) en **STATE 3**, esperando el
-**Proposal Gate**. Paquete en `changes/PT-194-refresco-de-sesion/` con 11 tareas atómicas. **Cero
-líneas de `src/` tocadas y ninguna rama creada** — el Proposal Gate es absoluto.
+**PT-194 implementado**, las once tareas cerradas. Queda en `VALIDATION_PENDING` porque toca el
+**camino de autenticación**: aunque sea FEATURE, el agente no cierra lo que decide quién eres.
+**`TD-025` cerrada** con él.
 
 **TD-024 cerrada** por PT-193 (ADR-058): 15 símbolos retirados, 8
 conservados por ADR-033 y 2 que eran falsos positivos de medir por nombre. Queda deuda técnica en

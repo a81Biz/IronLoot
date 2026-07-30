@@ -625,6 +625,36 @@ consumidores rompe la prueba con su nombre y su fichero, y un declarado que deja
 ---
 
 ### TD-025 — El refresco de sesión existe, tiene su cookie, y nadie lo llama
+**Status: ✅ CERRADA 2026-07-30 por PT-194.**
+
+**Qué se hizo.** Se cablearon los **dos** caminos por los que el portal llega al API: el
+`ClientAuthGuard` (navegación de página) y el proxy BFF (llamadas del navegador). Cablear sólo uno
+habría dejado el portal a medias — la página carga y sus llamadas fallan, o al revés.
+
+**La sesión efectiva pasa de quince minutos a lo que dure el refresh token.**
+
+**Lo que se decidió por el camino, y está escrito donde se lee:**
+
+- **Sólo `TokenExpiredError` refresca.** Hacerlo ante cualquier fallo de `jwt.verify` bastaría para que
+  un `access_token` basura acompañado de una cookie de refresco válida obtuviera un token nuevo: el
+  refresco se convertiría en una vía para saltarse la verificación de firma. Tiene guarda propia
+  (`refresco-no-relaja-la-verificacion.spec.ts`) y se vio fallar con sabotaje dirigido.
+- **`null` y `throw` no se colapsan**: «la sesión murió» y «no pude preguntarlo» llevan al login y no
+  significan lo mismo.
+- **Un intento por petición**, en los dos caminos. Es la barrera contra el bucle.
+
+**Lo que NO se hizo, y sigue abierto como decisión:** la **rotación del refresh token**. Un token
+robado sirve 7 días. Era el estado anterior y no empeora — pero ahora que el refresco se usa de verdad,
+rotar gana valor. Está declarado en `changes/PT-194-refresco-de-sesion/out-of-scope.md` con la nota de
+que, si se implementa, **la decisión D-2 (deduplicación por proceso) deja de valer**.
+
+**Cómo comprobar el estado:** `grep -rn "refrescarSesion" src/apps/client/src` — dos llamantes, el
+guard y el interceptor del proxy.
+
+---
+
+<details><summary>Enunciado original (PT-192), conservado</summary>
+
 **Abierta 2026-07-30 · PT-192 (al medir AUD-035) · Severidad: MEDIA · Esfuerzo: M**
 
 **Lo medido.** El API expone `POST /api/v1/auth/refresh`. BASE **guarda** el token de refresco en una
@@ -647,3 +677,5 @@ que el estado del navegador dejó de contradecir al del servidor. La sesión sig
 
 **Cómo comprobar el estado:** `grep -rn "auth/refresh" src/apps` — mientras no devuelva un llamante, esta
 deuda sigue abierta.
+
+</details>
