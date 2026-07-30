@@ -2972,3 +2972,30 @@ Evidence: docs/implementation/evidence/PT-177/
 Delta (real vs planificado): sin desviacion. Verificado ejecutando contra la base con salida real: el
   veredicto pasa a `sin_datos` por las disputas (`0 de 0`) y el proceso sale con **1**.
 PTSA reference: **H-025** -> CORREGIDA.
+
+## PT-178 — BUG: Redis no se podia observar, y el endpoint que lo vigila dependia de el (H-026)
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-178-redis-observable
+Objective: que una caida de Redis se distinga del funcionamiento normal.
+Root cause: `health.service.ts:89` devolvia `{status:'unknown', message:'Redis check not implemented'}`
+  **fijo**. Como el agregado es `allUp ? 'healthy' : 'degraded'`, **`healthy` era inalcanzable**: el
+  endpoint reportaba un problema inexistente en cada consulta. Y lo que lo hacia hallazgo: **si Redis se
+  caia de verdad decia exactamente lo mismo**. De Redis dependen las colas, el rate limiting, el cerrojo
+  distribuido y las sesiones de ADMIN. RULE-17 protegio el arranque; la degradacion en caliente no.
+Solution: `PING` con tope de 2 s sobre **el cliente que el sistema ya usa** (`ThrottlerRedisService`), no
+  uno propio: uno nuevo podria estar sano mientras el que sostiene el rate limiting esta roto. Se dice el
+  motivo del fallo, porque un `down` sin causa obliga a adivinar entre «no arranca», «no responde» y
+  «responde mal».
+Modified files: src/api/src/modules/health/{health.service.ts,health.controller.ts,health.module.ts},
+  src/api/test/unit/health/redis-observable.spec.ts
+Evidence: docs/implementation/evidence/PT-178/
+Delta (real vs planificado): **una desviacion, y la encontro comprobar el arreglo en vivo.** Con
+  `ironloot-redis` parado, `GET /health/detailed` **no respondia**: el `ThrottlerGuard` es global y su
+  almacenamiento es Redis (PT-030), asi que toda peticion consulta Redis **antes** de llegar al
+  controlador. **El endpoint que existe para diagnosticar la caida era el que la caida silenciaba**, y sin
+  verlo el arreglo solo habria funcionado mientras Redis estuviera en pie — es decir, cuando no hace
+  falta. Resuelto con `@SkipThrottle()`, el mismo patron que ya usa ADMIN.
+  Verificado en vivo las dos mitades: con Redis en pie `healthy` + `redis up`; con Redis parado
+  `unhealthy` + `redis down` + «PING sin respuesta en 2000 ms».
+PTSA reference: **H-026** -> CORREGIDA.

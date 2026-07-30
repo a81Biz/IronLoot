@@ -1,0 +1,20 @@
+PASS test/unit/health/redis-observable.spec.ts (7.077 s)
+  Redis se puede observar — H-026 (PT-178)
+    ✓ C1: con Redis respondiendo, el estado es `up` y trae latencia (14 ms)
+    ✓ C2: y entonces `/health/detailed` PUEDE decir `healthy` — antes era imposible (2 ms)
+    ✓ C3: con Redis caido el estado es `down`, y el agregado `unhealthy` (2 ms)
+    ✓ C4: el motivo del fallo se dice, no se esconde (2 ms)
+    ✓ C5: un `PING` colgado no cuelga el endpoint de salud (2001 ms)
+    casos de control
+      ✓ AC-01: `unknown` ya no es un estado que este codigo pueda producir (2 ms)
+      ✓ AC-02: la base de datos sigue comprobandose de verdad (1 ms)
+      ✓ AC-03: si la base cae, el agregado es `unhealthy` aunque Redis este bien (2 ms)
+
+Test Suites: 1 passed, 1 total
+Tests:       8 passed, 8 total
+Snapshots:   0 total
+Time:        7.293 s, estimated 8 s
+Ran all test suites matching /redis-observable/i.
+Jest did not exit one second after the test run has completed.
+
+'This usually means that there are asynchronous operations that weren't stopped in your tests. Consider running Jest with `--detectOpenHandles` to troubleshoot this issue.

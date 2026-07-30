@@ -1,0 +1,20 @@
+=== PT-178 — H-026 verificado en vivo, 2026-07-29
+
+ANTES (codigo viejo):
+  "status": "degraded"  ·  redis: {"status":"unknown","message":"Redis check not implemented"}
+/usr/bin/bash: line 1: healthy: command not found
+   era INALCANZABLE por construccion, y una caida real decia LO MISMO.
+
+DESPUES, Redis en pie:
+{"status":"healthy","timestamp":"2026-07-30T00:38:09.958Z","version":"0.5.1","environment":"development","uptime":8,"dependencies":{"database":{"status":"up","latency":2},"redis":{"status":"up","latency":0}}}
+
+DESPUES, Redis PARADO (la mitad que faltaba):
+{"status":"unhealthy","timestamp":"2026-07-30T00:37:21.815Z","version":"0.5.1","environment":"development","uptime":21,"dependencies":{"database":{"status":"up","latency":1},"redis":{"status":"down","message":"PING sin respuesta en 2000 ms"}}}
+
+/usr/bin/bash: line 1: unknown: command not found
+Los tres estados se distinguen: healthy / unhealthy con motivo / (y  ya no lo produce este codigo).
+
+--- Y el hallazgo dentro del hallazgo:
+Con Redis caido el endpoint NO respondia: el ThrottlerGuard es global y su almacen es Redis,
+asi que toda peticion consultaba Redis ANTES de llegar al controlador. El endpoint que existe
+para diagnosticar la caida era el que la caida silenciaba. Resuelto con @SkipThrottle().

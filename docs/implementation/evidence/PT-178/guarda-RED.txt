@@ -1,0 +1,145 @@
+FAIL test/unit/health/redis-observable.spec.ts (5.55 s)
+  Redis se puede observar — H-026 (PT-178)
+    ✕ C1: con Redis respondiendo, el estado es `up` y trae latencia (9 ms)
+    ✕ C2: y entonces `/health/detailed` PUEDE decir `healthy` — antes era imposible (2 ms)
+    ✕ C3: con Redis caido el estado es `down`, y el agregado `unhealthy` (1 ms)
+    ✕ C4: el motivo del fallo se dice, no se esconde (1 ms)
+    ✕ C5: un `PING` colgado no cuelga el endpoint de salud (2 ms)
+    casos de control
+      ✕ AC-01: `unknown` ya no es un estado que este codigo pueda producir (2 ms)
+      ✕ AC-02: la base de datos sigue comprobandose de verdad (7 ms)
+      ✕ AC-03: si la base cae, el agregado es `unhealthy` aunque Redis este bien (1 ms)
+
+  ● Redis se puede observar — H-026 (PT-178) › C1: con Redis respondiendo, el estado es `up` y trae latencia
+
+    TypeError: this.prisma.healthCheck is not a function
+
+      72 |    */
+      73 |   private async checkDatabase(): Promise<DependencyStatus> {
+    > 74 |     return this.prisma.healthCheck();
+         |                        ^
+      75 |   }
+      76 |
+      77 |   /**
+
+      at HealthService.checkDatabase (src/modules/health/health.service.ts:74:24)
+      at HealthService.checkDetailed (src/modules/health/health.service.ts:55:28)
+      at Object.<anonymous> (test/unit/health/redis-observable.spec.ts:57:29)
+
+  ● Redis se puede observar — H-026 (PT-178) › C2: y entonces `/health/detailed` PUEDE decir `healthy` — antes era imposible
+
+    TypeError: this.prisma.healthCheck is not a function
+
+      72 |    */
+      73 |   private async checkDatabase(): Promise<DependencyStatus> {
+    > 74 |     return this.prisma.healthCheck();
+         |                        ^
+      75 |   }
+      76 |
+      77 |   /**
+
+      at HealthService.checkDatabase (src/modules/health/health.service.ts:74:24)
+      at HealthService.checkDetailed (src/modules/health/health.service.ts:55:28)
+      at Object.<anonymous> (test/unit/health/redis-observable.spec.ts:67:27)
+
+  ● Redis se puede observar — H-026 (PT-178) › C3: con Redis caido el estado es `down`, y el agregado `unhealthy`
+
+    TypeError: this.prisma.healthCheck is not a function
+
+      72 |    */
+      73 |   private async checkDatabase(): Promise<DependencyStatus> {
+    > 74 |     return this.prisma.healthCheck();
+         |                        ^
+      75 |   }
+      76 |
+      77 |   /**
+
+      at HealthService.checkDatabase (src/modules/health/health.service.ts:74:24)
+      at HealthService.checkDetailed (src/modules/health/health.service.ts:55:28)
+      at Object.<anonymous> (test/unit/health/redis-observable.spec.ts:76:29)
+
+  ● Redis se puede observar — H-026 (PT-178) › C4: el motivo del fallo se dice, no se esconde
+
+    TypeError: this.prisma.healthCheck is not a function
+
+      72 |    */
+      73 |   private async checkDatabase(): Promise<DependencyStatus> {
+    > 74 |     return this.prisma.healthCheck();
+         |                        ^
+      75 |   }
+      76 |
+      77 |   /**
+
+      at HealthService.checkDatabase (src/modules/health/health.service.ts:74:24)
+      at HealthService.checkDetailed (src/modules/health/health.service.ts:55:28)
+      at Object.<anonymous> (test/unit/health/redis-observable.spec.ts:87:34)
+
+  ● Redis se puede observar — H-026 (PT-178) › C5: un `PING` colgado no cuelga el endpoint de salud
+
+    TypeError: this.prisma.healthCheck is not a function
+
+      72 |    */
+      73 |   private async checkDatabase(): Promise<DependencyStatus> {
+    > 74 |     return this.prisma.healthCheck();
+         |                        ^
+      75 |   }
+      76 |
+      77 |   /**
+
+      at HealthService.checkDatabase (src/modules/health/health.service.ts:74:24)
+      at HealthService.checkDetailed (src/modules/health/health.service.ts:55:28)
+      at Object.<anonymous> (test/unit/health/redis-observable.spec.ts:100:29)
+
+  ● Redis se puede observar — H-026 (PT-178) › casos de control › AC-01: `unknown` ya no es un estado que este codigo pueda producir
+
+    TypeError: this.prisma.healthCheck is not a function
+
+      72 |    */
+      73 |   private async checkDatabase(): Promise<DependencyStatus> {
+    > 74 |     return this.prisma.healthCheck();
+         |                        ^
+      75 |   }
+      76 |
+      77 |   /**
+
+      at HealthService.checkDatabase (src/modules/health/health.service.ts:74:24)
+      at HealthService.checkDetailed (src/modules/health/health.service.ts:55:28)
+      at Object.<anonymous> (test/unit/health/redis-observable.spec.ts:113:25)
+
+  ● Redis se puede observar — H-026 (PT-178) › casos de control › AC-02: la base de datos sigue comprobandose de verdad
+
+    TypeError: this.prisma.healthCheck is not a function
+
+      72 |    */
+      73 |   private async checkDatabase(): Promise<DependencyStatus> {
+    > 74 |     return this.prisma.healthCheck();
+         |                        ^
+      75 |   }
+      76 |
+      77 |   /**
+
+      at HealthService.checkDatabase (src/modules/health/health.service.ts:74:24)
+      at HealthService.checkDetailed (src/modules/health/health.service.ts:55:28)
+      at Object.<anonymous> (test/unit/health/redis-observable.spec.ts:121:21)
+
+  ● Redis se puede observar — H-026 (PT-178) › casos de control › AC-03: si la base cae, el agregado es `unhealthy` aunque Redis este bien
+
+    TypeError: this.prisma.healthCheck is not a function
+
+      72 |    */
+      73 |   private async checkDatabase(): Promise<DependencyStatus> {
+    > 74 |     return this.prisma.healthCheck();
+         |                        ^
+      75 |   }
+      76 |
+      77 |   /**
+
+      at HealthService.checkDatabase (src/modules/health/health.service.ts:74:24)
+      at HealthService.checkDetailed (src/modules/health/health.service.ts:55:28)
+      at Object.<anonymous> (test/unit/health/redis-observable.spec.ts:130:29)
+
+Test Suites: 1 failed, 1 total
+Tests:       8 failed, 8 total
+Snapshots:   0 total
+Time:        5.796 s
+Ran all test suites matching /redis-observable/i.
