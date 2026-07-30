@@ -715,6 +715,19 @@ how "optional" is written, and demanding an active value would mean inventing th
 credentials. Its exception list requires a written reason per entry, and it strips comments before
 scanning: it accused its own explanation of the defect the first time it ran.
 
+**Corollary (PT-182, H-031) — the same principle reaches variables that carry a business rule, and
+there the fallback must be the PROTECTIVE value, never the convenient one.** `docker-compose.yml`
+declared `SETTLEMENT_HOLDBACK_HOURS=${SETTLEMENT_HOLDBACK_HOURS:-0}`: the wait that protects the
+buyer was **zero by default**, so any deployment that did not declare the variable released the
+seller's net **the instant** the buyer confirmed, with no window — and nothing would have said so.
+The cron runs, the ledger balances, the wait simply does not happen. This is worse than the Redis
+case, not milder: there the process at least broke. The `0` was **QA's convenience** (PT-174, so the
+phase-35 chain would not wait three days) placed where production's default lives. **QA declares its
+`0` in `.env`; the fallback stays at the protective 72.**
+`liberacion-de-liquidacion.spec.ts` **C7** reads the compose file, not the service — the service
+already had its `?? 72` fallback and **nobody had ever seen it fail**, because compose always passed
+a value. The guard was watching the place where the hole was not.
+
 ### RULE-19: Every `{% block %}` must exist in its layout, and no library attribute without the library
 **What:** a template may only use blocks its layout (or the layout's own parents) declares. And no
 `data-bs-*` — or any other library's attributes — unless that library is actually loaded on that site.

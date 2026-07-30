@@ -3155,3 +3155,59 @@ Delta (real vs planificado): **una desviacion, y la destapo mi propia guarda.** 
   que no sea una puerta de escape.
 PTSA reference: ninguno — deuda tecnica. Quedan **2 entradas abiertas de 24**: TD-002 (credenciales de
   terceros) y TD-009 (riesgo aceptado por PT-080).
+
+## PT-182 — BUG: tres controles que aparentaban estar puestos (H-029 / H-030 / H-031)
+Date: 2026-07-29
+Status: DONE
+Branch: fix/PT-182-controles-que-aparentan
+Objective: cerrar los tres hallazgos del barrido posterior a S-005 — un guard que no verificaba, un correo
+  que no salia y una espera que valia cero por defecto.
+Root cause: los tres decian algo que el codigo no hacia, y **ninguno fallaba**. Un `return true` bajo un
+  nombre que promete verificar, una respuesta que dice «enviado», una variable que declara una espera. No hay
+  error que los delate: para verlos hay que leer lo que **afirman** y comprobarlo. Por eso dos llevaban meses.
+Solution:
+  - **H-029** — `recaptcha.guard.ts` verifica contra Google y **falla cerrado**. Antes comprobaba que el
+    token *existiera*, nunca que fuese valido: con `RECAPTCHA_ENABLED=true`, `"x"` pasaba igual que un token
+    legitimo, y esto protege `POST /auth/register`. Ahora todas las salidas son «no pasa» salvo una —sin
+    secreto, no pasa; Google dice `false`, no pasa; **Google no responde, no pasa**, porque un timeout no
+    puede ser una puerta accionable por quien sepa provocarlo—. Las dos variables dejan de estar comentadas
+    a medias en `.env.example`, con la consecuencia escrita: encenderlas a medias **rechaza** los registros.
+  - **H-030** — `EmailService` inyectado en `UsersService` y el reenvio de verificacion **enviado de verdad**.
+    El error **no se captura a proposito**: un `catch` que se lo comiera reproduciria el defecto por otra via.
+    Es el camino de recuperacion de una cuenta que no se puede activar —lo pide justamente quien no recibio
+    el correo del registro— y se le dejaba esperando para siempre. La condicion del `TODO` («when
+    NotificationsModule is ready») ya se cumplia desde hacia tiempo: F-33 otra vez.
+  - **H-031** — `docker-compose.yml` fijaba `SETTLEMENT_HOLDBACK_HOURS` con reserva **`:-0`**, asi que la
+    espera que protege al comprador valia cero en cualquier despliegue que no declarase la variable: el neto
+    se liberaba al instante de la confirmacion y nada lo decia. **Lo introduje yo hace unas horas** (PT-174)
+    para que la fase 35 de QA no esperase tres dias — la conveniencia de QA puesta donde vive el valor por
+    defecto de produccion. Reserva a `:-72` y QA **declara** su `0` en el `.env`.
+  - Retirados dos `TODO` que sobrevivieron al trabajo que los resolvia: el de Redis en `health.service.ts`
+    (hecho en PT-178) y el de las estadisticas en `users.service.ts` (`calculateUserStats` ya cuenta de
+    verdad). Es la forma pequeña de F-33 — el comentario que miente porque nadie lo borro.
+Modified files:
+  src/api/src/modules/auth/guards/recaptcha.guard.ts
+  src/api/src/modules/users/users.service.ts · users.module.ts
+  src/api/src/modules/health/health.service.ts
+  src/api/.env.example · docker-compose.yml · .env (no versionado)
+  src/api/test/unit/auth/recaptcha-falla-cerrado.spec.ts (nuevo, 7 casos)
+  src/api/test/unit/users/reenvio-de-verificacion.spec.ts (nuevo, 4 casos)
+  src/api/test/unit/scheduler/liberacion-de-liquidacion.spec.ts (C7 nuevo)
+  src/api/test/unit/users/users.service.spec.ts (proveedor nuevo)
+  PTSA/Hallazgos/H-029.md · H-030.md · H-031.md (nuevo) · PTSA/Evidencias/E-034.md · E-035.md
+Evidence: docs/implementation/evidence/PT-182/
+Delta (real vs planned): tres cosas que no estaban en el plan.
+  1. **H-031 no existia al empezar**: aparecio comprobando el arreglo de H-030, mirando los valores por
+     defecto de las reglas de negocio. Se registro como hallazgo en vez de dejarlo en la prosa de una
+     evidencia, porque **el recuento es lo que se lee** y esconderlo ahi lo haria invisible.
+  2. **La guarda de H-031 tenia el defecto que venia a vigilar.** C7 contaba `..` a mano para llegar a la
+     raiz y dentro del contenedor eso daba `/docker-compose.yml`: fallaba por no encontrar el fichero. Es el
+     modo en que una guarda se vuelve inutil sin dejar de existir. Ahora usa `raizDelMonorepo()`.
+  3. **Un caso mio pasaba por el motivo equivocado.** AC-01 del reenvio usaba `emailVerified`, campo que no
+     existe —el esquema tiene `emailVerifiedAt` (`schema.prisma:75`)—, asi que el servicio no veia la
+     verificacion y no reenviaba **por ceguera, no por respeto**. Un caso verde que no comprueba nada.
+  Y dos guardas ajenas se pusieron en rojo con razon durante la corrida: **RULE-33**, porque los derivados de
+  PTSA anunciaban `0` hallazgos activos con dos abiertos en el registro; y **RULE-20**, porque la carpeta de
+  evidencia de este PT existia antes que esta entrada. Las dos veces el numero lo corrigio el trabajo, no la
+  guarda.
+PTSA reference: H-029, H-030, H-031 — las tres CERRADA con VoBo humano.

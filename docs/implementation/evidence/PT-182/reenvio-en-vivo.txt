@@ -1,0 +1,6 @@
+registro            HTTP 201
+correos tras registro  1  ['Verifica tu cuenta de Iron Loot']
+reenvio             HTTP 200  {'message': 'Verification email sent. Please check your inbox.'}
+correos tras reenvio   2  ['Verifica tu cuenta de Iron Loot', 'Verifica tu cuenta de Iron Loot']
+
+OK — el reenvio produjo un correo real (1 -> 2)
