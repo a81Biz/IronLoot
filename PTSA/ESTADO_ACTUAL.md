@@ -1,5 +1,5 @@
 # ESTADO ACTUAL — PTSA V3
-**Última actualización**: 2026-07-29 | **Sesión**: S-007 (delta sync)
+**Última actualización**: 2026-07-29 | **Sesión**: S-008 (delta sync)
 
 ---
 
@@ -19,18 +19,17 @@ Cobertura:      PARCIAL        D1/D2/D3/D4 al 100 % · D5 al 0 % (muestra insufi
 
 ---
 
-## Los mismos cuatro números por tercera vez, y eso es lo que hay que leer
+## Los mismos cuatro números por CUARTA vez, y eso es lo que hay que leer
 
-En cada intervalo entre emisiones ha aparecido trabajo real: tres hallazgos entre S-005 y S-006, **dos más
-entre S-006 y S-007** —uno ALTA—, y todos cerrados antes de emitir.
+En cada intervalo entre emisiones ha aparecido trabajo real: tres hallazgos entre S-005 y S-006, dos entre S-006
+y S-007 —uno ALTA—, **uno entre S-007 y S-008**. Seis defectos reales, todos cerrados antes de emitir, y los
+cuatro números sin moverse.
 
 **La estabilidad de este 100 mide que se cierra lo que se encuentra, no que no haya nada que encontrar.**
 
-Y los dos de esta corrida salieron de **comprobar el cierre del hallazgo anterior**. Uno de ellos desmiente
-parte de ese cierre: H-030 afirmaba que el reenvío «propaga el fallo», y el `catch` estaba una capa más abajo.
-Se comprobó **ejecutando** que el correo salía y se dio por bueno **por lectura** que el fallo se propagaba —
-`[A1]` incumplido por el agente. Está anotado en la ficha de H-030; no se reabre, porque lo que reclamaba está
-cumplido y verificado.
+Y el de esta corrida **lo encontró la recomendación de la anterior**: S-007 dijo que los candidatos siguientes
+eran los otros terceros —la pasarela de pago, Redis, el almacenamiento—, y **el primero de la lista tenía el
+defecto**. No es mérito del barrido: es la señal de que el patrón se repite.
 
 Los tres avisos siguen vigentes:
 
@@ -55,7 +54,7 @@ había ejecutado. El camino feliz estaba probado; el otro, nunca.
 |---|---:|---|---|
 | D1 Alineación de Dominio | 100 | Estable — H-030 revisada, no reabierta | — |
 | D2 Integridad Arquitectónica | 100 | Estable desde S-006 | — |
-| D3 Observabilidad y Recuperación | **100** | H-032 (ALTA) y H-033 abiertas y cerradas dentro de esta corrida | — |
+| D3 Observabilidad y Recuperación | **100** | H-034 abierta y cerrada dentro de esta corrida (y H-032/H-033 en la anterior) | — |
 | D4 Fidelidad Documental | 100 | Estable | — |
 | D5 Fiabilidad Operacional | `SIN_DATOS` | **Por muestra insuficiente**, no por falta de datos | — |
 
@@ -65,31 +64,34 @@ había ejecutado. El camino feliz estaba probado; el otro, nunca.
 
 ## Hallazgos activos: 0
 
-**Cerrados: 33** — H-001 … H-033. Ninguno reabierto; **H-030 revisada** (`[A6]`: se anota, no se reescribe).
+**Cerrados: 34** — H-001 … H-034. Ninguno reabierto; **H-030 revisada** (`[A6]`: se anota, no se reescribe).
 
 ---
 
-## Los dos que cerró esta corrida (S-007)
+## Lo que cerró esta corrida (S-008)
 
-| Hallazgo | Dim | Sev | Qué pasaba | Cómo se comprobó el cierre |
+| Hallazgo | Dim | Sev | Qué pasaba | Cierre |
 |---|:--:|:--:|---|---|
-| **H-032** | D3 | **ALTA** | `EmailService` absorbía el fallo, y con él **tres capas de recuperación**: el `catch` del worker, su contador de intentos y los reintentos de BullMQ. Un envío fallido marcaba el trabajo como **completado** | **En vivo** con Mailhog parado: `200 «Verification email sent»` con bandeja vacía → **500 «Connection timeout»** |
-| **H-033** | D3 | MEDIA | El transporte no declaraba **ningún tope**: con el SMTP caído, reenvío **y registro** se colgaban **121 s**. Preexistente, tapado por H-032 | Medido: **121 s → ~5 s** |
+| **H-034** | D3 | MEDIA | Las **seis** llamadas de los tres adaptadores de pasarela usaban `fetch` **sin ningún tope**, y no había un `AbortController` en todo el directorio. El patrón de H-033 en el camino del dinero | `gateway-timeouts.ts`: **8 s** consultar · **20 s** operar. 7 casos, con **C1 y C2 vistos fallar** |
 
-**Y tres cosas propias que salieron con ellos:**
+**MEDIA y no ALTA, y el motivo se dice:** por diseño de PT-087 ningún pago cobrado queda sin acreditar —vía
+garantizada, reapertura del ciclo, asiento idempotente—, así que **el dinero no se pierde por esto**. Lo que se
+degrada es el tiempo de respuesta y la ocupación de recursos.
 
-1. **Una prueba verde sostenía el defecto** — `should not throw when mailerService fails`, dos veces, en el
-   mismo fichero que hasta PT-089 exigía la reserva `localhost:5174`. Una prueba puede ser el mecanismo que
-   mantiene vivo un defecto.
-2. **Los casos de control C4/C5/C6 no supieron fallar hasta la tercera versión.** Las dos primeras pasaban con
-   el defecto puesto.
-3. **El checkpoint D3 cazó, por tercera vez en la jornada, un `catch` mudo del día**: el del guard de reCAPTCHA
-   de PT-182, cuya justificación escrita era **falsa** — un guard recibe sus dependencias por inyección.
+**Lo que NO se afirma:** no se ha observado una llamada colgada contra una pasarela real. A diferencia de H-033
+—donde los 121 s **se midieron**— aquí el defecto se comprobó **leyendo** y la consecuencia se infiere. `[A1]`.
 
-Nueva **RULE-36**: *un servicio compartido no decide qué hacen sus llamantes con un fallo.*
+**Y once capturas que no son hallazgo:** el barrido encontró 11 `catch` sin `throw` ni registro, todos
+**declarados** en la línea base de D3 con motivo escrito. Once capturas sin `throw` suenan a once defectos y son
+once decisiones — **la diferencia la hace el motivo escrito**, que es justo lo que faltaba en H-032, donde la
+captura tenía una pregunta sin responder en vez de una razón.
 
-Evidencia: `E-036`, `docs/implementation/evidence/PT-183/`. Los tres de S-006 (H-029/H-030/H-031) en `E-034`,
-`E-035` y `evidence/PT-182/`.
+**Mis dos casos de control no supieron fallar a la primera** (segunda vez en dos PT): C2 se contentaba con que el
+fichero contuviera una cadena —bastaba el `import`— y C1 acusaba una llamada ya corregida por recortar una ventana
+fija.
+
+Evidencia: `E-037`, `evidence/PT-184/`. Las corridas anteriores: H-032/H-033 en `E-036` y `evidence/PT-183/`;
+H-029/H-030/H-031 en `E-034`, `E-035` y `evidence/PT-182/`.
 
 ---
 
@@ -129,10 +131,11 @@ desde H-025 y H-028 los instrumentos **lo dicen** en vez de dar verde.
 1. **Volumen de ciclos de pago** — lo único que sube D5 y saca la Confianza del filo de 91.
 2. **La decisión fiscal, cuando haya PAC.** Tres modelos medidos en `evidence/PT-155/hallazgos.md`. La C es
    subconjunto de la B; la B exige datos que **no se pueden pedir retroactivamente**.
-3. **Seguir mirando, y mirar afirmaciones.** Tres emisiones seguidas en que un barrido dirigido encuentra
-   defectos que ninguna prueba señalaba. Lo que los tres de hoy tienen en común da la pista de dónde buscar:
-   **sitios donde el código promete algo** — un nombre que dice «verifica», una respuesta que dice «enviado»,
-   una variable que declara una espera.
+3. **Terminar la lista de terceros: quedan Redis y el almacenamiento de ficheros.** La pasarela era el primero
+   y tenía el defecto. Con Redis, además, el fallo se puede **medir**: se para en desarrollo, como ya se hizo en
+   PT-178. Es lo que separó a H-033 (medido) de H-034 (leído).
+4. **Y seguir mirando dónde el código promete algo**: un nombre que dice «verifica», una respuesta que dice
+   «enviado», una variable que declara una espera, **una prueba que dice «no lanza»**.
 
 > **Este fichero es un derivado.** Manda `PTSA/Hallazgos/H-XXX.md`. Lo vigila
 > `estado-de-hallazgos-coherente.spec.ts` (**RULE-33**), que hoy lo pilló mintiendo.
