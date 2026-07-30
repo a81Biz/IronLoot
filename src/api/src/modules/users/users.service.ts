@@ -15,6 +15,7 @@ import {
   AuditResult,
 } from '../../common/observability';
 import { AuditPersistenceService } from '../audit/audit-persistence.service';
+import { EmailService } from '../notifications/email.service';
 import { KycService } from '../kyc/kyc.service';
 import {
   UpdateProfileDto,
@@ -47,6 +48,9 @@ export class UsersService {
     private readonly metrics: MetricsService,
     private readonly audit: AuditPersistenceService,
     private readonly kyc: KycService,
+    // PT-182 (H-030) — Faltaba, y por eso `resendVerificationEmail` no podia enviar nada aunque su
+    // respuesta dijera que si.
+    private readonly email: EmailService,
   ) {
     this.log = this.logger.child('UsersService');
   }
@@ -194,7 +198,9 @@ export class UsersService {
       throw new UserNotFoundException(userId);
     }
 
-    // TODO: Calculate real stats when Auctions and Ratings modules are ready
+    // PT-182 — Aqui habia un «TODO: calculate real stats when Auctions and Ratings modules are ready».
+    // Los dos modulos existen y `calculateUserStats` **ya cuenta de verdad** (`order.count`,
+    // `rating.aggregate`). El comentario sobrevivio al trabajo que lo resolvia: es F-33 en pequeño.
     const stats = await this.calculateUserStats(userId);
 
     return {
@@ -293,8 +299,19 @@ export class UsersService {
       { actorUserId: userId, payload: { action: 'resend_verification' } },
     );
 
-    // TODO: Send actual email when NotificationsModule is ready
-    // await this.emailService.sendVerificationEmail(user.email, emailVerificationToken);
+    // PT-182 (H-030) — **Aqui se enviaba nada y se respondia que si.**
+    //
+    // Lo que habia era la llamada comentada y un `return` diciendo «Verification email sent. Please check
+    // your inbox.». Este es **el camino de recuperacion de una cuenta que no se puede activar**: lo pide
+    // exactamente quien no recibio el correo del registro, y se le dejaba esperando para siempre.
+    //
+    // La condicion del `TODO` —«when NotificationsModule is ready»— ya se cumplia: `EmailService`
+    // implementa `sendVerificationEmail` y esta en uso.
+    //
+    // **No se captura el error a proposito.** Un `catch` que se lo comiera reproduciria el defecto por
+    // otra via: el usuario volveria a leer «revisa tu bandeja» sin que nada haya salido. Si el envio
+    // falla, que lo sepa.
+    await this.email.sendVerificationEmail(user.email, emailVerificationToken);
 
     return { message: 'Verification email sent. Please check your inbox.' };
   }

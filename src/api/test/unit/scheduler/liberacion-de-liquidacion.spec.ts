@@ -7,6 +7,9 @@ import { NotificationsService } from '@/modules/notifications/notifications.serv
 import { DistributedLockService } from '@/common/redis/distributed-lock.service';
 import { SystemConfigService } from '@/modules/system-config/system-config.service';
 import { CommissionsService } from '@/modules/commissions/commissions.service';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
 /**
  * PT-174 — La liberación del holdback cuenta desde la CONFIRMACIÓN del comprador.
@@ -39,6 +42,14 @@ import { CommissionsService } from '@/modules/commissions/commissions.service';
  * Este cron **no tenía ninguna prueba** antes de PT-174: mueve dinero de `pending_balance` a `balance` y
  * nadie lo vigilaba. Es la primera.
  */
+/**
+ * Raíz del monorepo. **No se cuentan `..` a mano**: dentro del contenedor el API se monta en `/app`, así
+ * que subir cinco niveles daba `/docker-compose.yml` y el caso fallaba por no encontrar el fichero —
+ * exactamente el modo en que una guarda se vuelve inútil sin dejar de existir. `raizDelMonorepo()` busca
+ * la marca del repositorio, y es lo que usan las demás guardas que leen ficheros de la raíz.
+ */
+const RAIZ = raizDelMonorepo();
+
 describe('releaseMaturedSettlements — la espera cuelga de la confirmación (PT-174)', () => {
   let service: AuctionSchedulerService;
 
@@ -173,8 +184,8 @@ describe('releaseMaturedSettlements — la espera cuelga de la confirmación (PT
       // Es lo que permite que la fase 35 de QA no espere 72 h — **configurando, no falseando**. La
       // diferencia con el `UPDATE` a la base que hace hoy `60-withdrawal.js`.
       //
-      // Y es el valor que `docker-compose` fija de verdad para el contenedor de desarrollo, así que este
-      // caso comprueba la configuración real de QA, no una hipotética.
+      // QA **declara** este 0 en su `.env`; ya no lo hereda de la reserva del compose, que desde PT-182
+      // es 72 (ver C7 — la reserva no puede ser el valor desprotegido).
       process.env.SETTLEMENT_HOLDBACK_HOURS = '0';
 
       await service.releaseMaturedSettlements();
@@ -183,6 +194,28 @@ describe('releaseMaturedSettlements — la espera cuelga de la confirmación (PT
         .shipment.deliveredAt.lte;
 
       expect(Math.abs(Date.now() - corte.getTime())).toBeLessThan(2_000);
+    });
+
+    it('C7: la reserva de `docker-compose` NO es el valor desprotegido', () => {
+      // PT-182. La sustitución estuvo en `:-0` unas horas, y era la misma familia que H-029 y H-030: un
+      // control que aparenta estar puesto y no lo está. Un despliegue que no declarase la variable
+      // liberaba el neto **al instante** de la confirmación —sin ventana para el comprador— y nada lo
+      // habría dicho: el cron corre, los asientos cuadran, la espera simplemente no existe.
+      //
+      // Se comprueba el `docker-compose.yml` y no el servicio a propósito: el servicio ya tiene su
+      // reserva de 72 (C3) y nunca la vio nadie fallar, porque el compose **siempre** le pasaba un valor.
+      // El agujero vivía en el sitio que este caso mira.
+      const compose = readFileSync(join(RAIZ, 'docker-compose.yml'), 'utf-8');
+      const linea = compose
+        .split(/\r?\n/)
+        .find((l: string) => l.includes('SETTLEMENT_HOLDBACK_HOURS=${'));
+
+      expect(linea).toBeDefined();
+
+      const reserva = /:-(\d+)\}/.exec(String(linea))?.[1];
+
+      expect(reserva).toBeDefined();
+      expect(Number(reserva)).toBeGreaterThan(0);
     });
 
     it('AC-02: sin pedidos maduros no se libera nada', async () => {

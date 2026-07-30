@@ -4,6 +4,9 @@ import { UsersService } from '@/modules/users/users.service';
 import { PrismaService } from '@/database/prisma.service';
 import { AuditPersistenceService } from '@/modules/audit/audit-persistence.service';
 import { KycService } from '@/modules/kyc/kyc.service';
+// PT-182 (H-030) — `UsersService` ya envia el correo de verificacion de verdad, asi que su modulo de
+// prueba tiene que proveerlo.
+import { EmailService } from '@/modules/notifications/email.service';
 import {
   StructuredLogger,
   RequestContextService,
@@ -127,6 +130,10 @@ describe('UsersService', () => {
         {
           provide: KycService,
           useValue: mockKycService,
+        },
+        {
+          provide: EmailService,
+          useValue: { sendVerificationEmail: jest.fn() },
         },
       ],
     }).compile();
