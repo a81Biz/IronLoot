@@ -1,0 +1,26 @@
+==============================================================================
+1) `catch` que ni relanza ni registra  (el patron de H-032, en su forma muda)
+==============================================================================
+   encontrados: 11
+     src/api/src/common/config/public-domain-check.ts:41
+     src/api/src/common/observability/observability.interceptor.ts:295
+     src/api/src/database/prisma.service.ts:52
+     src/api/src/modules/admin/admin.service.ts:352
+     src/api/src/modules/audit/audit-persistence.service.ts:270
+     src/api/src/modules/auth/auth.service.ts:152
+     src/api/src/modules/auth/guards/jwt-auth.guard.ts:78
+     src/api/src/modules/auth/guards/recaptcha.guard.ts:106
+     src/api/src/modules/health/health.service.ts:127
+     src/api/src/modules/payments/payment-trace.service.ts:204
+     src/api/src/modules/system-config/system-config.service.ts:234
+
+==============================================================================
+2) Llamadas a terceros: `fetch(` sin señal de aborto  (el patron de H-033)
+==============================================================================
+   encontrados: 0
+
+==============================================================================
+3) Servicios de terceros y sus topes declarados
+==============================================================================
+   ficheros con `timeout`: 7
+   ficheros con `AbortController`: 2

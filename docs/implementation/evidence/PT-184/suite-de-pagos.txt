@@ -1,0 +1,126 @@
+PASS test/unit/payments/topes-de-pasarela.spec.ts
+PASS test/unit/payments/payments.controller.spec.ts
+PASS test/unit/payments/payment-reconciliation.spec.ts
+PASS test/unit/payments/webhook-public.spec.ts
+PASS test/unit/payments/payments-dedup-amount.spec.ts
+[31m[Nest] 389  - [39m07/30/2026, 2:34:23 AM [31m  ERROR[39m [38;5;3m[MercadoPagoProvider] [39m[31mMercadoPago HMAC verification failed — rejecting[39m
+[31m[Nest] 389  - [39m07/30/2026, 2:34:23 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mPayPal webhook signature verification failed (WH-FALSO)[39m
+PASS test/unit/payments/provider-guarantees.spec.ts
+[33m[Nest] 389  - [39m07/30/2026, 2:34:23 AM [33m   WARN[39m [38;5;3m[StripeProvider] [39m[33mSTRIPE_SECRET_KEY not found. Stripe provider disabled.[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:23 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=WEBHOOK topic=payment id=123[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:23 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-FALSO)[39m
+[33m[Nest] 389  - [39m07/30/2026, 2:34:23 AM [33m   WARN[39m [38;5;3m[StripeProvider] [39m[33mSTRIPE_SECRET_KEY not found. Stripe provider disabled.[39m
+[33m[Nest] 389  - [39m07/30/2026, 2:34:23 AM [33m   WARN[39m [38;5;3m[StripeProvider] [39m[33mSTRIPE_SECRET_KEY not found. Stripe provider disabled.[39m
+[33m[Nest] 389  - [39m07/30/2026, 2:34:23 AM [33m   WARN[39m [38;5;3m[StripeProvider] [39m[33mSTRIPE_SECRET_KEY not found. Stripe provider disabled.[39m
+PASS test/unit/payments/credit-integrity.spec.ts
+PASS test/unit/payments/payment-method-cardinality.spec.ts
+PASS test/unit/payments/payments.service.spec.ts
+PASS test/unit/payments/webhook-credit.spec.ts
+[31m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [31m  ERROR[39m [38;5;3m[MercadoPagoProvider] [39m[31mMercadoPago HMAC verification failed — rejecting[39m
+[31m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [31m  ERROR[39m [38;5;3m[MercadoPagoProvider] [39m[31mMissing MercadoPago signature headers — rejecting[39m
+[31m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [31m  ERROR[39m [38;5;3m[MercadoPagoProvider] [39m[31mAnomalia: 2 pagos aprobados para DEP-08b22a46-49a4-4ece-a8ff-021cce24ed70-1784948505855[39m
+[31m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [31m  ERROR[39m [38;5;3m[MercadoPagoProvider] [39m[31mMercadoPago API /v1/payments/169718720683 responded 404[39m
+PASS test/unit/payments/mercadopago-notification.spec.ts
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=payment id=169718720683[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=WEBHOOK topic=payment id=169718720683[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=WEBHOOK topic=payment id=169718720683[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=WEBHOOK topic=payment id=169718720683[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=payment id=169718720683[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=payment id=169718720683[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=merchant_order id=MO-1[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=WEBHOOK topic=payment id=PAY01KYEDNWM3EHE6WWKPJ4228D91[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=chargebacks id=CB-1[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mIgnoring unsubscribed MercadoPago topic "chargebacks"[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=payment id=169718720683[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=order id=ORDTST01KYEDNWKHXHCS58ZPA3GESWMT[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=order id=ORDTST01KYEDNWKHXHCS58ZPA3GESWMT[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=payment id=169718720683[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=order id=ORDTST01KYEDNWKHXHCS58ZPA3GESWMT[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=order id=ORDTST01KYEDNWKHXHCS58ZPA3GESWMT[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mMercadoPago notification: format=IPN topic=payment id=169718720683[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mCreating MercadoPago preference for Order DEP-u-1[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39mObject(2) {
+  amount: [33m500[39m,
+  buyerEmail: [32m'a@b.com'[39m
+}
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mCreating MercadoPago preference for Order DEP-u-1[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39mObject(2) {
+  amount: [33m500[39m,
+  buyerEmail: [32m'a@b.com'[39m
+}
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39m[32mCreating MercadoPago preference for Order DEP-u-1[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[MercadoPagoProvider] [39mObject(2) {
+  amount: [33m500[39m,
+  buyerEmail: [32m'a@b.com'[39m
+}
+PASS test/unit/payments/mercadopago-preference.spec.ts
+[31m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mPayPal webhook signature verification failed (WH-1)[39m
+[31m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mPayPal webhook signature verification failed (WH-1)[39m
+[31m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mRejecting PayPal webhook — missing header(s): auth_algo, cert_url, transmission_id, transmission_sig, transmission_time[39m
+[31m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mPayPal webhook signature verification failed (WH-1)[39m
+PASS test/unit/payments/paypal-guarantees.spec.ts
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-u1-1 (321.5 MXN)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-u1-1 (100 MXN)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCapturing PayPal order ORDER-1[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-u1-1 (100 MXN)[39m
+[33m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [33m   WARN[39m [38;5;3m[PaypalProvider] [39m[33mNo se pudo registrar la traza de PayPal: bd caída[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-1)[39m
+[33m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [33m   WARN[39m [38;5;3m[PaypalProvider] [39m[33mNo se pudo consultar la orden ORDER-1 en PayPal: PayPal request to https://api-m.sandbox.paypal.com/v2/checkout/orders/ORDER-1 failed with status 500[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:26 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-1)[39m
+[32m[Nest] 389  - [39m07/25/2026, 12:00:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/25/2026, 12:00:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/25/2026, 12:01:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/25/2026, 12:00:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/25/2026, 12:01:10 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/25/2026, 12:00:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[33m[Nest] 389  - [39m07/25/2026, 12:00:00 PM [33m   WARN[39m [38;5;3m[PaypalProvider] [39m[33mPayPal returned 401 — refreshing access token and retrying once[39m
+[32m[Nest] 389  - [39m07/25/2026, 12:00:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+[33m[Nest] 389  - [39m07/25/2026, 12:00:00 PM [33m   WARN[39m [38;5;3m[PaypalProvider] [39m[33mPayPal returned 401 — refreshing access token and retrying once[39m
+[32m[Nest] 389  - [39m07/25/2026, 12:00:00 PM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-user-1-1700000000 (500 MXN)[39m
+PASS test/unit/payments/paypal-auth.spec.ts
+PASS test/unit/payments/paypal-create-order.spec.ts
+[31m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mPayPal webhook signature verification failed (WH-CAPTURE-1)[39m
+[31m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mRejecting PayPal webhook — missing header(s): transmission_sig[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (99.99 MXN)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCreating PayPal order for DEP-3f8a1c2e-9b4d-4e7a-8c1f-2d5e6a7b8c9d-1700000000 (500 MXN)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-APPROVED-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCapturing PayPal order ORDER-XYZ[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook CHECKOUT.ORDER.APPROVED (WH-APPROVED-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mCapturing PayPal order ORDER-XYZ[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.COMPLETED (WH-CAPTURE-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mReceived PayPal webhook PAYMENT.CAPTURE.DENIED (WH-DENIED-1)[39m
+[32m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [32m    LOG[39m [38;5;3m[PaypalProvider] [39m[32mIgnoring unsubscribed PayPal event PAYMENT.CAPTURE.DENIED[39m
+PASS test/unit/payments/paypal-webhook.spec.ts
+[31m[Nest] 389  - [39m07/30/2026, 2:34:27 AM [31m  ERROR[39m [38;5;3m[PaypalProvider] [39m[31mNo se pudo devolver la captura CAP-9: PayPal respondio 422[39m
+PASS test/unit/payments/paypal-verification-charge.spec.ts
+PASS test/unit/payments/payment-cycle.spec.ts
+PASS test/unit/payments/payment-record.spec.ts
+PASS test/unit/payments/payment-row-idempotence.spec.ts
+PASS test/unit/payments/payment-trace.spec.ts
+PASS test/unit/payments/deposit-status.spec.ts
+PASS test/unit/payments/respuesta-de-pasarela-no-es-averia.spec.ts
+PASS test/unit/payments/payment-provider-registry.spec.ts
+PASS test/unit/payments/return-urls.spec.ts
+PASS test/unit/payments/endpoints-legados-retirados.spec.ts
+
+Test Suites: 26 passed, 26 total
+Tests:       222 passed, 222 total
+Snapshots:   0 total
+Time:        15.195 s

@@ -4,7 +4,7 @@
 
 **Rama**: `master`, árbol limpio, cero ramas sin fusionar. **Sin subir a `origin`.**
 
-**Pruebas**: **1212** unitarias en verde — API **959** (118 suites) · CORE **134** · CLIENT **103** ·
+**Pruebas**: **1219** unitarias en verde — API **966** (119 suites) · CORE **134** · CLIENT **103** ·
 ADMIN **13** · BASE **3**.
 
 **Reglas duras**: **34** `RULE-NN` (RULE-36 nueva, RULE-17 con corolario). **Guardas de documentación**: **12**
@@ -14,25 +14,29 @@ suites / **136** pruebas.
 
 ## Estado: CERTIFICADO Clase A · cero hallazgos activos
 
-**S-007 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
+**S-008 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
 
-| Métrica | S-006 | **S-007** |
+| Métrica | S-007 | **S-008** |
 |---|---|---|
 | Health | 100.0 | **100 / 100** |
 | Risk | 0 | **0 / 100** |
 | Confidence | 91.0 | **91.0** |
 | Clase | A | **A** |
 
-**Hallazgos: 33 registrados, CERO activos.** Los cinco de hoy —H-029 … H-033— cerrados con tu VoBo y
-verificados **ejecutando**.
+**Hallazgos: 34 registrados, CERO activos.** Los seis de hoy —H-029 … H-034— cerrados con tu VoBo y verificados
+**ejecutando**.
 
-### Los mismos cuatro números por tercera vez, y ése es el dato
+### Los mismos cuatro números por CUARTA vez, y ése es el dato
 
-En cada intervalo entre emisiones apareció trabajo real: tres hallazgos entre S-005 y S-006, **dos más** entre
-S-006 y S-007 —uno **ALTA**—, y todos cerrados antes de emitir.
+En cada intervalo entre emisiones apareció trabajo real: **tres** hallazgos entre S-005 y S-006, **dos** entre
+S-006 y S-007 —uno ALTA—, **uno** entre S-007 y S-008. Seis defectos reales, todos cerrados antes de emitir.
 
 **La estabilidad de este 100 mide que se cierra lo que se encuentra, no que no haya nada que encontrar.** Quien
-lea sólo la tabla se lleva la impresión de tres jornadas sin incidentes, y hubo cinco defectos reales.
+lea sólo la tabla se lleva la impresión de cuatro emisiones sin incidentes.
+
+**Y cada hallazgo salió de comprobar el anterior.** H-032 y H-033, al verificar el cierre de H-030. H-034, al
+aplicar al camino del dinero la recomendación que dejó escrita S-007. Eso hace de la cadena algo más útil que su
+resultado: **el sitio donde buscar lo dijo el hallazgo previo, no una intuición**.
 
 ### Tres avisos que forman parte del resultado, no lo adornan
 
@@ -58,7 +62,46 @@ Lista en [`PENDING_TASKS.md`](PENDING_TASKS.md).
 
 ---
 
-## Lo último: el fallo de envío no llegaba a nadie (PT-183)
+## Lo último: las pasarelas no declaraban ningún tope (PT-184)
+
+La recomendación de S-007 decía que los candidatos siguientes eran los otros terceros —**la pasarela de pago**,
+Redis, el almacenamiento—. El primero de la lista tenía el defecto.
+
+Las **seis** llamadas de los tres adaptadores usaban `fetch` **sin `signal`**, y no había un `AbortController` en
+todo el directorio. Incluidas la que **captura** en PayPal y la que consulta en la vía garantizada.
+
+**Antes de hoy sólo dos ficheros del API declaraban un tope, y los dos se escribieron hoy.** No era un descuido
+puntual: era la forma de este sistema al hablar con un tercero.
+
+Cerrado con `gateway-timeouts.ts` — **8 s consultar · 20 s operar**. La asimetría es del dominio: consultar puede
+cortarse pronto porque la vía garantizada volverá a preguntar; **crear o capturar** no, porque abandonar algo que
+quizá se completó al otro lado deja un cobro sin saber qué pasó.
+
+**MEDIA y no ALTA, con su razón:** PT-087 garantiza que ningún pago cobrado queda sin acreditar —vía garantizada,
+reapertura del ciclo, asiento idempotente—, así que **el dinero no se pierde por esto**. Se degrada el tiempo de
+respuesta y la ocupación de recursos.
+
+**Y lo que no se afirma:** no se ha observado una llamada colgada contra una pasarela real. H-033 se **midió**
+(121 s parando Mailhog); esto se **leyó**. La diferencia marca el siguiente paso — **Redis se puede parar**, así
+que ahí el fallo se podrá medir.
+
+### Once capturas que parecen defectos y no lo son
+
+El barrido dio 11 `catch` sin `throw` ni registro. Ninguno es hallazgo: están **declarados** en la línea base del
+checkpoint D3, con motivo escrito, y los dos más sensibles razonados en `CLAUDE.md`. Once capturas sin `throw`
+suenan a once defectos y son once decisiones — **la diferencia la hace el motivo escrito**, que es justo lo que
+faltaba en H-032.
+
+### Y mis casos de control fallaron de la misma forma dos PT seguidos
+
+C2 exigía que el fichero *contuviera* el helper, y bastaba la línea del `import`. En PT-183 fue «que el bloque
+contenga H-032». **Compruebo que exista una cadena en vez de una relación**; las dos veces la corrección fue
+contar o acotar en vez de buscar. Y C1 tuvo el error simétrico: acusaba una llamada **ya corregida** por recortar
+una ventana fija — un falso positivo enseña a desconfiar de la guarda, que es la forma silenciosa de perderla.
+
+---
+
+## Antes de eso: el fallo de envío no llegaba a nadie (PT-183)
 
 Los dos hallazgos salieron de **comprobar el cierre del anterior**, ejecutando el camino de **fallo**. El camino
 feliz del correo estaba probado desde siempre; el otro, nunca.
@@ -183,10 +226,10 @@ con la contabilidad cerrando sola —950 → 95 de comisión → 855 retenido �
    cierra otra corrida igual: hacen falta 20 ciclos resueltos.
 3. **H-005**: cuando haya PAC. Los tres modelos están medidos en `evidence/PT-155/hallazgos.md`; la opción C
    es subconjunto de la B, y la B exige datos que **no se pueden pedir retroactivamente**.
-4. **Ejercitar caminos de FALLO, no sólo los felices.** Es la lección más accionable de hoy: los dos últimos
-   hallazgos vivían en el camino de error, que **nunca se había ejecutado**. Parar la dependencia y pedir la
-   operación —lo que aquí se hizo con Mailhog— encontró en cinco minutos dos defectos con meses de vida. Los
-   candidatos siguientes son los otros terceros: la pasarela de pago, Redis, el almacenamiento de ficheros.
+4. **Terminar la lista de terceros: quedan Redis y el almacenamiento de ficheros.** La pasarela era el primero
+   de los tres y tenía el defecto, así que no conviene dar por buenos los otros dos. Con **Redis** hay una
+   ventaja: **se puede parar** en desarrollo —ya se hizo en PT-178—, así que ahí el fallo se podrá **medir** y no
+   sólo leer. Es exactamente lo que separó a H-033 de H-034.
 5. **Y seguir mirando dónde el código promete algo**: un nombre que dice «verifica», una respuesta que dice
    «enviado», una variable que declara una espera, **una prueba que dice «no lanza»**. Una de esas cuatro formas
    era, hoy, una prueba nuestra.
