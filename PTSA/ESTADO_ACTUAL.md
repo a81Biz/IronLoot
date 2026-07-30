@@ -1,5 +1,5 @@
 # ESTADO ACTUAL — PTSA V3
-**Última actualización**: 2026-07-29 | **Sesión**: S-006 (delta sync)
+**Última actualización**: 2026-07-29 | **Sesión**: S-007 (delta sync)
 
 ---
 
@@ -19,13 +19,20 @@ Cobertura:      PARCIAL        D1/D2/D3/D4 al 100 % · D5 al 0 % (muestra insufi
 
 ---
 
-## Los scores son idénticos a S-005, y eso es lo que hay que leer
+## Los mismos cuatro números por tercera vez, y eso es lo que hay que leer
 
-Entre las dos emisiones aparecieron **tres hallazgos más** —uno ALTA en D1—, se corrigieron y se cerraron. El
-número no se movió.
+En cada intervalo entre emisiones ha aparecido trabajo real: tres hallazgos entre S-005 y S-006, **dos más
+entre S-006 y S-007** —uno ALTA—, y todos cerrados antes de emitir.
 
-**Un 100 estable no significa que no haya pasado nada.** Significa que lo que se encontró se cerró antes de
-emitir. Los tres avisos siguen vigentes:
+**La estabilidad de este 100 mide que se cierra lo que se encuentra, no que no haya nada que encontrar.**
+
+Y los dos de esta corrida salieron de **comprobar el cierre del hallazgo anterior**. Uno de ellos desmiente
+parte de ese cierre: H-030 afirmaba que el reenvío «propaga el fallo», y el `catch` estaba una capa más abajo.
+Se comprobó **ejecutando** que el correo salía y se dio por bueno **por lectura** que el fallo se propagaba —
+`[A1]` incumplido por el agente. Está anotado en la ficha de H-030; no se reabre, porque lo que reclamaba está
+cumplido y verificado.
+
+Los tres avisos siguen vigentes:
 
 **1. El Health llega a 100 en parte porque el alcance se estrechó.** H-005 se cerró **aceptándola como
 limitación declarada**, y lo que legitima ese cierre es que la declaración de valor se corrigió a la vez
@@ -35,9 +42,10 @@ limitación declarada**, y lo que legitima ese cierre es que la declaración de 
 fiabilidad operacional **no está demostrada** — 2 ciclos de pago no son una serie. Cualquier pérdida de
 cobertura tumba la Clase A.
 
-**3. Cero hallazgos activos es cero defectos CONOCIDOS.** Y esta emisión lo demuestra por tercera vez
-consecutiva: un barrido dirigido encontró tres defectos que **ninguna prueba señalaba**, dos de ellos con
-meses en el código. Este `0` mide lo que se ha buscado, no lo que hay.
+**3. Cero hallazgos activos es cero defectos CONOCIDOS.** Tercera emisión consecutiva en que un barrido
+dirigido encuentra defectos que **ninguna prueba señalaba**. Este `0` mide lo que se ha buscado, no lo que hay
+— y hoy quedó claro **dónde** buscar: los dos de esta corrida vivían en el **camino de fallo**, que nunca se
+había ejecutado. El camino feliz estaba probado; el otro, nunca.
 
 ---
 
@@ -45,9 +53,9 @@ meses en el código. Este `0` mide lo que se ha buscado, no lo que hay.
 
 | Dim | Score | Estado | Penaliza hoy |
 |---|---:|---|---|
-| D1 Alineación de Dominio | **100** | H-030 (ALTA) abierta y cerrada dentro de esta corrida | — |
-| D2 Integridad Arquitectónica | **100** | H-029 y H-031 abiertas y cerradas dentro de esta corrida | — |
-| D3 Observabilidad y Recuperación | 100 | Estable desde S-005 | — |
+| D1 Alineación de Dominio | 100 | Estable — H-030 revisada, no reabierta | — |
+| D2 Integridad Arquitectónica | 100 | Estable desde S-006 | — |
+| D3 Observabilidad y Recuperación | **100** | H-032 (ALTA) y H-033 abiertas y cerradas dentro de esta corrida | — |
 | D4 Fidelidad Documental | 100 | Estable | — |
 | D5 Fiabilidad Operacional | `SIN_DATOS` | **Por muestra insuficiente**, no por falta de datos | — |
 
@@ -57,29 +65,31 @@ meses en el código. Este `0` mide lo que se ha buscado, no lo que hay.
 
 ## Hallazgos activos: 0
 
-**Cerrados: 31** — H-001 … H-031. Ninguno reabierto.
+**Cerrados: 33** — H-001 … H-033. Ninguno reabierto; **H-030 revisada** (`[A6]`: se anota, no se reescribe).
 
 ---
 
-## Los tres que cerró esta corrida
+## Los dos que cerró esta corrida (S-007)
 
-Los tres tenían **la misma forma**: un control que aparenta estar puesto. No hay error que los delate — para
-verlos hay que leer lo que **afirman** y comprobarlo.
+| Hallazgo | Dim | Sev | Qué pasaba | Cómo se comprobó el cierre |
+|---|:--:|:--:|---|---|
+| **H-032** | D3 | **ALTA** | `EmailService` absorbía el fallo, y con él **tres capas de recuperación**: el `catch` del worker, su contador de intentos y los reintentos de BullMQ. Un envío fallido marcaba el trabajo como **completado** | **En vivo** con Mailhog parado: `200 «Verification email sent»` con bandeja vacía → **500 «Connection timeout»** |
+| **H-033** | D3 | MEDIA | El transporte no declaraba **ningún tope**: con el SMTP caído, reenvío **y registro** se colgaban **121 s**. Preexistente, tapado por H-032 | Medido: **121 s → ~5 s** |
 
-| Hallazgo | Dim | Sev | Qué afirmaba | Qué hacía | Cómo se comprobó el cierre |
-|---|:--:|:--:|---|---|---|
-| **H-029** | D2 | MEDIA | «verifica el captcha» | comprobaba que el token **existiera** | 7 casos: token basura rechazado, y **timeout de Google también** |
-| **H-030** | D1 | ALTA | «Verification email sent» | la llamada estaba **comentada** | **En vivo**: Mailhog `1 → 2` correos |
-| **H-031** | D2 | MEDIA | una espera de 72 h | reserva `:-0`: **sin espera** | C7 **visto fallar** con la reserva a 0 |
+**Y tres cosas propias que salieron con ellos:**
 
-**H-030 es ALTA** porque es el camino de recuperación de una cuenta que no se puede activar: lo pide justamente
-quien no recibió el correo del registro, y se le dejaba esperando para siempre.
+1. **Una prueba verde sostenía el defecto** — `should not throw when mailerService fails`, dos veces, en el
+   mismo fichero que hasta PT-089 exigía la reserva `localhost:5174`. Una prueba puede ser el mecanismo que
+   mantiene vivo un defecto.
+2. **Los casos de control C4/C5/C6 no supieron fallar hasta la tercera versión.** Las dos primeras pasaban con
+   el defecto puesto.
+3. **El checkpoint D3 cazó, por tercera vez en la jornada, un `catch` mudo del día**: el del guard de reCAPTCHA
+   de PT-182, cuya justificación escrita era **falsa** — un guard recibe sus dependencias por inyección.
 
-**H-031 es mío y de hoy** — lo introdujo PT-174 unas horas antes, poniendo la conveniencia de QA donde vive el
-valor por defecto de producción. Se registra igual: esconderlo en la prosa de una evidencia lo dejaría fuera
-del recuento.
+Nueva **RULE-36**: *un servicio compartido no decide qué hacen sus llamantes con un fallo.*
 
-Evidencia: `E-034` (los defectos), `E-035` (los cierres), `docs/implementation/evidence/PT-182/`.
+Evidencia: `E-036`, `docs/implementation/evidence/PT-183/`. Los tres de S-006 (H-029/H-030/H-031) en `E-034`,
+`E-035` y `evidence/PT-182/`.
 
 ---
 
