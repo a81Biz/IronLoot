@@ -44,7 +44,7 @@
 - **Excepción:** monto verificado ≠ solicitado → `PaymentMismatchException`; firma inválida o secreto ausente → rechazo.
 - **✅ Estado real (2026-07-29):** el CLIENT proxya al API por su BFF (`main.ts:86`), que inyecta el `Authorization` desde la cookie HttpOnly. **`AUD-003` corregido.**
 
-## UC-17 — Declarar el envío (vendedor) ✅
+## UC-28 — Declarar el envío (vendedor) ✅
 - **Actor:** **Vendedor**, y sólo él · **Precondición:** pedido en `PAID`.
 - **Happy:** `PATCH /shipments/:id` con `SHIPPED` → el pedido pasa a `SHIPPED` y se avisa al comprador. La
   transición la valida `OrderStateMachine`; `carrier` y `trackingNumber` son **campos manuales** — no hay
@@ -53,7 +53,7 @@
 - **Nota:** hasta PT-173 `shipments` escribía `order.status` **por fuera** de la máquina de estados: había **dos
   puertas al mismo estado y sólo una con cerradura**, y un pedido `PAID` podía saltar directo a `DELIVERED`.
 
-## UC-18 — Confirmar la recepción (comprador) ✅ **la llave la tiene quien recibe**
+## UC-29 — Confirmar la recepción (comprador) ✅ **la llave la tiene quien recibe**
 - **Actor:** **Comprador**, y sólo él · **Precondición:** pedido en `SHIPPED`.
 - **Happy:** `PATCH /shipments/:id` con `DELIVERED` → el pedido pasa a `DELIVERED` y **arranca el reloj del
   holdback**: `shipment.deliveredAt` es el instante desde el que se cuentan las `SETTLEMENT_HOLDBACK_HOURS` (72)

@@ -126,7 +126,7 @@ clase**.
 cambió `⚠️` por `✅` dejando el texto del defecto, y **lo reverté**: una línea que se contradice a sí misma es
 peor que una obsoleta.
 
-**(b)** **UC-17** (declarar envío) y **UC-18** (confirmar recepción), que no existían. Antes de hoy «recepción» y
+**(b)** **UC-28** (declarar envío) y **UC-29** (confirmar recepción), que no existían. *(Nacieron como `UC-17`/`UC-18` y colisionaban con dos casos ya existentes —webhook y moderar—; renumerados en PT-191, que además dejó guarda.)* Antes de hoy «recepción» y
 «holdback» **no aparecían ni una vez** en `1-negocio` ni en `2-producto`: lo más importante de la jornada vivía
 en las reglas y en las ADR, no en el producto.
 
