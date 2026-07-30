@@ -50,5 +50,37 @@ Tres `.env.example` (raíz, `src/api`, `src/admin`). Marcadas 🔒=secreto, ⚠�
 ## 3. Notas de configuración
 
 - Alias JWT: `env.validation.ts` acepta nombres alternativos (`JWT_EXPIRATION`/`JWT_EXPIRES_IN`/`JWT_REFRESH_EXPIRATION`) con cadenas de fallback.
-- `MAIL_*` sólo se define en `docker-compose.yml` (no en `.env.example`).
+- `MAIL_*` se define en `docker-compose.yml` y en `src/api/.env.example` (5 entradas). **Ya no es un hueco**: lo vigila `variables-de-entorno-declaradas.spec.ts` (RULE-17).
 - Detalle completo con citas: `audit/raw/E §4`.
+
+---
+
+## Topes de espera con terceros (2026-07-29 · ADR-052)
+
+**Antes de esta fecha, dos ficheros del API declaraban un tope — y los dos se escribieron el mismo día.**
+
+| Tercero | Tope | Nota |
+|---|---|---|
+| SMTP | conexión 5 s · saludo 5 s · sesión 10 s (`MAIL_TIMEOUTS_MS`) | Sin declararlos, nodemailer aplica **dos minutos**: con el SMTP caído el registro y el reenvío se colgaban **121 s**. Medido |
+| PayPal · Mercado Pago · HeyBanco | consultar 8 s · **operar 20 s** (`GATEWAY_TIMEOUTS_MS`) | La asimetría es **del dominio**: la vía garantizada volverá a preguntar, pero abandonar una captura deja un cobro sin saber qué pasó |
+| Google reCAPTCHA | 5 s, y **si no responde no se deja pasar** | Un timeout no puede ser una puerta accionable por quien sepa provocarlo |
+| Redis (ioredis) | los de la biblioteca | Se midió: ioredis **sí** trae los suyos. Lo que faltaba en Redis era la reserva a `localhost` del cerrojo (ADR-053) |
+| Almacenamiento | no aplica | `writeFile` local; sin servicio remoto en v1.0 |
+
+## Variables de conexión: **sin reserva, y el proceso aborta nombrándolas** (ADR-053)
+
+`DATABASE_URL` · `REDIS_URL` · `MAIL_HOST` · `MAIL_PORT` · `API_URL` · `BASE_URL` · `CLIENT_URL`.
+
+En un SSR, **a dónde llamar es una conexión**: `API_URL` con reserva a `localhost:3000` hacía que el sitio
+mandara *todas* sus llamadas a su propio contenedor y **arrancara `healthy` sin funcionar**. Lo vigila
+`conexiones-sin-reserva.spec.ts` en **los cuatro servicios**.
+
+**Excepción declarada**: `public-origins.ts` conserva el **subdominio de desarrollo** como reserva de
+`BASE_URL`/`CLIENT_URL`/`API_BASE_URL` por ADR-045. Es discutible y está anotado allí.
+
+## Y el fallo de un tercero llega a quien llamó (ADR-051)
+
+`EmailService` absorbía los errores de envío y con eso anulaba **tres capas de recuperación**, incluida la
+política de reintentos de la cola: un envío fallido marcaba el trabajo como **completado**. Ahora propaga, y cada
+llamante declara qué hace — con el caso notable de la recuperación de contraseña, que **captura a propósito**
+para no convertir una caída del SMTP en un oráculo de enumeración.

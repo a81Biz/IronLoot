@@ -4,12 +4,31 @@
 |---|---|
 | **Origen** | Reconstrucción basada en evidencia (deriva del código, no de Swagger) |
 | **Fuente** | `audit/raw/B-api-backend.md`, controllers de `src/api/src/modules/*` |
-| **Fecha** | 2026-07-23 |
+| **Fecha** | 2026-07-23 · **medido de nuevo 2026-07-29** (PT-188) |
 | **Documentos usados** | 08-API-Catalog, inventory/endpoints |
 | **Código usado** | `*.controller.ts` de los 27 módulos, `main.ts` |
 | **Nivel de confianza** | Alto (cada endpoint citado `archivo:línea` en `audit/raw/B`) |
 
-> **~118 endpoints.** Prefijo global `/api/v1` (versionado URI, `main.ts:89-95`). Guards: `JWT`=JwtAuthGuard · `Public`=@Public · `OptJWT`=Opcional · `AdminDual`=JWT admin o x-admin-key · `DevOnly` · `Recaptcha`. Throttle: global 100/min salvo lo indicado.
+> **159 endpoints** — medidos el 2026-07-29 sobre los controladores y contrastados con lo que Nest declara
+> montado al arrancar. Prefijo global `/api/v1` (versionado URI, `main.ts:89-95`). Guards: `JWT`=JwtAuthGuard ·
+> `Public`=@Public · `AdminDual`=sesión de ADMIN o `x-admin-key` · `DevOnly`=no existe en producción ·
+> `Recaptcha`. Throttle: global 100/min salvo lo indicado.
+>
+> **Decía «~118».** Faltaban 41, entre ellas los dos disparadores del planificador, el reenvío de verificación y
+> los `/users/me/*`. Y su reparto por autorización es: **79** `AdminDual` · **55** `JWT` · **14** `Public` ·
+> **11** `DevOnly`.
+
+> **La lista exhaustiva vive en un solo sitio.** Este catálogo describe **guard y límite** por familia de rutas;
+> la enumeración completa y medida de las 159 está en
+> [`docs/enterprise-documentation/inventory/endpoints.md`](../../docs/enterprise-documentation/inventory/endpoints.md),
+> que tiene guarda en las dos direcciones (`inventario-de-endpoints-completo.spec.ts`).
+>
+> No se duplica aquí a propósito: mantener dos listas de 159 filas es exactamente el problema que **ADR-049**
+> resolvió — cada PT pagaría la escritura doble y la divergencia sería cuestión de tiempo.
+
+> **`@Public()` no significa «sin autorización»: significa «no pases por el JWT global».**
+> `admin.controller.ts` declara `@UseGuards(AdminDualAuthGuard)` **y** `@Public()` a la vez. Leerlo mal daría por
+> abiertos los ochenta endpoints del módulo de más privilegio del sistema.
 
 ## Auth (`/auth`) — 12
 | Método | Ruta | Guard | Throttle |
@@ -67,15 +86,28 @@
 | POST | /ratings · GET /users/:userId/ratings | JWT / Public |
 | POST | /disputes · GET /disputes · GET /disputes/:id | JWT |
 
-## Users (`/users`) — 11 · Notifications — 4 · Watchlist — 3 · Upload — 1 · Health — 2
+## Users (`/users`) — 9 · Notifications — 4 · Watchlist — 3 · Upload — 1 · Health — 2
 - Users: `/users/me` (GET/PATCH), `/me/stats`, `/me/verification-status`, `/me/settings` (GET/PATCH), `/me/resend-verification`, `/me/enable-seller`, `/users/:id` (OptJWT). 
 - Notifications: list, unread-count, read-all, `:id/read`.
 - Watchlist: GET, POST, DELETE `/:auctionId`.
 - Upload: `POST /upload/image` (JWT, mime-restringido).
 - Health: `/health`, `/health/detailed` (Public).
 
-## Admin (`/admin`) — ~61 (todos `AdminDualAuthGuard`)
+## Admin (`/admin`) — **80** (79 `AdminDualAuthGuard` + `POST /admin/auth/login` público, que es el que emite el token)
 `POST /admin/auth/login` es **Public + @SkipThrottle** (`AUD-004`). Bloques: dashboard/stats · users · auctions(moderación) · lots · orders/payments · financial/commissions · reports(financial/operational/fiscal) · configuration(platform/smtp/storage/cfdi/payment) · disputes(resolve-buyer/seller/request-evidence) · audit-logs · moderation · kyc · **cfdi(generate ✗ stub)** · notifications/campaigns · refunds · **reconciliation (PT-080: operativa, lee `payment_cycles`)** · **payments/anomalies (PT-080: cola de revision)** · **payments/trace/:reference (PT-086: traza completa de la transaccion)** · seo/cms · queues. Detalle de rutas en `audit/raw/B §1`.
+
+## Scheduler (`/scheduler`) — 2 (`DevOnly`)
+
+**No existen en producción** (`DevelopmentOnlyGuard`). Son los disparadores que permiten a QA recorrer la cadena
+completa sin esperar 72 h ni los 120 s de la ventana de cierre (PT-175).
+
+| Método | Ruta | Guard | Para qué |
+|---|---|---|---|
+| POST | /scheduler/release-settlements | DevOnly | Ejecuta la liberación del holdback ahora. Devuelve `pendientesAntes` / `pendientesDespues` / `liberados` |
+| POST | /scheduler/expire-auction/:id | DevOnly | Lleva `endsAt` al pasado y cierra la subasta |
+
+**Configurar no es falsear**: se ejecuta el mismo código y sólo se adelanta el reloj. Sembrar el resultado con un
+`INSERT` sí sería falsear, y es lo que la fase 35 dejó de hacer.
 
 ## Diagnostics (`/diagnostics`) — 9 (`DevOnly`)
 Logs/metrics/errors dev-only; TODO restringir en prod (`AUD-025`).
