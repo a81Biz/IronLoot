@@ -4,7 +4,7 @@
 
 ---
 
-## Esperando validación humana: **PT-195**
+## Esperando validación humana: nada
 
 **PT-181 … PT-185 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
 veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
@@ -13,12 +13,13 @@ veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
 **PT-192 cerrado con VoBo humano** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37). Con él,
 **los 144 PT del registro están cerrados**: el índice de estado dice **0 realmente abiertos**.
 
-**PT-195** —dos guardas de documentación que llevaban tiempo en rojo mientras la suite se reportaba en
-verde— queda en `VALIDATION_PENDING`: es un BUG y el agente no cierra bugs (FDGE STATE 6). Su evidencia
-deja escrito lo que **no** se pudo determinar: desde cuándo fallaban.
+**PT-195 cerrado con VoBo humano** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37). Su
+evidencia deja escrito lo que **no** se pudo determinar —desde cuándo fallaban— en vez de una
+explicación cómoda.
 
-**En curso**: **PT-194** (cablear el refresco de sesión, `TD-025`) en STATE 2, esperando ACK de la
-estrategia. Cero líneas de `src/` tocadas.
+**En curso**: **PT-194** (cablear el refresco de sesión, `TD-025`) en **STATE 3**, esperando el
+**Proposal Gate**. Paquete en `changes/PT-194-refresco-de-sesion/` con 11 tareas atómicas. **Cero
+líneas de `src/` tocadas y ninguna rama creada** — el Proposal Gate es absoluto.
 
 **TD-024 cerrada** por PT-193 (ADR-058): 15 símbolos retirados, 8
 conservados por ADR-033 y 2 que eran falsos positivos de medir por nombre. Queda deuda técnica en

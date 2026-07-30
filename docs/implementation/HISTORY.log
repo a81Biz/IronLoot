@@ -3867,6 +3867,30 @@ Delta (real vs planned): **no se pudo determinar desde cuando fallaban**, y eso 
   preexistentes, y mis verificaciones de esas dos suites durante la jornada no eran fiables.
 PTSA reference: ninguna. Son guardas de RULE-31 y RULE-34, no hallazgos PTSA.
 
+## CIERRE CON VoBo HUMANO — PT-195
+Date: 2026-07-30
+Status: registro
+Objective: registrar el VoBo humano sobre PT-195.
+
+**Instruccion literal:** *«PT-195 validados con mi VoBo»*. Con eso PT-195 pasa de
+`VALIDATION_PENDING` a **CLOSED**.
+
+**Lo que cerro**: dos guardas de documentacion que llevaban tiempo en rojo —una cita a
+`evidence/PT-153/`, carpeta que nunca existio, y cuatro PT cuya evidencia vivia solo en prosa dentro
+del log—. Se traslado **literalmente** lo que el log ya decia, con cabecera que dice que **no se
+re-ejecuto nada**, y **sin ampliar la linea base**, que por diseno solo puede bajar.
+
+**Lo que este cierre NO afirma, y conviene que conste.** No se determino **desde cuando fallaban**.
+Fallan con el `HISTORY.log` de ayer y en el commit anterior, asi que no las rompio el trabajo de esa
+jornada; pero el agente reporto «1076 pruebas en 133 suites, en verde» varias veces durante el dia y
+**no consiguio reproducir aquel verde**. Queda como incognita medida, no como explicacion.
+
+La consecuencia practica esta dicha donde se lee: las verificaciones de esas dos suites durante la
+jornada no eran fiables, y varios VoBo se dieron sobre ellas.
+
+Verificacion en el cierre: API **1076** pruebas en 133 suites, comprobado dos veces. Las dos guardas
+**vistas fallar** con sabotaje dirigido y restauradas a verde.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3878,7 +3902,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**146** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
+**146** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4027,4 +4051,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-191 | 3621 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3670 |
 | PT-192 | 3708 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3761 |
 | PT-193 | 3805 | `DONE` | **DONE** | — |
-| PT-195 | 3841 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |
+| PT-195 | 3841 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3870 |
