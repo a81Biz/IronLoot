@@ -240,13 +240,27 @@ export const CATALOGO: Regla[] = [
 ];
 
 /** Coherencia inter-producto (Nivel 3). Se reporta aparte: NO entra en el score de rubrica. */
-export const COHERENCIA: { par: string; regla: string; sql: string }[] = [
+export const COHERENCIA: {
+  par: string;
+  regla: string;
+  /** Cuenta las filas INCOHERENTES. */
+  sql: string;
+  /**
+   * PT-177 (H-025) — Cuenta las filas que la comprobacion tiene para COMPARAR.
+   *
+   * Es el denominador. Sin el, `sql` devuelve 0 sobre una base vacia y eso se leia como «cuadra».
+   * Cada universo es el mismo `FROM`/`JOIN` de su comprobacion sin la condicion de desviacion: si no
+   * hay filas ahi, la comprobacion no se pronuncia sobre nada.
+   */
+  universo: string;
+}[] = [
   {
     par: 'P-002 → P-003',
     regla: 'El importe del pedido coincide con el precio final',
     sql:
       'SELECT count(*) FROM orders o JOIN auctions a ON a.id=o.auction_id ' +
       'WHERE abs(o.total_amount - a.current_price) > 0.01',
+    universo: 'SELECT count(*) FROM orders o JOIN auctions a ON a.id=o.auction_id',
   },
   {
     par: 'P-003 → P-010',
@@ -254,6 +268,7 @@ export const COHERENCIA: { par: string; regla: string; sql: string }[] = [
     sql:
       'SELECT count(*) FROM commission_records c JOIN orders o ON o.id=c.order_id ' +
       'WHERE abs(c.amount - (o.total_amount * c.rate_percent / 100)) > 0.01',
+    universo: 'SELECT count(*) FROM commission_records c JOIN orders o ON o.id=c.order_id',
   },
   {
     par: 'P-010 → P-009',
@@ -262,11 +277,15 @@ export const COHERENCIA: { par: string; regla: string; sql: string }[] = [
       'SELECT count(*) FROM commission_records c JOIN orders o ON o.id=c.order_id ' +
       "JOIN ledger l ON l.type='FEE_PLATFORM' AND l.reference_id=o.auction_id::text " +
       'WHERE abs(c.amount - l.amount) > 0.01',
+    universo:
+      'SELECT count(*) FROM commission_records c JOIN orders o ON o.id=c.order_id ' +
+      "JOIN ledger l ON l.type='FEE_PLATFORM' AND l.reference_id=o.auction_id::text",
   },
   {
     par: 'P-003 → P-006',
     regla: 'Toda disputa cuelga de un pedido existente',
     sql: 'SELECT count(*) FROM disputes d WHERE NOT EXISTS(SELECT 1 FROM orders o WHERE o.id=d.order_id)',
+    universo: 'SELECT count(*) FROM disputes d',
   },
   {
     par: 'P-002 → P-007',
@@ -274,6 +293,7 @@ export const COHERENCIA: { par: string; regla: string; sql: string }[] = [
     sql:
       "SELECT count(*) FROM notifications n WHERE n.type='AUCTION_WON' " +
       'AND NOT EXISTS(SELECT 1 FROM orders o WHERE o.buyer_id=n.user_id)',
+    universo: "SELECT count(*) FROM notifications n WHERE n.type='AUCTION_WON'",
   },
 ];
 
@@ -339,19 +359,34 @@ export async function evaluar(catalogo: Regla[] = CATALOGO): Promise<Evaluada[]>
   return salida;
 }
 
-/** Lo que devuelve una comprobacion de coherencia: el conteo, o `ERR` si no se pudo mirar. */
+/**
+ * Lo que devuelve una comprobacion de coherencia.
+ *
+ * `resultado` es el conteo de filas **incoherentes** (o `ERR` si no se pudo mirar) y `comparadas` es el
+ * **denominador**: cuantas filas habia para comparar.
+ *
+ * PT-177 (H-025) — El denominador es la mitad que faltaba. Sin el, una consulta que corre limpia sobre
+ * cero filas devuelve «0 incoherencias» y se contaba como medida: **cuanto mas vacia la base, mas verde
+ * el veredicto**. Lo que distingue un instrumento de auditoria de un test es justamente que declara
+ * sobre cuantos casos se pronuncia.
+ */
 export interface Comprobacion {
   par: string;
   resultado: string;
+  comparadas: number | 'ERR';
 }
 
 export type EstadoCoherencia = 'verificado' | 'sin_datos' | 'incoherente';
 
 export interface VeredictoCoherencia {
   estado: EstadoCoherencia;
+  /** Comprobaciones que corrieron **y tuvieron al menos una fila que comparar**. */
   medidas: number;
   incoherentes: number;
+  /** No se pudo consultar (`ERR`). */
   noMedidas: number;
+  /** PT-177 — Corrio limpia pero **sobre cero filas**. Se cuenta aparte: no es lo mismo que `ERR`. */
+  sinFilas: number;
 }
 
 /**
@@ -377,12 +412,22 @@ export function veredictoCoherencia(comprobaciones: Comprobacion[]): VeredictoCo
   const incoherentes = comprobaciones.filter(
     (c) => c.resultado !== 'ERR' && c.resultado !== '0',
   ).length;
-  const medidas = comprobaciones.length - noMedidas;
+
+  // PT-177 (H-025) — **Corrio limpia sobre cero filas no es haber medido.** Se cuenta aparte de `ERR`
+  // a proposito: «no pude conectar» y «no habia nada que comparar» son dos problemas distintos, y
+  // mezclarlos habria escondido el segundo detras del primero — que es exactamente lo que paso cuando
+  // PT-149 arreglo solo el primero.
+  const sinFilas = comprobaciones.filter((c) => c.comparadas === 0).length;
+  const medidas = comprobaciones.length - noMedidas - sinFilas;
 
   const estado: EstadoCoherencia =
-    incoherentes > 0 ? 'incoherente' : medidas === 0 || noMedidas > 0 ? 'sin_datos' : 'verificado';
+    incoherentes > 0
+      ? 'incoherente'
+      : medidas === 0 || noMedidas > 0 || sinFilas > 0
+        ? 'sin_datos'
+        : 'verificado';
 
-  return { estado, medidas, incoherentes, noMedidas };
+  return { estado, medidas, incoherentes, noMedidas, sinFilas };
 }
 
 async function main(): Promise<void> {
@@ -406,21 +451,30 @@ async function main(): Promise<void> {
   const comprobaciones: Comprobacion[] = [];
   for (const c of COHERENCIA) {
     let n: string;
+    let comparadas: number | 'ERR';
     try {
       n = await consultar(c.sql);
-    } catch (e) {
+      comparadas = Number(await consultar(c.universo));
+    } catch {
       n = 'ERR';
+      comparadas = 'ERR';
     }
-    comprobaciones.push({ par: c.par, resultado: n });
-    const marca = n === '0' ? 'OK  ' : n === 'ERR' ? 'n/d ' : 'FALLA';
-    console.log(`  [${marca}] ${c.par.padEnd(16)} ${c.regla}  (${n})`);
+    comprobaciones.push({ par: c.par, resultado: n, comparadas });
+
+    // PT-177 — `n/d` cubre ahora los dos motivos por los que no se ha medido: no se pudo consultar, o
+    // no habia filas. Se distinguen en el detalle para que nadie confunda una averia con falta de datos.
+    const noMidio = n === 'ERR' || comparadas === 0;
+    const marca = noMidio ? 'n/d ' : n === '0' ? 'OK  ' : 'FALLA';
+    const detalle = n === 'ERR' ? 'ERR' : `${n} de ${comparadas}`;
+    console.log(`  [${marca}] ${c.par.padEnd(16)} ${c.regla}  (${detalle})`);
+    if (comparadas === 0) console.log('            sin filas que comparar');
   }
 
   const v = veredictoCoherencia(comprobaciones);
   console.log(`\n  cross_coherence_verified = ${v.estado}`);
   console.log(
     `  ${v.medidas} de ${comprobaciones.length} medidas · ${v.incoherentes} incoherente(s) · ` +
-      `${v.noMedidas} sin poder mirar`,
+      `${v.noMedidas} sin poder mirar · ${v.sinFilas} sin filas que comparar`,
   );
   if (v.estado === 'sin_datos') {
     console.log('  Esto NO es un aprobado: es una comprobacion que no ha podido mirar.');
@@ -431,10 +485,20 @@ async function main(): Promise<void> {
   // PT-149: salir con 0 cuando no se pudo medir era lo que hacia grave a H-021. Un fallo que sale
   // con 0 no es un fallo para nadie que lo automatice. `verificado` es el unico estado que pasa.
   if (p.falla || v.estado !== 'verificado') {
+    // PT-177 — El motivo importa tanto como el codigo de salida. «No se pudo medir» mandaba a revisar
+    // la conexion **incluso cuando la conexion estaba perfecta** y lo que faltaba eran filas: es la
+    // leccion de H-020, donde un 400 por un uuid invalido mandaba a mirar el identificador en vez de la
+    // ruta. Un mensaje que apunta al sitio equivocado cuesta mas que no tener mensaje.
+    const porFaltaDeDatos = v.sinFilas > 0 && v.noMedidas === 0;
+
     console.error(
       p.falla || v.estado === 'incoherente'
         ? '\n  Una regla de dominio violada es un HALLAZGO, no un test roto: registralo en PTSA.\n'
-        : '\n  No se pudo medir. Revisa la conexion a la base antes de leer nada de arriba.\n',
+        : porFaltaDeDatos
+          ? '\n  No hay datos que comparar en ' +
+            `${v.sinFilas} de ${comprobaciones.length} comprobaciones. La conexion esta BIEN: lo que\n` +
+            '  falta es salida real. Genera datos (`run-all.sh`) y mide en la MISMA sesion.\n'
+          : '\n  No se pudo medir. Revisa la conexion a la base antes de leer nada de arriba.\n',
     );
     process.exit(1);
   }

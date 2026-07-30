@@ -2945,3 +2945,30 @@ Delta (real vs planificado): la fase se escribio ayer y **se vio pasar hoy**. Lo
 PTSA reference: **H-027** ya `CORREGIDA` y comprobada en vivo: la corrida anterior, con diez fases sin
   salida, imprimio diez lineas de `*** FALLO / NO EJECUTADA ***` y salio con 1. Antes habria mostrado una
   sola linea en verde.
+
+## PT-177 — BUG: el veredicto de coherencia no declaraba su denominador (H-025)
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-177-veredicto-declara-denominador
+Objective: que `cross_coherence_verified` no diga «verificado» sin haber comparado una sola fila.
+Root cause: cada comprobacion era un `SELECT count(*)` de filas **incoherentes**, sin universo. Una
+  consulta que corre limpia sobre cero filas devuelve `0` y se contaba como medida: **cuanto mas vacia la
+  base, mas verde el veredicto** — la propiedad inversa de la que debe tener un instrumento de auditoria.
+  PT-149 arreglo el caso «no pude conectar» (`ERR`) y dejo este. Y el propio docstring **declaraba la
+  proteccion sin implementarla**: «un catalogo vacio da `sin_datos`, no `verificado`».
+  Observado con la base vacia **y tambien con la base poblada**: cuatro de las cinco comparaban cero
+  filas y el veredicto decia `verificado · 5 de 5 medidas`. Las cinco cubren dinero.
+Solution: cada comprobacion declara su `universo` —el mismo `FROM`/`JOIN` sin la condicion de
+  desviacion— y el veredicto cuenta `sinFilas` **aparte** de `noMedidas`: «no pude conectar» y «no habia
+  nada que comparar» son dos problemas distintos, y mezclarlos habria escondido el segundo detras del
+  primero, que es exactamente lo que ya paso.
+  La salida ahora dice `0 de 1` en vez de `(0)`, y marca `sin filas que comparar` donde toca.
+  **Y el mensaje final se corrigio**: decia «revisa la conexion a la base» incluso con la conexion
+  perfecta. Es la leccion de H-020 —un error que manda a mirar el sitio equivocado cuesta mas que no
+  tenerlo—. Ahora distingue falta de datos de averia de conexion.
+Modified files: src/api/scripts/domain-rules.ts,
+  src/api/test/unit/dominio/veredicto-de-coherencia.spec.ts
+Evidence: docs/implementation/evidence/PT-177/
+Delta (real vs planificado): sin desviacion. Verificado ejecutando contra la base con salida real: el
+  veredicto pasa a `sin_datos` por las disputas (`0 de 0`) y el proceso sale con **1**.
+PTSA reference: **H-025** -> CORREGIDA.

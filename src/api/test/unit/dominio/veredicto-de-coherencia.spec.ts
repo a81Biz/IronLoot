@@ -33,9 +33,13 @@ import { veredictoCoherencia } from '../../../scripts/domain-rules';
  * veredicto de al lado. Aqui se aplica: **tres estados, no un booleano.**
  */
 describe('El veredicto de coherencia se deriva del resultado — PT-149 (H-021)', () => {
-  const ok = { par: 'P-002 → P-003', resultado: '0' as const };
-  const falla = { par: 'P-003 → P-010', resultado: '3' as const };
-  const err = { par: 'P-010 → P-009', resultado: 'ERR' as const };
+  // PT-177 (H-025) — `comparadas` es el DENOMINADOR: cuantas filas tenia la comprobacion para mirar.
+  // Sin el, una consulta que corre limpia sobre cero filas devuelve «0 incoherencias» y se cuenta como
+  // medida. Los casos de antes llevan un universo no vacio para seguir significando lo que decian.
+  const ok = { par: 'P-002 → P-003', resultado: '0' as const, comparadas: 5 };
+  const falla = { par: 'P-003 → P-010', resultado: '3' as const, comparadas: 7 };
+  const err = { par: 'P-010 → P-009', resultado: 'ERR' as const, comparadas: 'ERR' as const };
+  const vacia = { par: 'P-003 → P-006', resultado: '0' as const, comparadas: 0 };
 
   it('C1: las cinco miden y pasan → verificado', () => {
     expect(veredictoCoherencia([ok, ok, ok, ok, ok])).toEqual({
@@ -43,6 +47,9 @@ describe('El veredicto de coherencia se deriva del resultado — PT-149 (H-021)'
       medidas: 5,
       incoherentes: 0,
       noMedidas: 0,
+      // PT-177 — El campo nuevo entra en la igualdad estricta. Se deja el `toEqual` completo a
+      // proposito: un `objectContaining` habria dejado pasar que el veredicto omitiera el denominador.
+      sinFilas: 0,
     });
   });
 
@@ -76,6 +83,62 @@ describe('El veredicto de coherencia se deriva del resultado — PT-149 (H-021)'
     // Un catalogo vacio devolvia `true` con la logica vieja: `0 === 0`. Afirmar que se verifico la
     // coherencia de cero pares es la version degenerada del mismo error.
     expect(veredictoCoherencia([]).estado).toBe('sin_datos');
+  });
+
+  /**
+   * PT-177 (H-025) — **Una consulta que corre sobre CERO filas no ha medido nada.**
+   *
+   * PT-149 arreglo el caso «no pude conectar» (`ERR`) y dejo este: la consulta se ejecuta limpia,
+   * devuelve «0 incoherencias» porque **no hay una sola fila que comparar**, y contaba como medida.
+   *
+   * Observado el 2026-07-29 con la base vacia y **tambien con la base poblada**: cuatro de las cinco
+   * comprobaciones comparaban cero filas (0 pedidos, 0 comisiones, 0 disputas) y el veredicto decia
+   * `verificado · 5 de 5 medidas`. Las cinco cubren dinero.
+   *
+   * Y el propio docstring de `veredictoCoherencia()` **declaraba esta proteccion sin implementarla**:
+   * *«un catalogo vacio da `sin_datos`, no `verificado`»*. Estaba escrita la intencion, no el codigo.
+   */
+  describe('PT-177 — el veredicto declara su denominador', () => {
+    it('C6: cinco comprobaciones sobre CERO filas no son «verificado»', () => {
+      // El hallazgo tal cual se observo: consultas limpias, cero incoherencias, cero filas comparadas.
+      const v = veredictoCoherencia([vacia, vacia, vacia, vacia, vacia]);
+
+      expect(v.estado).toBe('sin_datos');
+      expect(v.medidas).toBe(0);
+    });
+
+    it('C7: una sola comprobacion vacia basta para NO decir «verificado»', () => {
+      // Es el caso real con la base poblada: cuatro vacias y una con datos.
+      expect(veredictoCoherencia([ok, ok, ok, ok, vacia]).estado).toBe('sin_datos');
+    });
+
+    it('C8: una incoherencia REAL sigue ganando sobre la falta de datos', () => {
+      // Una incoherencia observada es peor noticia que una no observada. El orden importa.
+      expect(veredictoCoherencia([vacia, falla]).estado).toBe('incoherente');
+    });
+
+    it('C9: con filas comparadas y sin incoherencias, si es «verificado»', () => {
+      const v = veredictoCoherencia([ok, ok, ok, ok, ok]);
+
+      expect(v.estado).toBe('verificado');
+      expect(v.medidas).toBe(5);
+    });
+
+    describe('casos de control', () => {
+      it('AC-02: `sinFilas` se cuenta aparte de `noMedidas` — no son lo mismo', () => {
+        // «No pude conectar» y «no habia nada que comparar» son dos problemas distintos, y mezclarlos
+        // habria escondido el segundo detras del primero, que es lo que ya paso una vez.
+        const v = veredictoCoherencia([err, vacia, ok]);
+
+        expect(v.noMedidas).toBe(1);
+        expect(v.sinFilas).toBe(1);
+        expect(v.medidas).toBe(1);
+      });
+
+      it('AC-03: el denominador no altera el caso que PT-149 ya cubria', () => {
+        expect(veredictoCoherencia([ok, err]).estado).toBe('sin_datos');
+      });
+    });
   });
 
   describe('salida del proceso', () => {

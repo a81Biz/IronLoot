@@ -1,0 +1,13 @@
+FAIL test/unit/dominio/veredicto-de-coherencia.spec.ts
+  ● Test suite failed to run
+
+    [96mtest/unit/dominio/veredicto-de-coherencia.spec.ts[0m:[93m131[0m:[93m18[0m - [91merror[0m[90m TS2339: [0mProperty 'sinFilas' does not exist on type 'VeredictoCoherencia'.
+
+    [7m131[0m         expect(v.sinFilas).toBe(1);
+    [7m   [0m [91m                 ~~~~~~~~[0m
+
+Test Suites: 1 failed, 1 total
+Tests:       0 total
+Snapshots:   0 total
+Time:        5.503 s
+Ran all test suites matching /veredicto-de-coherencia/i.

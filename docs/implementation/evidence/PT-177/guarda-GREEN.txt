@@ -1,0 +1,23 @@
+PASS test/unit/dominio/veredicto-de-coherencia.spec.ts
+  El veredicto de coherencia se deriva del resultado — PT-149 (H-021)
+    ✓ C1: las cinco miden y pasan → verificado (2 ms)
+    ✓ C2: una no se pudo medir → SIN_DATOS, nunca «verificado» (1 ms)
+    ✓ C3: las cinco en error → SIN_DATOS. Es el hallazgo tal cual se observo
+    ✓ C4: una incoherencia real → incoherente, y gana sobre la falta de datos
+    ✓ C5: sin comprobaciones no hay nada verificado
+    PT-177 — el veredicto declara su denominador
+      ✓ C6: cinco comprobaciones sobre CERO filas no son «verificado» (1 ms)
+      ✓ C7: una sola comprobacion vacia basta para NO decir «verificado»
+      ✓ C8: una incoherencia REAL sigue ganando sobre la falta de datos
+      ✓ C9: con filas comparadas y sin incoherencias, si es «verificado» (1 ms)
+      casos de control
+        ✓ AC-02: `sinFilas` se cuenta aparte de `noMedidas` — no son lo mismo (6 ms)
+        ✓ AC-03: el denominador no altera el caso que PT-149 ya cubria
+    salida del proceso
+      ✓ AC-01: «verificado» es el UNICO estado que permite salir con 0
+
+Test Suites: 1 passed, 1 total
+Tests:       12 passed, 12 total
+Snapshots:   0 total
+Time:        5.149 s, estimated 8 s
+Ran all test suites matching /veredicto-de-coherencia/i.
