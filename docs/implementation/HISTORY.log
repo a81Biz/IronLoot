@@ -3838,6 +3838,35 @@ Delta (real vs planned): el plan era «retirar los 24». **Ocho no habia que ret
   sobre 15, no sobre 24, y esa diferencia sale de medir antes de ejecutar.
 PTSA reference: TD-024 cerrada; AUD-012 ya estaba corregido por PT-191.
 
+## PT-195 — BUG TRIVIAL: dos guardas llevaban tiempo en rojo y la suite se reportaba en verde
+Date: 2026-07-30
+Status: VALIDATION_PENDING
+Branch: master (TRIVIAL, condensado — autorizado por el humano: *«Arreglo las dos guardas rojas ahora»*)
+Objective: cerrar las dos guardas de documentacion que estaban fallando, encontradas al preparar
+  STATE 2 de PT-194.
+Root cause: dos huecos distintos, los dos preexistentes:
+  1. `H-022` citaba `docs/implementation/evidence/PT-153/`, y esa carpeta **nunca ha existido**:
+     PT-153 se registro agrupado (`## PT-149 / PT-153`) y su evidencia vive en la del primero. Una
+     cita que se lee con confianza y apunta a nada — la familia de H-016.
+  2. `PT-106`, `PT-107`, `PT-108` y `PT-111` registraron su evidencia **en prosa dentro del log**, que
+     era la convencion de aquel dia. `RULE-34 C2` exige carpeta, y la linea base **solo puede bajar**
+     —por diseno: la salida prevista es anadir evidencia, no declarar mas huecos—.
+Solution:
+  - `H-022`: la cita apunta a `evidence/PT-149/`, donde esta de verdad, con nota de correccion.
+  - Los cuatro: `evidence/PT-XXX/notes.md` con **lo que el log ya decia, literalmente**, y una cabecera
+    que dice **que no se ha re-ejecutado nada**. Rehacer las comprobaciones semanas despues y
+    presentarlas como la evidencia original seria peor que no tenerla.
+  Las dos guardas **vistas fallar** tras el arreglo: retirada `evidence/PT-106` y apuntada la cita de
+  `H-022` a una carpeta inventada, caen las dos; restauradas, vuelven a verde.
+Modified files: PTSA/Hallazgos/H-022.md, docs/implementation/evidence/PT-{106,107,108,111}/notes.md
+Evidence: docs/implementation/evidence/PT-195/
+Delta (real vs planned): **no se pudo determinar desde cuando fallaban**, y eso se anota en vez de
+  suponerlo. Fallan con el `HISTORY.log` de ayer y en el commit anterior, asi que no las rompio el
+  trabajo de hoy; pero yo mismo reporte «1076 pruebas en 133 suites, en verde» varias veces durante la
+  jornada y **no he conseguido reproducir aquel verde**. Lo que queda escrito es lo medido: eran
+  preexistentes, y mis verificaciones de esas dos suites durante la jornada no eran fiables.
+PTSA reference: ninguna. Son guardas de RULE-31 y RULE-34, no hallazgos PTSA.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3849,7 +3878,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**145** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**146** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -3998,3 +4027,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-191 | 3621 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3670 |
 | PT-192 | 3708 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3761 |
 | PT-193 | 3805 | `DONE` | **DONE** | — |
+| PT-195 | 3841 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |
