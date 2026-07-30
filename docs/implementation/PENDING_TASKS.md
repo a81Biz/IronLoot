@@ -1,6 +1,6 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (PT-194 — el refresco de sesión, cableado)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-196 — rotación del refresh token, STATE 3)
 
 ---
 
@@ -20,8 +20,13 @@ explicación cómoda.
 **PT-194 cerrado con VoBo humano** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37).
 **`TD-025` cerrada** con él.
 
-**En curso**: **PT-196** — la **rotación del refresh token**, que PT-194 dejó declarada fuera de
-alcance. Sin rotar, un token robado sirve siete días.
+**En curso**: **PT-196** — la **rotación del refresh token**, en **STATE 3** esperando el Proposal
+Gate. Paquete en `changes/PT-196-rotacion-del-refresh-token/` con 12 tareas en cuatro bloques.
+**Cero líneas de `src/` y ninguna rama** — el Proposal Gate es absoluto.
+
+Es **MAJOR**: toca autenticación **y** el esquema. Y el orden de despliegue es parte del diseño — si el
+API rotara antes de que el CLIENT persista el token nuevo, **todos los usuarios perderían la sesión en
+su segundo refresco**.
 
 **TD-024 cerrada** por PT-193 (ADR-058): 15 símbolos retirados, 8
 conservados por ADR-033 y 2 que eran falsos positivos de medir por nombre. Queda deuda técnica en
