@@ -1,4 +1,6 @@
 import { DistributedLockService } from '../src/common/redis/distributed-lock.service';
+import { ConfigService } from '@nestjs/config';
+import { redisUrlObligatoria } from '../src/common/config/redis-url';
 import Redis from 'ioredis';
 
 /**
@@ -16,13 +18,14 @@ describe('Scheduler Distributed Lock (Integration)', () => {
   let lockService2: DistributedLockService;
   let redis: Redis;
 
+  // PT-185 (H-035) — Antes esto era `REDIS_HOST || 'localhost'` + `REDIS_PORT || '6379'`: **la misma forma que
+  // el hallazgo**, en el fichero que la prueba. `REDIS_URL` es el unico contrato de Redis desde PT-137, y aqui
+  // tambien: si falta, esta prueba no debe adivinar a donde conectarse — debe decir que no esta configurada.
+  const redisUrl = redisUrlObligatoria(process.env.REDIS_URL);
+
   beforeAll(async () => {
-    // Initialize real Redis connection (requires Redis running on localhost:6379)
-    redis = new Redis({
-      host: process.env.REDIS_HOST || 'localhost',
-      port: parseInt(process.env.REDIS_PORT || '6379'),
-      db: 1, // Use separate DB for tests
-    });
+    // Conexion real (requiere Redis en pie). `db: 1` para no tocar los datos de desarrollo.
+    redis = new Redis(redisUrl, { db: 1 });
 
     // Verify Redis connectivity
     try {
@@ -33,8 +36,14 @@ describe('Scheduler Distributed Lock (Integration)', () => {
     }
 
     // Create two lock service instances (simulating two API instances)
-    lockService1 = new DistributedLockService();
-    lockService2 = new DistributedLockService();
+    //
+    // PT-185 (H-035) — El servicio recibe la URL por `ConfigService`: ya no la lee con reserva a `localhost`,
+    // que era el defecto que RULE-17 prohibe. Aqui se le pasa la misma URL que usa este fichero, asi que las
+    // dos instancias siguen apuntando al mismo Redis — que es lo que la prueba necesita para que una gane el
+    // cerrojo y la otra no.
+    const config = { get: () => redisUrl } as unknown as ConfigService;
+    lockService1 = new DistributedLockService(config);
+    lockService2 = new DistributedLockService(config);
   });
 
   afterAll(async () => {

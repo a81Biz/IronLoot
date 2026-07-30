@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DistributedLockService } from './distributed-lock.service';
+import { ConfigService } from '@nestjs/config';
 
 // Mock Redis client — match the named export pattern used in the service
 jest.mock('ioredis', () => ({
@@ -16,7 +17,16 @@ describe('DistributedLockService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [DistributedLockService],
+      providers: [
+        DistributedLockService,
+        // PT-185 (H-035) — El servicio recibe la URL por `ConfigService` en vez de leerla con reserva a
+        // `localhost`. El doble devuelve una URL valida: lo que este fichero prueba es el cerrojo, no la
+        // configuracion — de esa responde `conexiones-sin-reserva.spec.ts`.
+        {
+          provide: ConfigService,
+          useValue: { get: jest.fn().mockReturnValue('redis://redis:6379') },
+        },
+      ],
     }).compile();
 
     service = module.get<DistributedLockService>(DistributedLockService);
