@@ -138,6 +138,16 @@ model Session {
 
   // Token
   refreshToken String   @unique @map("refresh_token") @db.VarChar(255)
+
+  // PT-196 — Rotacion del refresh token. Las dos son **anulables a proposito**: es lo que hace la
+  // migracion aditiva, y lo que permite que las sesiones vivas al desplegar sigan valiendo y roten en
+  // su primer refresco.
+  //
+  // `previousRefreshToken` lleva `@unique` por el mismo motivo que el vigente: sin el, dos sesiones
+  // podrian compartir «anterior», la busqueda seria ambigua y **se revocaria la sesion equivocada**.
+  previousRefreshToken String?   @unique @map("previous_refresh_token") @db.VarChar(255)
+  rotatedAt            DateTime? @map("rotated_at") @db.Timestamptz
+
   expiresAt    DateTime @map("expires_at") @db.Timestamptz
 
   // Session metadata

@@ -2,10 +2,9 @@
 
 **FDGE V3** · **2026-07-30** · Se **sobrescribe**: es el estado de ahora, no la historia.
 
-**Rama**: `master`, árbol limpio, al día con `origin` y sin una sola rama suelta.
+**Rama**: `feature/PT-196-rotacion-del-refresh-token`, pendiente de fusionar.
 
-**Pruebas**: **1325** unitarias en verde — API **1082** (134 suites) · CORE **93** (6) · CLIENT **134**
-(11) · ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
+**Pruebas**: **1354** unitarias en verde — API **1101** (136 suites) · CLIENT **144** (12) · CORE **93** (6) · ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
 con sus 41 casos: eran pruebas verdes sobre código que no corría en producción.)*
 
 **Reglas duras**: **36** `RULE-NN` (RULE-38 nueva). **Guardas de documentación**: **15** suites / **159** pruebas.
@@ -57,7 +56,9 @@ esta corrida vivían en el **camino de fallo**, que nunca se había ejecutado.
 
 ---
 
-## Esperan tu validación: nada
+## Esperan tu validación: **PT-196**
+
+Toca autenticación **y** el esquema.
 
 **PT-194 cerrado con tu VoBo** el 2026-07-30. `TD-025` cerrada con él. **En curso: PT-196**, la
 rotación del refresh token.

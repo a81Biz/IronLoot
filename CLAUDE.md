@@ -445,6 +445,20 @@ Each SSR site follows the same convention:
   la lección de PT-088 aplicada al tiempo. **Cuidado con lo que esto destapó**: el refresco existe, tiene
   su cookie y **no lo llama nadie**, así que la sesión efectiva del portal dura **quince minutos**
   (`TD-025`).
+- **La sesión dura lo que dura el refresh token, y ese token rota** (PT-194 + PT-196, `TD-025`,
+  ADR-059). El API exponía `/auth/refresh`, BASE guardaba el token con su cookie de 30 días y **no lo
+  llamaba nadie**: la sesión efectiva del portal duraba **quince minutos**. Ahora refrescan los dos
+  caminos —el `ClientAuthGuard` y el proxy BFF—, y **sólo ante `TokenExpiredError`**: refrescar ante
+  cualquier fallo de `verify` bastaría para que un `access_token` basura con una cookie de refresco
+  válida obtuviera uno nuevo.
+  **Y el token rota.** Presentarlo cae en cuatro casos: el vigente rota; el anterior **dentro de
+  `ROTATION_GRACE_SEC`** (30 s, derivados del tope de refresco) devuelve los vigentes sin rotar —es una
+  carrera, no un robo—; el anterior **fuera** de la gracia es **reuso** y revoca la sesión entera; y
+  cualquier otro es sesión no encontrada. **Revocada y expirada se comprueban ANTES que el reuso**, o
+  una sesión ya revocada llenaría el registro de ruido justo cuando hay que leerlo.
+  Dos consecuencias que conviene tener presentes: al detectar reuso **el usuario legítimo también
+  pierde la sesión** —no se sabe cuál de las dos copias es la suya—, y **se recuerda un solo token hacia
+  atrás**, así que un robo que llega tras dos rotaciones se lee como sesión caducada.
 - **Una afirmación de estado sobre un hallazgo lleva veredicto, y «sin verificar» vale** (RULE-38, PT-189).
   Los 36 `AUD-XXX` de la auditoría de julio tienen su estado en la **tabla de veredictos** de
   `docs-v2/transversal/Registro-de-Hallazgos.md`: `corregido` · `abierto` · `limitación declarada` ·

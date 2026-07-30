@@ -1,10 +1,10 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (PT-196 — rotación del refresh token, STATE 3)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-196 — la rotación del refresh token)
 
 ---
 
-## Esperando validación humana: nada
+## Esperando validación humana: **PT-196**
 
 **PT-181 … PT-185 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
 veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.

@@ -47,6 +47,8 @@ import { JwtPayload, AuthenticatedUser, Role } from './decorators';
  * - Password reset
  * - Email verification
  */
+import { graciaDeRotacionSeg } from './rotation-grace';
+
 @Injectable()
 export class AuthService {
   private readonly log: ChildLogger;
@@ -329,9 +331,11 @@ export class AuthService {
     this.ctx.getTraceId();
     this.log.debug('Refreshing token');
 
-    // Find session
-    const session = await this.prisma.session.findUnique({
-      where: { refreshToken },
+    // PT-196 — **Se busca por el vigente O por el anterior**, porque presentar el anterior no es
+    // necesariamente un error: dentro de la ventana de gracia es una carrera de dos peticiones del
+    // mismo navegador, y fuera de ella es un robo. Distinguirlo es el PT entero.
+    const session = await this.prisma.session.findFirst({
+      where: { OR: [{ refreshToken }, { previousRefreshToken: refreshToken }] },
     });
 
     if (!session) {
@@ -368,14 +372,84 @@ export class AuthService {
     // Check user state
     this.validateUserState(user);
 
-    // Update session last used
-    await this.prisma.session.update({
-      where: { id: session.id },
-      data: { lastUsedAt: new Date() },
+    // PT-196 — **Aqui se decide cual de los cuatro casos es.**
+    //
+    // El orden importa y esta comprobado: revocada, expirada y estado del usuario **ya se miraron
+    // arriba**. Si el reuso se comprobara antes, una sesion ya revocada dispararia un evento de
+    // seguridad en cada reintento y el registro se llenaria de ruido justo cuando hay que leerlo.
+    const esElAnterior =
+      session.previousRefreshToken != null && session.previousRefreshToken === refreshToken;
+
+    if (esElAnterior) {
+      const graciaMs = graciaDeRotacionSeg() * 1000;
+      // El reloj cuelga de **la rotacion**, no de la ultima vez que alguien toco la fila. Con
+      // `lastUsedAt` cada refresco reiniciaria la ventana y el token anterior valdria
+      // indefinidamente — es la leccion de H-011.
+      const dentroDeLaGracia =
+        session.rotatedAt != null && Date.now() - session.rotatedAt.getTime() <= graciaMs;
+
+      if (dentroDeLaGracia) {
+        // **Una carrera, no un robo.** Se devuelven los tokens vigentes sin rotar: el navegador se
+        // pone al dia y nadie pierde la sesion.
+        this.metrics.increment('auth_refresh_grace');
+        return this.emitirAcceso(user, session.refreshToken);
+      }
+
+      // **REUSO.** Hay dos copias del token en circulacion y no se sabe cual es la legitima. Se
+      // revoca **la sesion**, no el token: dejarla viva seria dejar viva la del ladron. El usuario
+      // legitimo tambien vuelve al login, y es el resultado correcto.
+      await this.prisma.session.update({
+        where: { id: session.id },
+        data: { revokedAt: new Date() },
+      });
+
+      // **No es un 401 mas: es un evento de seguridad, y lleva las DOS puntas.** Sin el origen de la
+      // sesion y el de la presentacion queda «hubo un reuso» y no se puede investigar si el token
+      // viajo de un dispositivo a otro.
+      this.log.error('REUSO DE REFRESH TOKEN detectado: sesion revocada', undefined, {
+        sessionId: session.id,
+        userId: session.userId,
+        ipSesion: session.ipAddress,
+        userAgentSesion: session.userAgent,
+        rotadoHace: session.rotatedAt
+          ? `${Math.round((Date.now() - session.rotatedAt.getTime()) / 1000)}s`
+          : 'desconocido',
+      });
+      this.metrics.increment('auth_refresh_failed', 1, { reason: 'token_reuse_detected' });
+
+      throw new TokenInvalidException();
+    }
+
+    // **Caso normal: rota.** El bloqueo va antes de escribir porque dos refrescos concurrentes con el
+    // vigente leerian el mismo estado y escribirian dos rotaciones: la segunda pisaria a la primera y
+    // **el token entregado primero dejaria de existir**. Un usuario expulsado por su propia
+    // concurrencia. Es RULE-24 aplicada a la sesion en vez de al monedero.
+    const tokenRotado = this.generateSecureToken();
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM sessions WHERE id = ${session.id}::uuid FOR UPDATE`;
+      await tx.session.update({
+        where: { id: session.id },
+        data: {
+          previousRefreshToken: session.refreshToken,
+          refreshToken: tokenRotado,
+          rotatedAt: new Date(),
+          lastUsedAt: new Date(),
+        },
+      });
     });
 
-    // Generate new access token (keep same refresh token)
-    // Map from session.user (which now includes profile)
+    return this.emitirAcceso(user, tokenRotado);
+  }
+
+  /**
+   * PT-196 — Firma el token de acceso y devuelve la respuesta. Se extrae porque **dos** caminos la
+   * necesitan: la rotacion normal y la carrera dentro de la gracia, que devuelve los vigentes.
+   */
+  private emitirAcceso(
+    user: Parameters<typeof this.mapUserToResponse>[0],
+    refreshToken: string,
+  ): AuthTokensResponseDto {
     const uDto = this.mapUserToResponse(user);
 
     const payload: JwtPayload = {
@@ -400,7 +474,7 @@ export class AuthService {
 
     return {
       accessToken,
-      refreshToken: session.refreshToken,
+      refreshToken,
       expiresIn: this.accessTokenExpirySeconds,
     };
   }
