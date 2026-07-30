@@ -4,7 +4,23 @@
 
 ---
 
-## Cero trabajo FDGE pendiente
+## Esperando validación humana
+
+`[R44]` y STATE 6 prohíben al agente cerrar bugs. **Cuatro esperan tu palabra, no trabajo:**
+
+| PT | Qué es | Evidencia |
+|---|---|---|
+| **PT-177** | El veredicto de coherencia declara su denominador (**H-025**) | `evidence/PT-177/` |
+| **PT-178** | Redis observable, y la salud sin depender del limitador (**H-026**) | `evidence/PT-178/` |
+| **PT-179** | Un 4xx de la pasarela no es avería nuestra (F-176-C) | `evidence/PT-179/` |
+| **PT-180** | Una tasa sobre dos casos no es veredicto (**H-028**) + dos `catch` mudos míos | `evidence/PT-180/` |
+
+Los cuatro **verificados ejecutando**, no leyendo. Los hallazgos que cierran ya están `CERRADA` por tu
+instrucción de antemano: *«si hay un hallazgo nuevo lo tratas hasta cerrarlo»*.
+
+---
+
+## Cero trabajo FDGE pendiente aparte de eso
 
 **Los catorce PT que esperaban validación se cerraron con VoBo humano el 2026-07-29**: PT-166 … PT-179.
 Detalle en `HISTORY.log` § «CIERRE CON VoBo HUMANO — PT-166 … PT-179 y H-025 / H-026 / H-027».

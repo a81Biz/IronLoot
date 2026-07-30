@@ -802,3 +802,65 @@ falta son **2 puntos de Health**, y los tienen los cuatro hallazgos activos. **L
 defectos, no de lo que la auditoria no pudo mirar.**
 
 **Estado de la corrida:** CERRADA_CON_HALLAZGOS.
+
+---
+
+## S-005 — Delta sync (`resume PTSA`) — 2026-07-29
+
+**Disparador:** peticion del humano tras aceptar H-005 como limitacion declarada y cerrar los catorce PT de
+la jornada.
+
+**Los cinco checkpoints, sobre salida real** (3 usuarios · 1 subasta CLOSED · 1 pedido · 2 pagos · 3 ciclos
+· 17 asientos · 1 comision · 1 envio):
+
+| Checkpoint | Resultado |
+|---|---|
+| `audit:domain` (D1.N1) | **14 de 14 reglas CUMPLE**, `rubric = 100`. **Primera emision sin una sola `n/d`** |
+| `audit:domain` (D1.N3) | `sin_datos`: 4 de 5 medidas, 1 sin filas (`0 disputas`). **H-025 funcionando** |
+| `audit:schema` (D2) | OK — las migraciones reproducen `schema.prisma` |
+| `audit:check` (D2) | 0 avisos, sin novedades |
+| `audit:observability` (D3) | silencios **25 == linea base**; `trace_completeness` **100 %** |
+| `audit:reliability` (D5) | `SIN_DATOS` **por muestra insuficiente**. `health_unstable = false` |
+
+Y los endpoints de salud en vivo, **en los dos estados**: con Redis en pie `healthy` + `redis up`; con
+Redis parado `unhealthy` + `redis down` + «PING sin respuesta en 2000 ms».
+
+**Evidencia nueva:** E-033.
+
+**Hallazgo nuevo, nacido y cerrado en esta corrida: H-028 (D3 MEDIA).** La primera medicion de D5 dio
+`Success Rate 50 % ROJO` -> `health_unstable = true` -> **clase capada a B**. El sistema **no estaba
+inestable**: el ciclo que uso la via garantizada la uso porque el sandbox de PayPal no notifico, que es lo
+que PT-087 diseño. Con `n = 2` una tasa solo puede valer 0 %, 50 % o 100 % y el umbral verde es `>= 95`:
+**un solo fallback fuerza ROJO por aritmetica**. Y al reves es peor — `1 de 1` daba `100 % VERDE`, que fue
+la primera medicion de D5 de esta auditoria. `reliability-check.ts` **ya llevaba escrita esta leccion** por
+PT-122, que corrigio **que** ciclos entran en el denominador; nadie miro **cuantos**. Corregido por PT-180
+con `MUESTRA_MINIMA = 20`, **derivada de los umbrales del propio fichero** y no elegida.
+
+**Y dos `catch` mudos mios, cazados por el checkpoint que existe para eso.** D3 dio **27** contra una linea
+base de 25: dos `catch` nuevos en el JS del detalle de pedido, introducidos por PT-174 unas horas antes, que
+avisaban a la persona y no dejaban rastro del error. Corregidos en PT-180.
+
+**Hallazgos cerrados en esta corrida:** H-005 (por decision), H-025 (PT-177), H-026 (PT-178), H-028
+(PT-180). Con H-027 (PT-176, de S-004-M), **el registro queda con 28 hallazgos y CERO activos**.
+
+**H-005 se cerro por decision, no por codigo, y se deja dicho como se legitima:** un hallazgo que se cierra
+«aceptandolo» sin mas vaciaria el score —bastaria aceptar todo para sacar un 100—. Aqui la aceptacion va
+con **la enmienda de la declaracion de valor** (`F-1 § U-006`): el producto ya **no promete** emitir CFDI y
+`P-012` pasa a `FUERA_DE_ALCANCE_V1`. El hueco que D1 mide se cierra **por el lado de la declaracion**, y
+queda escrito que se cerro por ahi. **El sistema sigue sin emitir facturas.** Reapertura declarada: si v1.1
+lo vuelve a prometer, `P-012` vuelve y H-005 se reabre con el.
+
+**Scores:** Health 88.0 -> **100** · Risk 100 -> **0** · Confidence 97.9 -> **91.0** · Clase **B** -> **A**.
+
+**Como hay que leer ese 100, y esto es parte de la emision:**
+
+1. **Sube en parte porque el alcance se estrecho**, no solo porque se arreglara.
+2. **La Confianza esta a UN punto del umbral de A** (91 contra 90). La baja **D5 al 0 %**: la fiabilidad
+   operacional **no esta demostrada**. Hacen falta 20 ciclos resueltos y hay 2.
+3. **Cero hallazgos activos es cero defectos CONOCIDOS.** Un dia de mirar y ejecutar produjo **ocho
+   hallazgos**, cinco de ellos con meses en el codigo. Este `0` mide lo que se ha buscado.
+
+**Cobertura declarada** (`[A8]`): D1/D2/D3/D4 al **100 %** · **D5 al 0 %**. D1 llega al 100 por primera vez
+gracias a la **fase 35** (PT-175), que cierra una subasta de verdad.
+
+**Estado de la corrida:** CERRADA_SIN_HALLAZGOS_ACTIVOS.

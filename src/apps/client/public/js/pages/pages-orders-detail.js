@@ -75,7 +75,11 @@ if (formEnvio) {
 
       avisar('msgEnvio', true, 'Envío declarado. El comprador ya puede confirmar la recepción.');
       window.location.reload();
-    } catch {
+    } catch (e) {
+      // PT-180 — El aviso es para la persona; esto es para quien tenga que averiguar por que fallo.
+      // Sin registrar el error, «no se pudo contactar» no distingue un timeout de un 500 ni de un
+      // bloqueo de la CSP — tres causas con tres soluciones distintas. Lo caza el checkpoint D3.
+      console.error('[orders] fallo al declarar el envio:', e);
       avisar('msgEnvio', false, 'No se pudo contactar con el servidor.');
       boton.disabled = false;
     }
@@ -110,7 +114,9 @@ if (btnRecepcion) {
 
       avisar('msgRecepcion', true, 'Recepción confirmada. Gracias.');
       window.location.reload();
-    } catch {
+    } catch (e) {
+      // PT-180 — Igual que arriba, y aqui importa mas: de esta confirmacion cuelga el pago al vendedor.
+      console.error('[orders] fallo al confirmar la recepcion:', e);
       avisar('msgRecepcion', false, 'No se pudo contactar con el servidor.');
       btnRecepcion.disabled = false;
     }

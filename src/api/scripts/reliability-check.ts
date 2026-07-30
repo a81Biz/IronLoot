@@ -33,6 +33,40 @@ export interface Tasa {
   detalle: string;
 }
 
+/**
+ * PT-180 (H-028) — **Muestra minima para que una tasa sea un veredicto.**
+ *
+ * **El numero se deriva de los umbrales de abajo, no se elige.** Con `>= 95 %` para VERDE, un solo fallo
+ * entre `n` casos cumple `(n-1)/n >= 0.95` unicamente si **`n >= 20`**. Por debajo de veinte, la metrica
+ * **no puede expresar «bien»**: con `n = 2` los unicos valores posibles son 0 %, 50 % y 100 %, asi que un
+ * solo uso de la via garantizada fuerza ROJO por aritmetica, no por inestabilidad.
+ *
+ * Observado en S-005 (H-028): `Success Rate 50% ROJO` sobre **dos** ciclos, `health_unstable = true` y la
+ * clase capada a B — cuando el ciclo que uso el fallback lo uso porque el sandbox de PayPal no notifico,
+ * que es exactamente lo que PT-087 diseño.
+ *
+ * Y el falso verde es peor: **1 de 1 resuelto sin fallback daba `100 % VERDE`** y se leia como fiabilidad
+ * demostrada. Fue la primera medicion de D5 de esta auditoria.
+ *
+ * `reliability-check.ts` ya llevaba escrita esta leccion por PT-122, que corrigio **que** ciclos entran en
+ * el denominador. Nadie miro **cuantos**. Misma familia que H-025: un instrumento de auditoria declara la
+ * base de su afirmacion.
+ */
+export const MUESTRA_MINIMA = 20;
+
+/**
+ * Degrada un semaforo a `SIN_DATOS` cuando la muestra no sostiene el veredicto.
+ *
+ * `SIN_DATOS` **no capa la clase** —`health_unstable` se dispara con ROJO— **y tampoco cuenta como
+ * verde**. La falta de evidencia pesa donde debe: en la cobertura declarada de D5, no en un veredicto
+ * inventado en ninguna de las dos direcciones.
+ */
+export function semaforoConMuestra(semaforo: Semaforo, muestra: number): Semaforo {
+  if (semaforo === 'SIN_DATOS') return 'SIN_DATOS';
+
+  return muestra >= MUESTRA_MINIMA ? semaforo : 'SIN_DATOS';
+}
+
 /** Umbrales declarados en F-1 §6. */
 export function clasificarExito(pct: number | null): Semaforo {
   if (pct === null) return 'SIN_DATOS';
@@ -125,13 +159,19 @@ export async function medir(): Promise<Tasa[]> {
     {
       nombre: 'Success Rate',
       valor: exito,
-      semaforo: clasificarExito(exito),
-      detalle: `${alPrimerIntento} de ${resueltos} ciclos resueltos sin necesitar la via garantizada`,
+      // PT-180 (H-028) — El denominador de esta tasa son los ciclos RESUELTOS. Con menos de
+      // `MUESTRA_MINIMA` el veredicto no lo sostiene la muestra, en ninguna de las dos direcciones.
+      semaforo: semaforoConMuestra(clasificarExito(exito), resueltos),
+      detalle:
+        `${alPrimerIntento} de ${resueltos} ciclos resueltos sin necesitar la via garantizada` +
+        (resueltos > 0 && resueltos < MUESTRA_MINIMA
+          ? ` · MUESTRA INSUFICIENTE (<${MUESTRA_MINIMA}): el semaforo no se pronuncia`
+          : ''),
     },
     {
       nombre: 'Retry Rate',
       valor: reintento,
-      semaforo: clasificarReintento(reintento),
+      semaforo: semaforoConMuestra(clasificarReintento(reintento), resueltos),
       detalle:
         `${conSondeo} de ${resueltos} ciclos RESUELTOS necesitaron al menos un POLL_ATTEMPT` +
         (abiertosEnSondeo
@@ -141,7 +181,8 @@ export async function medir(): Promise<Tasa[]> {
     {
       nombre: 'Failure Rate',
       valor: fallo,
-      semaforo: fallo === 0 ? 'VERDE' : fallo <= 5 ? 'AMBAR' : 'ROJO',
+      // El denominador de esta son TODOS los ciclos, no solo los resueltos.
+      semaforo: semaforoConMuestra(fallo === 0 ? 'VERDE' : fallo <= 5 ? 'AMBAR' : 'ROJO', totales),
       detalle: `${fallidos} de ${totales} ciclos EXPIRED o FAILED`,
     },
   ];

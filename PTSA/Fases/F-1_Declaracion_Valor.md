@@ -181,3 +181,40 @@ producir un `CfdiRecord` válido», pero no dice de quién es la obligación. Un
 no nombra al obligado no se puede auditar.
 
 Se registra aquí para que la próxima sesión no vuelva a buscarla.
+
+---
+
+## Update U-006 — 2026-07-29: la facturación fiscal sale del alcance de v1.0
+
+**Decisión del humano, recibida el 2026-07-29:** *«acepta como limitación declarada»*.
+
+**Qué cambia en la declaración de valor.** `P-012 (CFDI Record)` **deja de ser un producto que v1.0
+entrega**. Pasa a producto declarado **fuera de alcance**, con su motivo: emitir un CFDI exige un **PAC
+certificado ante el SAT** —un tercero contratado— y una **decisión fiscal** sobre quién factura una venta
+entre particulares. Ninguna de las dos cosas es código.
+
+**Por qué esto es parte del cierre de H-005 y no un atajo para cerrarlo.** Si un hallazgo se cerrase
+«aceptándolo» sin más, el score dejaría de significar nada: bastaría aceptar todo para sacar un 100. Lo
+que legitima este cierre es que **la declaración de valor se corrige a la vez**. H-005 decía que el
+producto **prometía** una factura fiscal y no la emitía; a partir de hoy **no la promete**. El hueco entre
+lo declarado y lo entregado —que es exactamente lo que mide D1— se cierra por el lado de la declaración,
+y queda dicho que se cerró por ahí.
+
+**Lo que NO cambia:** el sistema sigue sin emitir facturas fiscales. Un vendedor con obligaciones ante el
+SAT las tiene igual, y `P-012` sigue existiendo como modelo de datos y como stub. **Aceptar una
+limitación no la hace desaparecer: la hace explícita.**
+
+**Los tres modelos posibles siguen sobre la mesa** para cuando haya proveedor, medidos en
+`docs/implementation/evidence/PT-155/hallazgos.md`. Dos cosas de ahí que conviene no perder:
+
+- **La opción C es subconjunto de la B.** Diferir no cierra puertas en ese sentido; al revés sí — la B
+  exige datos fiscales y una autorización legal que **no se pueden pedir retroactivamente** a quien ya
+  vendió.
+- **La elección decide si el timbrado entra en el camino del dinero.** En B entra; en A y C no.
+
+**Consecuencia para el score:** D1 deja de tener un hallazgo activo. **Y eso hay que leerlo con el
+contexto de arriba**: sube porque el alcance se estrechó, no porque se implementara nada.
+
+**Reapertura.** Si v1.1 vuelve a declarar la facturación como producto entregado, `P-012` vuelve al
+inventario y H-005 se reabre con él. La decisión está fechada y firmada para que se pueda revisar, no
+para que se olvide.

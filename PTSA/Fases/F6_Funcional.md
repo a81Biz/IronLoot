@@ -353,3 +353,39 @@ y la liquidacion— hace falta una corrida que **cierre** una subasta. Es el uni
 es de la suite, no del producto.
 
 Evidencia: **E-032**.
+
+---
+
+## Update U-008 — 2026-07-29 (S-005, delta sync)
+
+**Las 14 reglas de dominio, medidas y cumpliendo. Primera vez sin una sola `n/d`.**
+
+```
+  rubric_compliance_score = 100
+  Todas las reglas aplicables se cumplen
+```
+
+Lo permitio la **fase 35** (PT-175): cierra una subasta de verdad, asi que `R-5.1a` («toda subasta cerrada
+con pujas genera pedido») y `R-5.1d` («toda venta liquidada registra su comision») por fin tuvieron datos.
+En S-004-M salian `n/d` y era el unico hueco que quedaba en D1.
+
+**Coherencia inter-producto, ahora con denominador** — H-025 corregido por PT-177:
+
+```
+  [OK  ] P-002 → P-003  (0 de 1)   ·  [OK  ] P-003 → P-010  (0 de 1)
+  [OK  ] P-010 → P-009  (0 de 1)   ·  [OK  ] P-002 → P-007  (0 de 1)
+  [n/d ] P-003 → P-006  (0 de 0)   sin filas que comparar
+
+  cross_coherence_verified = sin_datos · 4 de 5 medidas · 1 sin filas
+```
+
+Antes decia `verificado · 5 de 5 medidas` con **cero filas** en cuatro de las cinco. Ahora declara sobre
+cuantas filas se pronuncia, y con 0 disputas **no se pronuncia**.
+
+**D1 = 100** y `cobertura_D1 = 100 %`.
+
+**Nota de dominio, por la enmienda de F-1 § U-006:** `P-012 (CfdiRecord)` sale del inventario de v1.0 como
+`FUERA_DE_ALCANCE_V1`. Ninguna de las 14 reglas lo evaluaba —el catalogo nunca tuvo una regla CFDI— asi que
+el score no cambia por eso. Lo que cambia es que **el producto ya no promete lo que no entrega**.
+
+Evidencia: **E-033**.

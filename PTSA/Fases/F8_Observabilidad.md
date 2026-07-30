@@ -293,3 +293,53 @@ comprobaciones compararon CERO filas** (0 pedidos, 0 comisiones, 0 disputas). Es
 la de `E-029`: alli la base estaba vacia y podia parecer un limite del entorno.
 
 Evidencia: **E-032**.
+
+---
+
+## Update U-010 — 2026-07-29 (S-005, delta sync)
+
+**D3 = 100.** `silent_failure_count = 25`, **igual que la linea base**, y `trace_completeness = 100 %`
+(2 de 2 ciclos liquidados).
+
+**Pero llegar a 25 costo una correccion.** La primera medicion dio **27**: dos `catch` nuevos en
+`pages-orders-detail.js`, introducidos por **PT-174 unas horas antes**, que avisaban a la persona y **no
+dejaban rastro del error**. Con `catch { }` sin capturar, «no se pudo contactar» no distingue un timeout de
+un 500 ni de un bloqueo de la CSP — tres causas con tres soluciones distintas. Corregidos en PT-180.
+
+**El checkpoint funciono sobre trabajo del mismo dia**, que es exactamente para lo que existe.
+
+### La salud, en vivo y en los dos estados — H-026 cerrado
+
+```
+Redis en pie:  {"status":"healthy",  "redis":{"status":"up","latency":1}}
+Redis parado:  {"status":"unhealthy","redis":{"status":"down","message":"PING sin respuesta en 2000 ms"}}
+```
+
+`healthy` **era inalcanzable por construccion** hasta PT-178. Y hubo un hallazgo dentro del hallazgo: sin
+`@SkipThrottle()` la peticion no llegaba al controlador, porque el limitador consulta Redis — **el endpoint
+que diagnostica la caida era el que la caida silenciaba**.
+
+### H-028 — D5 mide, y por primera vez no se pronuncia
+
+```
+  Success Rate  50%  SIN_DATOS   1 de 2 … · MUESTRA INSUFICIENTE (<20): el semaforo no se pronuncia
+  Retry Rate    50%  SIN_DATOS
+  Failure Rate   0%  SIN_DATOS
+  health_unstable = false
+```
+
+La primera medicion de esta corrida dio `Success Rate 50 % ROJO` -> `health_unstable = true` -> **clase
+capada a B**, con el sistema **sano**: el ciclo que uso la via garantizada la uso porque el sandbox de
+PayPal no notifico, que es lo que PT-087 diseño.
+
+Con `n = 2` una tasa solo puede valer 0 %, 50 % o 100 % y el umbral verde es `>= 95`: **un solo fallback
+fuerza ROJO por aritmetica**. Y al reves es peor: `1 de 1` daba `100 % VERDE` y se leia como fiabilidad
+demostrada — fue la primera medicion de D5 de esta auditoria, en S-004-M.
+
+Corregido por PT-180 con `MUESTRA_MINIMA = 20`, **derivada de los umbrales del propio fichero**: con
+`>= 95 %`, un fallo entre `n` cumple `(n-1)/n >= 0.95` solo si `n >= 20`.
+
+**Consecuencia declarada: `cobertura_D5 = 0 %`.** La falta de evidencia pesa donde debe — en la cobertura,
+no en un veredicto inventado.
+
+Evidencia: **E-033**.

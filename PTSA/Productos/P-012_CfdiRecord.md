@@ -3,7 +3,7 @@ producto_id: P-012
 nombre: CFDI Record — Registro fiscal
 clase: secundario
 criticidad: BAJA
-estado: IDENTIFICADO
+estado: FUERA_DE_ALCANCE_V1
 dimension_primaria: D1
 confidence: 0
 audit_due: 2026-08-26
@@ -73,3 +73,19 @@ genera.
 > no es calculable todavía. Declararlo `VALIDADO` sería inventarse el número.
 >
 > Definir las rúbricas es trabajo de F12 (Gobernanza de Dominio) y queda en `PENDIENTES.md`.
+
+
+---
+
+## Fuera de alcance de v1.0 — 2026-07-29
+
+**Por decisión del humano** (*«acepta como limitación declarada»*), este producto **sale del inventario
+que v1.0 entrega**. La enmienda de la declaración de valor está en `F-1 § Update U-006`.
+
+`estado: FUERA_DE_ALCANCE_V1` y **no** `VALIDADO`: el producto **no se genera**. Marcarlo validado sería
+falso, y dejarlo `IDENTIFICADO` sugeriría trabajo pendiente del repositorio cuando lo que falta es un
+**PAC certificado ante el SAT** y una decisión fiscal.
+
+**No se degrada ni se borra** — `[A6]`. El modelo de datos, el módulo y el stub siguen ahí; lo que cambia
+es que la plataforma ya **no promete** emitirlo. Si v1.1 lo vuelve a prometer, este producto vuelve al
+inventario y **H-005 se reabre con él**.

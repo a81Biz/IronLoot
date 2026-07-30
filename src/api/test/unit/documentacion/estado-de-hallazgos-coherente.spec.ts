@@ -174,11 +174,17 @@ describe('Los derivados de PTSA no contradicen los hallazgos — RULE-33 (PT-168
       expect(idsDeHallazgo(falso).filter((id) => cerrados.includes(id))).toEqual(['H-021']);
     });
 
-    it('AC-02: el hallazgo realmente activo NO se acusa', () => {
-      // Un falso positivo tambien mata un control: si acusara a H-005, el equipo aprenderia a
-      // ignorar esta guarda.
-      const legitimo = '| **H-005** | D1 | ALTA | CFDI/PAC sin integrar |';
+    it('AC-02: un hallazgo que NO esta cerrado no se acusa', () => {
+      // Un falso positivo tambien mata un control: si acusara a un hallazgo legitimamente activo, el
+      // equipo aprenderia a ignorar esta guarda.
+      //
+      // **El identificador es sintetico a proposito.** La primera version usaba `H-005`, que entonces
+      // estaba abierto — y el caso empezo a fallar el dia que H-005 se cerro. Un caso de control atado a
+      // un hallazgo VIVO caduca en cuanto ese hallazgo cambia de estado, y entonces parece que la guarda
+      // esta rota cuando lo que ha cambiado es el mundo.
+      const legitimo = '| **H-999** | D1 | ALTA | un hallazgo que no esta en el registro |';
 
+      expect(cerrados).not.toContain('H-999');
       expect(idsDeHallazgo(legitimo).filter((id) => cerrados.includes(id))).toEqual([]);
     });
 
@@ -208,10 +214,13 @@ describe('Los derivados de PTSA no contradicen los hallazgos — RULE-33 (PT-168
     it('AC-07: la prosa que nombra cerrados NO se acusa; la fila de tabla SI', () => {
       // El caso real que hizo aparecer `filasDeTabla`: la seccion de activos dice el recuento de
       // cerrados y explica de donde venia un score. Eso es legitimo. Declararlo en la tabla, no.
+      // El id de la fila es **sintetico**, por lo mismo que AC-02: una fila fijada a un hallazgo
+      // VIVO empieza a fallar el dia que ese hallazgo se cierra, y entonces parece roto el control
+      // cuando lo que ha cambiado es el mundo. Paso con `H-005` al cerrarse.
       const seccionReal = [
         '| ID | Dim | Sev |',
         '|---|---|---|',
-        '| **H-005** | D1 | ALTA |',
+        '| **H-999** | D1 | ALTA |',
         '',
         '**Cerrados**: 23 (H-001 … H-004, H-006 … H-024). Ninguno reabierto.',
       ].join('\n');

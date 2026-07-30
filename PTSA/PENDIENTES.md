@@ -1,6 +1,6 @@
 # PENDIENTES.md — Bloqueantes y preguntas abiertas
 
-**PTSA V3** · **Última actualización:** 2026-07-29 (S-004-M — medición dirigida)
+**PTSA V3** · **Última actualización:** 2026-07-29 (S-005 — delta sync)
 
 > **Este fichero es ESTADO, no log.** Llegó a tener siete bloques de sesión apilados —DS-004 …
 > S-002-G—, ninguno podado, con el mismo pendiente repetido **cinco veces** y sin que nada dijera cuál
@@ -22,11 +22,19 @@
 
 | # | Pendiente | Responsable |
 |---|---|---|
-| 1 | **H-005 — quién emite la factura.** Tres modelos en `evidence/PT-155/hallazgos.md`. Mantiene D1 en 85 y bloquea P-012. **Ningún PT puede resolverlo**: no hay código que sustituya a un PAC certificado ante el SAT | Humano (negocio + fiscal) |
-| 2 | **Un `resume PTSA` que recalcule y emita.** Los scores se midieron con cuatro hallazgos activos y hoy hay uno; la aritmética daría D2 = 100 y D3 = 100. Y es buen momento: la base tiene salida real | Humano (disparador PTSA) |
+| 1 | **Volumen de ciclos de pago.** D5 está al **0 %** de cobertura: hacen falta **20 ciclos resueltos** y hay **2**. Es lo único que saca la Confianza del filo de 91 y lo único que puede demostrar la fiabilidad operacional | Humano decide cuándo; el agente mide |
+| 2 | **La decisión fiscal, cuando haya PAC certificado ante el SAT.** No es un hallazgo abierto: es la condición para que v1.1 pueda volver a prometer la factura | Negocio + fiscal |
 
-**Es todo.** Los tres hallazgos corregibles —H-025, H-026, H-027— se cerraron el 2026-07-29 con VoBo
-humano, cada uno verificado ejecutando y no leyendo.
+**Bloqueantes: ninguno. Hallazgos activos: cero.** Los 28 del registro están `CERRADA`.
+
+Sobre la fila 2: la facturación fiscal se cerró el 2026-07-29 **como limitación declarada de v1.0**, con la
+declaración de valor enmendada a la vez (`F-1 § U-006`) y `P-012` en `FUERA_DE_ALCANCE_V1`. Si v1.1 vuelve a
+prometerla, ese producto vuelve al inventario y **su hallazgo se reabre con él**.
+
+**Y una advertencia que forma parte del estado, no es un adorno:** cero hallazgos activos es **cero
+defectos conocidos**. La jornada del 2026-07-29 produjo **ocho hallazgos** en un día de mirar y ejecutar, y
+**cinco llevaban meses en el código**. La auditoría no encuentra defectos porque el sistema empeore: los
+encuentra porque alguien mira.
 
 ---
 

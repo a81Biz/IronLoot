@@ -3066,3 +3066,35 @@ la jornada, **cinco ya estaban en el codigo desde antes** y se vieron al mirar y
 **Dos los causo esta jornada** (la CLABE que rompio la fase 60 y el Chrome huerfano), y los dos estan
 corregidos. Ninguno de los siete lo trajo una implementacion nueva: los trajo **ejecutar y mirar**, que es
 precisamente lo que no se habia hecho.
+
+## PT-180 — BUG: una tasa sobre dos casos capaba la clase, y dos `catch` mios no dejaban rastro (H-028)
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: fix/PT-180-catch-mudos-en-el-js-del-pedido
+Objective: que D5 no emita un veredicto que su muestra no sostiene, y que el JS nuevo deje rastro.
+Root cause: **dos cosas, las dos encontradas por el delta sync S-005.**
+  **(1) H-028.** `Success Rate 50 % ROJO` sobre **dos** ciclos -> `health_unstable = true` -> clase capada a
+  B. El sistema **no estaba inestable**: el ciclo que uso la via garantizada la uso porque el sandbox de
+  PayPal no notifico, que es lo que PT-087 diseño. Con `n = 2` una tasa solo puede valer 0 %, 50 % o 100 % y
+  el umbral verde es `>= 95`: **un solo fallback fuerza ROJO por aritmetica**. Y al reves es peor — `1 de 1`
+  daba `100 % VERDE` y se leia como fiabilidad demostrada, que fue la primera medicion de D5 de esta
+  auditoria. `reliability-check.ts` **ya llevaba escrita esta leccion** por PT-122, que corrigio **que**
+  ciclos entran en el denominador; nadie miro **cuantos**. Misma familia que H-025.
+  **(2) Dos `catch` mudos mios.** D3 dio **27** silencios contra la linea base de 25: dos `catch { }` en
+  `pages-orders-detail.js`, introducidos por **PT-174 unas horas antes**, que avisaban a la persona y **no
+  capturaban el error**. «No se pudo contactar» no distingue un timeout de un 500 ni de un bloqueo de la CSP.
+Solution: `MUESTRA_MINIMA = 20`, **derivada de los umbrales del propio fichero** y no elegida a
+  conveniencia: con `>= 95 %`, un fallo entre `n` cumple `(n-1)/n >= 0.95` solo si `n >= 20`. Por debajo, el
+  semaforo es `SIN_DATOS` — **no capa la clase y tampoco cuenta como verde**—, y la falta de evidencia pesa
+  donde debe: `cobertura_D5 = 0 %`.
+  Y los dos `catch` capturan el error y lo registran con `console.error`, conservando el aviso a la persona.
+Modified files: src/api/scripts/reliability-check.ts,
+  src/api/test/unit/observabilidad/fiabilidad-operacional.spec.ts,
+  src/apps/client/public/js/pages/pages-orders-detail.js
+Evidence: docs/implementation/evidence/PT-180/
+Delta (real vs planificado): no estaba planificado — **lo abrio el propio delta sync**. Y de paso salio un
+  tercer defecto, de mis guardas: **dos casos de control de RULE-33 estaban fijados a `H-005`**, que
+  entonces estaba abierto, y empezaron a fallar el dia que H-005 se cerro. Un caso de control atado a un
+  hallazgo VIVO caduca en cuanto ese hallazgo cambia de estado, y hace parecer roto el control cuando lo que
+  cambio fue el mundo. Ahora usan un identificador sintetico.
+PTSA reference: **H-028** -> CERRADA. Y el checkpoint D3 vuelve a su linea base de 25.

@@ -4,35 +4,44 @@
 
 **Rama**: `master`, árbol limpio, cero ramas sin fusionar. **Sin subir a `origin`.**
 
-**Pruebas**: **1179** unitarias en verde — API **926** (114 suites) · CORE **134** · CLIENT **103** ·
+**Pruebas**: **1186** unitarias en verde — API **933** (114 suites) · CORE **134** · CLIENT **103** ·
 ADMIN **13** · BASE **3**.
 
 **Reglas duras**: **33** `RULE-NN`. **Guardas de documentación**: **12** suites / **135** pruebas.
 
 ---
 
-## Estado: un solo pendiente, y no es de código
+## Estado: CERTIFICADO Clase A · cero hallazgos activos
 
-**Cero trabajo FDGE pendiente. Cero hallazgos corregibles abiertos.**
+**S-005 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
 
-`PT-166 … PT-179` **cerrados con VoBo humano** el 2026-07-29 — catorce PT. Y los **tres hallazgos
-corregibles cerrados**, cada uno verificado **ejecutando**:
-
-| Hallazgo | PT | Cómo se comprobó |
+| Métrica | S-004-M | **S-005** |
 |---|---|---|
-| **H-025** — el veredicto de coherencia sin denominador | PT-177 | Dice `0 de 1`, marca `sin filas que comparar` y **sale con 1** |
-| **H-026** — Redis no observable | PT-178 | En vivo: en pie → `healthy`; parado → `unhealthy` + «PING sin respuesta en 2000 ms» |
-| **H-027** — el resumen omitía la fase caída | PT-176 | En vivo: diez fases sin salida → diez `*** FALLO / NO EJECUTADA ***` y exit 1 |
+| Health | 88.0 | **100 / 100** |
+| Risk | 100 | **0 / 100** |
+| Confidence | 97.9 | **91.0** |
+| Clase | B | **A** |
 
-### Lo único que queda: H-005, y no se cierra con código
+**Hallazgos: 28 registrados, CERO activos.** Los cuatro de esta corrida —H-005, H-025, H-026, H-028— se
+cerraron con VoBo, y los técnicos **verificados ejecutando**.
 
-Necesita **contratar un PAC ante el SAT** y **decidir el modelo fiscal**. Dos vías de cierre, las dos
-tuyas: decidir el modelo (A/B/C de `evidence/PT-155/hallazgos.md`), o aceptarlo como limitación declarada
-de v1.0 — el PRD ya lo lleva en Out-of-Scope. **No hay implementación que sustituya a un proveedor
-certificado.**
+### Tres avisos que forman parte del resultado, no lo adornan
 
-Y queda **un `resume PTSA`**, que sólo dispara el humano: los scores se midieron con cuatro hallazgos
-activos y hoy hay uno.
+**1. El Health llega a 100 en parte porque el alcance se estrechó.** H-005 se cerró **aceptándola como
+limitación declarada**, y lo que legitima el cierre es que la declaración de valor se corrigió a la vez
+(`F-1 § U-006`): el producto ya **no promete** emitir CFDI, y `P-012` pasó a `FUERA_DE_ALCANCE_V1`. **El
+sistema sigue sin emitir facturas.** Si v1.1 vuelve a prometerla, ese producto vuelve y H-005 se reabre.
+
+**2. La Confianza está a UN punto del umbral de A** (91 contra 90). La baja **D5, al 0 %**: la fiabilidad
+operacional **no está demostrada** — hacen falta 20 ciclos resueltos y hay 2.
+
+**3. Cero hallazgos activos es cero defectos CONOCIDOS.** Esta jornada produjo **ocho hallazgos** en un día
+de mirar y ejecutar, y **cinco llevaban meses en el código**. El `0` mide lo que se ha buscado.
+
+### Esperan tu validación
+
+**PT-177, PT-178, PT-179, PT-180** — los cuatro con evidencia ejecutada. Lista en
+[`PENDING_TASKS.md`](PENDING_TASKS.md).
 
 ---
 

@@ -1,0 +1,18 @@
+=== PT-180 — H-028 y los catch mudos, verificado ejecutando
+
+--- ANTES:
+  Success Rate  50%  ROJO   -> health_unstable = true, clase capada a B
+  silent_failure_count = 27  (linea base 25)  -> FALLA
+
+--- DESPUES:
+  Success Rate         50%   SIN_DATOS
+                 1 de 2 ciclos resueltos sin necesitar la via garantizada · MUESTRA INSUFICIENTE (<20): el semaforo no se pronuncia
+  Retry Rate           50%   SIN_DATOS
+  Failure Rate          0%   SIN_DATOS
+  Hallucination Rate = NO_APLICA (sistema determinista, sin LLM)
+  Un Retry Rate alto significa «las pasarelas no notifican», no «el sistema falla».
+  health_unstable = false
+
+  silent_failure_count = 25   (linea base: 25)
+  trace_completeness = 100%
+  OK — sin silencios nuevos.

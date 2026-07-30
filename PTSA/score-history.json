@@ -844,6 +844,64 @@
         "IDENTIFICADO": 1
       },
       "nota": "La medicion hizo su trabajo y a la vez encontro un defecto: Confidence 83.6 -> 97.9 (se cerro el hueco de cobertura) y Health 89.5 -> 88.0 (H-027). Es la auditoria funcionando, no una regresion del sistema. D5 deja de ser SIN_DATOS por primera vez en la historia de esta auditoria. Lo que el metodo demuestra: medir en la misma sesion que genera los datos vale 14.3 puntos de Confianza; las dos veces anteriores se midio en la sesion siguiente y la salida ya no estaba."
+    },
+    {
+      "session": "S-005",
+      "date": "2026-07-29",
+      "type": "delta_sync",
+      "scores": {
+        "D1": 100,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "health": 100.0,
+        "risk": 0,
+        "confidence": 91.0
+      },
+      "classification": "A",
+      "classification_without_cap": "A",
+      "cap_reason": null,
+      "cap_note": "Sin cap. §15.6 se cumple por los dos lados (Health>=90 y Confidence>=90). freshness=FRESH y health_unstable=false no capan. PERO la Confianza esta a UN punto del umbral: cualquier perdida de cobertura tumba la clase A.",
+      "score_freshness": {
+        "last_verified": "2026-07-29",
+        "commits_since_audit": 0,
+        "status": "FRESH"
+      },
+      "potable_water_rule_activated": false,
+      "health_unstable": false,
+      "risk_detail": {
+        "risk_bruto": 0,
+        "detalle": "Cero hallazgos activos. Los 28 del registro estan CERRADA."
+      },
+      "coverage_detail": {
+        "D1": 100,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100,
+        "D5": 0,
+        "motivo": "D1 al 100 por primera vez: la fase 35 (PT-175) cierra una subasta de verdad, asi que R-5.1a y R-5.1d se midieron — 14 de 14 reglas CUMPLE. D5 al 0 % por MUESTRA INSUFICIENTE, no por falta de datos: 2 ciclos resueltos frente a los 20 que los umbrales exigen (H-028/PT-180). La fiabilidad operacional NO esta demostrada."
+      },
+      "trigger": "resume PTSA — peticion del humano tras aceptar H-005 como limitacion declarada y cerrar los catorce PT de la jornada.",
+      "findings_changes": {
+        "nuevos": [
+          "H-028"
+        ],
+        "revisados": [],
+        "cerrados": [
+          "H-005",
+          "H-025",
+          "H-026",
+          "H-028"
+        ]
+      },
+      "evidencias_nuevas": [
+        "E-033"
+      ],
+      "productos": {
+        "VALIDADO": 11,
+        "FUERA_DE_ALCANCE_V1": 1
+      },
+      "nota": "PRIMERA emision con CERO hallazgos activos, y hay que leerla con tres avisos que forman parte de ella. (1) El Health sube a 100 EN PARTE porque el alcance se estrecho: H-005 se cerro aceptandola como limitacion declarada, con la declaracion de valor enmendada a la vez (F-1 U-006) — el producto ya no promete emitir CFDI y P-012 pasa a FUERA_DE_ALCANCE_V1. El sistema sigue sin emitir facturas. (2) La Confianza esta a UN punto del umbral de A porque D5 esta al 0 %: la fiabilidad operacional NO esta demostrada. (3) Cero hallazgos activos es cero defectos CONOCIDOS: un dia de mirar y ejecutar produjo OCHO hallazgos, cinco con meses en el codigo. H-028 nacio y murio en esta corrida — una tasa sobre 2 casos capaba la clase a B por aritmetica, y al reves 1 de 1 daba 100 % VERDE. Y el checkpoint D3 cazo dos catch mudos introducidos por PT-174 unas horas antes."
     }
   ]
 }

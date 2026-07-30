@@ -1,0 +1,29 @@
+PASS test/unit/observabilidad/fiabilidad-operacional.spec.ts (6.924 s)
+  Los umbrales de fiabilidad operacional (PT-122)
+    ✓ FO-10: sin datos NO es verde
+    Success Rate — verde >=95, ambar 85-95, rojo <85
+      ✓ FO-01: 100% es verde (2 ms)
+      ✓ FO-02: exactamente 95 es VERDE (el umbral es inclusivo)
+      ✓ FO-03: 94 cae a ambar
+      ✓ FO-04: exactamente 85 sigue siendo AMBAR
+      ✓ FO-05: 84 es rojo
+    Retry Rate — verde <=10, ambar 10-25, rojo >25
+      ✓ FO-06: 0% es verde
+      ✓ FO-07: exactamente 10 es VERDE
+      ✓ FO-08: exactamente 25 sigue siendo AMBAR
+      ✓ FO-09: 26 es rojo
+  PT-180 — una tasa exige muestra minima para ser veredicto (H-028)
+    ✓ C1: el minimo es el que los umbrales implican, no uno elegido (1 ms)
+    ✓ C2: con muestra insuficiente el semaforo es SIN_DATOS, no ROJO
+    ✓ C3: y tampoco es VERDE — el falso verde es el peor de los dos
+    ✓ C4: con muestra suficiente, el semaforo manda como siempre
+    casos de control
+      ✓ AC-01: `SIN_DATOS` por muestra corta NO capa la clase — pero tampoco la sube
+      ✓ AC-02: en el borde exacto de la muestra, el veredicto ya cuenta (1 ms)
+      ✓ AC-03: un `SIN_DATOS` de origen sigue siendo SIN_DATOS
+
+Test Suites: 1 passed, 1 total
+Tests:       17 passed, 17 total
+Snapshots:   0 total
+Time:        7.155 s
+Ran all test suites matching /fiabilidad-operacional/i.
