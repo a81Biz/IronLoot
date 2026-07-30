@@ -4,7 +4,7 @@
 
 **Rama**: `master`, árbol limpio, **al día con `origin`** y cero ramas sin fusionar.
 
-**Pruebas**: **1263** unitarias en verde — API **1051** (129 suites) · CORE **93** (6) · CLIENT **103** ·
+**Pruebas**: **1268** unitarias en verde — API **1056** (130 suites) · CORE **93** (6) · CLIENT **103** ·
 ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
 con sus 41 casos: eran pruebas verdes sobre código que no corría en producción.)*
 
