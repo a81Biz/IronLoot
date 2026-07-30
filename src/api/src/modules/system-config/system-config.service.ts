@@ -67,47 +67,22 @@ const SEEDED_KEYS: Array<{
     description: 'Requiere KYC aprobado antes de habilitar venta',
     defaultValue: 'true',
   },
-  // SMTP
-  {
-    key: 'SMTP_HOST',
-    envKey: 'SMTP_HOST',
-    category: 'smtp',
-    isSecret: false,
-    description: 'Servidor SMTP',
-    defaultValue: 'localhost',
-  },
-  {
-    key: 'SMTP_PORT',
-    envKey: 'SMTP_PORT',
-    category: 'smtp',
-    isSecret: false,
-    description: 'Puerto SMTP',
-    defaultValue: '1025',
-  },
-  {
-    key: 'SMTP_USER',
-    envKey: 'SMTP_USER',
-    category: 'smtp',
-    isSecret: false,
-    description: 'Usuario SMTP',
-    defaultValue: '',
-  },
-  {
-    key: 'SMTP_PASSWORD',
-    envKey: 'SMTP_PASSWORD',
-    category: 'smtp',
-    isSecret: true,
-    description: 'Contraseña SMTP',
-    defaultValue: '',
-  },
-  {
-    key: 'SMTP_FROM',
-    envKey: 'SMTP_FROM',
-    category: 'smtp',
-    isSecret: false,
-    description: 'Dirección remitente',
-    defaultValue: 'noreply@ironloot.com',
-  },
+  // PT-191 (AUD-027) — **Aqui vivian cinco claves `SMTP_*` que no leia nadie.**
+  //
+  // El panel de ADMIN tenia un formulario completo para editarlas —host, puerto, usuario, contrasena,
+  // remitente— con su `POST /settings/smtp`, que guardaba y respondia «saved=1». Y el mailer construye su
+  // transporte con **`MAIL_*` del entorno** (`notifications.module.ts`), asi que cambiarlas **no hacia nada**:
+  // ni entonces ni tras reiniciar. Un control que aparenta funcionar — la familia de H-029 y H-030.
+  //
+  // **Por que se retiran en vez de cablearse.** `ADR-011` dice que `SystemConfig` es «seed desde env, override
+  // **runtime** en Admin», y para `AUCTION_MIN_INCREMENT_AMOUNT` eso es cierto: `bids.service` la lee en cada
+  // puja. El correo no puede: el transporte se construye **una vez al arrancar**, asi que el override no seria
+  // runtime sino «al proximo reinicio», y hasta entonces el panel seguiria mintiendo, solo que mas despacio.
+  // Es el precedente de **ADR-047**: lo que no tiene consumidor se retira, no se pule.
+  //
+  // **Reversible, y la alternativa esta escrita**: para tener el override de verdad hay que construir el
+  // transporte **por envio** leyendo `SystemConfig`. Eso es un cambio de diseno, no una casilla mas.
+  // El contrato del correo es `MAIL_HOST` / `MAIL_PORT` / `MAIL_USER` / `MAIL_PASSWORD` / `MAIL_FROM`.
   // Storage
   {
     key: 'STORAGE_PROVIDER',

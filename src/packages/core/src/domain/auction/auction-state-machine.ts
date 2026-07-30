@@ -15,6 +15,11 @@ const VALID_TRANSITIONS: TransitionMap = {
   [AuctionStatus.PUBLISHED]: new Set([
     AuctionStatus.ACTIVE,
     AuctionStatus.CANCELLED,
+    // PT-191 (AUD-011) — El panel puede suspender o cerrar algo publicado que aun no ha arrancado. Faltaban
+    // las dos, y el panel las hacia igual escribiendo `status` a mano: el mapa no describia el dominio, y
+    // enforzarlo sin completarlo habria roto operaciones legitimas.
+    AuctionStatus.SUSPENDED,
+    AuctionStatus.CLOSED,
   ]),
   [AuctionStatus.ACTIVE]: new Set([
     AuctionStatus.CLOSED,
@@ -24,8 +29,15 @@ const VALID_TRANSITIONS: TransitionMap = {
   [AuctionStatus.PENDING_MODERATION]: new Set([
     AuctionStatus.PUBLISHED,
     AuctionStatus.CANCELLED,
+    // PT-191 (AUD-011) — **Rechazar devuelve el anuncio al vendedor como borrador.** Es el flujo central de
+    // moderacion y el mapa no lo tenia: la maquina habria rechazado la operacion mas usada del panel.
+    AuctionStatus.DRAFT,
   ]),
-  [AuctionStatus.SUSPENDED]: new Set([AuctionStatus.PUBLISHED]),
+  [AuctionStatus.SUSPENDED]: new Set([
+    AuctionStatus.PUBLISHED,
+    // PT-191 (AUD-011) — Lo suspendido tiene que poder cancelarse; si no, queda atrapado.
+    AuctionStatus.CANCELLED,
+  ]),
   // CLOSED and CANCELLED are terminal — no outbound transitions.
 };
 

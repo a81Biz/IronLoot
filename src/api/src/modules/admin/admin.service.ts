@@ -6,6 +6,7 @@ import { CommissionsService } from '../commissions/commissions.service';
 import { KycService } from '../kyc/kyc.service';
 import { CfdiService } from '../cfdi/cfdi.service';
 import { NotificationQueueProducer } from '../notifications/notification-queue.producer';
+import { AuctionStateMachine, AuctionStatus } from '@ironloot/core';
 
 @Injectable()
 export class AdminService {
@@ -111,8 +112,10 @@ export class AdminService {
     return { data, meta: { total, page, limit, pages: Math.ceil(total / limit) } };
   }
 
-  async cancelAuction(id: string) {
-    return this.prisma.auction.update({ where: { id }, data: { status: 'CANCELLED' } });
+  async cancelAuction(id: string, adminUser = 'admin') {
+    // PT-191 (AUD-011) — Esta era la peor de las seis: **no llamaba ni a `assertAuctionModifiable`**, asi que
+    // cancelaba incluso una subasta ya cerrada.
+    return this.transicionar(id, AuctionStatus.CANCELLED, adminUser);
   }
 
   async getOrders(page = 1, limit = 20, status?: string) {
@@ -384,16 +387,67 @@ export class AdminService {
     }
   }
 
+  /**
+   * PT-191 (AUD-011) — **La unica puerta por la que el panel cambia el estado de una subasta.**
+   *
+   * ## Que habia
+   *
+   * Seis metodos escribiendo `auction.status` a mano —aprobar, rechazar, suspender, cerrar a la fuerza,
+   * reabrir y cancelar— sin consultar `AuctionStateMachine`. La unica proteccion era
+   * `assertAuctionModifiable`, que solo bloquea `CLOSED` y `CANCELLED`; y `cancelAuction` **ni siquiera la
+   * llamaba**.
+   *
+   * Es la forma exacta de **PT-173**, donde `shipments` escribia `order.status` por fuera de la maquina:
+   * *dos puertas al mismo estado y solo una con cerradura*. Aqui eran seis.
+   *
+   * ## Que impide ahora
+   *
+   * Aprobar o reabrir una subasta **`ACTIVE`** —ya esta corriendo— y cualquier cosa desde un estado terminal.
+   * Antes se aplicaban en silencio y dejaban la subasta en un estado que el dominio no admite.
+   *
+   * ## Lo que hubo que arreglar ANTES de poder cerrar esta puerta
+   *
+   * El mapa de la maquina estaba **incompleto**: le faltaban `PENDING_MODERATION → DRAFT` (rechazar, el flujo
+   * central de moderacion), `PUBLISHED → SUSPENDED`, `PUBLISHED → CLOSED` y `SUSPENDED → CANCELLED`. Cablear
+   * la maquina sin completarla habria roto la moderacion — **enforzar un mapa incompleto no es enforzar el
+   * dominio, es enforzar un error de transcripcion del dominio.**
+   */
+  private async transicionar(
+    id: string,
+    destino: AuctionStatus,
+    adminUser: string,
+    datosExtra: Record<string, unknown> = {},
+  ) {
+    const actual = await this.prisma.auction.findUnique({
+      where: { id },
+      select: { status: true },
+    });
+    if (!actual) throw new NotFoundException('Auction not found');
+
+    const desde = actual.status as unknown as AuctionStatus;
+    if (desde === destino) {
+      throw new BadRequestException(`Auction is already ${destino}`);
+    }
+
+    if (!AuctionStateMachine.canTransition(desde, destino)) {
+      // El mensaje nombra las dos puntas: sin ellas, «transicion invalida» manda a leer codigo.
+      throw new BadRequestException(
+        `Invalid auction transition ${desde} -> ${destino} (admin: ${adminUser})`,
+      );
+    }
+
+    return (this.prisma.auction as any).update({
+      where: { id },
+      data: { status: destino, ...datosExtra },
+    });
+  }
+
   async approveAuction(id: string, adminUser: string) {
     await this.assertAuctionModifiable(id);
     const auction = await this.prisma.auction.findUnique({ where: { id } });
     if (!auction) throw new NotFoundException('Auction not found');
-    const result = await (this.prisma.auction as any).update({
-      where: { id },
-      data: {
-        status: 'PUBLISHED',
-        adminNotes: `Approved by ${adminUser} at ${new Date().toISOString()}`,
-      },
+    const result = await this.transicionar(id, AuctionStatus.PUBLISHED, adminUser, {
+      adminNotes: `Approved by ${adminUser} at ${new Date().toISOString()}`,
     });
     await this.logAdminAction('AUCTION_APPROVED', id, adminUser);
     return result;
@@ -401,9 +455,8 @@ export class AdminService {
 
   async rejectAuction(id: string, reason: string, adminUser: string) {
     await this.assertAuctionModifiable(id);
-    const result = await (this.prisma.auction as any).update({
-      where: { id },
-      data: { status: 'DRAFT', adminNotes: `Rejected by ${adminUser}: ${reason}` },
+    const result = await this.transicionar(id, AuctionStatus.DRAFT, adminUser, {
+      adminNotes: `Rejected by ${adminUser}: ${reason}`,
     });
     await this.logAdminAction('AUCTION_REJECTED', id, adminUser, { reason });
     return result;
@@ -411,12 +464,8 @@ export class AdminService {
 
   async suspendAuction(id: string, adminUser: string) {
     await this.assertAuctionModifiable(id);
-    const result = await (this.prisma.auction as any).update({
-      where: { id },
-      data: {
-        status: 'SUSPENDED',
-        adminNotes: `Suspended by ${adminUser} at ${new Date().toISOString()}`,
-      },
+    const result = await this.transicionar(id, AuctionStatus.SUSPENDED, adminUser, {
+      adminNotes: `Suspended by ${adminUser} at ${new Date().toISOString()}`,
     });
     await this.logAdminAction('AUCTION_SUSPENDED', id, adminUser);
     return result;
@@ -424,24 +473,18 @@ export class AdminService {
 
   async forceCloseAuction(id: string, adminUser: string) {
     await this.assertAuctionModifiable(id);
-    const result = await (this.prisma.auction as any).update({
-      where: { id },
-      data: {
-        status: 'CLOSED',
-        adminNotes: `Force-closed by ${adminUser} at ${new Date().toISOString()}`,
-      },
+    const result = await this.transicionar(id, AuctionStatus.CLOSED, adminUser, {
+      adminNotes: `Force-closed by ${adminUser} at ${new Date().toISOString()}`,
     });
     await this.logAdminAction('AUCTION_FORCE_CLOSED', id, adminUser);
     return result;
   }
 
   async reopenAuction(id: string, adminUser: string) {
-    const result = await (this.prisma.auction as any).update({
-      where: { id },
-      data: {
-        status: 'PUBLISHED',
-        adminNotes: `Reopened by ${adminUser} at ${new Date().toISOString()}`,
-      },
+    // PT-191 (AUD-011) — Tampoco llamaba a `assertAuctionModifiable`: reabria una subasta cerrada. Ahora la
+    // maquina lo rechaza, porque `CLOSED` es terminal.
+    const result = await this.transicionar(id, AuctionStatus.PUBLISHED, adminUser, {
+      adminNotes: `Reopened by ${adminUser} at ${new Date().toISOString()}`,
     });
     await this.logAdminAction('AUCTION_REOPENED', id, adminUser);
     return result;
@@ -636,13 +679,8 @@ export class AdminService {
     return this.getPlatformConfig();
   }
 
-  async getSmtpConfig() {
-    return this.systemConfig.getByCategory('smtp');
-  }
-
-  async updateSmtpConfig(updates: Record<string, string>, adminUser: string) {
-    await this.systemConfig.updateCategory('smtp', updates, adminUser);
-  }
+  // PT-191 (AUD-027) — `getSmtpConfig` / `updateSmtpConfig` retirados con sus endpoints: leian y escribian la
+  // categoria `smtp` de `SystemConfig`, que **el mailer nunca consulto**. Ver `system-config.service.ts`.
 
   async getStorageConfig() {
     return this.systemConfig.getByCategory('storage');

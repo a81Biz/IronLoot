@@ -76,15 +76,13 @@ export class ConfigurationController {
   @Get("settings")
   @UseGuards(AdminAuthGuard)
   async settings(@Req() req, @Res() res, @Query("saved") saved?: string) {
-    const [paymentConfig, smtpConfig, storageConfig] = await Promise.all([
+    const [paymentConfig, storageConfig] = await Promise.all([
       this.configurationService.getPaymentConfig(),
-      this.configurationService.getSmtpConfig(),
       this.configurationService.getStorageConfig(),
     ]);
     return res.render("pages/settings", {
       title: "Configuración",
       config: paymentConfig,
-      smtpConfig,
       storageConfig,
       saved: saved === "1",
       adminUser: req.session.adminUser,
@@ -121,21 +119,12 @@ export class ConfigurationController {
     return res.redirect("/settings?saved=1");
   }
 
-  @Post("settings/smtp")
-  @UseGuards(AdminAuthGuard)
-  async saveSmtpConfig(@Body() body: any, @Req() req, @Res() res) {
-    const updates: Record<string, string> = {};
-    if (body.SMTP_HOST) updates["SMTP_HOST"] = body.SMTP_HOST;
-    if (body.SMTP_PORT) updates["SMTP_PORT"] = body.SMTP_PORT;
-    if (body.SMTP_USER) updates["SMTP_USER"] = body.SMTP_USER;
-    if (body.SMTP_PASSWORD) updates["SMTP_PASSWORD"] = body.SMTP_PASSWORD;
-    if (body.SMTP_FROM) updates["SMTP_FROM"] = body.SMTP_FROM;
-    await this.configurationService.updateSmtpConfig(
-      updates,
-      req.session.adminUser,
-    );
-    return res.redirect("/settings?saved=1");
-  }
+  // PT-191 (AUD-027) — **Aqui habia un formulario SMTP que no configuraba nada.**
+  //
+  // Guardaba host, puerto, usuario, contrasena y remitente en `SystemConfig` y respondia «saved=1». El mailer
+  // construye su transporte con **`MAIL_*` del entorno**, asi que cambiarlos no tenia efecto **nunca**. Se
+  // retira en vez de cablearse porque el transporte se crea al arrancar: un override ahi no seria runtime sino
+  // «al proximo reinicio». El motivo largo esta en `system-config.service.ts`.
 
   @Post("settings/storage")
   @UseGuards(AdminAuthGuard)
