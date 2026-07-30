@@ -1,0 +1,231 @@
+PASS test/unit/documentacion/evidencia-citada-esta-en-git.spec.ts (7.419 s)
+  La evidencia citada esta en git — RULE-31 (PT-152)
+    ✓ git responde y hay evidencia seguida — si no, la guarda no compara nada (2 ms)
+    ✓ C1: toda evidencia citada esta seguida por git
+    ✓ C2: toda evidencia citada existe en disco (24 ms)
+    ✓ C3: se han encontrado citas — si no, C1 y C2 pasan en vacio (1 ms)
+    C4 (PT-170): una cita a CARPETA tambien existe
+      ✓ se han encontrado citas a carpeta — si no, C4 pasa en vacio
+      ✓ C4: ninguna cita a carpeta apunta a un directorio inexistente (50 ms)
+      ✓ C5: cada exclusion declara su motivo — una exclusion sin motivo es una puerta de escape (1 ms)
+    casos de control
+      ✓ AC-01: una cita a evidencia se reconoce
+      ✓ AC-02: una carpeta no es una cita a FICHERO — pero si es una cita (PT-170) (1 ms)
+      ✓ AC-05 (PT-170): una cita a fichero no se cuenta ademas como cita a carpeta
+      ✓ AC-06 (PT-170): una ruta rota dentro de un blockquote NO se acusa
+      ✓ AC-08 (PT-173): un documento archivado esta fuera, y un vivo dentro
+      ✓ AC-07 (PT-170): la misma ruta FUERA del blockquote si se acusa
+      ✓ AC-03: se reconocen los formatos de volcado, no solo `.md`
+      ✓ AC-04: el directorio de evidencia existe y tiene contenido (3 ms)
+
+PASS test/unit/documentacion/reglas-citadas-existen.spec.ts
+  Toda RULE-NN citada existe en el contrato — RULE-27 (PT-141)
+    ✓ el contrato existe y declara un numero plausible de reglas (1 ms)
+    ✓ C1: ninguna RULE-NN citada en el codigo falta del contrato (2514 ms)
+    ✓ C2: la numeracion no reutiliza un identificador
+    casos de control
+      ✓ AC-01: una regla citada y no declarada se detecta
+      ✓ AC-02: una regla citada Y declarada no se acusa (1 ms)
+      ✓ AC-03: nombrar una regla dentro del cuerpo de otra no la declara
+      ✓ AC-06: lo que un bloque de casos de control nombra no cuenta como cita
+      ✓ AC-04: un hueco de numeracion no se acusa si nadie lo cita
+      ✓ AC-05: la deteccion es por palabra completa (1 ms)
+
+PASS test/unit/documentacion/afirmaciones-de-estado-verificadas.spec.ts
+  Toda afirmacion de estado sobre un AUD tiene veredicto — PT-189
+    ✓ C1: ningun documento presenta como defecto vivo un AUD que la tabla declara corregido (105 ms)
+    ✓ C2: el registro declara un veredicto para cada AUD citado en docs-v2 (121 ms)
+    ✓ C3: el registro NO afirma un recuento redondo sin desglosarlo
+    casos de control
+      ✓ AC-01: una linea con senal y veredicto NO se acusa (1 ms)
+      ✓ AC-02: una linea con senal y SIN veredicto si se acusa
+      ✓ AC-03: una linea que cita un AUD SIN senal de problema no se acusa
+      ✓ AC-04: «sin verificar» cuenta como veredicto — se permite no saber, no se permite no mirar (1 ms)
+      ✓ AC-05: el registro no esta vacio — una guarda sobre un fichero vacio pasa sin comprobar nada
+
+PASS test/unit/documentacion/inventario-de-endpoints-completo.spec.ts
+  El inventario de endpoints esta completo y no inventa rutas — PT-188
+    ✓ C1: ninguna ruta montada falta en el inventario (3 ms)
+    ✓ C2: ninguna ruta documentada deja de existir — la mitad de H-020
+    ✓ C3: el recuento que el inventario anuncia es el real (1 ms)
+    ✓ C4: las rutas que solo existen en desarrollo estan marcadas como tales (2 ms)
+    casos de control
+      ✓ AC-01: el extractor lee las rutas de un controlador con DOS `@Controller`
+      ✓ AC-02: `documentadas` no confunde una fila de tabla con prosa que cite una ruta
+      ✓ AC-03: el inventario no esta vacio — una guarda sobre un fichero vacio pasa sin comprobar nada
+
+PASS test/unit/documentacion/patrones-de-guardas-casan.spec.ts
+  Los patrones de `test:guardas` casan con algo — RULE-32 (PT-165)
+    ✓ se leyeron patrones y suites — si no, la guarda no compara nada
+    ✓ C1: ningun patron se queda sin suite (1 ms)
+    casos de control
+      ✓ AC-01: un patron que no casa se detecta
+      ✓ AC-02: el patron corregido si casa
+      ✓ AC-03: se extraen los patrones separados por `|` (1 ms)
+      ✓ AC-04: sin guion declarado no se inventan patrones
+
+PASS test/unit/documentacion/estado-de-hallazgos-coherente.spec.ts
+  Los derivados de PTSA no contradicen los hallazgos — RULE-33 (PT-168)
+    ✓ hay hallazgos que leer — si no, todo lo de abajo pasa en vacio (3 ms)
+    ✓ C1: `ESTADO_ACTUAL.md` no presenta como activo ningun hallazgo cerrado (2 ms)
+    ✓ C2: el numero que `ESTADO_ACTUAL.md` anuncia es el que hay activo (1 ms)
+    ✓ C3: `PENDIENTES.md` no lista como abierto ningun hallazgo cerrado (2 ms)
+    ✓ C4: `RESUMEN.md` no imputa a una dimension un hallazgo cerrado (2 ms)
+    casos de control
+      ✓ AC-01: un cerrado presentado como activo se detecta
+      ✓ AC-02: un hallazgo que NO esta cerrado no se acusa (1 ms)
+      ✓ AC-03: una seccion que no existe devuelve null, no cadena vacia
+      ✓ AC-04: la seccion se corta en el siguiente `##`
+      ✓ AC-05: el estado se lee del frontmatter, no del cuerpo (1 ms)
+      ✓ AC-06: un frontmatter sin `estado:` no se inventa
+      ✓ AC-07: la prosa que nombra cerrados NO se acusa; la fila de tabla SI (1 ms)
+      ✓ AC-08: `filasDeTabla` descarta el separador y conserva los datos
+
+PASS test/unit/documentacion/deuda-no-determinada-vigente.spec.ts
+  Un `ND-XXX` que afirma una ausencia se comprueba — RULE-35 (PT-171)
+    ✓ el documento existe y tiene seccion NOT DETERMINED con entradas (1 ms)
+    ✓ C1: el hecho que cerro cada `ND` sigue siendo cierto (24 ms)
+    ✓ C2: todo `ND` con un hecho verificado esta declarado cerrado en el documento
+    ✓ C3: toda ruta que la seccion cita existe (16 ms)
+    ✓ C5: una entrada abierta con motivo lo explica — no basta con marcarla
+    ✓ C4: cada hecho declarado explica por que importa (1 ms)
+    casos de control
+      ✓ AC-01: un `Status:` cerrado se reconoce
+      ✓ AC-02: un `ND` sin cierre NO se cuenta como cerrado
+      ✓ AC-03: el `Status:` de un `ND` no se atribuye al siguiente (1 ms)
+      ✓ AC-04: una ausencia que ya es falsa se detecta (2 ms)
+      ✓ AC-05: se extrae la ruta aunque la cita lleve `:linea`
+      ✓ AC-06: la extraccion se limita a la seccion NOT DETERMINED (1 ms)
+
+PASS test/unit/documentacion/alcance-de-auditoria-existe.spec.ts
+  El alcance de auditoria no cita lo que no existe — RULE-28 (PT-157)
+    ✓ el fichero de alcance existe y declara documentos (1 ms)
+    ✓ C1: toda ruta citada por `audit-scope.yaml` existe (14 ms)
+    ✓ C2: el comentario de migraciones dice el numero real (2 ms)
+  ADR-049 no se deshace sin retirarla — RULE-29 (PT-154)
+    ✓ C1: ninguno de los nueve archivados reaparece en la raiz (9 ms)
+    ✓ C2: y siguen estando en `archive/` — archivar no es borrar (11 ms)
+    ✓ C3: el contrato de agente sigue en la raiz (5 ms)
+    casos de control
+      ✓ AC-01: una ruta inexistente se detecta
+      ✓ AC-02: un glob no se cuenta como cita (1 ms)
+      ✓ AC-03: la lista de archivados es la de ADR-049, los nueve
+
+PASS test/unit/documentacion/indice-de-estado-al-dia.spec.ts
+  El indice de estado de HISTORY.log esta al dia — PT-187
+    ✓ C1: el indice existe (1 ms)
+    ✓ C2: el indice esta REGENERADO — coincide con lo que produce el generador (8 ms)
+    ✓ C3: ningun PT queda realmente abierto sin figurar en PENDING_TASKS.md (6 ms)
+    ✓ C4: un BUG no figura DONE sin un bloque de VoBo que lo nombre (7 ms)
+    casos de control
+      ✓ AC-01: una entrada CERRADA por un bloque posterior se lee como CLOSED
+      ✓ AC-02: una entrada SIN cierre posterior sigue abierta — el indice no regala cierres
+      ✓ AC-03: un bloque ANTERIOR no cierra un PT posterior
+      ✓ AC-04: un encabezado agrupado cuenta como varios PT
+
+PASS test/unit/documentacion/coherencia-de-registros.spec.ts
+  Los registros de trabajo no se contradicen — RULE-20 (PT-140)
+    ✓ los tres registros existen y tienen contenido
+    ✓ C1: ningun PT marcado PENDING/BLOCKED figura terminado en HISTORY.log (1 ms)
+    ✓ C2: todo PT con carpeta de evidencia tiene entrada en HISTORY.log (4 ms)
+    ✓ C3: ninguna TD cerrada figura pendiente en PENDING_TASKS (1 ms)
+    casos de control
+      ✓ AC-01: un PT pendiente que HISTORY declara DONE se acusa
+      ✓ AC-02: un PT pendiente SIN entrada en historia es legitimo
+      ✓ AC-03: un titulo de seccion no cuenta como fila pendiente
+      ✓ AC-04: `Status: VALIDATION_PENDING` cuenta como terminado
+      ✓ AC-05: una TD cerrada se detecta por su `Status:`
+      ✓ AC-06: una TD abierta no se cuenta como cerrada (1 ms)
+
+PASS test/unit/documentacion/contexto-de-construccion.spec.ts
+  El contexto de construccion de Docker esta acotado (F-42)
+    ✓ CD-01: se encontraron los servicios con Dockerfile (1 ms)
+    src/api
+      ✓ CD-02: si hace `COPY . .`, tiene .dockerignore
+      ✓ CD-03: y ese .dockerignore excluye *.tsbuildinfo
+      ✓ CD-03: y ese .dockerignore excluye node_modules
+      ✓ CD-03: y ese .dockerignore excluye dist
+    src/apps/base
+      ✓ CD-02: si hace `COPY . .`, tiene .dockerignore
+      ✓ CD-03: y ese .dockerignore excluye *.tsbuildinfo (1 ms)
+      ✓ CD-03: y ese .dockerignore excluye node_modules (2 ms)
+      ✓ CD-03: y ese .dockerignore excluye dist (1 ms)
+    src/apps/client
+      ✓ CD-02: si hace `COPY . .`, tiene .dockerignore
+      ✓ CD-03: y ese .dockerignore excluye *.tsbuildinfo (1 ms)
+      ✓ CD-03: y ese .dockerignore excluye node_modules (1 ms)
+      ✓ CD-03: y ese .dockerignore excluye dist (1 ms)
+    src/admin
+      ✓ CD-02: si hace `COPY . .`, tiene .dockerignore
+      ✓ CD-03: y ese .dockerignore excluye *.tsbuildinfo (1 ms)
+      ✓ CD-03: y ese .dockerignore excluye node_modules (1 ms)
+      ✓ CD-03: y ese .dockerignore excluye dist (1 ms)
+
+PASS test/unit/documentacion/rastro-de-trabajo-completo.spec.ts
+  El rastro de trabajo no tiene huecos — RULE-34 (PT-169)
+    ✓ se leyeron entradas, cierres y evidencia — si no, C1 y C2 pasan en vacio (1 ms)
+    ✓ C1: todo PT que sigue esperando validacion figura en PENDING_TASKS (7 ms)
+    ✓ C2: ningun grupo NUEVO se queda sin evidencia — contada por grupo
+    ✓ C3: la linea base solo puede BAJAR — nunca crecer
+    ✓ C4: la linea base no cubre a PT-166 ni a PT-167 — se resolvieron, no se declararon (1 ms)
+    ✓ C5: lo declarado en la linea base sigue siendo cierto
+    casos de control
+      ✓ AC-01: un rango se expande — sin esto C1 acusaria a catorce PT validados
+      ✓ AC-02: una cabecera agrupada da todos sus PT (1 ms)
+      ✓ AC-03: un VALIDATION_PENDING sin cierre posterior se detecta
+      ✓ AC-04: una entrada de VoBo cierra lo que enumera en el CUERPO
+      ✓ AC-08: un VoBo de totalidad cierra lo acumulado, aunque no enumere
+      ✓ AC-09: el orden importa — lo pendiente DESPUES de un VoBo total sigue pendiente (1 ms)
+      ✓ AC-05: un grupo con evidencia en cualquiera de sus PT no se acusa
+      ✓ AC-06: un grupo sin evidencia en ninguno de sus PT SI se acusa
+      ✓ AC-10: una entrada sin PT en cabecera no exige evidencia
+      ✓ AC-11: la clave de un grupo con rango expande el rango (1 ms)
+      ✓ AC-07: `Status:` con prosa detras se sigue leyendo
+
+PASS test/unit/documentacion/coherencia-documentacion-codigo.spec.ts
+  La documentacion coincide con el codigo que cita (PT-130)
+    ✓ los documentos del alcance existen — sin clausula de escape (2 ms)
+    la tabla de stack del TRD
+      ✓ tiene filas con cita — si no, no habria nada que comprobar
+      ✓ cada cita apunta a una linea que contiene el paquete que dice (2 ms)
+      ✓ cada version declarada coincide con la que dice el package.json citado (2 ms)
+    las citas de la prosa del TRD
+      ✓ hay citas que mirar — si no, esta guarda no vigila nada
+      ✓ ninguna aterriza en una llave o en una cabecera de seccion (6 ms)
+    las rutas de salud documentadas
+      ✓ no documenta `/health` sin el prefijo global
+    casos de control
+      ✓ C1: reconoce una fila con cita (1 ms)
+      ✓ C2: una fila SIN cita no se mira — no se inventa cobertura
+      ✓ C3: una linea fuera de rango se detecta, no se ignora (1 ms)
+      ✓ C4: no acusa a la prosa
+      ✓ C5: una cita que aterriza en una llave se detecta — el estado real de PT-135 (1 ms)
+      ✓ C6: una entrada real NO se acusa — un falso positivo tambien mata un control
+
+PASS test/unit/documentacion/coherencia-deuda-tecnica.spec.ts
+  El registro de deuda no contradice a la historia (PT-103)
+    ✓ CD-01: ninguna deuda cerrada en HISTORY.log sigue abierta en el registro (10 ms)
+    ✓ CD-05: se salta limpiamente cuando los documentos no estan
+    ✓ CD-02: RECHAZA una deuda cerrada en la historia y abierta en el registro
+    ✓ CD-03: ACEPTA un registro coherente
+    ✓ CD-04: NO acusa ante una redaccion que no encaja en ninguna lista (1 ms)
+    ✓ CD-06: una deuda del registro que la historia no menciona es irrelevante
+
+PASS test/unit/documentacion/configuracion-de-pruebas-montada.spec.ts
+  La configuracion de pruebas vive en un sitio y esta montada (PT-172)
+    ✓ C1: `jest.config.js` existe (1 ms)
+    ✓ C2: `package.json` NO recupera su bloque `jest` — una sola fuente (1 ms)
+    ✓ C3: el fichero esta declarado como montaje del servicio `api` (2 ms)
+    ✓ C4: `maxWorkers` sigue fijado y explicado (4 ms)
+    ✓ C5: no queda ninguna clave de comentario que Jest rechace (1 ms)
+    casos de control
+      ✓ AC-01: se extraen los montajes de un bloque de servicio
+      ✓ AC-02: el bloque se corta en el siguiente servicio
+      ✓ AC-03: un servicio que no existe da lista vacia, y C3 lo detectaria
+      ✓ AC-04: un volumen nombrado (no una ruta) no se cuenta como montaje de fichero
+
+Test Suites: 15 passed, 15 total
+Tests:       159 passed, 159 total
+Snapshots:   0 total
+Time:        11.445 s
+Ran all test suites matching /unit\/documentacion/i.

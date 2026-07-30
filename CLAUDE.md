@@ -385,6 +385,17 @@ Each SSR site follows the same convention:
   *todas* sus llamadas a su propio contenedor y **arrancara `healthy` sin funcionar**. Lo vigila
   `conexiones-sin-reserva.spec.ts` en API, ADMIN, BASE y CLIENT. **Excepción declarada**:
   `public-origins.ts` conserva el **subdominio** de desarrollo (nunca un puerto) por ADR-045.
+- **Una afirmación de estado sobre un hallazgo lleva veredicto, y «sin verificar» vale** (RULE-38, PT-189).
+  Los 36 `AUD-XXX` de la auditoría de julio tienen su estado en la **tabla de veredictos** de
+  `docs-v2/transversal/Registro-de-Hallazgos.md`: `corregido` · `abierto` · `limitación declarada` ·
+  **`sin verificar`**. Ningún documento puede presentar como defecto vivo algo que la tabla declara
+  corregido. Nació de medir **74 líneas en 22 documentos** que declaraban vigentes nueve hallazgos
+  arreglados hacía meses — y una de ellas, `RN-64`, **describía el defecto como si fuera la regla de
+  negocio**. El registro decía «36/36 corregidos» y cinco no lo estaban. **El recuento honesto es 15
+  corregidos · 5 abiertos · 1 limitación · 15 sin verificar**: una lista con final, en vez de un «36/36»
+  que nunca fue cierto. Y al corregir una de estas líneas, **reescribe la frase, no el símbolo**: cambiar
+  `⚠️` por `✅` dejando el texto del defecto produce una línea que se contradice a sí misma, que es peor
+  que una obsoleta.
 - **El estado real de un PT se lee en el ÍNDICE DE ESTADO**, al final de `HISTORY.log`
   (`npm run indice:estado`, PT-187). El log es append-only, así que la línea `Status:` de una entrada
   es **histórica**: **102 entradas dicen `VALIDATION_PENDING` estando cerradas**. No las reescribas —
