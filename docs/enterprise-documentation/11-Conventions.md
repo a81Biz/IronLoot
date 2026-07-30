@@ -773,6 +773,29 @@ read prose: a guard that forces a particular wording teaches people to write for
 the document stops telling the truth. Its parser understands grouped headers (`## PT-090 … PT-104`)
 because a noisy guard gets disabled, and a disabled guard also stops catching what it did detect.
 
+### RULE-37: An append-only register needs a generated index, and a BUG closed by the agent is not closed
+**What:** `HISTORY.log` is append-only, so a `Status:` line records what was true **when written**, not today.
+The real state lives in a later `## CIERRE CON VoBo` block. Two obligations follow: (a) the file ends with a
+**generated** index (`npm run indice:estado`) giving each PT's real state; (b) a BUG may not carry
+`Status: DONE` unless a VoBo block names it — or a later totality declaration covers it.
+**Why:** measured 2026-07-29. **102 entries still said `VALIDATION_PENDING` while closed**, and it cost real
+time: PT-147 was reported as pending when it had been closed for hours, and the human pushed back —
+*"why is PT-147 still pending if closing it has been asked for more than once?"*. It wasn't. The file said so,
+and the agent repeated the file instead of measuring it. RULE-34's guard already walks the log chronologically
+and **compensates**; a human reader has no such compensation.
+**Why an index and not a rewrite:** rewriting the 102 lines reads better and **falsifies the register** — it
+erases when each thing became known, which is exactly what append-only exists to preserve. The index appends.
+**And (b) is the half that matters more.** The index's first run found `PT-181` in `VALIDATION_PENDING` with no
+closure block —its VoBo lived only in `PENDING_TASKS.md`— and `PT-182 … PT-186` written straight to
+`Status: DONE`, all five BUGs. FDGE STATE 6 is explicit: the agent does not close bugs. The outcome was right
+(the VoBo was standing) but **a closure with no record of who authorised it is indistinguishable from one the
+agent granted itself**, and that distinction is the whole point of STATE 6.
+**Enforced by:** `indice-de-estado-al-dia.spec.ts`. Read its C4 before touching it: the first version's regex
+ended in `(?=\n## |$)` with the `m` flag — where `$` matches end of **line** — so every block was truncated to
+its header and the case accused five PTs that were named in the body next door. The block extraction is a named
+function for that reason, and `SIN_DECLARAR` (entries older than the `Status:` field) is **not** treated as open:
+an unknown is not a pending.
+
 ### RULE-36: A shared service never decides what its callers do with a failure
 **What:** a service used from more than one call site **propagates** its errors. Swallowing is the
 caller's decision, taken at the call site, **with the reason written next to it**. Logging and
@@ -923,6 +946,8 @@ When adding a new required environment variable:
 | 2026-07-29 | RULE-35 — an `ND-XXX` asserting an absence is checked (from F-167-G) | PT-171 |
 | 2026-07-29 | RULE-17 corollary — a business-rule default must be the **protective** value (from H-031) | PT-182 |
 | 2026-07-29 | RULE-36 — a shared service never decides what its callers do with a failure (from H-032/H-033) | PT-183 |
+| 2026-07-29 | RULE-17 corollary widened — the guard covers the **four** services, not just the API (from H-035) | PT-186 |
+| 2026-07-29 | RULE-37 — an append-only register needs a generated index; a BUG the agent closes is not closed | PT-187 |
 
 **Backfill (PT-183).** This log claimed to be *the* incremental record and held **12 of 34 rules**. Twenty-two
 were missing, so a reader checking when a rule arrived — and against which defect — found nothing and had no

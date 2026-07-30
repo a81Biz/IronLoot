@@ -1,6 +1,6 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181 … PT-185)
+**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181 … PT-187)
 
 ---
 
@@ -23,6 +23,7 @@ veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
 | **H-032** | D3 | PT-183 | **En vivo** con Mailhog parado: `200` con bandeja vacía → **500** |
 | **H-033** | D3 | PT-183 | Medido: **121 s → ~5 s** |
 | **H-034** | D3 | PT-184 | 7 casos, con **C1 y C2 vistos fallar** al devolver una llamada a su forma sin tope |
+| **H-035** | D2 | PT-185 · **PT-186** | Reabierta: el primer cierre cubría el API y faltaban **6** reservas en BASE/CLIENT. Cerrada con los cuatro servicios cubiertos |
 | **H-035** | D2 | PT-185 | La guarda nueva **vista acusar al fichero correcto, y sólo a ése**, antes del arreglo |
 
 Los siete nacieron y murieron el 2026-07-29, **cada uno saliendo de comprobar el anterior**: H-032/H-033 al

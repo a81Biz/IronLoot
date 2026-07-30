@@ -1,0 +1,10 @@
+=== las 102 entradas con Status obsoleto, y el estado real que el indice calcula ===
+
+--- cuantas dicen VALIDATION_PENDING literalmente:
+102
+
+--- cuantas quedan realmente abiertas segun el indice:
+0
+
+--- PT-147, el que se reporto como pendiente:
+| PT-147 | 2136 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 2492 |
