@@ -1,0 +1,9 @@
+=== los tres servicios en pie tras el cambio ===
+
+ironloot-api: running healthy
+ironloot-base: running healthy
+ironloot-client: running healthy
+
+health API : 200
+BASE /     : 200
+CLIENT /dashboard : 302 -> http://base.ironloot.local/auth/login

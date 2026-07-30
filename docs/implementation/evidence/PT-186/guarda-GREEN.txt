@@ -1,0 +1,20 @@
+PASS test/unit/config/conexiones-sin-reserva.spec.ts (7.237 s)
+  Ninguna variable de conexion se lee con reserva — RULE-17, la otra mitad (PT-185/PT-186)
+    ✓ C1-API: ningun fichero da un valor por defecto a una conexion (1251 ms)
+    ✓ C1-ADMIN: ningun fichero da un valor por defecto a una conexion (390 ms)
+    ✓ C1-BASE: ningun fichero da un valor por defecto a una conexion (32 ms)
+    ✓ C1-CLIENT: ningun fichero da un valor por defecto a una conexion (69 ms)
+    ✓ C1-cobertura: la guarda mira los CUATRO servicios, no solo el API (922 ms)
+    casos de control
+      ✓ C2: `||` se detecta
+      ✓ C3: `??` tambien — vigilar solo `||` ensena a usar el otro
+      ✓ C4: el segundo argumento de `config.get` tambien es una reserva
+      ✓ C5: leer la variable SIN reserva no se acusa
+      ✓ C6: una reserva en un COMENTARIO no cuenta — la guarda no se acusa a si misma (1 ms)
+      ✓ C7: una variable que NO es de conexion no se acusa
+
+Test Suites: 1 passed, 1 total
+Tests:       11 passed, 11 total
+Snapshots:   0 total
+Time:        7.465 s, estimated 8 s
+Ran all test suites matching /conexiones-sin-reserva/i.
