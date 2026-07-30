@@ -95,30 +95,44 @@ marcado aquí `corregido`, la prueba falla. Y si alguien cita un `AUD` que no es
 | AUD-012 | **corregido** | PT-191 (2026-07-30). `Money` retirado (no puede representar el descubierto, y su aritmética es peor que `Decimal`), y con él el validador de IPN de **PayPal**, que describía un protocolo que la plataforma no usa. Al medir el conjunto: **30 de 42 símbolos de `core` sin consumidor** → `TD-024`, con guarda que impide que crezca |
 | AUD-013 | corregido | verificado el 2026-07-29 contra código o base |
 | AUD-014 | corregido | verificado el 2026-07-29 contra código o base |
-| AUD-015 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-015 | **corregido** | PT-192 (2026-07-30). El grave de los quince: `CR-002` decía `held_funds <= balance` y aquí retener **resta del balance**, así que la violaba quien pujara casi todo su saldo —comportándose bien—. Estaba **codificada en el checkpoint D1.N1 como CRÍTICA**, lista para acusar al sistema de un fallo inexistente; `RN-21` ya decía lo correcto desde PT-032. Ahora se mide sobre el ledger, en el momento de retener |
 | AUD-016 | limitación declarada | CFDI — aceptado como limitación declarada de v1.0 (H-005). Falta el PAC, no el código |
 | AUD-017 | corregido | verificado el 2026-07-29 contra código o base |
 | AUD-018 | corregido | verificado el 2026-07-29 contra código o base |
-| AUD-019 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
-| AUD-020 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
-| AUD-021 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
-| AUD-022 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-019 | **corregido** | PT-192 (2026-07-30). Medido: `UserPaymentMethod` está documentado en **5 documentos** de `docs-v2`, entre ellos `Modelo-de-Datos.md` |
+| AUD-020 | **corregido** | PT-192 (2026-07-30). El registro de deuda cita hasta PT-191 y tiene 25 entradas vivas; se reescribió entero en PT-181 y se amplió en PT-191 |
+| AUD-021 | **corregido** | PT-192 (2026-07-30). Medido: **ninguna** ficha de producto PTSA sigue en `BORRADOR` |
+| AUD-022 | **corregido** | PT-192 (2026-07-30). Medido: **27 directorios** en `src/api/src/modules/`, `CLAUDE.md` declara 27 y las 27 tienen fila en su tabla. El «23» del enunciado eran las migraciones, otra cosa |
 | AUD-023 | corregido | verificado el 2026-07-29 contra código o base |
-| AUD-024 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-024 | **corregido** | PT-192 (2026-07-30). Medido: `shipments.service.ts` **no llama a ningún transportista**, y 4 documentos lo describen como captura manual |
 | AUD-025 | corregido | verificado el 2026-07-29 contra código o base |
-| AUD-026 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-026 | **corregido** | PT-192 (2026-07-30). PT-040 quitó la reserva débil pero la dejó en `|| ""`: fallaba cerrado **en la petición, no en el arranque**, así que sin `JWT_SECRET` el CLIENT arrancaba `healthy` y rebotaba al login a todo el mundo sin un error en ningún log. Ahora `variableObligatoria()` + 32 caracteres, como el API |
 | AUD-027 | **corregido** | PT-191 (2026-07-30). No eran «dos rutas de config»: el panel tenía un formulario SMTP completo que guardaba y decía «guardado», y **el mailer lee `MAIL_*` del entorno** — no configuraba nada. Retirado con su formulario y sus dos endpoints huérfanos. `una-sola-ruta-de-correo.spec.ts` |
-| AUD-028 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
-| AUD-029 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-028 | **corregido** | PT-192 (2026-07-30). Medido: el `pre-commit` recorre los **cinco** proyectos con `lint-staged` (PT-091) y la raíz tiene 17 scripts; los ocho jobs de CI se ejecutan desde PT-136 |
+| AUD-029 | **corregido** | PT-192 (2026-07-30). `docs-v2/transversal/Diccionario-Maestro.md` existe |
 | AUD-030 | corregido | verificado el 2026-07-29 contra código o base |
-| AUD-031 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
-| AUD-032 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
-| AUD-033 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
-| AUD-034 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
-| AUD-035 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
-| AUD-036 | **sin verificar** | nadie lo ha vuelto a medir desde 2026-07-23 |
+| AUD-031 | **corregido** | PT-192 (2026-07-30) por **ADR-057**. El CHANGELOG llevaba parado desde el 12-ene y no era olvido: el registro vivo es `HISTORY.log`, append-only y con índice de estado generado. Mantener dos garantiza que uno mienta (razonamiento de ADR-049); el fichero apunta ahí y conserva su histórico |
+| AUD-032 | **corregido** | PT-192 (2026-07-30). Medido: **ninguna** plantilla de ADMIN queda sin un `render()` que la nombre |
+| AUD-033 | **corregido** | PT-192 (2026-07-30). Medido: **cero** rutas comentadas en `orders.controller.ts` |
+| AUD-034 | **corregido** | PT-192 (2026-07-30) por **ADR-056**. Las cinco versiones divergían y **ninguna significaba nada**: los paquetes son privados y `core` se referencia con `file:`, no por versión. Unificadas a la de la plataforma (1.0.0) |
+| AUD-035 | **corregido** | PT-192 (2026-07-30). Las cookies **sobrevivían a sus tokens** —acceso 7 d contra 15 min, refresco 30 d contra 7 d—; ahora derivan de `JWT_ACCESS_EXPIRY`/`JWT_REFRESH_EXPIRY`. Al medirlo salió algo mayor: el refresco **no lo llama nadie**, así que la sesión efectiva son 15 min → `TD-025` |
+| AUD-036 | **corregido** | PT-192 (2026-07-30). Medido: **cero** imports cruzados entre `src/admin` y `src/apps/client` |
 
-**Recuento: 20 corregidos · 0 abiertos · 1 limitación declarada · 15 sin verificar.**
+**Recuento: 35 corregidos · 0 abiertos · 1 limitación declarada · 0 sin verificar.**
+
+> **Cerrado el 2026-07-30 por PT-192.** Los quince «sin verificar» se **midieron uno a uno** contra el
+> código, la base y los documentos. **Diez ya estaban corregidos** y nadie lo había comprobado; **cinco
+> seguían abiertos**, y uno —`AUD-015`— era el más grave de toda la lista: una regla de dominio que decía
+> lo contrario de lo que el sistema hace, **codificada como CRÍTICA en el checkpoint D1.N1** y lista para
+> acusar al sistema de un fallo inexistente. No había saltado porque ese checkpoint necesita una base con
+> historia: **un control que no se ejecuta no avisa de nada**, y aquí eso lo escondió durante meses.
+>
+> **Con esto la lista tiene final**: 35 corregidos y una limitación declarada (`AUD-016`, CFDI, que
+> depende de contratar un PAC). Ninguna casilla dice ya «no lo sé».
+>
+> Y dos cosas salieron de medir, no del enunciado: la sesión efectiva del portal dura **quince minutos**
+> porque el refresco no está cableado (`TD-025`), y **diez de los quince ya estaban bien** — el coste de
+> no medir no es sólo no arreglar, es no saber qué está arreglado.
 
 > **Actualizado el 2026-07-30 por PT-191.** Los cinco que estaban abiertos —AUD-006, AUD-010, AUD-011,
 > AUD-012 y AUD-027— se cerraron en un solo ciclo, y **ninguno resultó ser lo que su enunciado decía**:

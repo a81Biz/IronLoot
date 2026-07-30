@@ -591,3 +591,29 @@ consumidores rompe la prueba con su nombre y su fichero, y un declarado que deja
 
 **Cómo comprobar el estado:** `npx jest --testPathPattern="core-sin-superficie" --no-coverage` — el caso
 `C3` imprime la cuenta viva.
+
+---
+
+### TD-025 — El refresco de sesión existe, tiene su cookie, y nadie lo llama
+**Abierta 2026-07-30 · PT-192 (al medir AUD-035) · Severidad: MEDIA · Esfuerzo: M**
+
+**Lo medido.** El API expone `POST /api/v1/auth/refresh`. BASE **guarda** el token de refresco en una
+cookie propia al iniciar sesión y la borra al cerrar. Y `grep -rn "refresh_token" src/apps` no devuelve
+**ni un solo llamante**: nadie la lee, nadie llama al endpoint.
+
+**La consecuencia, que es la que importa.** `JWT_ACCESS_EXPIRY` son **15 minutos**, y el
+`ClientAuthGuard` no intenta refrescar: verifica, falla, borra la cookie y manda al login. Es decir,
+**la sesión efectiva del portal privado dura quince minutos**, aunque el sistema tenga escrito todo lo
+necesario para que durase siete días.
+
+**Por qué no se cerró en PT-192.** Cablear el refresco es trabajo de funcionalidad sobre el camino de
+autenticación: hay que decidir dónde se intenta (¿en el guard? ¿en el proxy del BFF?), qué pasa con las
+peticiones en vuelo mientras se refresca, y cómo se evita una tormenta de refrescos simultáneos. Eso es
+un PT con criterios de aceptación, no un arreglo dentro de una medición.
+
+**Lo que PT-192 sí hizo:** dejar de prometerlo. Las cookies ya no viven más que sus tokens (AUD-035), así
+que el estado del navegador dejó de contradecir al del servidor. La sesión sigue durando quince minutos
+— pero ahora se ve.
+
+**Cómo comprobar el estado:** `grep -rn "auth/refresh" src/apps` — mientras no devuelva un llamante, esta
+deuda sigue abierta.

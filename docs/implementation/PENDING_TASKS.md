@@ -1,19 +1,17 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (PT-191 cerrado con VoBo humano)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-192 — los quince «sin verificar», medidos)
 
 ---
 
-## Esperando validación humana: nada
+## Esperando validación humana: **PT-192**
 
 **PT-181 … PT-185 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
 veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
 
-**PT-191 cerrado con VoBo humano** el 2026-07-30 (*«de PT-191 ciérralos todos, tienes mi VoBo»*), con
-constancia en `HISTORY.log` (RULE-37). Con él, **los 143 PT del registro están cerrados**: el índice de
-estado dice **0 realmente abiertos**.
-
-**Cero trabajo FDGE pendiente.**
+**PT-191 cerrado con VoBo humano** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37).
+**PT-192 queda en `VALIDATION_PENDING`**: son cinco BUG y el agente no cierra bugs (FDGE STATE 6).
+El resto de los 144 PT del registro está cerrado.
 
 ---
 
@@ -63,10 +61,19 @@ veredictos con su evidencia.
 Los cinco se cerraron leyendo el código, no el enunciado, y los cinco resultaron ser otra cosa. Revisar «qué
 falta» leyendo enunciados devuelve la lista de síntomas, y por eso nunca terminaba.
 
-### Y quedan 15 `AUD` con veredicto `sin verificar`
+### Los 15 «sin verificar», medidos (PT-192)
 
-Deuda **de medición**, no de código: puede que estén todos corregidos. **No se declaran corregidos sin
-medirlos** — eso es exactamente lo que produjo el «36/36» que la tabla existe para desmentir.
+**Diez ya estaban corregidos y nadie lo sabía. Cinco seguían abiertos.** Ése es el coste real de dejar
+una casilla en «no lo sé»: no es sólo no arreglar, es **no saber qué está arreglado** — dos tercios de
+la lista era trabajo hecho que seguía figurando como incógnita, y con ellos se arrastraba el único
+grave.
+
+**`AUD-015`** era una regla de dominio que decía lo contrario de lo que el sistema hace, **codificada
+como CRÍTICA en el checkpoint D1.N1** y lista para acusar al sistema de un fallo inexistente. No saltó
+porque ese checkpoint necesita una base con historia.
+
+**Recuento final: 35 corregidos · 0 abiertos · 1 limitación declarada · 0 sin verificar.** La lista
+tiene final.
 
 ---
 
@@ -101,7 +108,9 @@ llegue el proveedor:
 - **La elección decide, sin querer, si el timbrado entra en el camino del dinero.** En B entra; en A y C no.
   Este repositorio ya sabe lo que cuesta poner algo frágil en la ruta de un pago (ADR-038).
 
-**Deuda técnica abierta: 3 de 25** — TD-002 (credenciales de terceros), TD-009 (riesgo aceptado por PT-080)
+**Deuda técnica abierta: 4 de 26** — con **TD-025** (PT-192): el refresco de sesión existe, tiene su cookie de 30 días y **no lo llama nadie**, así que la sesión efectiva del portal dura **quince minutos**. Cablearlo es trabajo de funcionalidad sobre autenticación, no un arreglo dentro de una medición.
+
+**Las otras tres** — TD-002 (credenciales de terceros), TD-009 (riesgo aceptado por PT-080)
 y **TD-024** (nueva, PT-191): `@ironloot/core` exporta **24 símbolos que nadie importa** — los puertos de una
 arquitectura hexagonal cuyos adaptadores no se escribieron. **No se retiran porque hacerlo es abandonar
 formalmente ese diseño, y eso pide una ADR.** Lo que ya está hecho es medirlo, y hay guarda para que no crezca.

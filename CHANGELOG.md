@@ -1,5 +1,18 @@
 # Changelog
 
+> **El registro vivo es [`docs/implementation/HISTORY.log`](docs/implementation/HISTORY.log)** (ADR-057).
+>
+> Este fichero se quedó en `0.5.1` el **12-ene-2026**. No fue un descuido: desde entonces el trabajo se
+> registra en `HISTORY.log`, que es **append-only**, lo exige FDGE STATE 7 y lleva un **índice de estado
+> generado** (`npm run indice:estado`) que dice de cada PT si está realmente cerrado y dónde consta el
+> VoBo. Mantener dos registros de lo mismo garantiza que uno mienta — es el razonamiento de ADR-049.
+>
+> Lo de abajo se conserva **tal cual**: es real, es anterior a FDGE, y reescribirlo para que pareciera
+> continuo sería falsificar el momento en que se supo cada cosa.
+>
+> **Las versiones ya no se mueven por servicio**: desde ADR-056 hay una sola, la de la plataforma.
+
+
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),

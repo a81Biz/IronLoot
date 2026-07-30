@@ -18,7 +18,7 @@
 | **HeyBanco** | `heybanco.provider.ts` | ✅ documentado y declarado en `src/api/.env.example`. **Falta la credencial, no el código** (TD-002). AUD-023 corregido |
 | Stripe | referencia condicional | ⚠️ etiqueta Graphify obsoleta; sin SDK real |
 | **Email (SMTP/Mailhog)** | `notifications.module.ts` | ✅ una sola ruta: `MAIL_*` del entorno. Las claves `SMTP_*` y su formulario en el panel se retiraron — **no configuraban nada** (`AUD-027` corregido, PT-191) |
-| **Transportista** | `shipments/*` | ✗ sin API real; campos manuales (AUD-024) |
+| **Transportista** | `shipments/*` | ✅ **captura manual, declarada como tal**: `carrier` y `trackingNumber` los escribe el vendedor y no hay integración con ningún transportista — lo que estaba mal era el documento que la anunciaba como integración (`AUD-024` corregido, PT-192) |
 | **CFDI/PAC** | `cfdi/*`, `ICfdiPacProvider` | ✗ stub, sin proveedor (AUD-016) |
 | **KYC** | `kyc/*` | manual admin; sin proveedor externo |
 | **Storage** | `upload/*`, `IStorageService` | LOCAL\|S3\|MINIO por config |

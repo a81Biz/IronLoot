@@ -78,7 +78,17 @@ Las siguientes reglas son determinísticas, verificables y candidatas a tests ej
 | ID | Regla | Campo verificable | Severidad si falla |
 |:---|:---|:---|:---|
 | **CR-001** | El balance del monedero NUNCA puede ser negativo | `wallets.balance >= 0` | CRÍTICA |
-| **CR-002** | Los fondos retenidos no pueden superar el balance disponible | `wallets.held_funds <= wallets.balance` | CRÍTICA |
+| **CR-002** | Toda retención de puja se hizo contra saldo suficiente **en su momento** | `ledger WHERE type=HOLD_BID AND amount > balance_before` = 0 | CRÍTICA |
+> **Enmienda 2026-07-30 (PT-192, AUD-015) — `CR-002` decía lo contrario de lo que el sistema hace.**
+> Decía `held_funds <= balance`, y aquí retener **resta del balance y suma a `held_funds`**: son bolsas
+> disjuntas, así que cualquiera que puje casi todo su saldo la violaba **comportándose bien**. Estaba
+> además **codificada** en el checkpoint D1.N1 con severidad CRÍTICA, lista para acusar al sistema de un
+> fallo inexistente; no saltó porque ese checkpoint necesita una base con historia. `RN-21` ya enunciaba
+> la versión correcta desde **PT-032** — convivían, y la equivocada era la que se ejecutaba.
+>
+> La protección es real; lo que estaba mal era **dónde se medía**. Ahora se mide en el ledger, sobre el
+> momento de retener, que es donde vive.
+
 | **CR-003** | Cada cambio de balance genera exactamente una entrada de Ledger | `COUNT(ledger WHERE wallet_id=?) > 0` después de toda operación | ALTA |
 | **CR-004** | El monto de depósito DEBE coincidir con el pago verificado del proveedor | `payment.amount == dto.amount` | ALTA |
 | **CR-005** | Una puja en subasta propia es rechazada con `BID_ON_OWN_AUCTION` | Error 400 si `auction.sellerId == bid.userId` | ALTA |

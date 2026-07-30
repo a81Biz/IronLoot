@@ -1,6 +1,6 @@
 {
   "name": "@ironloot/base",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "IronLoot BASE — Public site (NestJS SSR)",
   "private": true,
   "scripts": {

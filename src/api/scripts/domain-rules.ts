@@ -121,11 +121,28 @@ export const CATALOGO: Regla[] = [
     poblacion: 'SELECT count(*) FROM wallets',
   },
   {
+    // PT-192 (AUD-015) — **Esta regla decía lo contrario de lo que el sistema hace, y estaba armada.**
+    //
+    // Decía: `SELECT count(*) FROM wallets WHERE held_funds > balance`, con severidad CRÍTICA. Y eso es
+    // falso aquí: `holdFunds()` **resta del balance y suma a heldFunds** —son bolsas disjuntas—, así que
+    // cualquiera que puje casi todo su saldo la viola **comportándose bien**. Este checkpoint estaba
+    // preparado para declarar una violación crítica de dominio sobre datos correctos.
+    //
+    // `RN-21` ya decía lo correcto desde **PT-032**: *«`held` no puede exceder el balance al momento de
+    // bloquear; tras bloquear puede exceder el restante»*. Las dos afirmaciones convivían y la
+    // equivocada era la que se ejecutaba. No saltó nunca porque este checkpoint necesita una base con
+    // historia y en CI da `SIN_DATOS` — **un control que no se ejecuta no avisa de nada**, y aquí eso
+    // fue lo que lo mantuvo escondido durante meses.
+    //
+    // La protección sí es real; lo que estaba mal era **dónde se medía**. Se mide en el ledger, que es
+    // inmutable y guarda el saldo previo de cada retención: una retención hecha contra saldo
+    // insuficiente significa que la excepción de `holdFunds` dejó pasar algo, y eso sí es crítico.
+    // A diferencia de la anterior, no puede dispararse con datos correctos.
     id: 'CR-002',
-    enunciado: 'Los fondos retenidos no superan el balance',
+    enunciado: 'Toda retencion de puja se hizo contra saldo suficiente en su momento',
     peso: 20,
-    sql: 'SELECT count(*) FROM wallets WHERE held_funds > balance',
-    poblacion: 'SELECT count(*) FROM wallets',
+    sql: "SELECT count(*) FROM ledger WHERE type = 'HOLD_BID' AND amount > balance_before",
+    poblacion: "SELECT count(*) FROM ledger WHERE type = 'HOLD_BID'",
   },
   {
     id: 'CR-003',

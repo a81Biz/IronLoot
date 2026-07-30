@@ -2,16 +2,16 @@
 
 **FDGE V3** · **2026-07-30** · Se **sobrescribe**: es el estado de ahora, no la historia.
 
-**Rama**: `master`, árbol limpio, **al día con `origin`** y cero ramas sin fusionar.
+**Rama**: `fix/PT-192-los-quince-medidos`, pendiente de fusionar. Sólo existe `master` además de ella.
 
-**Pruebas**: **1268** unitarias en verde — API **1056** (130 suites) · CORE **93** (6) · CLIENT **103** ·
+**Pruebas**: **1288** unitarias en verde — API **1076** (133 suites) · CORE **93** (6) · CLIENT **103** ·
 ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
 con sus 41 casos: eran pruebas verdes sobre código que no corría en producción.)*
 
 **Reglas duras**: **36** `RULE-NN` (RULE-38 nueva). **Guardas de documentación**: **15** suites / **159** pruebas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **143 encabezados · 0 realmente abiertos.**
+`npm run indice:estado`. **144 encabezados · 1 realmente abierto** (PT-192, `VALIDATION_PENDING`).
 
 ---
 
@@ -57,7 +57,9 @@ esta corrida vivían en el **camino de fallo**, que nunca se había ejecutado.
 
 ---
 
-## Esperan tu validación: nada
+## Esperan tu validación: **PT-192**
+
+Son cinco BUG y el agente no cierra bugs (FDGE STATE 6).
 
 **PT-191 cerrado con tu VoBo** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37: un BUG `DONE` sin
 bloque de VoBo que lo nombre no está cerrado). Con él, **los 143 PT del registro están cerrados** — el
@@ -66,7 +68,54 @@ bloque de VoBo que lo nombre no está cerrado). Con él, **los 143 PT del regist
 
 ---
 
-## Lo último: los cinco `AUD` abiertos, cerrados — y ninguno era lo que decía (PT-191)
+## Lo último: los quince «sin verificar», medidos — y diez ya estaban bien (PT-192)
+
+Pediste cerrarlos. Están cerrados, y el resultado dice algo que no esperaba:
+
+**Diez ya estaban corregidos y nadie lo sabía. Cinco seguían abiertos.**
+
+Ése es el coste real de dejar una casilla en «no lo sé»: no es sólo no arreglar, es **no saber qué está
+arreglado**. Dos tercios de la lista era trabajo ya hecho que seguía figurando como incógnita — y con
+ellos se arrastraba el único grave de todos.
+
+### `AUD-015`: una regla de dominio armada que decía lo contrario del sistema
+
+`CR-002` decía *«los fondos retenidos no pueden superar el balance disponible»*. Y aquí **retener resta
+del balance y suma a `held_funds`**: son bolsas disjuntas, así que cualquiera que puje casi todo su
+saldo **viola la invariante comportándose bien**.
+
+Lo peligroso no era la frase: estaba **codificada en el checkpoint D1.N1 con severidad CRÍTICA**, lista
+para acusar al sistema de un fallo inexistente. No saltó nunca porque ese checkpoint necesita una base
+con historia — **un control que no se ejecuta no avisa de nada**, y aquí eso lo escondió meses. Y
+`RN-21` decía lo correcto **desde PT-032**: convivían, y la equivocada era la que se ejecutaba.
+
+### Los otros cuatro
+
+| | |
+|---|---|
+| **AUD-026** | El CLIENT verificaba sesiones con `JWT_SECRET \|\| ""`. Fallaba cerrado **en la petición, no en el arranque**: sin la variable arrancaba `healthy` y rebotaba al login a todo el mundo, sin un error en ningún log |
+| **AUD-035** | Las cookies **sobrevivían a sus tokens**: acceso 7 días contra 15 minutos, refresco 30 contra 7 |
+| **AUD-034** | Cinco versiones divergentes que **no significaban nada** (paquetes privados, `core` por `file:`) → ADR-056 |
+| **AUD-031** | CHANGELOG parado desde el 12-ene, y no era olvido: el registro vivo es `HISTORY.log` → ADR-057 |
+
+### Lo que salió de medir, y no estaba en ningún enunciado
+
+**La sesión efectiva del portal dura quince minutos.** El API expone `POST /auth/refresh`, BASE guarda
+el token de refresco con su cookie de 30 días… y **no hay un solo llamante**. El mecanismo para que la
+sesión dure siete días está escrito y no está cableado → **TD-025**. No se cierra aquí: cablearlo exige
+decidir dónde se intenta, qué pasa con las peticiones en vuelo y cómo se evita una tormenta de
+refrescos. Eso es un PT con criterios de aceptación.
+
+### Y cinco veredictos míos fueron falsos positivos
+
+Todos por el mismo motivo de siempre —**medir la forma en vez de la cosa**—: el «18» de ADMIN en vez
+del «27» del API; contar `--prefix` en vez del bucle del hook; `**Status: CERRADA` con los dos puntos
+dentro de la negrita; `RN-64` contra `RN-64b`; y el registro de hallazgos contándose a sí mismo como
+documentación. Los cacé releyendo mis propios veredictos con desconfianza. Están en la autorrevisión.
+
+---
+
+## Antes de eso: los cinco `AUD` abiertos, cerrados — y ninguno era lo que decía (PT-191)
 
 Me pediste cerrarlos completos. Están cerrados. Lo que importa del resultado no es que sean cinco, sino que
 **ninguno tenía el tamaño que anunciaba su enunciado**:

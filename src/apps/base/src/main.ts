@@ -16,6 +16,10 @@ import {
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
 import { variableObligatoria } from "./common/config/variable-obligatoria";
+import {
+  VIDA_ACCESO_MS,
+  VIDA_REFRESCO_MS,
+} from "./common/config/vida-de-sesion";
 
 // COOKIE_DOMAIN controls cross-subdomain SSO. Set to `.ironloot.local` for local dev
 // with hosts-file entries, or `.ironloot.com` for production.
@@ -29,7 +33,10 @@ const COOKIE_OPTIONS = {
   secure: isProd,
   sameSite: (process.env.COOKIE_SAMESITE || "Lax") as "Lax" | "Strict" | "None",
   ...(cookieDomain ? { domain: cookieDomain } : {}),
-  maxAge: 7 * 24 * 60 * 60 * 1000,
+  // PT-192 (AUD-035) — La cookie dura lo que dura el token que lleva dentro. Antes era un literal de
+  // **7 días** para un token de **15 minutos**: el navegador seguía mandando una credencial muerta
+  // durante seis días y veintitrés horas. Motivo completo en `common/config/vida-de-sesion.ts`.
+  maxAge: VIDA_ACCESO_MS,
   path: "/",
 };
 
@@ -150,7 +157,10 @@ async function bootstrap() {
                 if (tokens.refreshToken) {
                   expressRes.cookie("refresh_token", tokens.refreshToken, {
                     ...COOKIE_OPTIONS,
-                    maxAge: 30 * 24 * 60 * 60 * 1000,
+                    // PT-192 (AUD-035) — Era un literal de 30 días para un token de 7. Ojo: este token
+                    // **no lo consume nadie** todavía (TD-025), así que hoy la sesión efectiva son los
+                    // 15 minutos del de acceso, no estos 7 días.
+                    maxAge: VIDA_REFRESCO_MS,
                   });
                 }
                 return JSON.stringify({

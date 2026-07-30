@@ -62,7 +62,7 @@
 | RN-32 | Una orden por subasta (`auction_id` UNIQUE, 1:1). | ✅ Cumple | `schema.prisma:253` | — |
 | RN-33 | Orden sigue FSM: PENDING_PAYMENT→PAID→SHIPPED→DELIVERED (+REFUNDED/CANCELLED). **Y `shipments` también pasa por ella** desde PT-173: escribía `order.status` a mano, así que había **dos puertas al mismo estado y sólo una con cerradura** — un pedido `PAID` saltaba directo a `DELIVERED`. | ✅ Cumple (servicio, envíos **y admin**) | `order-state-machine.ts:5`, `shipments.service.ts`, `admin.service.ts` | AUD-011 corregido · **PT-173** · **PT-191** |
 | RN-34 | Envío requiere orden PAID + vendedor; un envío por orden; estado cascada a la orden. | ✅ Cumple | `shipments.service.ts:34-48,103` | — |
-| RN-35 | Sin integración de transportista real: `carrier`/`trackingNumber` son campos manuales. | ⚠️ Doc lo sobredimensiona | `create-shipment.dto.ts:24` | **AUD-024** |
+| RN-35 | Sin integración de transportista real: `carrier`/`trackingNumber` son campos manuales. | ✅ Cumple, y la documentación ya lo describe como captura manual (`AUD-024` corregido, PT-192) | `create-shipment.dto.ts:24` | **AUD-024** |
 
 ## 5. Disputas, reembolsos, reputación
 

@@ -419,6 +419,24 @@ Each SSR site follows the same convention:
   el grafo—: un identificador duplicado **rompe hacia atrás**, porque las referencias que lo citaban
   siguen resolviendo, sólo que a dos sitios. Lo vigilan `citas-de-fichero-existen.spec.ts` y
   `identificadores-sin-colision.spec.ts`; la segunda distingue `RN-64` de `RN-64b`, que son dos reglas.
+- **Una regla de dominio codificada tiene que coincidir con el código que gobierna** (PT-192, AUD-015).
+  `CR-002` decía `held_funds <= balance` y aquí **retener resta del balance**: son bolsas disjuntas, así
+  que la violaba quien pujara casi todo su saldo —comportándose bien—. Estaba **codificada en el
+  checkpoint D1.N1 como CRÍTICA**, lista para acusar al sistema de un fallo inexistente, y no saltó
+  porque ese checkpoint necesita una base con historia. `RN-21` decía lo correcto **desde PT-032**: las
+  dos convivían y la equivocada era la que se ejecutaba. Ahora se mide sobre el ledger, en el momento de
+  retener — la protección era real, lo que estaba mal era **dónde se medía**.
+- **Quien verifica un token exige su secreto al arrancar** (PT-192, AUD-026). El CLIENT usaba
+  `JWT_SECRET || ""`: fallaba cerrado **en la petición, no en el arranque**, así que sin la variable el
+  sitio arrancaba `healthy` y **rebotaba al login a todo el mundo sin un error en ningún log** — el
+  síntoma manda a mirar la cookie, no una variable que nadie declaró. Ahora `variableObligatoria()` con
+  la misma longitud mínima que el API. Y **el motivo del mensaje es un parámetro**, porque decir «es una
+  variable de conexión» sobre un secreto manda al sitio equivocado.
+- **Una cookie de sesión no vive más que su token** (PT-192, AUD-035). Eran literales: 7 días de cookie
+  para 15 minutos de token, 30 días para 7. Ahora derivan de `JWT_ACCESS_EXPIRY`/`JWT_REFRESH_EXPIRY` —
+  la lección de PT-088 aplicada al tiempo. **Cuidado con lo que esto destapó**: el refresco existe, tiene
+  su cookie y **no lo llama nadie**, así que la sesión efectiva del portal dura **quince minutos**
+  (`TD-025`).
 - **Una afirmación de estado sobre un hallazgo lleva veredicto, y «sin verificar» vale** (RULE-38, PT-189).
   Los 36 `AUD-XXX` de la auditoría de julio tienen su estado en la **tabla de veredictos** de
   `docs-v2/transversal/Registro-de-Hallazgos.md`: `corregido` · `abierto` · `limitación declarada` ·

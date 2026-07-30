@@ -40,7 +40,7 @@
 |---|:--:|:--:|:--:|---|
 | Núcleo (User…Ledger + observabilidad) | ✅ | ✅ | ✅ | ✅ |
 | Backoffice (11 modelos) | ✅ | ✅ | parcial | ✅ AUD-001 corregido |
-| UserPaymentMethod | ✅ | ✅ | ✗ | ✗ AUD-019 |
+| UserPaymentMethod | ✅ | ✅ | ✗ | ✅ documentado en 5 documentos de `docs-v2`, `Modelo-de-Datos.md` entre ellos (`AUD-019` corregido, PT-192) |
 | Enum SUSPENDED/PENDING_MODERATION/HEY_BANCO | ✅ | ✅ | parcial | ✅ AUD-001 corregido · AUD-023 corregido |
 
 ## Eslabones rotos (resumen)

@@ -3705,6 +3705,59 @@ su sintoma, no su tamano*. Ninguno de los cinco era lo que decia, y cuatro eran 
 Verificacion en el cierre: API **1051** pruebas en 129 suites · CORE **93** en 6 · CLIENT 103 ·
 ADMIN 13 · BASE 3. Arbol limpio, `master` al dia con `origin`, cero ramas sin fusionar.
 
+## PT-192 — BUG: Los quince AUD «sin verificar», medidos uno a uno
+Date: 2026-07-30
+Status: VALIDATION_PENDING
+Branch: fix/PT-192-los-quince-medidos
+Objective: medir los 15 hallazgos cuyo veredicto era «sin verificar» —deuda de MEDICION, no de
+  codigo— y cerrar cada uno con evidencia.
+Root cause: **diez ya estaban corregidos y nadie lo sabia; cinco seguian abiertos.** Eso es lo que
+  cuesta dejar una casilla en «no lo se»: no es solo no arreglar, es no saber que esta arreglado.
+  Y con los diez se arrastraba el unico que importaba de verdad.
+Solution:
+  - AUD-015 — **el grave**. `CR-002` decia `held_funds <= balance` y aqui retener **resta del
+    balance**: son bolsas disjuntas, asi que la violaba quien pujara casi todo su saldo,
+    comportandose bien. Estaba **codificada en el checkpoint D1.N1 con severidad CRITICA**, lista
+    para acusar al sistema de un fallo inexistente; no salto porque ese checkpoint necesita una base
+    con historia. `RN-21` ya decia lo correcto desde PT-032 — convivian, y la equivocada era la que
+    se ejecutaba. Ahora se mide en el ledger, sobre el momento de retener.
+    Guarda: `regla-critica-coincide-con-el-codigo.spec.ts`.
+  - AUD-026 — el CLIENT verificaba sesiones con `JWT_SECRET || ""`. PT-040 quito la reserva debil
+    pero dejo un fallo cerrado **en la peticion, no en el arranque**: sin la variable el sitio
+    arrancaba `healthy` y rebotaba al login a todo el mundo, sin error en ningun log. Ahora
+    `variableObligatoria()` + 32 caracteres, como el API. Guarda:
+    `secreto-de-sesion-obligatorio.spec.ts`.
+  - AUD-035 — las cookies **sobrevivian a sus tokens**: acceso 7 dias contra 15 minutos, refresco 30
+    dias contra 7. Ahora derivan de `JWT_ACCESS_EXPIRY`/`JWT_REFRESH_EXPIRY`. Guarda:
+    `cookie-no-vive-mas-que-su-token.spec.ts`.
+  - AUD-034 — las cinco versiones divergian y **ninguna significaba nada**: los paquetes son privados
+    y `core` se referencia con `file:`. Unificadas a la de la plataforma por **ADR-056**.
+  - AUD-031 — el CHANGELOG llevaba parado desde el 12-ene y no era olvido: el registro vivo es
+    `HISTORY.log`. **ADR-057** lo hace apuntar ahi, conservando su historico.
+  - Los otros diez (019, 020, 021, 022, 024, 028, 029, 032, 033, 036) se midieron y **ya estaban
+    corregidos**; no requerian tocar nada.
+Modified files: src/api/scripts/domain-rules.ts, PTSA/Fases/F-1_Declaracion_Valor.md,
+  src/apps/client/src/common/guards/client-auth.guard.ts,
+  src/apps/{base,client}/src/common/config/variable-obligatoria.ts,
+  src/apps/base/src/common/config/vida-de-sesion.ts (nuevo), src/apps/base/src/main.ts,
+  los cinco package.json, CHANGELOG.md, docs-v2/transversal/Registro-Maestro-de-ADR.md,
+  Registro-de-Hallazgos.md, 10-Technical-Debt.md (TD-025), 3 guardas nuevas, 3 documentos de docs-v2
+Evidence: docs/implementation/evidence/PT-192/
+Delta (real vs planned): el plan era «medir quince». **Salieron dos defectos que no estaba en ningun
+  enunciado**: la sesion efectiva del portal dura **quince minutos** porque el refresco esta escrito,
+  tiene su cookie de 30 dias y **no lo llama nadie** (TD-025, no se cierra aqui porque cablearlo es
+  trabajo de funcionalidad sobre el camino de autenticacion); y `variableObligatoria()` mentia al
+  usarse para un secreto —su mensaje decia siempre «es una variable de conexion»—, asi que el motivo
+  paso a ser un parametro.
+  **Y cinco veredictos mios fueron falsos positivos**, todos por medir la forma en vez de la cosa
+  (el «18» de ADMIN por el «27» del API; `--prefix` en vez del bucle del hook; `**Status: CERRADA`
+  con los dos puntos dentro de la negrita; `RN-64` contra `RN-64b`; y el registro de hallazgos
+  contandose a si mismo como documentacion). Estan en la autorrevision.
+PTSA reference: AUD-015, AUD-019, AUD-020, AUD-021, AUD-022, AUD-024, AUD-026, AUD-028, AUD-029,
+  AUD-031, AUD-032, AUD-033, AUD-034, AUD-035, AUD-036 — los quince a «corregido» en la tabla de
+  veredictos. Recuento final: **35 corregidos · 0 abiertos · 1 limitacion declarada · 0 sin
+  verificar**. La lista tiene final.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -3716,7 +3769,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**143** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**144** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -3863,3 +3916,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-189 | 3538 | `DONE` | **DONE** | — |
 | PT-190 | 3589 | `DONE` | **DONE** | — |
 | PT-191 | 3621 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3670 |
+| PT-192 | 3708 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |
