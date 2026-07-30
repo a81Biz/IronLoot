@@ -9,6 +9,30 @@ ROOT="C:/DevOps/Desarrollos/IronLoot/qa-out"
 
 log(){ echo -e "\n\033[1;36m==== $* ====\033[0m"; }
 
+# PT-175 — Una fase que muere en modo `headed` deja su Chrome VIVO.
+#
+# Medido el 2026-07-29: dos corridas y una fase suelta que reventaron dejaron **22 procesos Chrome**
+# acumulados, y la corrida siguiente murio en el bootstrap con «Target page, context or browser has been
+# closed» — un fallo que no se parece en nada a su causa. Se perdio una corrida entera interpretando un
+# error de recursos como un defecto del producto.
+#
+# El `finally { browser.close() }` de cada fase no basta: si el proceso muere por una excepcion no
+# capturada, no llega a ejecutarse. Asi que se limpia ANTES de empezar, que es el unico momento en el que
+# se puede garantizar.
+limpiar_navegadores(){
+  local n
+  n=$(powershell -NoProfile -Command "(Get-Process chrome -ErrorAction SilentlyContinue | Measure-Object).Count" 2>/dev/null | tr -d '
+')
+  if [ -n "${n:-}" ] && [ "$n" -gt 0 ] 2>/dev/null; then
+    echo "   limpiando $n proceso(s) Chrome de corridas anteriores"
+    powershell -NoProfile -Command "Get-Process chrome -ErrorAction SilentlyContinue | Stop-Process -Force" >/dev/null 2>&1
+    sleep 2
+  fi
+}
+
+
+limpiar_navegadores
+
 log "1) RESET BD — truncar todos los datos (empezar de cero)"
 TABLES="account_verifications,payment_cycle_events,payment_cycles,processed_webhook_events,audit_events,error_events,request_logs,withdrawal_requests,sessions,auctions,orders,bids,payments,shipments,ratings,disputes,notifications,wallets,user_payment_methods,system_config,ledger,profiles,users,commission_config,commission_records,moderation_log,cfdi_records,kyc_submissions,notification_campaigns,seo_config,cms_content,watchlist,refund_requests"
 docker exec "$DB" psql -U ironloot -d ironloot_db -c "TRUNCATE TABLE ${TABLES} RESTART IDENTITY CASCADE;" >/dev/null 2>&1 \

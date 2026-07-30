@@ -1,0 +1,39 @@
+=== PT-175 — La fase 35 ejecutada en navegador real, 2026-07-29
+
+--- Los 17 casos
+[PASS] QA-CL-00     Hay una subasta del vendedor que seguir :: a3447862-2246-4ccc-bcea-8080064642c1
+[PASS] QA-CL-01     La subasta cierra por `closeExpiredAuctions()`, no por siembra :: {"estadoAntes":"ACTIVE","estadoDespues":"CLOSED"}
+[PASS] QA-CL-02     El cierre genera el pedido, pagado (R-5.1a) :: c37e2531-a803-442c-bed0-47e38a66fac8|PAID|950.00|855.00
+[PASS] QA-CL-03     La venta registra su comisión (R-5.1d) :: MXN 95.00 sobre 950.00
+[PASS] QA-CL-04     El neto de la venta está retenido, no disponible (RN-64) :: pending=855 · disponible=0 · neto del pedido=855.00
+[PASS] QA-CL-05     El vendedor registra el envío :: HTTP 201
+[PASS] QA-CL-06     El vendedor declara la salida (SHIPPED) :: HTTP 200
+[PASS] QA-CL-07     El vendedor NO puede confirmar la recepción (PT-174) :: HTTP 403 — antes de PT-174 esto devolvía 200 y liberaba su propio holdback
+[PASS] QA-CL-08     El comprador recibe el aviso del envío, con su tipo (H-012) :: notificaciones ORDER_SHIPPED=1
+[PASS] QA-CL-09     El COMPRADOR confirma la recepción :: HTTP 200
+[PASS] QA-CL-10     La confirmación sella `delivered_at` — de ahí cuelga la espera :: 2026-07-30 00:11:42.685+00
+[PASS] QA-CL-11     Se ejecuta la liberación de liquidaciones maduras :: {"pendientesAntes":1,"pendientesDespues":0,"liberados":1}
+[PASS] QA-CL-12     El neto pasa de retenido a disponible :: disponible 0→855 · pending 855→0
+[PASS] QA-CL-13     Queda su asiento `SETTLEMENT_RELEASE` :: MXN 855.00
+[PASS] QA-CL-14     La solicitud de retiro llega a las reglas de negocio, no a un crash :: MXN 855 · cuenta HTTP 201 · retiro HTTP 400
+[PASS] QA-CL-14b    La ganancia de esta venta esta disponible para retirar :: disponible=855 >= neto=855.00
+[PASS] QA-CL-15     La fase no escribe en la base: cero INSERT/UPDATE/DELETE :: escrituras detectadas=0. Los dos adelantos de reloj van por endpoints solo-desarrollo, no por SQL. La fase 60 escribe 6 veces para fabricar su estado de partida
+
+--- El resumen de la corrida completa (exit 0)
+[1;36m==== RESUMEN FINAL ====[0m
+   smoke: 57/57 PASS
+   bootstrap: 13/13 PASS
+   authed: 41/41 PASS
+   e2e: 5/5 PASS
+   puja-en-vivo: 8/8 PASS
+   cierre-y-liquidacion: 17/17 PASS
+   extras: 19/19 PASS
+   admin-writes: 4/4 PASS
+   withdrawal: 12/13 PASS
+   payment-trace: 16/16 PASS
+   paypal-guaranteed: 16/17 PASS
+
+Salida completa: C:/DevOps/Desarrollos/IronLoot/qa-out/20260729-180945
+
+--- La contabilidad cierra sola:
+    venta 950.00 -> comision 95.00 (10%) -> neto 855.00 retenido -> 855.00 liberado -> 855.00 disponible

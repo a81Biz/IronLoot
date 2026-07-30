@@ -1,0 +1,307 @@
+
+[1;36m==== 1) RESET BD — truncar todos los datos (empezar de cero) ====[0m
+   OK truncadas
+   users=0
+
+[1;36m==== 2) Reiniciar API (limpiar estado tras reset) y esperar health ====[0m
+   API health 200 (intento 9)
+
+[1;36m==== 2b) ARRANQUE DEL API ====[0m
+   API en pie (HTTP 200)
+
+[1;36m==== 3) Fase 00 — Smoke (crea OUT + .last-run) ====[0m
+[PASS] BASE   /                                          http=200  final=/ | consoleErr:1
+[PASS] BASE   /about                                     http=200  final=/about | consoleErr:1
+[PASS] BASE   /contact                                   http=200  final=/contact | consoleErr:1
+[PASS] BASE   /privacy                                   http=200  final=/privacy | consoleErr:1
+[PASS] BASE   /terms                                     http=200  final=/static/terms | consoleErr:2
+[PASS] BASE   /static/terms                              http=200  final=/static/terms | consoleErr:1
+[PASS] BASE   /auctions                                  http=200  final=/auctions | consoleErr:1
+[PASS] BASE   /auth/login                                http=200  final=/auth/login | consoleErr:1
+[PASS] BASE   /auth/register                             http=200  final=/auth/register | consoleErr:1
+[PASS] BASE   /auth/recovery                             http=200  final=/auth/recovery | consoleErr:1
+[PASS] BASE   /auth/reset-password                       http=200  final=/auth/reset-password | consoleErr:1
+[PASS] BASE   /auth/verify-email-pending                 http=200  final=/auth/verify-email-pending | consoleErr:1
+[PASS] BASE   /auth/verify-email?token=invalido123       http=200  final=/auth/verify-email?token=invalido123 | consoleErr:2
+[PASS] BASE   /auth/reset-password?token=invalido123     http=200  final=/auth/reset-password?token=invalido123 | consoleErr:1
+[PASS] BASE   /auctions/00000000-0000-0000-0000-000000000000 http=404  final=/auctions/00000000-0000-0000-0000-000000000000 | consoleErr:2
+[PASS] BASE   /ruta-que-no-existe-xyz                    http=404  final=/ruta-que-no-existe-xyz | consoleErr:2
+[PASS] CLIENT /dashboard                                 http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /profile                                   http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /settings                                  http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /my-bids                                   http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /auctions/won-auctions                     http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /auctions/watchlist                        http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /wallet                                    http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /wallet/deposit                            http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /wallet/withdraw                           http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /wallet/history                            http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /payments                                  http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /orders                                    http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /notifications                             http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /disputes                                  http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /disputes/create                           http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /reputation                                http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /seller/onboarding                         http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /seller/auctions                           http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /seller/orders                             http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] CLIENT /auctions/create                           http=200  final=http://base.ironloot.local/auth/login | consoleErr:2
+[PASS] ADMIN  /login                                     http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /                                          http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /users                                     http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /auctions                                  http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /lots                                      http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /moderation                                http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /orders                                    http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /disputes                                  http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /refunds                                   http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /payments                                  http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /kyc                                       http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /commissions                               http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /cfdi                                      http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /cms                                       http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /seo                                       http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /audit                                     http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /reports                                   http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /reconciliation                            http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /notifications                             http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /configuration/platform                    http=200  final=/login | consoleErr:2
+[PASS] ADMIN  /settings                                  http=200  final=/login | consoleErr:2
+
+=== SMOKE RESUMEN ===  total=57 PASS=57 FAIL=0 pantallas_con_consoleError=57
+Salida: C:\DevOps\Desarrollos\IronLoot\qa-out\20260729-180945
+   OUT=C:/DevOps/Desarrollos/IronLoot/qa-out/20260729-180945
+
+[1;36m==== 4) Fase 10 — Bootstrap del mundo (KYC-gated seller) ====[0m
+[PASS] QA-BOOT-01   Admin login inicial :: http://admin.ironloot.local/
+[PASS] QA-BOOT-02   Config comisión GLOBAL (10%) :: db.rate_percent=10.00
+[PASS] QA-BOOT-04   Registrar comprador (comprador_180945@test.local) :: http://base.ironloot.local/auth/verify-email-pending
+[PASS] QA-BOOT-05   Registrar vendedor (vendedor_180945@test.local) :: http://base.ironloot.local/auth/verify-email-pending
+   (db users=2)
+[PASS] QA-BOOT-06   Verificar email (comprador y vendedor) :: buyer=true() seller=true()
+   (db verified=2)
+[PASS] QA-BOOT-07a  Login vendedor :: http://client.ironloot.local/dashboard
+[PASS] QA-BOOT-07   Onboarding vendedor: perfil guardado + gate KYC bloquea enable-seller :: is_seller(pre)=f (gate KYC activo, PT-069)
+[PASS] QA-BOOT-07b  Vendedor envía KYC (POST /api/v1/kyc) :: http=201 kyc_submissions=1
+[PASS] QA-BOOT-08   Admin aprueba KYC → is_seller=true :: http=200 kyc.status=APPROVED is_seller=t
+   publish -> http=200 status=PUBLISHED 
+[PASS] QA-BOOT-09   Crear + publicar subasta :: id=a3447862 status=PUBLISHED publishOk=true createHttp=201
+[PASS] QA-BOOT-10a  Login comprador :: http://client.ironloot.local/dashboard
+[PASS] QA-BOOT-10b  Depósito: contrato /payments/initiate devuelve redirectUrl :: http=201 redirectUrl=true
+[PASS] QA-BOOT-10c  Fondear wallet comprador (crédito de prueba) :: balance=5000.00
+
+=== BOOTSTRAP RESUMEN === total=13 PASS=13 FAIL=0
+
+[1;36m==== 5) Fase 20 — Rutas autenticadas ====[0m
+[PASS] QA-CLI-01        /dashboard                         http=200  render=true consoleErr:1
+[PASS] QA-CLI-02        /profile                           http=200  render=true consoleErr:1
+[PASS] QA-CLI-03        /settings                          http=200  render=true consoleErr:1
+[PASS] QA-CLI-04        /wallet                            http=200  render=true consoleErr:1
+[PASS] QA-CLI-05        /wallet/deposit                    http=200  render=true consoleErr:1
+[PASS] QA-CLI-06        /wallet/withdraw                   http=200  render=true consoleErr:1
+[PASS] QA-CLI-07        /wallet/history                    http=200  render=true consoleErr:1
+[PASS] QA-CLI-08        /payments                          http=200  render=true consoleErr:1
+[PASS] QA-CLI-09        /my-bids                           http=200  render=true consoleErr:1
+[PASS] QA-CLI-10        /auctions/won-auctions             http=200  render=true consoleErr:1
+[PASS] QA-CLI-11        /auctions/watchlist                http=200  render=true consoleErr:1
+[PASS] QA-CLI-12        /orders                            http=200  render=true consoleErr:1
+[PASS] QA-CLI-13        /notifications                     http=200  render=true consoleErr:1
+[PASS] QA-CLI-14        /disputes                          http=200  render=true consoleErr:1
+[PASS] QA-CLI-15        /reputation                        http=200  render=true consoleErr:1
+[PASS] QA-CLI-16        /auctions/a3447862-2246-4ccc-bcea-8080064642c1 http=200  render=true consoleErr:1
+[PASS] QA-SEL-01        /seller/onboarding                 http=200  render=true consoleErr:1
+[PASS] QA-SEL-02        /seller/auctions                   http=200  render=true consoleErr:1
+[PASS] QA-SEL-03        /seller/orders                     http=200  render=true consoleErr:1
+[PASS] QA-SEL-04        /auctions/create                   http=200  render=true consoleErr:1
+[PASS] QA-SEL-05        /auctions/a3447862-2246-4ccc-bcea-8080064642c1/edit http=200  render=true consoleErr:1
+[PASS] QA-ADM-01        /                                  http=200  render=true consoleErr:1
+[PASS] QA-ADM-02        /users                             http=200  render=true consoleErr:1
+[PASS] QA-ADM-03        /auctions                          http=200  render=true consoleErr:1
+[PASS] QA-ADM-04        /lots                              http=200  render=true consoleErr:1
+[PASS] QA-ADM-05        /moderation                        http=200  render=true consoleErr:1
+[PASS] QA-ADM-06        /orders                            http=200  render=true consoleErr:1
+[PASS] QA-ADM-07        /disputes                          http=200  render=true consoleErr:1
+[PASS] QA-ADM-08        /refunds                           http=200  render=true consoleErr:1
+[PASS] QA-ADM-09        /payments                          http=200  render=true consoleErr:1
+[PASS] QA-ADM-10        /kyc                               http=200  render=true consoleErr:1
+[PASS] QA-ADM-11        /commissions                       http=200  render=true consoleErr:1
+[PASS] QA-ADM-12        /cfdi                              http=200  render=true consoleErr:1
+[PASS] QA-ADM-13        /cms                               http=200  render=true consoleErr:1
+[PASS] QA-ADM-14        /seo                               http=200  render=true consoleErr:1
+[PASS] QA-ADM-15        /audit                             http=200  render=true consoleErr:1
+[PASS] QA-ADM-16        /reports                           http=200  render=true consoleErr:1
+[PASS] QA-ADM-17        /reconciliation                    http=200  render=true consoleErr:1
+[PASS] QA-ADM-18        /notifications                     http=200  render=true consoleErr:1
+[PASS] QA-ADM-19        /configuration/platform            http=200  render=true consoleErr:1
+[PASS] QA-ADM-20        /settings                          http=200  render=true consoleErr:1
+
+=== SWEEP AUTENTICADO === total=41 PASS=41 FAIL=0 pantallas_con_consoleError=41
+
+[1;36m==== 6) Fase 30 — E2E puja + bloqueo + outbid + liberación (incluye E2E-6) ====[0m
+[PASS] E2E-3      Subasta activa disponible para pujar :: status=ACTIVE start=500.00
+[PASS] E2E-setup  Comprador2 competidor (andamiaje API+DB) :: regHttp=201 id=73af6d45
+   pre comprador1: balance=5000 held=0
+[PASS] E2E-5      Comprador1 puja 600 → fondos bloqueados :: bidHttp=201 msg="¡Puja realizada!" held 0->600 bal 5000->4400 curPrice=600 bids=1
+[PASS] E2E-6      Comprador2 puja 700 → outbid libera fondos de comprador1 :: bid2Http=201 msg="¡Puja realizada!" c1.held 600->0 c2.held=700 curPrice=700
+[PASS] E2E-ledger Ledger registra HOLD_BID y RELEASE_BID :: HOLD_BID=2 RELEASE_BID=1
+
+=== E2E RESUMEN === total=5 PASS=5 FAIL=0
+
+[1;36m==== 6b) Fase 32 — PUJA EN VIVO en dos navegadores (PT-102/F-34) ====[0m
+lidera "comprador2_180945@test.local" → observa comprador2_180945@test.local, puja comprador_180945@test.local
+subasta a3447862 ACTIVE precio=700 → B pujara 950
+[PASS] V-LIVE-1  La pagina de detalle carga para A :: uctions/a3447862-2246-4ccc-bcea-8080064642c1
+[PASS] V-LIVE-2  A abre el WebSocket contra su propio dominio :: client.ironloot.local
+[PASS] V-LIVE-5  La cuenta atras sigue viva tras defer :: "0h 29m 51s"
+[PASS] V-LIVE-0  B puja 950 desde el formulario :: HTTP 201 "¡Puja realizada!"
+[PASS] V-LIVE-3  A ve subir el precio SIN recargar :: "$700" -> "$950" (esperado >= 950)
+[PASS] V-LIVE-4  La lista de pujas de A crece :: 2 -> 3
+[PASS] V-LIVE-6  Cero violaciones de CSP en el recorrido :: 0 violaciones
+[PASS] V-LIVE-7  La puja quedo asentada en la base :: current_price=950
+
+=== FASE 32 === total=8 PASS=8 FAIL=0
+
+[1;36m==== 6c) Fase 35 — CIERRE, RECEPCION Y LIQUIDACION, sin sembrar (PT-175) ====[0m
+[PASS] QA-CL-00     Hay una subasta del vendedor que seguir :: a3447862-2246-4ccc-bcea-8080064642c1
+[PASS] QA-CL-01     La subasta cierra por `closeExpiredAuctions()`, no por siembra :: {"estadoAntes":"ACTIVE","estadoDespues":"CLOSED"}
+[PASS] QA-CL-02     El cierre genera el pedido, pagado (R-5.1a) :: c37e2531-a803-442c-bed0-47e38a66fac8|PAID|950.00|855.00
+[PASS] QA-CL-03     La venta registra su comisión (R-5.1d) :: MXN 95.00 sobre 950.00
+[PASS] QA-CL-04     El neto de la venta está retenido, no disponible (RN-64) :: pending=855 · disponible=0 · neto del pedido=855.00
+[PASS] QA-CL-05     El vendedor registra el envío :: HTTP 201
+[PASS] QA-CL-06     El vendedor declara la salida (SHIPPED) :: HTTP 200
+[PASS] QA-CL-07     El vendedor NO puede confirmar la recepción (PT-174) :: HTTP 403 — antes de PT-174 esto devolvía 200 y liberaba su propio holdback
+[PASS] QA-CL-08     El comprador recibe el aviso del envío, con su tipo (H-012) :: notificaciones ORDER_SHIPPED=1
+[PASS] QA-CL-09     El COMPRADOR confirma la recepción :: HTTP 200
+[PASS] QA-CL-10     La confirmación sella `delivered_at` — de ahí cuelga la espera :: 2026-07-30 00:11:42.685+00
+[PASS] QA-CL-11     Se ejecuta la liberación de liquidaciones maduras :: {"pendientesAntes":1,"pendientesDespues":0,"liberados":1}
+[PASS] QA-CL-12     El neto pasa de retenido a disponible :: disponible 0→855 · pending 855→0
+[PASS] QA-CL-13     Queda su asiento `SETTLEMENT_RELEASE` :: MXN 855.00
+[PASS] QA-CL-14     La solicitud de retiro llega a las reglas de negocio, no a un crash :: MXN 855 · cuenta HTTP 201 · retiro HTTP 400
+[PASS] QA-CL-14b    La ganancia de esta venta esta disponible para retirar :: disponible=855 >= neto=855.00
+[PASS] QA-CL-15     La fase no escribe en la base: cero INSERT/UPDATE/DELETE :: escrituras detectadas=0. Los dos adelantos de reloj van por endpoints solo-desarrollo, no por SQL. La fase 60 escribe 6 veces para fabricar su estado de partida
+
+=== 35-cierre-y-liquidacion === PASS=17/17
+
+[1;36m==== 7) Fase 40 — Extras (auth/responsive/CSP/cross-browser) ====[0m
+[PASS] QA-AUTH-06   Login inválido → error, sin sesión :: err="Credenciales incorrectas." url=/auth/login
+[PASS] QA-AUTH-03   Registro con email duplicado → error controlado :: err="Error al registrar."
+[PASS] QA-AUTH-02   Validación de registro (email/pass inválidos) :: emailValid=false passValid=false
+[PASS] QA-AUTH-13   Token en cookie HttpOnly (no accesible por JS) :: cookie=access_token httpOnly=true jsLeak=false
+[PASS] QA-AUTH-12   Logout limpia sesión (dashboard→login) :: url=/auth/login
+[PASS] QA-X-04-base-movil Responsive BASE home @375px (sin overflow horizontal) :: overflowX=0px
+[PASS] QA-X-04-base-tablet Responsive BASE home @768px (sin overflow horizontal) :: overflowX=0px
+[PASS] QA-X-04-base-desktop Responsive BASE home @1366px (sin overflow horizontal) :: overflowX=0px
+[PASS] QA-X-04-client-movil Responsive CLIENT dashboard @375px :: overflowX=0px
+[PASS] QA-X-04-client-tablet Responsive CLIENT dashboard @768px :: overflowX=0px
+[PASS] QA-X-04-client-desktop Responsive CLIENT dashboard @1366px :: overflowX=0px
+[PASS] QA-X-07-BASE Cabecera CSP presente (BASE) :: csp=sí xFrameOptions=SAMEORIGIN
+[PASS] QA-X-07-CLIENT Cabecera CSP presente (CLIENT) :: csp=sí xFrameOptions=SAMEORIGIN
+[PASS] QA-X-07-ADMIN Cabecera CSP presente (ADMIN) :: csp=sí xFrameOptions=SAMEORIGIN
+[PASS] QA-X-05-firefox Cross-browser BASE home (firefox) :: http=200 title="IronLoot — Subastas en línea"
+[PASS] QA-X-05-webkit Cross-browser BASE home (webkit) :: http=200 title="IronLoot — Subastas en línea"
+[PASS] QA-CSP-UIR-BASE BASE no fuerza HTTPS en desarrollo (upgrade-insecure-requests) :: no la envia
+[PASS] QA-CSP-UIR-CLIENT CLIENT no fuerza HTTPS en desarrollo (upgrade-insecure-requests) :: no la envia
+[PASS] QA-CSP-UIR-ADMIN ADMIN no fuerza HTTPS en desarrollo (upgrade-insecure-requests) :: no la envia
+
+=== EXTRAS RESUMEN === total=19 PASS=19 FAIL=0
+
+[1;36m==== 8) Fase 50 — Escrituras admin ====[0m
+[PASS] QA-ADM-W-commission Comisión global persistida (bootstrap) :: rate=10.00
+[PASS] QA-ADM-W-seo   SEO: editar metadata home → persiste :: db.title="IronLoot Home QA 180945"
+[PASS] QA-ADM-W-cms   CMS: editar bloque home.hero.title → persiste :: db.value="Hero QA 180945"
+[PASS] QA-ADM-W-user  Usuario: suspender comprador2 → estado cambia :: state=SUSPENDED
+
+=== ADMIN WRITES RESUMEN === total=4 PASS=4 FAIL=0
+
+[1;36m==== 9) Fase 60 — RETIRO REAL DEL VENDEDOR (KYC→CLABE→holdback→solicitud→admin) ====[0m
+[PASS] QA-WD-00     Login vendedor :: http://client.ironloot.local/dashboard
+[PASS] QA-WD-01     KYC del vendedor APPROVED (gate de retiro) :: status=APPROVED approved=true
+[PASS] QA-WD-02a    Rechazar CLABE con verificador inválido (RN-63) :: http=400
+[FAIL] QA-WD-02b    Registrar cuenta bancaria (CLABE válida, RN-63) :: http=400 db.clabe=002010077777777771
+[PASS] QA-WD-03     Venta liquidada a pendingBalance (holdback 900, RN-64) :: pending 0→900 · disponible 855 (retenido, no retirable)
+[PASS] QA-WD-04     Liberar holdback → saldo disponible (SETTLEMENT_RELEASE, RN-64) :: disponible 855→1755 · pending 0
+[PASS] QA-WD-04b    Verificar la cuenta: codigo incorrecto falla, correcto verifica (PT-092) :: verify=201 malo=false bueno=true verificada=t
+[PASS] QA-WD-05     Solicitud de retiro REAL reserva fondos (RN-65) :: http=201 req=9c5a4b77 status=REQUESTED disponible 1755→1255 ledger=[WITHDRAWAL 500.00]
+[PASS] QA-WD-06     Rechazar retiro por saldo disponible insuficiente (gate) :: http=400
+[PASS] QA-WD-07a    Admin ve la solicitud en la cola (GET /admin/withdrawals) :: http=200 enCola=true total=1
+[PASS] QA-WD-07b    Admin APRUEBA el retiro (REQUESTED→APPROVED, RN-66) :: http=200 status=APPROVED
+[PASS] QA-WD-08     Admin marca PAGADO tras SPEI manual (APPROVED→PAID, RN-66) :: http=200 status=PAID ref=SPEI-QA-0001 disponible=1255 (sin cambio, ya reservado)
+[PASS] QA-WD-09     Rechazo de retiro reintegra fondos (→REJECTED + ADJUSTMENT, RN-66) :: status=REJECTED disponible 1255→(reserva)1055→(reintegro)1255 ledger=[ADJUSTMENT 200.00]
+
+=== RETIRO RESUMEN === total=13 PASS=12 FAIL=1
+
+[1;36m==== 9b) Fase 70 — PAGO REAL POR MERCADO PAGO + TRAZA COMPLETA (PT-080/085/086) ====[0m
+[PASS] QA-TR-00     Login comprador :: comprador_180945@test.local
+[PASS] QA-TR-01     Solicitud de depósito crea el ciclo :: ref=DEP-94c19096-5b8f-4b47-8864-86c8674d5939-1785370346225
+[PASS] QA-TR-02     El ciclo nace en REQUESTED :: status=REQUESTED
+[PASS] QA-TR-03     Cobro real aprobado en Mercado Pago :: orden=ORDTST01KYR5V1XECS06AB3TXRD6B5ZP status=processed
+[PASS] QA-TR-04     Pago canónico resuelto :: id=171150291292
+[PASS] QA-TR-05     Notificación firmada aceptada :: HTTP 201
+[PASS] QA-TR-06     Wallet acreditado por el importe exacto :: asientos=1 importe=137.4 movio=137.4 monedero=true
+[PASS] QA-TR-07     El ciclo queda SETTLED :: status=SETTLED
+[PASS] QA-TR-08     El pago queda registrado en payments :: COMPLETED 137.40
+[PASS] QA-TR-09     La traza contiene todos los pasos del pago :: 7 pasos
+[PASS] QA-TR-10     La traza está en orden: empieza en la solicitud y termina en la acreditación :: DEPOSIT_REQUESTED → PROVIDER_CREATE → NOTIFICATION_RECEIVED → SIGNATURE_OK → PROVIDER_CONFIRM → CYCLE_DECISION → WALLET_CREDITED
+[PASS] QA-TR-11     Las llamadas salientes registran su endpoint :: 2 llamadas
+[PASS] QA-TR-12     Ninguna credencial quedó persistida en la traza :: coincidencias=0
+[PASS] QA-TR-13     Lo redactado quedó marcado, no borrado en silencio :: 2 entradas con marca
+[PASS] QA-TR-14     La reentrega no acredita de nuevo :: HTTP 201 saldo=99186.4
+[PASS] QA-TR-15     La reentrega queda registrada como duplicada :: 1 duplicadas
+
+=== PAGO Y TRAZA RESUMEN === total=16 PASS=16 FAIL=0
+
+[1;36m==== 9c) Fase 71 — PAGO REAL POR PAYPAL VIA GARANTIZADA (PT-076/087) ====[0m
+[PASS] QA-PP-00     Login comprador :: comprador_180945@test.local
+[PASS] QA-PP-01     PayPal se ofrece al usuario :: {"providers":["MERCADO_PAGO","PAYPAL"]}
+[PASS] QA-PP-02     La solicitud crea la orden en PayPal :: orden=10P68192VF400191S
+[PASS] QA-PP-03     El id de la orden queda guardado en el ciclo :: provider_ref=10P68192VF400191S
+[PASS] QA-PP-04     La creacion de la orden deja traza con su estado HTTP :: HTTP 200
+[PASS] QA-PP-05     El comprador aprueba en el checkout real :: status=APPROVED
+[PASS] QA-PP-06     Ninguna notificacion llego (es el escenario que se prueba) :: 0 notificaciones
+[PASS] QA-PP-07     La via garantizada cierra el ciclo sin notificacion :: status=SETTLED
+[PASS] QA-PP-08     El sondeo CAPTURA la orden aprobada, no solo la consulta :: status=COMPLETED
+[PASS] QA-PP-09     El monedero se acredita por el importe exacto :: asientos=1 importe=321.5 movio=321.5 monedero=true
+[PASS] QA-PP-10     El asiento contable existe y es UNO solo :: 1 filas
+[PASS] QA-PP-11     La traza contiene todos los pasos del recorrido :: 6 pasos
+[PASS] QA-PP-12     Toda la traza se atribuye a PAYPAL, no a otra pasarela :: 0 entradas mal atribuidas
+[PASS] QA-PP-13     La captura queda registrada con su endpoint :: 1 llamadas
+[PASS] QA-PP-14     Ninguna credencial de PayPal quedo persistida :: coincidencias=0
+[FAIL] QA-PP-15     Un webhook fabricado se rechaza con 401 :: HTTP 500
+[PASS] QA-PP-16     El saldo no cambia tras el intento fabricado :: saldo=99507.9
+
+=== PAYPAL VIA GARANTIZADA === total=17 PASS=16 FAIL=1 SKIP=0
+
+[1;36m==== 10) Historial comprador + vendedor ====[0m
+   act.json escrito
+=== COMPRADOR (login OK) ===
+  /orders (compras): http=200 filas=2 ¿datos visibles?=true
+      · OrdenSubastaMontoEstadoFecha c37e2531-a803-442c-bed0-47e38a66fac8 Reloj de colección QA 18
+      · c37e2531-a803-442c-bed0-47e38a66fac8 Reloj de colección QA 180945 MXN 950 DELIVERED 2026-0
+  /auctions/won-auctions (ganadas): http=200 filas=2 ¿datos visibles?=true
+      · SubastaMontoEstadoAcción Reloj de colección QA 180945 MXN 950 DELIVERED Ver orden
+      · Reloj de colección QA 180945 MXN 950 DELIVERED Ver orden
+  /my-bids (pujas): http=200 filas=3 ¿datos visibles?=true
+      · SubastaMi ofertaPrecio actualEstado Reloj de colección QA 180945 MXN 950 MXN 950 Ganando R
+      · Reloj de colección QA 180945 MXN 950 MXN 950 Ganando
+=== VENDEDOR (login OK) ===
+  /seller/auctions (mis subastas): http=200 filas=2 ¿datos visibles?=true
+      · TítuloEstadoPrecio actualFinAcciones Reloj de colección QA 180945 CLOSED MXN 950 2026-07-3
+      · Reloj de colección QA 180945 CLOSED MXN 950 2026-07-30T00:11:39.377Z
+  /seller/orders (ventas): http=200 filas=2 ¿datos visibles?=false
+      · OrdenCompradorMontoEstadoEnvío c37e2531… — MXN 950 DELIVERED DELIVERED
+      · c37e2531… — MXN 950 DELIVERED DELIVERED
+
+[1;36m==== RESUMEN FINAL ====[0m
+   smoke: 57/57 PASS
+   bootstrap: 13/13 PASS
+   authed: 41/41 PASS
+   e2e: 5/5 PASS
+   puja-en-vivo: 8/8 PASS
+   cierre-y-liquidacion: 17/17 PASS
+   extras: 19/19 PASS
+   admin-writes: 4/4 PASS
+   withdrawal: 12/13 PASS
+   payment-trace: 16/16 PASS
+   paypal-guaranteed: 16/17 PASS
+
+Salida completa: C:/DevOps/Desarrollos/IronLoot/qa-out/20260729-180945

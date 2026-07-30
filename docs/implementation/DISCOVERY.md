@@ -5455,3 +5455,76 @@ comprueba las dos direcciones: que lo archivado quede fuera y que **lo vivo siga
 
 Corregido en el acto, dentro de PT-173. No se registra como PT aparte: es un ajuste de una exclusión que la
 propia guarda delató en la misma sesión en que se creó.
+
+---
+
+## F-176-A … F-176-D — Lo que apareció al EJECUTAR la fase 35
+
+Date: 2026-07-29 · Tipo: **hallazgos** · Origen: la corrida completa de la suite en navegador real, con
+la fase 35 dentro. Cuatro cosas que no se ven leyendo el código.
+
+### F-176-A — Mi fase se quedó fuera del repositorio, y `git` no protestó
+
+`git commit` respondió **«nothing to commit»** con `35-cierre-y-liquidacion.js` delante y funcionando.
+Causa: `.gitignore:79` tiene un **`*.js` general** que apunta a la salida compilada de TypeScript.
+
+**Y no se había notado porque `.gitignore` no desindexa lo ya seguido: sólo muerde a lo NUEVO.** Las
+fases que ya existían están seguidas desde antes de la regla, así que la suite **parecía completa**
+mientras cualquier fase nueva se quedaba en la máquina de quien la escribió.
+
+Al arreglarlo apareció una segunda víctima: **`90-validacion-hallazgos.js` tampoco estaba en el
+repositorio**, y `CLAUDE.md` lo documenta como comando (`node 90-validacion-hallazgos.js`). El manual
+mandaba ejecutar un fichero que no llegaba a quien clonara.
+
+**Cuarta vez de la misma historia**, y el propio `.gitignore` lo documenta en PT-088 y PT-135 — *«la
+misma historia, tercera vez»*. Corregido con la excepción y su motivo.
+
+### F-176-B — Mi fase rompió la fase 60, consumiendo un recurso compartido
+
+`QA-WD-02b` («Registrar cuenta bancaria, CLABE válida») pasó a **FAIL con `http=400`**. Causa: mi
+QA-CL-14 registraba la CLABE `002010077777777771` **para el mismo vendedor**, y al correr antes se la
+quedaba; la fase 60 recibía 400 por duplicada.
+
+Es **RULE-23 en otra forma**: allí una suite borraba datos que otras usaban; aquí una fase **consume un
+recurso** y la siguiente se queda sin él. Una fase no puede dejar el mundo peor para las que vienen
+detrás.
+
+Corregido: la fase 35 **no registra cuenta**. Pide el retiro con una CLABE válida en formato y no
+registrada, y afirma sólo que el sistema **decide** en vez de romperse. El recorrido hasta `PAID` sigue
+siendo de la fase 60.
+
+### F-176-C — Un 422 de PayPal sale como 500 nuestro
+
+`QA-PP-15` manda un webhook fabricado y espera **401**. Devuelve **500**.
+
+Verificado con la traza real (`payment_cycle_events`): el último apunte es **`SIGNATURE_OK`, HTTP 200**.
+Es decir, **la API de PayPal respondió `verification_status: SUCCESS`** a una firma que es literalmente
+`base64("falsa")`, con `PAYPAL_WEBHOOK_ID` configurado y en modo sandbox. Aceptada la firma, el flujo
+capturó, PayPal devolvió **422** (la orden ya estaba capturada), y `authorizedCall` lanzó un `Error`
+genérico → **500 `INTERNAL_ERROR`**.
+
+**El defecto nuestro es el 500.** Una orden ya capturada es una **situación de negocio**, no una avería
+interna. Y es exactamente el razonamiento que el propio código escribe veinte líneas más arriba, en
+PT-087: *«un rechazo de seguridad es 401, no una avería interna … antes lanzaba `Error` genérico y el
+controlador lo traducía a 500: contaminaba la tasa de error y le decía a PayPal reintenta»*. La lección
+se aplicó a la firma y **no al resto de respuestas de la pasarela**.
+
+**Lo que NO se afirma:** que IronLoot acepte webhooks falsificados en producción. La verificación se
+delega en PayPal, y **PayPal sandbox dijo que la firma era válida**. En producción presumiblemente no lo
+diría — pero eso **no se puede verificar aquí**, y por eso se declara en vez de suponerse en cualquiera
+de los dos sentidos.
+
+**Y de ahí sale el problema del propio caso**: `QA-PP-15` cree probar nuestra seguridad y en realidad
+prueba la indulgencia del sandbox de un tercero. Falla **por un motivo que no está en nuestro código**,
+que es la forma más rápida de enseñar a ignorar un caso rojo.
+
+### F-176-D — Una fase que muere en `headed` deja su Chrome vivo
+
+Dos corridas y una fase suelta que reventaron dejaron **22 procesos Chrome** acumulados. La corrida
+siguiente murió en el **bootstrap** con «Target page, context or browser has been closed» — un error que
+no se parece en nada a su causa. **Se perdió una corrida entera** interpretando un agotamiento de
+recursos como un defecto del producto.
+
+El `finally { browser.close() }` de cada fase **no basta**: si el proceso muere por una excepción no
+capturada, no llega a ejecutarse. Corregido limpiando **antes de empezar**, que es el único momento en
+que se puede garantizar.

@@ -2899,3 +2899,49 @@ Delta (real vs planificado): dos desviaciones. (1) No hacia falta maquina nueva:
   Y **una prueba fijaba el defecto**: `should update status and set deliveredAt` pasaba el pedido sin
   estado, asi que no habia transicion que validar. Corregida.
 PTSA reference: ninguno — defecto nuevo. F-172-A.
+
+## PT-175 (ejecución) — La fase 35 vista pasar, y cuatro cosas que sólo aparecen ejecutando
+Date: 2026-07-29
+Status: VALIDATION_PENDING
+Branch: master
+Objective: ver la cadena completa correr en navegador real, no sólo escrita.
+
+**La fase 35: 17/17 PASS**, y la corrida completa salió con **código 0** — las once fases declaradas
+produjeron salida. 208 checks, 206 en verde.
+
+La contabilidad cierra sola, y ningún número se escribió a mano:
+
+```
+venta 950.00 -> comision 95.00 (10 %) -> neto 855.00 RETENIDO -> 855.00 liberado -> 855.00 disponible
+QA-CL-04  pending=855 · disponible=0        el neto entero retenido
+QA-CL-07  el VENDEDOR confirma -> HTTP 403  el defecto de F-172-A, cerrado en vivo
+QA-CL-09  el COMPRADOR confirma -> HTTP 200
+QA-CL-12  disponible 0->855 · pending 855->0
+QA-CL-15  0 escrituras a la base
+```
+
+**Cuatro hallazgos que no se ven leyendo el código** — detalle en `DISCOVERY.md § F-176-A…D`:
+
+- **F-176-A** — `.gitignore` se comia las fases NUEVAS de la suite (`*.js` general). `git commit` decia
+  «nothing to commit» con el fichero delante. Segunda victima: `90-validacion-hallazgos.js`, que
+  `CLAUDE.md` documenta como comando y **no estaba en el repositorio**. Cuarta vez de la misma historia.
+- **F-176-B** — **mi fase rompio la fase 60**: registraba la misma CLABE para el mismo vendedor y la
+  fase 60 recibia 400 por duplicada. RULE-23 en otra forma: una fase consume un recurso compartido.
+  Corregido: la 35 ya no registra cuenta.
+- **F-176-C** — un **422 de PayPal sale como 500 nuestro**. Y la traza real dice `SIGNATURE_OK` HTTP 200:
+  **PayPal sandbox valido una firma que es `base64("falsa")`**. El defecto nuestro es el 500 —una orden ya
+  capturada es negocio, no averia—; lo otro es del sandbox y **no se puede verificar aqui**, asi que se
+  declara sin afirmar nada en ninguno de los dos sentidos. `QA-PP-15` cree probar nuestra seguridad y
+  prueba la indulgencia de un tercero.
+- **F-176-D** — una fase que muere en `headed` deja su Chrome vivo; 22 acumulados mataron el bootstrap de
+  la corrida siguiente con un error que no se parece a su causa. Se limpia antes de empezar.
+
+Modified files: tests/qa-browser-suite/{35-cierre-y-liquidacion.js,run-all.sh}, .gitignore,
+  docs/implementation/DISCOVERY.md
+Evidence: docs/implementation/evidence/PT-175/{corrida-completa.txt,verificacion.txt}
+Delta (real vs planificado): la fase se escribio ayer y **se vio pasar hoy**. Los cuatro hallazgos son
+  todos de ejecucion: ninguno era visible en revision. Dos son mios (A y B) y estan corregidos; C y D
+  quedan registrados, C sin corregir.
+PTSA reference: **H-027** ya `CORREGIDA` y comprobada en vivo: la corrida anterior, con diez fases sin
+  salida, imprimio diez lineas de `*** FALLO / NO EJECUTADA ***` y salio con 1. Antes habria mostrado una
+  sola linea en verde.

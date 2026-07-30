@@ -314,15 +314,21 @@ async function esperarA(descripcion, sql, limiteMs) {
     // El recorrido completo hasta `PAID` es de la fase 60, que lo ejercita real.
     const aRetirar = Math.min(despues.balance, num(neto) || despues.balance);
 
-    const cuenta = await comoUsuario(pV, '/api/v1/wallet/payment-methods', 'POST', {
-      clabe: '002010077777777771',
-      holderName: 'Vendedor QA',
-      bankName: 'Banamex',
-    });
-
+    // **Esta fase NO registra la cuenta bancaria, y es deliberado.** La primera version lo hacia con la
+    // CLABE `002010077777777771`, que es **la misma que usa la fase 60** para el **mismo vendedor**: al
+    // correr antes, se la quedaba, y la fase 60 recibia 400 por duplicada. Rompi una prueba que llevaba
+    // tiempo en verde.
+    //
+    // Es la leccion de RULE-23 en otra forma: alli una suite borraba datos que otras usaban; aqui una
+    // fase **consume un recurso compartido** y la siguiente se queda sin el. Una fase no puede dejar el
+    // mundo peor para las que vienen detras.
+    //
+    // Asi que se pide el retiro con una CLABE **valida en formato y no registrada**, y lo que se afirma
+    // es que el sistema **decide** en vez de romperse. Un 4xx aqui es la proteccion de TD-003
+    // funcionando; un 500 seria la familia de H-018 — reventar donde correspondia responder.
     const retiro = await comoUsuario(pV, '/api/v1/wallet/withdrawals', 'POST', {
       amount: aRetirar,
-      paymentMethodId: '002010077777777771',
+      paymentMethodId: '002010077777777788',
     });
 
     const decidio = retiro.status < 500;
@@ -330,8 +336,9 @@ async function esperarA(descripcion, sql, limiteMs) {
       'QA-CL-14',
       'La solicitud de retiro llega a las reglas de negocio, no a un crash',
       decidio ? 'PASS' : 'FAIL',
-      `MXN ${aRetirar} · cuenta HTTP ${cuenta.status} · retiro HTTP ${retiro.status}` +
-        `${retiro.json && retiro.json.message ? ' — ' + JSON.stringify(retiro.json.message) : ''}`,
+      `MXN ${aRetirar} · retiro HTTP ${retiro.status}` +
+        `${retiro.json && retiro.json.message ? ' — ' + JSON.stringify(retiro.json.message) : ''}` +
+        ' · el recorrido hasta PAID es de la fase 60, que registra y verifica la cuenta',
     );
 
     rec(
