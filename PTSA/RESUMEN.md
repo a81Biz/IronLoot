@@ -1,7 +1,7 @@
 # PTSA V3 — RESUMEN DE AUDITORÍA
 ## IronLoot Auction Platform v1.0.0
 
-**Sesión**: S-010 — **delta sync** (`resume PTSA`) | **Fecha**: 2026-07-29
+**Sesión**: S-011 — **delta sync** (`resume PTSA`) | **Fecha**: 2026-07-30
 **Disparador**: tres decisiones del humano tras señalar que *«de nuevo faltan muchas cosas»* — reabrir H-035 y
 cerrarlo completo, **aceptar D5 como limitación declarada**, y añadir un índice de estado a `HISTORY.log`.
 **auditoria_estado**: CERRADA_SIN_HALLAZGOS_ACTIVOS
@@ -24,6 +24,22 @@ Conf   = 80×0.40 + 100×0.25 + 95×0.20 + 100×0.15 = 91.0
 ```
 
 **Regla del Agua Potable: NO activada.** D1 = 100. Se dice porque `[A4]` lo exige.
+
+> **S-011 — lo que este sync tiene y los cinco anteriores no.**
+>
+> **D1 se midió sobre salida real generada en esta misma sesión.** `run-all.sh` produjo 209 de 210
+> comprobaciones y, acto seguido, `audit:domain` evaluó las **ocho reglas `CR` con datos delante**:
+> `rubric_compliance_score = 100`, 4 de 5 coherencias cruzadas medidas. S-006 a S-010 arrastraban
+> `SIN_DATOS` en las cinco — un `SIN_DATOS` no es un aprobado, y el propio checkpoint lo dice.
+>
+> **D3 falló, y ése es el resultado que más vale.** Tres `catch` mudos que introdujeron PT-194 y PT-196
+> — `H-036`, corregido y re-verificado antes de emitir: `silent_failure_count` de **27 a 24**, por
+> debajo de la línea base. Los introduje **en el sitio donde mi propio diseño afirmaba que no los
+> había**: `design.md` argumentaba que `null` ≠ `throw`, y el `catch` del llamante se comía el `throw`
+> dos líneas después. **Lo encontró el checkpoint, no una lectura.**
+>
+> **D5 sin cambio**: 2 ciclos de pago resueltos de los 20 que exige la muestra. Es lo único que separa
+> la Confianza de un número mayor, y sigue siendo la limitación declarada de v1.0.
 
 **§15.6 se cumple por los dos lados**: Health ≥ 90 **y** Confidence ≥ 90. `freshness = FRESH` → sin cap.
 `health_unstable = false` → sin cap por D5.

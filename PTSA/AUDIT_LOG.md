@@ -1115,3 +1115,37 @@ El patron es siempre el mismo: **comprobar que exista una cadena en vez de una r
 correcto que no cambien**: no se cerro ningun hallazgo nuevo y la declaracion de D5 no compra puntos.
 
 **Estado de la corrida:** CERRADA_SIN_HALLAZGOS_ACTIVOS — **35 hallazgos, todos CERRADA**.
+
+## S-011 — delta sync — 2026-07-30
+
+**Disparador**: `resume PTSA` (instrucción del humano, con VoBo y ACK dados por adelantado para toda
+la cadena).
+
+**Intervalo cubierto**: S-010 → S-011. **28 commits · 6 PT** (PT-191 … PT-196) más PT-197 y PT-198
+dentro de esta misma sesión.
+
+**Lo ejecutado, no leído:**
+
+| Checkpoint | Resultado |
+|---|---|
+| `audit:schema` (D2) | OK — las migraciones reproducen `schema.prisma`, incluida la de PT-196 |
+| `audit:check` (D2) | OK — 0 paquetes con aviso propio; línea base vacía a propósito |
+| `audit:observability` (D3) | **FALLÓ** → `H-036`, corregido y re-verificado: 27 → **24** |
+| `run-all.sh` (salida real) | **209 de 210** comprobaciones |
+| `audit:domain` (D1) | 8/8 reglas `CR` con datos delante · `rubric = 100` · 4 de 5 coherencias medidas |
+| `audit:reliability` (D5) | 2 ciclos resueltos de 20 · `health_unstable = false` |
+
+**Hallazgo nuevo: 1** — `H-036` (D3), **cerrado antes de emitir**. Tres `catch` mudos introducidos por
+PT-194 y PT-196 en el camino de sesión, en el sitio donde el propio diseño afirmaba que no los había.
+
+**Lo que este sync consiguió y los cinco anteriores no**: medir D1 **con salida real generada en la
+misma sesión**. Las emisiones S-006 a S-010 arrastraban `SIN_DATOS` en las cinco comprobaciones de
+coherencia. Aquí se generó la salida y se midió acto seguido, que es lo que el checkpoint pide en su
+propio mensaje.
+
+**Y una corrección de lo que se afirmó en PT-192**: la `CR-002` vieja (`held_funds > balance`) **no
+falla sobre estos datos**, y conviene decir por qué en vez de dejar la afirmación anterior. Los tres
+monederos tienen `held_funds = 0` —la subasta cerró y los fondos se capturaron—, así que esa regla mide
+**monederos en reposo**, donde la invariante es trivialmente cierta. La `CR-002` nueva midió **3
+retenciones reales** del ledger. El argumento correcto no es «la vieja habría fallado»: es que **medía
+el momento equivocado**, y su aprobado no informaba de nada.

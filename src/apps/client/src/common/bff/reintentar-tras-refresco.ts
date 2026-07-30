@@ -80,9 +80,16 @@ export async function interceptarRespuesta(
   let tokens: Tokens | null;
   try {
     tokens = await deps.refrescar(refreshToken);
-  } catch {
-    // El API no contestó al refrescar. El navegador recibe el 401 original, que es la verdad de lo que
-    // pasó con **su** petición; el motivo del refresco lo registra `refrescarSesion`.
+  } catch (error) {
+    // PT-199 (D3) — Mismo defecto que en el guard: se decía que el motivo «lo registra
+    // `refrescarSesion`», y `refrescarSesion` **lanza**. El lanzamiento moría aquí.
+    //
+    // El navegador sigue recibiendo el 401 original —es la verdad de lo que pasó con **su**
+    // petición—, pero ahora queda escrito **por qué** no se pudo reintentar.
+    console.error(
+      `[CLIENT] No se pudo refrescar al reintentar ${req.method} ${req.url}: ` +
+        `${(error as Error).message}. Se devuelve el 401 original.`,
+    );
     return cuerpo;
   }
 

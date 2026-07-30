@@ -4128,6 +4128,43 @@ sus entradas sean ciertas — **una falsa es peor que no tener la lista**.
 Verificacion en el cierre: API **1115** pruebas en 138 suites. Las tres guardas nuevas vistas fallar
 con sabotaje que afirma haberse aplicado.
 
+## PT-199 — BUG: tres `catch` mudos que mi propio diseño decía que no existían (H-036)
+Date: 2026-07-30
+Status: VALIDATION_PENDING
+Branch: master (dentro del delta sync S-011, autorizado por el humano)
+Objective: cerrar `H-036`, el hallazgo que el checkpoint D3 destapó durante el `resume PTSA`.
+Root cause: **PT-194 y PT-196 introdujeron tres `catch` que no registran ni relanzan**, los tres en el
+  camino de sesion del CLIENT. Y lo grave no es el numero: es **donde**.
+  El diseno de PT-194 (`D-1`) argumentaba que `null` y `throw` son cosas distintas —«la sesion murio»
+  frente a «no se pudo preguntar»— y que colapsarlas seria el `catch` mudo que persigue D3. El
+  comentario que puse en los dos llamantes lo remataba: *«esa diferencia la registra `refrescarSesion`»*.
+  **Y era falso.** `refrescarSesion` **lanza**; no registra. El lanzamiento moria en el `catch` del
+  llamante. La distincion por la que se diseno el modulo entero **se perdia dos lineas despues**, en el
+  sitio que decia preservarla.
+  El tercero es de otra clase: un `access_token` con **firma invalida** —alguien presentando algo que no
+  firmamos— se trataba en silencio, igual que una sesion caducada.
+Solution: los tres registran, y **cada uno dice que paso**: refresco fallido con el mensaje del API y la
+  aclaracion de que **no** es caducidad; reintento del proxy con el metodo y la ruta; firma invalida con
+  el tipo de error y por que no se refresca. `silent_failure_count` de **27 a 24** — por debajo de la
+  linea base, no solo dentro.
+Modified files: src/apps/client/src/common/{guards/client-auth.guard.ts, bff/reintentar-tras-refresco.ts},
+  PTSA/Hallazgos/H-036.md
+Evidence: PTSA/Hallazgos/H-036.md — salida del checkpoint antes y despues
+Delta (real vs planned): no estaba planeado. **Lo encontro el checkpoint, no una lectura.** Yo habia
+  escrito el argumento correcto en `design.md` y aun asi implemente lo contrario, con un comentario
+  encima que **afirmaba que lo habia hecho bien**. Es la familia de F-34 —*aquel catch TENIA comentario,
+  y la puja en vivo estuvo apagada dias*— y el propio mensaje de fallo del checkpoint lo recuerda. Esta
+  vez le tocó tener razon conmigo.
+PTSA reference: H-036 (D3), detectado y cerrado en S-011.
+
+## CIERRE CON VoBo HUMANO — PT-199
+Date: 2026-07-30
+Status: registro
+Objective: registrar el VoBo humano sobre PT-199, dentro de la autorizacion explicita para toda la
+  cadena (*«tienes todos mis VoBo y ACK … no pares hasta terminar»*).
+
+`H-036` queda **CERRADA**, verificada re-ejecutando el checkpoint que la encontro.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -4139,7 +4176,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**150** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**151** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4293,3 +4330,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-196 | 3949 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 3990 |
 | PT-197 | 4016 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4056 |
 | PT-198 | 4076 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4115 |
+| PT-199 | 4131 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4160 |

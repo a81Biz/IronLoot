@@ -89,8 +89,18 @@ export class ClientAuthGuard implements CanActivate {
     } catch (error) {
       // **La rama que decide la seguridad de todo esto.** Cualquier fallo que no sea expiración
       // —firma inválida, token malformado, basura— va al login SIN refrescar.
-      if (!(error instanceof jwt.TokenExpiredError))
+      if (!(error instanceof jwt.TokenExpiredError)) {
+        // PT-199 (D3) — **Y se registra.** Un token con firma inválida no es un usuario despistado:
+        // es alguien presentando algo que no firmamos nosotros. Que se trate igual que una sesión
+        // caducada está bien; que no deje rastro, no. El checkpoint de observabilidad delató este
+        // `catch` mudo, y tenía razón.
+        console.warn(
+          `[CLIENT] Token de acceso rechazado por ${(error as Error).name}. No se refresca: ` +
+            `refrescar ante un fallo que no sea expiración convertiría el refresco en una vía para ` +
+            `saltarse la verificación de firma.`,
+        );
         return this.cerrarSesion(res);
+      }
 
       return this.refrescarYSeguir(req, res);
     }
@@ -107,9 +117,18 @@ export class ClientAuthGuard implements CanActivate {
     let tokens: Tokens | null;
     try {
       tokens = await refrescarSesion(refreshToken);
-    } catch {
-      // El API no contestó. Lleva al mismo sitio que un `null`, pero por otro motivo — y esa
-      // diferencia la registra `refrescarSesion`, que es donde se sabe cuál de los dos fue.
+    } catch (error) {
+      // PT-199 (D3) — **Aquí decía que «la diferencia la registra `refrescarSesion`», y era falso.**
+      // `refrescarSesion` **lanza**; el lanzamiento moría en este `catch` y nadie escribía nada. El
+      // diseño de PT-194 distinguía `null` de `throw` precisamente para no confundir «la sesión
+      // murió» con «el API no contestó»… y esa distinción se perdía dos líneas después.
+      //
+      // Lo delató el checkpoint D3, no una lectura del código. Un fallo que nadie puede observar no
+      // es un fallo tolerado: es un fallo oculto.
+      console.error(
+        `[CLIENT] No se pudo refrescar la sesión: ${(error as Error).message}. Se cierra sesión, ` +
+          `pero **no** porque haya caducado — el API no respondió.`,
+      );
       return this.cerrarSesion(res);
     }
 

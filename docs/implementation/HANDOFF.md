@@ -4,19 +4,27 @@
 
 **Rama**: `master`, árbol limpio, al día con `origin` y sin una sola rama suelta.
 
-**Pruebas**: **1361** unitarias en verde — API **1108** (137 suites) · CLIENT **144** (12) · CORE **93** (6) · ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
+**Pruebas**: **1366** unitarias en verde — API **1113** (138 suites) · CLIENT **144** (12) · CORE **93** (6) · ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
 con sus 41 casos: eran pruebas verdes sobre código que no corría en producción.)*
 
 **Reglas duras**: **36** `RULE-NN` (RULE-38 nueva). **Guardas de documentación**: **15** suites / **159** pruebas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **149 encabezados · 1 realmente abierto** (PT-197, `VALIDATION_PENDING`).
+`npm run indice:estado`. **150 encabezados · 0 realmente abiertos.**
 
 ---
 
 ## Estado: CERTIFICADO Clase A · cero hallazgos PTSA activos
 
-**S-010 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
+**S-011 emitido el 2026-07-30** (delta sync). `freshness = FRESH`, `commits_since_audit = 0`.
+
+**Es el primer sync que mide D1 con salida real generada en la misma sesión**: `run-all.sh` (209/210) y
+`audit:domain` acto seguido — 8/8 reglas `CR` con datos delante, `rubric = 100`. Las cinco emisiones
+anteriores arrastraban `SIN_DATOS` en las cinco coherencias.
+
+**Y D3 falló**: `H-036`, tres `catch` mudos que introdujeron PT-194 y PT-196 **en el sitio donde el
+propio diseño afirmaba que no los había**. Corregido antes de emitir; `silent_failure_count` de 27 a
+**24**, por debajo de la línea base.
 
 | Métrica | S-009 | **S-010** |
 |---|---|---|

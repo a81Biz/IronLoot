@@ -1186,6 +1186,29 @@
         "FUERA_DE_ALCANCE_V1": 1
       },
       "nota": "Emision de decisiones, no de hallazgos nuevos. (1) **H-035 reabierta y cerrada completa.** Su cierre anterior declaraba que ADMIN, BASE y CLIENT quedaban fuera «escrito como pendiente, no dado por hecho» — mejor que callarlo y PEOR que medirlo. Medidos: SEIS reservas, no las cuatro estimadas, y una **en el propio API** que la lista corta de variables de la guarda ocultaba (`CLIENT_URL` no estaba en ella). E-038 habia declarado esa debilidad textualmente y se cumplio en la corrida siguiente: **declarar una debilidad no la cierra.** Las dos mas caras eran las del proxy del BFF: sin API_URL el sitio arranca `healthy` y manda todas sus llamadas a su propio contenedor. (2) **D5 aceptada como limitacion declarada de v1.0**, con el mecanismo de H-005: se declara lo que no esta demostrado en vez de arrastrarlo. La cobertura de D5 sigue en 0 % y la Confianza en 91 — el numero no mejora por declararlo, que es precisamente lo que hace honesta la declaracion. (3) **PT-187: HISTORY.log decia «pendiente» de 102 entradas cerradas**, y eso hizo que se reportara PT-147 como pendiente llevando horas cerrado. El indice generado lo resuelve sin reescribir el registro. Y su primera ejecucion encontro un defecto de proceso del agente: cinco BUG escritos `Status: DONE` directamente, cuando STATE 6 dice que el agente no cierra bugs. El VoBo estaba dado, pero no constaba — y un cierre sin constancia es indistinguible de uno auto-otorgado."
+    },
+    {
+      "session": "S-011",
+      "date": "2026-07-30",
+      "type": "delta_sync",
+      "health": 100,
+      "risk": 0,
+      "confidence": 91.0,
+      "class": "A",
+      "dimensions": {
+        "D1": 100,
+        "D2": 100,
+        "D3": 100,
+        "D4": 100
+      },
+      "freshness": "FRESH",
+      "commits_since_audit": 0,
+      "coverage": "PARCIAL — D1/D2/D3/D4 medidas ejecutando; D5 al 0 % (2 de 20 ciclos)",
+      "findings_new": [
+        "H-036"
+      ],
+      "findings_active": 0,
+      "notes": "Primer sync que mide D1 sobre salida real generada en la misma sesion: 8/8 reglas CR, rubric 100, 4 de 5 coherencias. D3 fallo y se corrigio antes de emitir (H-036: tres catch mudos de PT-194/PT-196). D5 sin cambio: 2 ciclos de 20."
     }
   ]
 }

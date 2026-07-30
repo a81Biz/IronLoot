@@ -1,5 +1,5 @@
 # ESTADO ACTUAL — PTSA V3
-**Última actualización**: 2026-07-29 | **Sesión**: S-010 (delta sync)
+**Última actualización**: 2026-07-30 | **Sesión**: S-011 (delta sync)
 
 ---
 
@@ -11,24 +11,25 @@ Fase actual:    CERTIFICADO — Clase A
 Health:         100 / 100      cero hallazgos activos
 Risk:           0 / 100        Risk_bruto = 0
 Confidence:     91.0 / 100     A UN PUNTO del umbral de A — la baja D5 al 0 %
-Freshness:      STALE          medido el 2026-07-30: 28 commits y 6 PT desde S-010
-Cobertura:      PARCIAL        D1/D2/D3/D4 al 100 % · D5 al 0 % — LIMITACIÓN DECLARADA de v1.0
+Freshness:      FRESH          S-011 emitido el 2026-07-30, commits_since_audit = 0
+Cobertura:      PARCIAL        D1/D2/D3/D4 medidas EJECUTANDO · D5 al 0 % — LIMITACIÓN DECLARADA de v1.0
 ```
 
-> **Frescura corregida el 2026-07-30 — y esto NO recalcula la puntuación.**
+> **S-011 — delta sync ejecutado el 2026-07-30, y la frescura vuelve a ser real.**
 >
-> Este bloque declaraba `freshness = FRESH` y `commits_since_audit = 0`. Medido: desde S-010 hay
-> **28 commits y 6 PT** (PT-191 … PT-196), y entre ellos **una migración de esquema** y cambios en el
-> **camino de autenticación** — las dos cosas que `[A7]` considera motivo de caducidad.
+> El sync anterior (S-010) se declaraba `FRESH` con **28 commits y 6 PT** encima; `PT-197` lo corrigió a
+> `STALE` sin inventar puntuación, y este sync lo resuelve **midiendo**.
 >
-> **Health, Risk y Confidence se dejan como están, a propósito.** Recalcularlos exige un delta sync, y
-> PTSA sólo se activa con su disparador explícito (`resume PTSA`): inventar un número aquí sería
-> justamente lo que `[A1]` prohíbe. Lo que sí es medible sin auditar es **cuántos commits han pasado**,
-> y eso es lo que se corrige.
+> **D1 se midió sobre salida real generada en esta misma sesión** (`run-all.sh`, 209/210 comprobaciones),
+> que es lo que el propio checkpoint exige y lo que las cinco emisiones anteriores no pudieron hacer:
+> las ocho reglas `CR` en verde con datos delante, `rubric_compliance_score = 100`, y 4 de 5
+> comprobaciones de coherencia cruzada medidas.
 >
-> **Consecuencia práctica**, dicha porque cambia cómo hay que leer lo de abajo: con `freshness = STALE`,
-> `[A8]` dice que **el score no es válido** hasta el próximo sync, y §15.6 capta la clase en **C**. El
-> «Clase A» de la tabla siguiente es el de S-010, no el de hoy.
+> **D3 falló y se corrigió antes de emitir** → `H-036`, tres `catch` mudos que introdujeron PT-194 y
+> PT-196. `silent_failure_count` de **27 a 24**, por debajo de la línea base.
+>
+> **D5 sigue al 0 %**: 2 ciclos de pago resueltos de los 20 que exige la muestra. No ha cambiado, y es
+> lo único que separa la Confianza de un número mayor.
 
 **Regla del Agua Potable: NO activada** — D1 = 100. Se dice porque `[A4]` lo exige.
 
