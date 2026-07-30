@@ -103,6 +103,27 @@ describe("El proxy reintenta una vez — PT-194 (TD-025)", () => {
     });
   });
 
+  it("PT-196: el refresh token ROTADO tambien se persiste por este camino", async () => {
+    // Los dos caminos o ninguno: si solo el guard persistiera, una carga de pagina cuyo primer 401
+    // llegase por `fetch` dejaria el token viejo en el navegador.
+    refrescar.mockResolvedValue({
+      accessToken: "a-nuevo",
+      refreshToken: "refresh-ROTADO",
+    });
+    reintentar.mockResolvedValue({ status: 200, cuerpo: CUERPO_OK });
+    const ctx = contexto(
+      { access_token: "viejo", refresh_token: "r-viejo" },
+      401,
+    );
+
+    await llamar(401, ctx);
+
+    const porNombre = Object.fromEntries(
+      ctx.res.cookie.mock.calls.map((c: unknown[]) => [c[0], c[1]]),
+    );
+    expect(porNombre["refresh_token"]).toBe("refresh-ROTADO");
+  });
+
   it("C3: 401 + refresco fallido -> devuelve el 401, NO una redireccion", async () => {
     // Un `fetch` que recibe un 302 al login acabaría metiendo el HTML del login en un `JSON.parse`.
     refrescar.mockResolvedValue(null);

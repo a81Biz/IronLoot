@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { refrescarSesion, type Tokens } from "../auth/refrescar-sesion";
-import { VIDA_ACCESO_MS } from "../config/vida-de-sesion";
+import { escribirCookiesDeSesion } from "../auth/escribir-cookies-de-sesion";
 
 /**
  * PT-194 (`TD-025`) — **La otra mitad del refresco: las llamadas del navegador.**
@@ -88,15 +88,8 @@ export async function interceptarRespuesta(
 
   if (!tokens) return cuerpo;
 
-  res.cookie("access_token", tokens.accessToken, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: (process.env.COOKIE_SAMESITE || "Lax") as
-      "lax" | "strict" | "none",
-    ...(process.env.COOKIE_DOMAIN ? { domain: process.env.COOKIE_DOMAIN } : {}),
-    maxAge: VIDA_ACCESO_MS,
-    path: "/",
-  });
+  // PT-196 — Las DOS cookies, por el mismo motivo que en el guard: los dos caminos o ninguno.
+  escribirCookiesDeSesion(res, tokens);
 
   // **Un solo reintento.** Si vuelve a dar 401, se devuelve: sin esto, un token que el API rechaza por
   // otro motivo produciría un bucle de refrescos con una llamada por intento.

@@ -3,7 +3,7 @@ import { Response, Request } from "express";
 import * as jwt from "jsonwebtoken";
 import { variableObligatoria } from "../config/variable-obligatoria";
 import { refrescarSesion, type Tokens } from "../auth/refrescar-sesion";
-import { VIDA_ACCESO_MS } from "../config/vida-de-sesion";
+import { escribirCookiesDeSesion } from "../auth/escribir-cookies-de-sesion";
 
 // PT-186 (H-035) — Aqui BASE_URL es a donde se manda a alguien que no ha iniciado sesion. Con reserva a
 // `localhost:5174`, un despliegue sin la variable redirigia a una direccion que solo existe en la maquina de
@@ -116,15 +116,10 @@ export class ClientAuthGuard implements CanActivate {
     // `null` = la sesión murió: revocada, expirada o usuario suspendido. Lo dijo el API.
     if (!tokens) return this.cerrarSesion(res);
 
-    res.cookie("access_token", tokens.accessToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: (process.env.COOKIE_SAMESITE || "Lax") as
-        "lax" | "strict" | "none",
-      ...(COOKIE_DOMAIN ? { domain: COOKIE_DOMAIN } : {}),
-      maxAge: VIDA_ACCESO_MS,
-      path: "/",
-    });
+    // PT-196 — **Las DOS cookies.** Con la rotacion, cada refresco entrega un refresh token nuevo:
+    // si no se persistiera, el navegador conservaria el viejo, lo presentaria la proxima vez y la
+    // deteccion de reuso revocaria la sesion. Todos los usuarios, en su segundo refresco.
+    escribirCookiesDeSesion(res, tokens);
 
     // **Lo que evita la página en blanco**: `apiGet` lee de aquí, en esta misma petición.
     if (req.cookies) req.cookies["access_token"] = tokens.accessToken;

@@ -118,6 +118,28 @@ describe("ClientAuthGuard refresca una vez — PT-194 (TD-025)", () => {
     });
   });
 
+  it("PT-196: el refresh token ROTADO se persiste — o la sesion se revoca en el siguiente refresco", async () => {
+    // **La prueba que impide que la rotacion sea una regresion total.** Con PT-196 el API devuelve un
+    // refresh token **distinto** en cada refresco. Si el guard no lo escribe, el navegador conserva el
+    // viejo, lo presenta la proxima vez y la deteccion de reuso revoca la sesion: **todos los
+    // usuarios, en su segundo refresco**.
+    refrescar.mockResolvedValue({
+      accessToken: "access-nuevo",
+      refreshToken: "refresh-ROTADO",
+    });
+    const { ctx, res } = contexto({
+      access_token: TOKEN_EXPIRADO,
+      refresh_token: "refresh-viejo",
+    });
+
+    await guard.canActivate(ctx);
+
+    const porNombre = Object.fromEntries(
+      res.cookie.mock.calls.map((c: unknown[]) => [c[0], c[1]]),
+    );
+    expect(porNombre["refresh_token"]).toBe("refresh-ROTADO");
+  });
+
   it("C5: y el token nuevo llega a `req.cookies` de ESA MISMA peticion", async () => {
     // Es lo que evita que la página cargue vacía: `apiGet` lee de aquí, 28 veces.
     refrescar.mockResolvedValue({
