@@ -8,8 +8,11 @@ import {
   Render,
 } from "@nestjs/common";
 
-const API_URL = process.env.API_URL || "http://localhost:3000";
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5175";
+import { variableObligatoria } from "./common/config/variable-obligatoria";
+// PT-186 (H-035) — Sin reserva: a donde llamar es una conexion, y un `localhost:<puerto>` de reserva no falla
+// al arrancar, falla en silencio. Es la frase que PT-089 escribio en el API y que no llego hasta aqui.
+const API_URL = variableObligatoria("API_URL");
+const CLIENT_URL = variableObligatoria("CLIENT_URL");
 
 async function fetchJson<T>(url: string): Promise<T | null> {
   try {

@@ -1,8 +1,12 @@
 import { CanActivate, ExecutionContext, Injectable } from "@nestjs/common";
 import { Response, Request } from "express";
 import * as jwt from "jsonwebtoken";
+import { variableObligatoria } from "../config/variable-obligatoria";
 
-const BASE_URL = process.env.BASE_URL || "http://localhost:5174";
+// PT-186 (H-035) — Aqui BASE_URL es a donde se manda a alguien que no ha iniciado sesion. Con reserva a
+// `localhost:5174`, un despliegue sin la variable redirigia a una direccion que solo existe en la maquina de
+// quien desplego: el usuario acabaria en una pagina que no carga, sin saber por que.
+const BASE_URL = variableObligatoria("BASE_URL");
 // PT-040 (AUD-026): no weak fallback secret. If JWT_SECRET is unset the guard fails closed
 // (jwt.verify throws → redirect to login) instead of trusting a known placeholder.
 const JWT_SECRET = process.env.JWT_SECRET || "";

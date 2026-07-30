@@ -1,0 +1,46 @@
+/**
+ * PT-186 (H-035) — De dónde salen las variables de conexión de CLIENT, y por qué sin reserva.
+ *
+ * Aquí había, repartido en dos ficheros:
+ *
+ * ```ts
+ * const API_URL = process.env.API_URL || "http://localhost:3000";
+ * const BASE_URL = process.env.BASE_URL || "http://localhost:5174";
+ * const apiTarget = process.env.API_URL || "http://localhost:3000";   // ← el proxy del BFF
+ * ```
+ *
+ * Es **RULE-17** y es la mitad que la regla llama el problema: *the fallback was the problem, not the
+ * variable*. Y `public-origins.ts` del API ya lo tenía escrito desde PT-089 con estas palabras:
+ *
+ * > *Un valor de reserva con puerto es peor que no tener valor: no falla al arrancar, falla en silencio y en
+ * > producción.*
+ *
+ * PT-089 quitó esos `localhost:<puerto>` **del API**. No llegó a los dos sitios SSR, y el más caro es el
+ * tercero: `apiTarget` es el destino del **proxy del BFF**, así que un despliegue sin `API_URL` manda *todas*
+ * las llamadas del portal privado a su propio contenedor, donde no escucha nadie. El sitio no arranca roto —
+ * arranca, y no funciona.
+ *
+ * **Por qué no está en `@ironloot/core`:** BASE, CLIENT y ADMIN no dependen de él (no está en sus
+ * `package.json`), y añadir la dependencia para veinte líneas metería la librería de dominio en tres
+ * despliegues que hoy no la necesitan. El coste de duplicarlas es explícito y está aquí escrito.
+ */
+
+/**
+ * Devuelve el valor de la variable, o **aborta nombrándola**.
+ *
+ * Se lanza en vez de devolver `undefined` porque un `undefined` viaja: acabaría concatenado en una URL como
+ * `"undefined/api/v1/..."`, que es un fallo tres capas más abajo del sitio donde se puede entender.
+ */
+export function variableObligatoria(nombre: string): string {
+  const valor = process.env[nombre]?.trim();
+
+  if (!valor) {
+    throw new Error(
+      `[CLIENT] Falta la variable de entorno ${nombre}. Es una variable de conexión: sin ella el sitio no ` +
+        `sabe a dónde llamar, y no se asume ningún valor por defecto (RULE-17). ` +
+        `docker-compose la declara; si estás fuera de compose, ponla en el entorno.`,
+    );
+  }
+
+  return valor.replace(/\/+$/, "");
+}

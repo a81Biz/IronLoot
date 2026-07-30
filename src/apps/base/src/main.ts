@@ -15,6 +15,7 @@ import {
 } from "http-proxy-middleware";
 import helmet from "helmet";
 import cookieParser from "cookie-parser";
+import { variableObligatoria } from "./common/config/variable-obligatoria";
 
 // COOKIE_DOMAIN controls cross-subdomain SSO. Set to `.ironloot.local` for local dev
 // with hosts-file entries, or `.ironloot.com` for production.
@@ -94,7 +95,10 @@ async function bootstrap() {
   app.setViewEngine("html");
 
   // BFF proxy — forwards API requests and handles auth cookies
-  const apiTarget = process.env.API_URL || "http://localhost:3000";
+  // PT-186 (H-035) — **El destino del proxy del BFF.** Con reserva a `localhost:3000`, un despliegue sin
+  // `API_URL` mandaba TODAS las llamadas del sitio publico a su propio contenedor, donde no escucha nadie: el
+  // sitio arranca y no funciona. Es el mas caro de los tres sitios que tenian esta reserva.
+  const apiTarget = variableObligatoria("API_URL");
   app.use(
     "/api",
     createProxyMiddleware({

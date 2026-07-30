@@ -21,14 +21,38 @@ import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
  *
  * **Se vigilan las tres formas de escribir una reserva** —`||`, `??` y el segundo argumento de `config.get`—
  * porque vigilar sólo una enseña a usar las otras.
+ *
+ * ## PT-186 — y se vigilan los CUATRO servicios, no sólo el API
+ *
+ * La primera versión miraba `src/api/src` y nada más. Al cerrar H-035 se **declaró** que ADMIN, BASE y CLIENT
+ * quedaban fuera «como pendiente»… sin medirlos. Medidos: ADMIN **0**, y **BASE y CLIENT 2 cada uno** —
+ * `API_URL`, `CLIENT_URL`, `BASE_URL`, todas con reserva a `localhost`, y una de ellas en **el proxy del BFF**.
+ *
+ * Así que el hallazgo estaba cerrado afirmando algo que cubría la mitad. La lección es de método y es la misma
+ * que este repositorio ya tiene escrita: **declarar un alcance no es medirlo**. Si una guarda deja fuera tres
+ * servicios, lo que hay que hacer es mirarlos, no anotarlos.
  */
 const RAIZ = raizDelMonorepo();
-const API = join(RAIZ, 'src', 'api', 'src');
+
+/**
+ * Los cuatro servicios. Se recorren **todos** en una sola guarda en vez de copiarla tres veces: un mecanismo,
+ * una lista. Es la lección de RULE-32 — lo que se duplica se desincroniza.
+ */
+export const SERVICIOS: Array<{ nombre: string; dir: string }> = [
+  { nombre: 'API', dir: join(RAIZ, 'src', 'api', 'src') },
+  { nombre: 'ADMIN', dir: join(RAIZ, 'src', 'admin', 'src') },
+  { nombre: 'BASE', dir: join(RAIZ, 'src', 'apps', 'base', 'src') },
+  { nombre: 'CLIENT', dir: join(RAIZ, 'src', 'apps', 'client', 'src') },
+];
 
 /**
  * Variables cuyo valor **es una conexión**: si están mal, el proceso habla con quien no debe o con nadie. No
  * incluye ajustes de negocio ni banderas — para esas, un valor por defecto puede ser legítimo (aunque tiene su
  * propia regla: el corolario de RULE-17, que exige que sea el valor **protegido**).
+ *
+ * `API_URL`, `BASE_URL` y `CLIENT_URL` entran por PT-186: en un SSR, **a dónde llamar es una conexión**. Con
+ * reserva a `localhost`, un despliegue que las olvide manda las peticiones a su propio contenedor, donde no
+ * escucha nadie — y en el caso de `API_URL` eso es el proxy del BFF, o sea el sitio entero.
  */
 export const VARIABLES_DE_CONEXION = [
   'DATABASE_URL',
@@ -37,10 +61,13 @@ export const VARIABLES_DE_CONEXION = [
   'REDIS_PORT',
   'MAIL_HOST',
   'MAIL_PORT',
+  'API_URL',
+  'BASE_URL',
+  'CLIENT_URL',
 ];
 
-/** Ficheros `.ts` de `src/api/src`, sin pruebas. */
-function fuentes(dir: string = API): string[] {
+/** Ficheros `.ts` de un servicio, sin pruebas. */
+function fuentes(dir: string): string[] {
   const salida: string[] = [];
 
   for (const entrada of readdirSync(dir)) {
@@ -88,18 +115,38 @@ export function reservasDeConexion(fuente: string, variables = VARIABLES_DE_CONE
   return hallados;
 }
 
-describe('Ninguna variable de conexion se lee con reserva — RULE-17, la otra mitad (PT-185)', () => {
-  it('C1: ningun fichero de `src/api/src` da un valor por defecto a una conexion', () => {
+describe('Ninguna variable de conexion se lee con reserva — RULE-17, la otra mitad (PT-185/PT-186)', () => {
+  /** Acusaciones de un servicio, con la ruta recortada desde `src/` para que se lea. */
+  function acusacionesDe(dir: string): string[] {
     const acusados: string[] = [];
 
-    for (const f of fuentes()) {
+    for (const f of fuentes(dir)) {
       const reservas = reservasDeConexion(readFileSync(f, 'utf-8'));
       if (reservas.length) {
-        acusados.push(`${f.slice(f.indexOf('src' + sep + 'api'))}: ${reservas.join(', ')}`);
+        acusados.push(`${f.slice(f.indexOf('src' + sep))}: ${reservas.join(', ')}`);
       }
     }
 
-    expect(acusados).toEqual([]);
+    return acusados;
+  }
+
+  // Un caso por servicio, y no un bucle con una sola aserción: así el nombre del caso que falla **dice cuál**.
+  // Con un `expect` acumulado, el mensaje mezcla los cuatro y hay que leerlo dos veces.
+  for (const { nombre, dir } of SERVICIOS) {
+    it(`C1-${nombre}: ningun fichero da un valor por defecto a una conexion`, () => {
+      expect(acusacionesDe(dir)).toEqual([]);
+    });
+  }
+
+  it('C1-cobertura: la guarda mira los CUATRO servicios, no solo el API', () => {
+    // PT-186. H-035 se cerro declarando que ADMIN, BASE y CLIENT quedaban fuera «como pendiente», sin medirlos —
+    // y BASE y CLIENT tenian dos reservas cada uno. Este caso existe para que la lista no se estreche otra vez:
+    // si alguien quita un servicio, falla aqui y no en silencio.
+    expect(SERVICIOS.map((s) => s.nombre).sort()).toEqual(['ADMIN', 'API', 'BASE', 'CLIENT']);
+
+    for (const { dir } of SERVICIOS) {
+      expect(fuentes(dir).length).toBeGreaterThan(0);
+    }
   });
 
   describe('casos de control', () => {
