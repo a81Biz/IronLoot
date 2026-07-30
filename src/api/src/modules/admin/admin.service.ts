@@ -6,6 +6,7 @@ import { CommissionsService } from '../commissions/commissions.service';
 import { KycService } from '../kyc/kyc.service';
 import { CfdiService } from '../cfdi/cfdi.service';
 import { NotificationQueueProducer } from '../notifications/notification-queue.producer';
+import { RefundsService } from '../refunds/refunds.service';
 import { AuctionStateMachine, AuctionStatus } from '@ironloot/core';
 
 @Injectable()
@@ -17,6 +18,8 @@ export class AdminService {
     private readonly kyc: KycService,
     private readonly cfdi: CfdiService,
     private readonly notificationQueue: NotificationQueueProducer,
+    // PT-191 (AUD-010) — Resolver una disputa a favor del comprador mueve dinero de verdad.
+    private readonly refundsService: RefundsService,
   ) {}
 
   async getStats() {
@@ -930,13 +933,39 @@ export class AdminService {
     });
     if (!dispute) throw new NotFoundException('Dispute not found');
 
+    // PT-191 (AUD-010) — **Resolver a favor del comprador ES devolverle el dinero.**
+    //
+    // Antes esto ponía la disputa en `RESOLVED` y devolvía `note: 'Initiate refund via POST
+    // /admin/refunds'`: una **nota de texto** pidiendo que alguien, después, llamara a otro endpoint.
+    // Nada obligaba a ese segundo paso. Para el comprador y para el panel la disputa quedaba resuelta a
+    // su favor, y el dinero dependía de que un humano leyera la nota y no se distrajera. Es la familia
+    // de H-029 y H-030: **un control que aparenta funcionar**.
+    //
+    // El reembolso va **antes** de marcar `RESOLVED` a propósito: si el movimiento de dinero falla, la
+    // disputa sigue abierta. Al revés dejaría una disputa cerrada sin pago — el estado exacto que este
+    // hallazgo describe.
+    const reembolso = await this.refundsService.createRefund(
+      dispute.order.id,
+      Number(dispute.order.totalAmount),
+      `Dispute ${disputeId} resolved in favor of buyer: ${reason}`,
+      adminUser,
+    );
+
     await this.prisma.dispute.update({
       where: { id: disputeId },
-      data: { status: 'RESOLVED' as any },
+      data: { status: 'RESOLVED' as any, resolution: reason },
     });
 
-    await this.logAdminAction('dispute.resolved_buyer', disputeId, adminUser, { reason });
-    return { resolved: true, favor: 'buyer', note: 'Initiate refund via POST /admin/refunds' };
+    await this.logAdminAction('dispute.resolved_buyer', disputeId, adminUser, {
+      reason,
+      refundId: (reembolso as { id?: string })?.id,
+    });
+    return {
+      resolved: true,
+      favor: 'buyer',
+      refunded: true,
+      refundId: (reembolso as { id?: string })?.id,
+    };
   }
 
   async resolveDisputeFavorSeller(disputeId: string, reason: string, adminUser: string) {

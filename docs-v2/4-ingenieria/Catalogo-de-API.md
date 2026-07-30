@@ -115,7 +115,7 @@ Logs/metrics/errors dev-only; TODO restringir en prod (`AUD-025`).
 ## WebSocket
 | Namespace | Eventos salientes | Entrantes | Auth |
 |---|---|---|---|
-| `auctions` | `bid:new`, `auction:extended`, `auction:ended` | joinAuction, leaveAuction | **✗ ninguna** (`AUD-006`) |
+| `auctions` | `bid:new`, `auction:extended` | joinAuction, leaveAuction | **pública a propósito** (`AUD-006` corregido, PT-191): sin autenticación para que la puja en vivo se vea sin cuenta, con las cargas acotadas por prueba. `auction:ended` se retiró — difundía `winnerId` y no lo emitía nadie |
 | `events` | `emitAuctionEvent` | joinAuction, leaveAuction | **✗ ninguna** |
 
 CORS de WS por `ALLOWED_ORIGINS`. **Sin cliente WS en el frontend** (`AUD-002`).

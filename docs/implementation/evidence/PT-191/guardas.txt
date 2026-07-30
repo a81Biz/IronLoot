@@ -1,0 +1,17 @@
+PASS test/unit/dominio/core-sin-superficie-huerfana.spec.ts (6.641 s)
+PASS test/unit/disputes/resolver-mueve-dinero.spec.ts
+PASS test/unit/seguridad/emisiones-publicas-sin-datos-privados.spec.ts
+PASS test/unit/admin/admin-pasa-por-la-maquina.spec.ts
+PASS test/unit/notifications/una-sola-ruta-de-correo.spec.ts
+
+Test Suites: 5 passed, 5 total
+Tests:       43 passed, 43 total
+Snapshots:   0 total
+Time:        10.057 s
+Ran all test suites matching /resolver-mueve-dinero|core-sin-superficie|emisiones-publicas|admin-pasa-por|una-sola-ruta/i.
+
+Test Suites: 1 failed, 127 passed, 128 total
+Tests:       1 failed, 1042 passed, 1043 total
+Snapshots:   0 total
+Time:        53.095 s, estimated 58 s
+Ran all test suites.

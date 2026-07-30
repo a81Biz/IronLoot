@@ -1,20 +1,21 @@
 # HANDOFF — estado actual
 
-**FDGE V3** · **2026-07-29** · Se **sobrescribe**: es el estado de ahora, no la historia.
+**FDGE V3** · **2026-07-30** · Se **sobrescribe**: es el estado de ahora, no la historia.
 
-**Rama**: `master`, árbol limpio, cero ramas sin fusionar. **Sin subir a `origin`.**
+**Rama**: `fix/PT-191-cerrar-los-aud-abiertos`, pendiente de fusionar a `master`.
 
-**Pruebas**: **1253** unitarias en verde — API **1000** (123 suites) · CORE **134** · CLIENT **103** ·
-ADMIN **13** · BASE **3**.
+**Pruebas**: **1255** unitarias en verde — API **1043** (128 suites) · CORE **93** (6) · CLIENT **103** ·
+ADMIN **13** · BASE **3**. *(CORE baja de 134 a 93 porque PT-191 retiró `Money` y el validador de IPN de PayPal
+con sus 41 casos: eran pruebas verdes sobre código que no corría en producción.)*
 
 **Reglas duras**: **36** `RULE-NN` (RULE-38 nueva). **Guardas de documentación**: **15** suites / **159** pruebas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **139 encabezados · 0 realmente abiertos.**
+`npm run indice:estado`. **143 encabezados · 1 realmente abierto** (PT-191, `VALIDATION_PENDING`).
 
 ---
 
-## Estado: CERTIFICADO Clase A · cero hallazgos activos
+## Estado: CERTIFICADO Clase A · cero hallazgos PTSA activos
 
 **S-010 emitido el 2026-07-29.** `freshness = FRESH`, `commits_since_audit = 0`.
 
@@ -56,14 +57,63 @@ esta corrida vivían en el **camino de fallo**, que nunca se había ejecutado.
 
 ---
 
-## Esperan tu validación: nada
+## Esperan tu validación: **PT-191**
 
-Los veintiséis PT de la jornada —**PT-158 … PT-183**— están cerrados con tu VoBo. Cero trabajo FDGE pendiente.
-Lista en [`PENDING_TASKS.md`](PENDING_TASKS.md).
+Todo lo anterior —**PT-158 … PT-190**— está cerrado con tu VoBo. **PT-191 queda en `VALIDATION_PENDING`**
+porque son cinco BUG y el agente no cierra bugs (FDGE STATE 6). Lista en
+[`PENDING_TASKS.md`](PENDING_TASKS.md).
 
 ---
 
-## Lo último: 74 líneas declaraban vigentes nueve hallazgos corregidos (PT-189)
+## Lo último: los cinco `AUD` abiertos, cerrados — y ninguno era lo que decía (PT-191)
+
+Me pediste cerrarlos completos. Están cerrados. Lo que importa del resultado no es que sean cinco, sino que
+**ninguno tenía el tamaño que anunciaba su enunciado**:
+
+| Hallazgo | Enunciado | Lo que había |
+|---|---|---|
+| **AUD-027** | «dos rutas de config SMTP» | El panel tenía un formulario completo que guardaba y respondía «guardado» — y el mailer lee `MAIL_*` del entorno. **No configuraba nada, ni tras reiniciar** |
+| **AUD-011** | «no menciona `AuctionStateMachine`» | **Seis** puertas al estado sin cerradura, dos sin llamar ni a `assertAuctionModifiable`. Y **la máquina estaba incompleta**: cablearla tal cual habría roto la moderación |
+| **AUD-010** | «no mueve dinero» | **Tres** defectos. Cablear el primero sin los otros habría **impreso dinero**: `createRefund` sólo acredita, no carga a nadie |
+| **AUD-012** | «`Money` no se usa» | **30 de 42** símbolos de `core` sin consumidor. Uno no estaba muerto: implementaba el IPN de **PayPal**, un protocolo que esta plataforma no usa |
+| **AUD-006** | «el WS no autentica» | Cierto **y deliberado** — la puja en vivo se ve sin cuenta. Faltaba que fuera comprobable, y había **dos armas cargadas** con cero llamantes apuntándole |
+
+**Recuento de la tabla de veredictos: 20 corregidos · 0 abiertos · 1 limitación · 15 sin verificar.**
+
+### La respuesta a «¿por qué siempre salen más casos?»
+
+**El enunciado de un hallazgo es su síntoma, no su tamaño.** Los cinco se cerraron leyendo el código, no el
+enunciado — y los cinco resultaron ser otra cosa, cuatro de ellas más grandes. Mientras «revisar qué falta»
+signifique releer enunciados, la lista que sale es la de síntomas, y por eso nunca terminaba.
+
+Corolario práctico, que ya está aplicado: **al cerrar un hallazgo, mide la clase, no el ejemplo.** AUD-012
+nombraba un símbolo; medir el conjunto dio 30. AUD-027 nombraba una clave; medir el camino dio un formulario
+entero que no hacía nada.
+
+### Y esto sí cambia el mapa de «cómo dejan de salir cosas»
+
+| Clase | Estado |
+|---|---|
+| `RULE-NN` · `TD`/`ND` · `H-XXX`↔derivados · HISTORY/PENDING · índice de estado | guardadas desde antes |
+| endpoints del inventario | **PT-188** |
+| afirmaciones `AUD` en `docs-v2` | **PT-189 (RULE-38)** — y hoy **encontró sola** las 49 líneas obsoletas que dejaron estos cierres, en 13 documentos |
+| **superficie exportada de `@ironloot/core`** | **PT-191** — 24 huérfanos declarados uno a uno; no pueden crecer |
+| **cargas del canal público (WebSocket)** | **PT-191** — ninguna emisión puede llevar un campo identificativo |
+| **el generador del índice de estado** | **PT-191** — se comía en silencio una entrada mal colocada; ahora **aborta nombrándola** |
+| Los otros 5 inventarios · citas `fichero:línea` fuera del TRD · `ADR`/`RN`/`UC`/`P` (170 identificadores) | **sin guarda, y escrito** |
+
+Los **15 `AUD` sin verificar** siguen siendo deuda de medición. No se declaran corregidos sin medirlos: eso es
+exactamente lo que produjo el «36/36».
+
+### Cinco veces más mis guardas midieron otra cosa
+
+Mismo patrón de siempre —**comprobar la forma en vez de la relación**—, y hoy con una variante nueva: la guarda
+de `core` **se leyó a sí misma** (su lista de declarados contaba como consumo) y pasó **en vacío**. La delató un
+caso que compara la cuenta contra la lista, no la propia guarda. Está en la autorrevisión, con las otras cuatro.
+
+---
+
+## Antes de eso: 74 líneas declaraban vigentes nueve hallazgos corregidos (PT-189)
 
 Me pediste revisar la documentación para saber qué falta, y luego arreglarlo en orden. Esto es lo que había:
 

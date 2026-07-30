@@ -182,8 +182,33 @@ function main(): void {
   const log = readFileSync(HISTORY, 'utf-8');
   const corte = log.indexOf(MARCA);
   // Se corta desde el separador que precede a la marca, para no acumular `---` en cada regeneración.
-  const previo =
-    corte < 0 ? log.replace(/\s*$/, '') : log.slice(0, log.lastIndexOf('\n---', corte));
+  const inicioBloque = corte < 0 ? -1 : log.lastIndexOf('\n---', corte);
+  const previo = corte < 0 ? log.replace(/\s*$/, '') : log.slice(0, inicioBloque);
+
+  // PT-191 — **Si hay contenido entre el separador y la marca, se aborta en vez de borrarlo.**
+  //
+  // Todo lo que va desde ese `---` hasta el final se considera bloque generado y se reemplaza. Una
+  // entrada nueva escrita **después** del separador entra en esa zona y **desaparece en la siguiente
+  // regeneración, sin error y sin traza** — pasó dos veces al anotar este mismo PT, y las dos el
+  // comando dijo que todo había ido bien.
+  //
+  // En un fichero cuyo valor entero es ser **append-only**, una herramienta que borra en silencio es
+  // peor que una que no existe: la primera vez se pierde el trabajo, y la segunda ya nadie se fía del
+  // registro. Se prefiere abortar nombrando el problema. Es RULE-17 aplicada a un fichero en vez de a
+  // una variable de entorno: **mal colocado no puede parecerse a bien colocado.**
+  if (corte >= 0) {
+    const zona = log.slice(inicioBloque, corte);
+    const intrusa = /^##\s+PT-\d+/m.exec(zona);
+    if (intrusa) {
+      console.error(
+        `[indice:estado] ABORTADO — hay una entrada («${intrusa[0].trim()}») entre el separador ` +
+          `y el ÍNDICE DE ESTADO.\n` +
+          `  Todo eso se reemplaza al regenerar, así que la entrada se perdería en silencio.\n` +
+          `  Muévela ARRIBA del «---» que precede al índice y vuelve a ejecutar.`,
+      );
+      process.exit(1);
+    }
+  }
 
   const salida = previo + generar(previo);
   writeFileSync(HISTORY, salida, 'utf-8');

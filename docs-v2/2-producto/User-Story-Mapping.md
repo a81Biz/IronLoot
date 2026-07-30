@@ -24,7 +24,7 @@ Later         Buscar/filtrar Retirar saldo    Recibir alertas   Historial de    
                                               tiempo real (WS)  órdenes             evidencia         CFDI / reconcil.
 ```
 
-**Estado por columna (revisado 2026-07-29):** Descubrir ✅ · Financiar ✅ (`AUD-003` **corregido**: el CLIENT proxya por BFF) · Competir ✅ (`AUD-002` **corregido**: UI de puja + Socket.io) · Cerrar/Recibir ✅ backend · Resolver ⚠️ (`AUD-010`) · Operar ⚠️ (CFDI `AUD-016`).
+**Estado por columna (revisado 2026-07-29):** Descubrir ✅ · Financiar ✅ (`AUD-003` **corregido**: el CLIENT proxya por BFF) · Competir ✅ (`AUD-002` **corregido**: UI de puja + Socket.io) · Cerrar/Recibir ✅ backend · Resolver ✅ (`AUD-010` corregido, PT-191: la resolución reembolsa) · Operar ⚠️ (CFDI `AUD-016`).
 
 ## 2. Historias de usuario (formato Connextra) con criterios
 
@@ -41,7 +41,7 @@ Later         Buscar/filtrar Retirar saldo    Recibir alertas   Historial de    
 | US-07c | Como vendedor quiero cobrar sin depender de que el comprador conteste. | Si nadie confirma, a los 14 días (`DISPUTE_WINDOW_DAYS`) el neto **se libera igual**. | ✅ PT-174 |
 | US-08 | Como comprador quiero calificar tras recibir. | Dado envío DELIVERED, cuando califico, entonces se guarda mi rating a la contraparte. | ✅ |
 | US-09 | Como usuario quiero abrir una disputa si algo falla. | Dentro de 14 días de entrega, cuando abro disputa, entonces queda OPEN. | ✅ AUD-003 corregido |
-| US-10 | Como admin quiero resolver disputas y reembolsar. | Cuando resuelvo a favor del comprador, entonces se reembolsa. | ✗ AUD-010 |
+| US-10 | Como admin quiero resolver disputas y reembolsar. | Cuando resuelvo a favor del comprador, entonces se reembolsa. | ✅ `AUD-010` corregido (PT-191) |
 | US-11 | Como admin quiero configurar la comisión por vendedor/global. | Cuando fijo una tasa, entonces se aplica a la venta. | ✅ AUD-005 corregido |
 | US-12 | Como finanzas quiero emitir CFDI por orden. | Cuando genero CFDI, entonces obtengo factura timbrada. | ✗ AUD-016 |
 | US-13 | Como admin quiero ver KPIs de ingresos y usuarios. | Cuando abro el dashboard, entonces veo ingresos/altas por día. | ✅ |

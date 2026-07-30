@@ -19,9 +19,9 @@
 | E2 Catálogo | Publicación y navegación de subastas | ✅ Operable |
 | E3 Puja | Puja competitiva con bloqueo de fondos y soft-close | ✅ UI y Socket.io en `pages-auction-detail.js` (AUD-002 corregido) |
 | E4 Monedero | Depósito, retiro, historial, bloqueo/liberación | ✅ Backend y UI; el CLIENT proxya por BFF (`AUD-003` corregido) |
-| E5 Cierre y Orden | Adjudicación automática, captura, orden | ⚠️ Backend sí (AUD-012) |
+| E5 Cierre y Orden | Adjudicación automática, captura, orden | ✅ Backend, con la orquestación en los services (`AUD-012` corregido: los use-cases de `core` se retiraron por ADR-033) |
 | E6 Cumplimiento | Envío, entrega, calificación | ✅ Operable |
-| E7 Conflictos | Disputa y reembolso | ⚠️ Resolución no mueve dinero (AUD-010) |
+| E7 Conflictos | Disputa y reembolso | ✅ Resolver a favor del comprador **reembolsa**, y el importe sale del vendedor (`AUD-010` corregido, PT-191) |
 | E8 Monetización | Comisiones | ✅ Fuente única `commissionsService.resolveRatePercent` (AUD-005 corregido) |
 | E9 Backoffice | Moderación, finanzas, KYC, CFDI, campañas, reportes | ⚠️ CFDI stub (AUD-016) |
 | E10 Fiscal | Facturación CFDI | ✗ **No funcional** (AUD-016) |
@@ -60,21 +60,21 @@
 
 ### E7 — Conflictos
 - **RF-60** Abrir disputa (14 días, participante). *AC:* `RN-40`. **[✅ `AUD-003` corregido]**
-- **RF-61** Resolver disputa (admin) + reembolso. *AC:* `RN-41`,`RN-42`. **[✗ **resolución no mueve dinero** (`AUD-010`, **abierto**); reembolso **con 16 pruebas en 3 suites** — `AUD-013` corregido]**
+- **RF-61** Resolver disputa (admin) + reembolso. *AC:* `RN-41`,`RN-42`. **[✅ la resolución **ejecuta el reembolso** en el mismo acto, cargándoselo al vendedor (`AUD-010` corregido, PT-191); reembolso **con 16 pruebas en 3 suites** — `AUD-013` corregido]**
 
 ### E8 — Monetización
 - **RF-70** Comisión configurable por vendedor/global aplicada a la venta. *AC:* `RN-31`. **[✅ fuente única `resolveRatePercent`; `AUD-005` corregido]**
 
 ### E9/E10 — Backoffice y Fiscal
-- **RF-80** Moderar subastas/usuarios/KYC; reportes; campañas. **[⚠️ admin salta FSM `AUD-011`]**
+- **RF-80** Moderar subastas/usuarios/KYC; reportes; campañas. **[✅ el admin pasa por `AuctionStateMachine` — puerta única `transicionar()` (`AUD-011` corregido, PT-191)]**
 - **RF-81** Emitir CFDI por orden. *AC:* factura timbrada. **[✗ stub `AUD-016`]**
 
 ## 3. Requisitos no funcionales (resumen)
 
 | NFR | Requisito | Estado real |
 |---|---|---|
-| Seguridad | JWT+2FA, rate limiting, validación de firma de webhooks (HMAC en MP/HeyBanco, verify-webhook-signature en PayPal), secretos gated en prod | ⚠️ **WS sin auth (AUD-006, abierto)** — sólo emite datos de subasta, ya públicos. ADMIN **con Helmet+CSP** (AUD-007 corregido) y credenciales por defecto **rechazadas al arrancar en producción** (AUD-004 corregido). Texto original: creds admin default (AUD-004) |
-| Integridad financiera | Ledger inmutable; `Decimal`; MXN | ⚠️ **`Money` VO sigue sin usarse (AUD-012, abierto)**. `payments` en `MXN`: **AUD-008 corregido** (medido en la base el 2026-07-29) |
+| Seguridad | JWT+2FA, rate limiting, validación de firma de webhooks (HMAC en MP/HeyBanco, verify-webhook-signature en PayPal), secretos gated en prod | ✅ **WS público a propósito** (`AUD-006` corregido, PT-191): el handshake no autentica porque la puja en vivo se ve sin cuenta, y lo que emite está **acotado por prueba** — ninguna carga puede llevar un campo identificativo. ADMIN **con Helmet+CSP** (AUD-007 corregido) y credenciales por defecto **rechazadas al arrancar en producción** (AUD-004 corregido). Texto original: creds admin default (AUD-004) |
+| Integridad financiera | Ledger inmutable; `Decimal`; MXN | ✅ **`Money` retirado** (`AUD-012` corregido, PT-191): no podía representar el descubierto y su aritmética era peor que `Decimal`, que es lo que el API usa. `payments` en `MXN`: **AUD-008 corregido** (medido en la base el 2026-07-29) |
 | Disponibilidad | Healthchecks Docker; scheduler con lock Redis | ✅ |
 | Observabilidad | AuditEvent/ErrorEvent/RequestLog con traceId | ✅ retención **única y configurable** — `LOG_RETENTION_DAYS` (90 por defecto), PT-043 (AUD-018 corregido) |
 | Rendimiento | Índices en tablas de puja/wallet/orden | ✅ |

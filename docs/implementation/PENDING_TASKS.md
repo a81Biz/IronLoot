@@ -1,15 +1,16 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-29 (cierre con VoBo de PT-181 … PT-190)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-191 — los cinco `AUD` abiertos, cerrados)
 
 ---
 
-## Esperando validación humana: nada
+## Esperando validación humana: **PT-191**
 
 **PT-181 … PT-185 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
 veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
 
-**Cero trabajo FDGE pendiente.**
+**PT-191 queda en `VALIDATION_PENDING`**: son cinco BUG y el agente no cierra bugs (FDGE STATE 6). Todo
+lo demás está cerrado.
 
 ---
 
@@ -38,25 +39,31 @@ y así está escrito. Si v1.1 lo vuelve a prometer, `P-012` vuelve y **H-005 se 
 
 ---
 
-## Dos hallazgos verificados ABIERTOS — tu decisión, no trabajo iniciado
+## Los cinco `AUD` que estaban abiertos: cerrados (PT-191)
 
-PT-189 midió los 21 `AUD` que se podían medir sin leer seguridad línea a línea. **Cinco están abiertos**, y dos
-de ellos se verificaron hoy por primera vez:
-
-| Hallazgo | Qué es | Coste de cerrarlo |
+| Hallazgo | Lo que decía el enunciado | Lo que había, medido |
 |---|---|---|
-| **AUD-006** | El WebSocket **no autentica el handshake**: `handleConnection` sólo registra, y `joinAuction` acepta cualquier UUID | Cambio de diseño. **Matiz que importa**: sólo emite `emitAuctionEvent` a la sala de la subasta —datos que `GET /auctions/:id` ya da en público—, así que **no es una fuga**, es superficie sin autenticar |
-| **AUD-011** | `admin.service.ts` **no pasa por `AuctionStateMachine`**: el panel puede saltar transiciones que el servicio prohíbe | Refactor de las mutaciones del panel. Es la familia de PT-173 (`shipments` escribía el estado por fuera) pero con más puertas |
-| **AUD-010** | Resolver una disputa **no mueve dinero**: devuelve una nota indicando `POST /admin/refunds` | Decidir si se automatiza o se documenta como proceso manual |
-| **AUD-012** | El VO `Money` existe en `core` y **ningún servicio del API lo importa** | Cablearlo o retirarlo. `ProcessRefundUseCase` está en el mismo caso |
-| **AUD-027** | `SMTP_*` sigue existiendo junto a `MAIL_*` en `system-config` | Unificar. Bajo, pero es una segunda ruta de configuración viva |
+| **AUD-027** | «dos rutas de config SMTP» | El panel tenía un **formulario completo** que guardaba y decía «guardado», y el mailer lee `MAIL_*` del entorno: **no configuraba nada** |
+| **AUD-011** | «`admin.service.ts` no menciona `AuctionStateMachine`» | **Seis** operaciones escribiendo el estado a mano, dos sin llamar ni a `assertAuctionModifiable` — y **la máquina estaba incompleta** |
+| **AUD-010** | «resolver una disputa no mueve dinero» | **Tres** defectos encadenados; cablear el primero sin los otros habría **impreso dinero** |
+| **AUD-012** | «el VO `Money` no lo importa nadie» | **30 de 42** símbolos de `core` sin consumidor, y uno **mentía** sobre cómo se valida un IPN |
+| **AUD-006** | «el WebSocket no autentica el handshake» | Cierto **y deliberado**; faltaba que fuera comprobable. Y había dos armas cargadas apuntándole, con cero llamantes |
 
-**No se han abierto como `H-XXX` ni se ha empezado ninguno.** Promoverlos al registro PTSA los metería en el
-score de Health, y esa es una decisión tuya — no algo que el agente deba hacer por iniciativa propia. Están
-declarados en la tabla de veredictos con su evidencia; ahí no se pierden.
+**Recuento de la tabla de veredictos: 20 corregidos · 0 abiertos · 1 limitación declarada · 15 sin verificar.**
 
-**Y quedan 15 `AUD` con veredicto `sin verificar`.** Eso es deuda **de medición**, no de código: puede que estén
-todos corregidos. Lo que ya no ocurre es que nadie sepa cuáles son.
+**No se promovieron a `H-XXX`**: meterlos en el score de Health sigue siendo tu decisión. Están en la tabla de
+veredictos con su evidencia.
+
+### Lo que esto contesta, que es la pregunta de fondo
+
+*«¿Por qué siempre salen más casos?»* — **porque el enunciado de un hallazgo es su síntoma, no su tamaño.**
+Los cinco se cerraron leyendo el código, no el enunciado, y los cinco resultaron ser otra cosa. Revisar «qué
+falta» leyendo enunciados devuelve la lista de síntomas, y por eso nunca terminaba.
+
+### Y quedan 15 `AUD` con veredicto `sin verificar`
+
+Deuda **de medición**, no de código: puede que estén todos corregidos. **No se declaran corregidos sin
+medirlos** — eso es exactamente lo que produjo el «36/36» que la tabla existe para desmentir.
 
 ---
 
@@ -91,7 +98,10 @@ llegue el proveedor:
 - **La elección decide, sin querer, si el timbrado entra en el camino del dinero.** En B entra; en A y C no.
   Este repositorio ya sabe lo que cuesta poner algo frágil en la ruta de un pago (ADR-038).
 
-**Deuda técnica abierta: 2 de 24** — TD-002 (credenciales de terceros) y TD-009 (riesgo aceptado por PT-080).
+**Deuda técnica abierta: 3 de 25** — TD-002 (credenciales de terceros), TD-009 (riesgo aceptado por PT-080)
+y **TD-024** (nueva, PT-191): `@ironloot/core` exporta **24 símbolos que nadie importa** — los puertos de una
+arquitectura hexagonal cuyos adaptadores no se escribieron. **No se retiran porque hacerlo es abandonar
+formalmente ese diseño, y eso pide una ADR.** Lo que ya está hecho es medirlo, y hay guarda para que no crezca.
 
 ---
 
@@ -106,8 +116,7 @@ estabilidad del 100 mide que se cierra lo que se encuentra, no que no haya nada 
 **La lista de terceros queda cerrada**: la pasarela tenía el defecto, Redis tenía otro distinto y el
 almacenamiento **no aplica** (es `writeFile` local).
 
-**Y queda un pendiente concreto**: la guarda de reservas mira sólo `src/api/src`. **ADMIN, BASE y CLIENT no están
-cubiertos, y ADMIN tuvo exactamente este defecto en PT-147.**
+**Ese pendiente se cerró en PT-186**: la guarda de reservas cubre ahora los cuatro servicios.
 
 **Lo único que falta medir es D5, y no lo cierra otra corrida igual:** hacen falta **20 ciclos de pago
 resueltos** y hay **2**. Con `>= 95 %` para verde, un solo fallo entre `n` cumple `(n−1)/n >= 0.95` sólo si

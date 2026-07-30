@@ -8,7 +8,8 @@ import { MercadoPagoProvider } from '../../src/modules/payments/providers/mercad
 /**
  * PT-143 — Doble de pasarela para e2e.
  *
- * Cumple el contrato de `IPaymentProvider` sin salir a la red. **No simula cobros**: devuelve una
+ * Cumple el contrato de `PaymentProvider` —el de `modules/payments/interfaces/`, que es el que el
+ * registro exige de verdad— sin salir a la red. **No simula cobros**: devuelve una
  * URL de redireccion y nada mas, que es justo lo que el endpoint bajo prueba tiene que producir.
  *
  * Lo que este doble NO cubre —que la pasarela responda como creemos— **no se pierde**: lo ejerce la

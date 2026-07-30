@@ -36,7 +36,7 @@
 - **Actor:** Sistema (scheduler) · **Trigger:** cron cada minuto.
 - **Happy:** con lock Redis (`lock:auction-close`): subastas `ACTIVE` con `endsAt≤now` → `CLOSED`; puja más alta = ganador → Orden `PAID`; captura del ganador (`DEBIT_ORDER`) → crédito vendedor (`CREDIT_SALE`) − comisión (`FEE_PLATFORM`); libera held de perdedores; notifica y emite `auction:ended`. `[auction-scheduler.service.ts:105-254]`
 - **Alternativo:** sin pujas → cierra sin orden.
-- **Excepción:** otra instancia tiene el lock → se omite (evita doble proceso). **Riesgo:** el use-case `CloseAuctionUseCase` de core no se usa; settlement con baja cobertura (`AUD-012`).
+- **Excepción:** otra instancia tiene el lock → se omite (evita doble proceso). **Riesgo:** el settlement tenía baja cobertura; el `CloseAuctionUseCase` de `core` se retiró por ADR-033 y la orquestación vive en los services (`AUD-012` corregido, PT-191).
 
 ## UC-08 — Depositar en el monedero ✅
 - **Actor:** Comprador/Vendedor.
@@ -84,11 +84,11 @@
 
 ## UC-19 — Resolver disputa (Admin) ✗
 - **Happy (parcial):** `POST /admin/disputes/:id/resolve-buyer|seller` → estado `RESOLVED` + nota. `[admin.service.ts:868-891]`
-- **✗ Estado real:** **no ejecuta el reembolso**; deja nota "iniciar refund vía `POST /admin/refunds`" → el dinero se mueve en un paso manual separado (`AUD-010`). Además admin escribe estado sin FSM (`AUD-011`).
+- **✅ Estado real (PT-191):** resolver a favor del comprador **ejecuta el reembolso en el mismo acto**, y el importe **sale del vendedor** —del holdback si sigue retenido, y si ya se liberó queda descubierto—. Antes dejaba una nota pidiendo que alguien llamara a otro endpoint (`AUD-010` corregido). El admin pasa ahora por `AuctionStateMachine` (`AUD-011` corregido).
 
 ## UC-20 — Procesar reembolso (Admin) ⚠️
 - **Happy:** `POST /admin/refunds` → 0<monto≤total, uno por orden → acredita comprador (`REFUND`), orden→`REFUNDED`, audit event, en TX. `[refunds.service.ts:19-89]`
-- **⚠️ Estado real (2026-07-29):** el servicio **sí tiene pruebas** — 16 en 3 suites de comisiones y reembolsos (`AUD-013` corregido). Lo que sigue abierto es otra cosa: el `ProcessRefundUseCase` de `core` **no se usa** (`AUD-012`).
+- **⚠️ Estado real (2026-07-29):** el servicio **sí tiene pruebas** — 16 en 3 suites de comisiones y reembolsos (`AUD-013` corregido). Lo que se citaba como abierto —el `ProcessRefundUseCase` de `core`— **ya no existe**: se retiró por ADR-033 (`AUD-012` corregido, PT-191).
 
 ## UC-23 — Generar CFDI (Admin) ✗
 - **Intención:** `POST /admin/cfdi/:orderId/generate` → factura timbrada por el PAC.

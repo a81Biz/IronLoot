@@ -38,7 +38,7 @@ graph LR
 | Catálogo & Subastas | subastas, pujas, watchlist, ciclo de vida | conformista con Finanzas (bloqueo) |
 | Monedero & Finanzas | wallet, ledger, captura, comisión | shared kernel de dinero |
 | Órdenes & Cumplimiento | órdenes, envíos, calificaciones | downstream de Subastas |
-| Conflictos | disputas, reembolsos | invoca Finanzas (parcial, `AUD-010`) |
+| Conflictos | disputas, reembolsos | invoca Finanzas: la resolución reembolsa vía `WalletService.reversarVenta()` (`AUD-010` corregido, PT-191) |
 | Backoffice & Fiscal | moderación, KYC, CFDI, comisiones, CMS/SEO, config | gobierna vía AdminService (god-object) |
 | Observabilidad | audit/error/request logs, diagnostics | genérico transversal |
 | Notificaciones | in-app + email + campañas | genérico transversal |
@@ -56,7 +56,7 @@ Capas (`packages/core/src/`): `domain/` (reglas hoja), `application/` (use-cases
 | Monedero | Wallet | disponible = balance − held; `canLockFunds` | `wallet-calculation.ts` |
 
 ### Value Objects
-- **Money** — centavos enteros, currency-safe (`money.ts`). **⚠️ No usado por el API** (`AUD-012`).
+- **Money** — **retirado en PT-191** (`AUD-012` corregido). Ningún servicio lo importaba, y cablearlo habría sido una regresión: guardaba centavos en un `number` mientras las columnas son `Decimal(12,2)`, y su constructor rechaza negativos, que el descubierto del vendedor necesita.
 - DTOs de dinero/paginación (`shared/`).
 
 ### Validadores de dominio
@@ -64,7 +64,7 @@ Capas (`packages/core/src/`): `domain/` (reglas hoja), `application/` (use-cases
 - **WebhookSignatureValidator** (HMAC timing-safe) y **IpnValidator** (PayPal).
 
 ### Casos de uso (application) ⚠️
-`PlaceBidUseCase`, `CloseAuctionUseCase`, `ProcessPaymentUseCase`, `ProcessRefundUseCase` — dependen sólo de puertos `contracts/`. **No se cablean en el API** (`AUD-012`): la orquestación se reimplementa en los services.
+`PlaceBidUseCase`, `CloseAuctionUseCase`, `ProcessPaymentUseCase`, `ProcessRefundUseCase` — dependen sólo de puertos `contracts/`. **Retirados por ADR-033** (`AUD-012` corregido): la orquestación vive en los services, y conservar una copia sin cablear sólo producía cobertura que no cubría nada.
 
 ### Puertos (contracts / integrations)
 - Repositorios: `auction/bid/order/wallet-repository.interface.ts`.
@@ -82,8 +82,8 @@ Definido una sola vez en el [Diccionario Maestro](../transversal/Diccionario-Mae
 | Anti-patrón | Descripción | Hallazgo |
 |---|---|---|
 | God-object | AdminController/Service concentran 18 áreas | `E §1` |
-| Dominio anémico parcial | use-cases y Money de core no usados; lógica duplicada en services | AUD-012 |
-| Bypass de invariantes | admin escribe estado sin FSM | AUD-011 |
+| Superficie huérfana en `core` | 24 símbolos exportados sin consumidor: los puertos hexagonales sin adaptador. Contados y con guarda que impide que crezcan | `TD-024` (AUD-012 corregido) |
+| ~~Bypass de invariantes~~ | resuelto: el admin pasa por `AuctionStateMachine` (puerta única `transicionar()`) | AUD-011 corregido, PT-191 |
 | Referencia sin FK | modelos backoffice con refs libres | AUD-001 |
 
 > Modelo de datos físico completo en [4-ingenieria/Modelo-de-Datos.md](../4-ingenieria/Modelo-de-Datos.md); entidades en [Modelo Maestro de Dominio](../transversal/Modelo-Maestro-de-Dominio.md).
