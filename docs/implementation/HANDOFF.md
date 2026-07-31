@@ -3,18 +3,19 @@
 **FDGE V3** · **2026-07-30** · Se **sobrescribe**: es el estado de ahora, no la historia. La historia
 está en [`HISTORY.log`](HISTORY.log), que es append-only y la tiene íntegra con su fecha.
 
-**Rama**: `fix/PT-200-documentos-al-dia` (PT-200 en validación). `master` limpio y al día con `origin`.
+**Rama**: `master`. PT-200 y PT-201 fusionados y **en espera de tu validación** — son BUG, y el agente no
+los cierra.
 
-**Pruebas**: **1383** unitarias en verde — API **1130** (138 suites) · CLIENT **144** (12) · CORE **93** (6) ·
-ADMIN **13** (2) · BASE **3** (1). *(Medido el 2026-07-30, tras PT-200: la corrida anterior daba 1366 porque
-las 17 pruebas de las dos guardas de este PT aún no existían.)*
+**Pruebas**: **1385** unitarias en verde — API **1132** (138 suites) · CLIENT **144** (12) · CORE **93** (6) ·
+ADMIN **13** (2) · BASE **3** (1). *(Medido el 2026-07-30. Sube de 1366 a 1385 por las 19 pruebas que
+aportan las guardas de PT-200 y PT-201, no por trabajo de producto.)*
 
 **Reglas duras**: **36** `RULE-NN`. **Guardas de documentación**: **19** suites.
 
 **Hallazgos PTSA**: **36** registrados, **0** activos. **Deuda técnica**: **2** abiertas de **19** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **152 encabezados · 1 realmente abierto** (PT-200).
+`npm run indice:estado`. **153 encabezados · 2 realmente abiertos** (PT-200, PT-201).
 
 > **Estas siete cifras están vigiladas** por `handoff-es-estado-actual.spec.ts`, salvo el recuento de
 > pruebas: verificarlo exigiría ejecutar las cinco suites dentro de una prueba. Se dice porque *lo que no
@@ -53,7 +54,7 @@ cierra lo que se encuentra, no que no haya nada que encontrar.**
 
 ---
 
-## Esperando tu validación: PT-200
+## Esperando tu validación: PT-200 y PT-201
 
 **Es un BUG, y el agente no cierra bugs** (FDGE STATE 6 · RULE-37). Lo corregido:
 
@@ -65,6 +66,8 @@ cierra lo que se encuentra, no que no haya nada que encontrar.**
 | `docs-v2/README.md` | «Hoy (2026-07-29): 1078 unitarias» | **1383** |
 | `10-Technical-Debt.md` | — | hueco `TD-018…023` declarado; **19 entradas, 2 abiertas** |
 | `tsconfig.json` (raíz) | ausente desde `004f5dc` | restituido: sin él `npm run indice:estado` **no arrancaba** |
+| `inventory/integrations.md` (PT-201) | 4 «Interface» en un directorio **retirado por PT-193** | 1 movida, y **3 declaradas inexistentes** — se retiraron por no tener implementador |
+| `inventory/integrations.md` (PT-201) | almacén del rate limiter «TBD, see TD-002» | `ND-002`, **cerrada por PT-171**: existe desde PT-030 |
 
 **Lo que enseña, y no es sobre estos documentos.** `HANDOFF.md` era el **único** registro de la tabla
 *«Dónde vive un pendiente»* sin guarda, y el que más se lee: es el primer fichero que abre quien retoma el

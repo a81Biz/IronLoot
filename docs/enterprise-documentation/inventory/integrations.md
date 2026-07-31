@@ -22,7 +22,7 @@ All external services and third-party integrations.
 - **Config:** `MERCADO_PAGO_ACCESS_TOKEN` env var (`.env.example` — not in visible portion; referenced in CLAUDE.md)
 - **Features:** Checkout sessions, webhook notifications, payment method listing
 - **Webhook:** `POST /api/v1/payments/webhook/mercado_pago` — HMAC validated
-- **Interface:** `IPaymentProvider` (`src/packages/core/src/integrations/payment-provider.interface.ts`)
+- **Contrato:** `IPaymentProvider` (`src/api/src/modules/payments/interfaces/payment-provider.interface.ts`)
 
 ### PayPal
 - **Status:** Implemented (schema + service)
@@ -51,7 +51,7 @@ All external services and third-party integrations.
 - **Dev SMTP:** Mailhog at `mailhog:1025` (Docker service)
 - **Dev UI:** `http://localhost:8025`
 - **Config:** `MAIL_HOST`, `MAIL_PORT`, `MAIL_USER`, `MAIL_PASSWORD`, `MAIL_FROM`
-- **Interface:** `IEmailService` (`src/packages/core/src/integrations/email-service.interface.ts`)
+- **Contrato:** ninguno — `EmailService` es una clase concreta (`src/api/src/modules/notifications/email.service.ts`). Lo que cada llamante hace con un fallo de envío está declarado por **RULE-36**
 
 ---
 
@@ -74,7 +74,7 @@ All external services and third-party integrations.
 - **Config:** `REDIS_URL`, `REDIS_HOST`, `REDIS_PORT` (optional: `REDIS_PASSWORD`)
 - **Memory limit:** 256 MB
 - **Uses:**
-  - `ThrottlerModule` (rate limiting — storage backend TBD, see TD-002)
+  - `ThrottlerModule` (rate limiting) con `ThrottlerRedisService` sobre `REDIS_URL` — compartido entre instancias desde PT-030
   - `DistributedLockService` (auction close cron)
   - `BullModule` (BullMQ async job queues — PT-038)
 
@@ -117,7 +117,7 @@ All external services and third-party integrations.
 ### Local Storage
 - **Status:** Active (dev)
 - **Provider:** Local filesystem (`uploads/` directory)
-- **Interface:** `IStorageService` (`src/packages/core/src/integrations/storage-service.interface.ts`)
+- **Contrato:** ninguno — el módulo `upload` escribe al sistema de ficheros sin abstracción. Sustituir el almacén exige tocar el módulo, y eso es lo que hay que saber antes de prometer S3
 - **Served at:** `/uploads` (via `ServeStaticModule`)
 - **Production:** Cloud storage implementation expected (S3-compatible); not confirmed
 
@@ -127,7 +127,7 @@ All external services and third-party integrations.
 
 ### PAC Provider (stub)
 - **Status:** STUB — no real PAC integration
-- **Interface:** `ICfdiPacProvider` (`src/packages/core/src/integrations/cfdi-pac-provider.interface.ts`)
+- **Contrato:** ninguno — `cfdi.service.ts` es un stub sin cliente de PAC (TD-001, `H-005`, `P-012` FUERA_DE_ALCANCE_V1)
 - **Schema:** `cfdi_records` table exists and is fully defined
 - **Risk:** Fiscal invoicing non-functional (see TD-001 in Technical Debt)
 
@@ -198,3 +198,25 @@ Ahora propaga, y **cada llamante declara qué hace con el fallo**:
 
 **Stripe y HeyBanco tienen su código de adaptador escrito y no tienen credenciales.** El registro de deuda decía
 que faltaba el código, y eso era falso (PT-181). Lo que falta es de negocio, no de ingeniería.
+
+---
+
+## Nota de corrección — 2026-07-30 (PT-201)
+
+**Cuatro secciones de este documento seguían citando `src/packages/core/src/integrations/`**, el
+directorio que PT-193 retiró (ADR-058) — **dentro del documento cuya nota de cabecera dice que se
+retiró**. La cabecera se corrigió en PT-198 y el cuerpo no, porque la guarda de entonces sólo leía la
+línea `**Source:**`.
+
+**Y tres de las cuatro no tenían sustituto**, que es el dato: no existe un `IEmailService`, ni un
+`IStorageService`, ni un `ICfdiPacProvider` en ninguna parte del código. Se retiraron **porque nadie los
+implementaba**. Un inventario que los nombra como «Interface» promete una capa de abstracción que no
+existe — y quien planee cambiar de almacén o de PAC leerá que hay un contrato donde hay una llamada
+directa.
+
+**Una quinta línea decía otra cosa falsa**: el almacén del rate limiter figuraba como *«TBD, see
+TD-002»*. `TD-002` son las credenciales de Stripe y HeyBanco; lo que correspondía era `ND-002`, **cerrada
+por PT-171** — y cerrada porque el almacén **sí existe** (`ThrottlerRedisService` sobre `REDIS_URL`, desde
+PT-030). Un identificador equivocado apuntando a una deuda abierta convertía algo resuelto en pendiente.
+
+Lo vigila `inventarios-completos.spec.ts § C7`, que ahora lee el **cuerpo** y no sólo la cabecera.

@@ -237,5 +237,64 @@ describe('Los inventarios que dicen «todos» los nombran todos — PT-197', () 
       const cabecera = leer(join(INV, 'integrations.md')).slice(0, 800);
       expect(cabecera).toMatch(/\*\*Source:\*\*/);
     });
+
+    it('C7: ninguna ruta del CUERPO apunta a un fichero inexistente — PT-201', () => {
+      // **PT-201 — la guarda miraba al lado del agujero.** `C6` sólo lee la línea `**Source:**`, porque
+      // estrecharla fue lo que evitó que se acusara a la nota que explica la corrección. Ese
+      // estrechamiento dejó **el cuerpo entero sin vigilar**: cuatro secciones seguían citando
+      // `src/packages/core/src/integrations/*`, el directorio que PT-193 retiró, **dentro del documento
+      // cuya cabecera dice que se retiró**.
+      //
+      // Lo encontró una lectura ajena, no esta suite. Es el punto 4 de las «Siguientes» de `HANDOFF.md`
+      // —*buscar guardas que miran al lado del agujero*— cumpliéndose sobre una guarda de ayer.
+      //
+      // **Dos acotaciones, y las dos se midieron antes de escribirlas:**
+      //
+      // 1. **Las líneas de cita (`>`) se excluyen.** Una nota que explica por qué se corrigió una ruta
+      //    **tiene que** nombrar la ruta retirada. Es prosa sobre el pasado, no una afirmación sobre el
+      //    presente — y sin esta exclusión la guarda acusaría al texto que la justifica, que ya ha
+      //    pasado ocho veces en esta jornada.
+      // 2. **Sólo rutas ancladas en la raíz** (`src/`, `docs/`, `tests/`, `prisma/`, `.github/`). Mi
+      //    primera medición acusó a 78 líneas de `routes.md` y `services.md` que citan **rutas
+      //    relativas a una base declarada** (`modules/users/users.controller.ts`), y son correctas.
+      //    Comprobarlas contra el directorio de trabajo es medir la forma en vez de la cosa.
+      const ANCLADAS = /^(src|docs|tests|prisma|scripts|\.github)\//;
+      const rotas: string[] = [];
+
+      for (const fichero of readdirSync(INV).filter((f) => f.endsWith('.md'))) {
+        const lineas = leer(join(INV, fichero)).split('\n');
+
+        lineas.forEach((linea, i) => {
+          if (linea.trimStart().startsWith('>')) return;
+
+          for (const m of linea.matchAll(/`([\w./-]+\.(?:ts|js|json|prisma|ya?ml|sql))`/g)) {
+            if (!ANCLADAS.test(m[1])) continue;
+            if (!existsSync(join(RAIZ, m[1]))) rotas.push(`${fichero}:${i + 1} → ${m[1]}`);
+          }
+        });
+      }
+
+      expect(rotas).toEqual([]);
+    });
+
+    it('AC-08 (control): C7 leyo rutas ancladas de verdad — sin esto pasaria en vacio', () => {
+      // El listón es **10**, y sale de contar: hay **17** rutas ancladas en los seis inventarios
+      // (components 5 · integrations 6 · services 3 · entities 2 · routes 1 · endpoints 0). Mi primera
+      // versión puso 20 **a ojo** y el control se puso rojo con el corpus entero delante — un listón
+      // inventado convierte un control en un falso positivo. No se fija en 17 a propósito: eso obligaría
+      // a tocar la prueba con cada cita nueva, y una guarda que estorba es una guarda que se retira.
+      let ancladas = 0;
+
+      for (const fichero of readdirSync(INV).filter((f) => f.endsWith('.md'))) {
+        for (const linea of leer(join(INV, fichero)).split('\n')) {
+          if (linea.trimStart().startsWith('>')) continue;
+          for (const m of linea.matchAll(/`([\w./-]+\.(?:ts|js|json|prisma|ya?ml|sql))`/g)) {
+            if (/^(src|docs|tests|prisma|scripts|\.github)\//.test(m[1])) ancladas++;
+          }
+        }
+      }
+
+      expect(ancladas).toBeGreaterThan(10);
+    });
   });
 });
