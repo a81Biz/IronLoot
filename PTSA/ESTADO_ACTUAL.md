@@ -1,5 +1,5 @@
 # ESTADO ACTUAL — PTSA V3
-**Última actualización**: 2026-07-30 | **Sesión**: S-012 (delta sync)
+**Última actualización**: 2026-07-30 | **Sesión**: S-013 (delta sync)
 
 ---
 
@@ -11,10 +11,32 @@ Fase actual:    CERTIFICADO — Clase A
 Health:         100 / 100      cero hallazgos activos
 Risk:           0 / 100        Risk_bruto = 0
 Confidence:     91.0 / 100     POR PRIMERA VEZ DERIVADO: 80/100/95/100 — ver el desglose abajo
-Freshness:      FRESH          S-012 medido sobre ffbdf14 — cero deriva en auditable_patterns
-audit_commit:   ffbdf148e98cc0b8578dbfab9d1d08573c91a07b
+Freshness:      FRESH          S-013 medido sobre 98e445b — cero deriva en auditable_patterns
+audit_commit:   98e445b3fe0c099001c58aa62699e410d9d3562a
 Cobertura:      PARCIAL        D1/D2/D3/D4 medidas EJECUTANDO · D5 al 0 % — LIMITACIÓN DECLARADA de v1.0
 ```
+
+> **S-013 — el sync corto que cierra el ciclo, y por qué hizo falta.**
+>
+> `PT-203` amplió `RULE-31` para cubrir la evidencia de PTSA, y eso toca `11-Conventions.md` — que está
+> en `auditable_patterns`. **La consecuencia es la que la regla exige**: el certificado caduca en cuanto
+> se toca el contrato, aunque lo que se haya hecho sea reforzarlo. Se resuelve **volviendo a ejecutar**,
+> no reetiquetando: los cinco checkpoints, otra vez, sobre `98e445b`.
+>
+> | Checkpoint | Resultado |
+> |---|---|
+> | `audit:schema` (D2) | OK |
+> | `audit:check` (D2) | OK — sin novedades respecto a la línea base |
+> | `audit:observability` (D3) | OK — `silent_failure_count = 24` (base 25) · traza 100 % |
+> | `audit:domain` (D1) | `rubric_compliance_score = 100` · 4 de 5 coherencias medidas |
+> | `audit:reliability` (D5) | 2 de 20 ciclos · `health_unstable = false` |
+>
+> **Sin hallazgos nuevos.** Es la primera emisión del día en la que el intervalo no trae ninguno — y el
+> intervalo es de un solo PT, que además era la corrección de lo que S-012 dejó sin ejecutar.
+>
+> **Lo que sí deja escrito:** ampliar el contrato caduca el certificado, y eso **no es un efecto
+> secundario molesto**. Un contrato nuevo describe un sistema que aún no se ha vuelto a medir contra él.
+> El coste de reemitir es el precio de que la frescura signifique algo.
 
 > **S-012 — delta sync ejecutado el 2026-07-30. Frescura restaurada MIDIENDO, y un hallazgo nuevo.**
 >

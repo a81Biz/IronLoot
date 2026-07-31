@@ -1,17 +1,17 @@
 # PTSA V3 — RESUMEN DE AUDITORÍA
 ## IronLoot Auction Platform v1.0.0
 
-**Sesión**: S-012 — **delta sync** (`resume PTSA`) | **Fecha**: 2026-07-30
+**Sesión**: S-013 — **delta sync** | **Fecha**: 2026-07-30
 **Disparador**: `resume PTSA`, para restaurar la frescura que `PT-202` había dejado en `STALE` al medir
 que `PT-200` tocó un fichero del alcance auditable.
 **auditoria_estado**: CERRADA_SIN_HALLAZGOS_ACTIVOS
-**audit_commit**: `ffbdf148e98cc0b8578dbfab9d1d08573c91a07b`
+**audit_commit**: `98e445b3fe0c099001c58aa62699e410d9d3562a`
 
 ---
 
 ## SCORES — CLASE A
 
-| Métrica | S-010 | S-011 | **S-012** | Cambio |
+| Métrica | S-011 | S-012 | **S-013** | Cambio |
 |---|---|---|---|---|
 | **Health Score** | 100 | 100 | **100 / 100** | — |
 | **Risk Score** | 0 | 0 | **0 / 100** | — |

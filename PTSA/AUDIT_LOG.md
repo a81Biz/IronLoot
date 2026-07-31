@@ -1253,3 +1253,32 @@ exactamente los mismos. `coverage 80` derivado de «4 de 5 dimensiones medidas e
 `evidence_validity 95` de contar 38 evidencias validas contra 2 citadas y ausentes (38/40). **Dos
 derivaciones independientes del mismo 91.0** — que es mas de lo que habia antes, y no habria aparecido
 sin el error de partida.
+
+## S-013 — delta sync — 2026-07-30
+
+**Disparador**: continuacion del ciclo. `PT-203` amplio `RULE-31` y con ello toco `11-Conventions.md`,
+que esta en `auditable_patterns`: el certificado de S-012 caduco en el mismo acto de reforzarlo.
+
+**Deriva medida sobre `ffbdf14` -> `98e445b`**: 1 fichero del alcance (`11-Conventions.md`). Ningun
+codigo de produccion; el resto son `*.spec.ts` y registros, todos en `ignore_patterns`.
+
+**Los cinco checkpoints, re-ejecutados:** `audit:schema` OK · `audit:check` OK ·
+`audit:observability` `silent_failure_count = 24` sobre base 25 y traza 100% · `audit:domain`
+`rubric_compliance_score = 100` con 4 de 5 coherencias · `audit:reliability` 2 de 20 ciclos,
+`health_unstable = false`.
+
+**Hallazgos nuevos: 0.** Primera emision del dia sin ninguno. El intervalo es de un solo PT y ese PT era
+precisamente la ejecucion de lo que S-012 habia dejado como recomendacion.
+
+**Lo que esta emision deja dicho, y no es sobre las cifras:** ampliar el contrato **caduca el
+certificado**. No es un efecto secundario molesto — un contrato nuevo describe un sistema que todavia no
+se ha vuelto a medir contra el. Que reemitir cueste algo es lo que hace que `FRESH` signifique algo.
+
+**Scores:** Health **100** · Risk **0** · Confidence **91.0** · Clase **A** · `freshness FRESH` sobre
+`98e445b`. Desglose sin cambio: `coverage 80 · freshness 100 · evidence_validity 95 · autonomy 100`.
+
+**Nota sobre `evidence_validity`:** se mantiene en 95 y no sube a 100 pese a que ya no hay citas rotas
+—`PT-203` cerro la ultima—. Subirlo exigiria volver a medirlo, y el insumo se midio en S-012 sobre 40
+evidencias (38 validas + 2 ausentes). **Se deja como estaba en vez de mejorarlo por deduccion**: la
+proxima emision que lo mida lo movera si toca. Es la diferencia entre medir y suponer, que es de lo que
+va todo este ciclo.
