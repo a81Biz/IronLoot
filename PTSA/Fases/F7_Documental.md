@@ -277,3 +277,22 @@ los protege — por eso los nueve documentos se archivaron en vez de borrarse. `
 otra cosa: no es historico, es la declaracion de alcance vigente.
 
 **D4 baja de 100 a 94** (H-024 MEDIA −5, H-023 BAJA −1).
+
+
+## Update U-S012 — 2026-07-30
+
+**La evidencia que sostiene un veredicto puede no existir, y el registro no lo notaba.**
+
+Medidas las citas `evidencias:` de los 36 hallazgos contra `PTSA/Evidencias/`: **2 apuntaban a ficheros
+inexistentes** (`H-008 -> E-011`, `H-036 -> E-040`). Verificado en git que **ninguna se borro** — nunca
+se crearon—, asi que no hay violacion de `[A6]`: lo que hubo fue **una cita escrita antes que su
+captura**.
+
+`H-008` ademas **describe el contenido** de `E-011` en su cuerpo, con lo que se lee como una medicion
+guardada. Es la familia de `H-016` con una diferencia que baja la severidad a MEDIA: una cita a la nada
+avisa de que falta algo; una cita a la linea equivocada, no.
+
+Corregido en el mismo sync -> `H-037`. **Una mitad se escribe y la otra se declara perdida**, y esa
+asimetria es deliberada: reconstruir hoy la captura de junio seria inventar procedencia.
+
+**Sin guarda todavia.** `RULE-31` cubre la evidencia de FDGE, no las `E-XXX`. Recomendado a FDGE.

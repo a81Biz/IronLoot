@@ -1,21 +1,26 @@
 # PTSA V3 — RESUMEN DE AUDITORÍA
 ## IronLoot Auction Platform v1.0.0
 
-**Sesión**: S-011 — **delta sync** (`resume PTSA`) | **Fecha**: 2026-07-30
-**Disparador**: tres decisiones del humano tras señalar que *«de nuevo faltan muchas cosas»* — reabrir H-035 y
-cerrarlo completo, **aceptar D5 como limitación declarada**, y añadir un índice de estado a `HISTORY.log`.
+**Sesión**: S-012 — **delta sync** (`resume PTSA`) | **Fecha**: 2026-07-30
+**Disparador**: `resume PTSA`, para restaurar la frescura que `PT-202` había dejado en `STALE` al medir
+que `PT-200` tocó un fichero del alcance auditable.
 **auditoria_estado**: CERRADA_SIN_HALLAZGOS_ACTIVOS
+**audit_commit**: `ffbdf148e98cc0b8578dbfab9d1d08573c91a07b`
 
 ---
 
 ## SCORES — CLASE A
 
-| Métrica | S-009 | **S-010** | Cambio |
-|---|---|---|---|
-| **Health Score** | 100.0 | **100 / 100** | — |
-| **Risk Score** | 0 | **0 / 100** | — |
-| **Confidence** | 91.0 | **91.0 / 100** | — |
-| **Clasificación** | A | **A** | — |
+| Métrica | S-010 | S-011 | **S-012** | Cambio |
+|---|---|---|---|---|
+| **Health Score** | 100 | 100 | **100 / 100** | — |
+| **Risk Score** | 0 | 0 | **0 / 100** | — |
+| **Confidence** | 91.0 | 91.0 | **91.0 / 100** | — |
+| **Clasificación** | A | A | **A** | — |
+
+> **La cabecera de este documento decía `S-011` con la tabla comparando `S-009` y `S-010`.** Se corrige
+> al sobrescribir: un resumen que anuncia una sesión y tabula otras dos es la misma clase de defecto que
+> `PT-200` midió en `HANDOFF.md` — un documento que se presenta como vigente y arrastra lo anterior.
 
 ```
 Health = (100×0.30) + (100×0.30) + (100×0.30) + (100×0.10) = 100
@@ -25,24 +30,26 @@ Conf   = 80×0.40 + 100×0.25 + 95×0.20 + 100×0.15 = 91.0
 
 **Regla del Agua Potable: NO activada.** D1 = 100. Se dice porque `[A4]` lo exige.
 
-> **S-011 — lo que este sync tiene y los cinco anteriores no.**
+> **S-012 — la frescura se restaura MIDIENDO, y aparece un hallazgo en la propia evidencia.**
 >
-> **D1 se midió sobre salida real generada en esta misma sesión.** `run-all.sh` produjo 209 de 210
-> comprobaciones y, acto seguido, `audit:domain` evaluó las **ocho reglas `CR` con datos delante**:
-> `rubric_compliance_score = 100`, 4 de 5 coherencias cruzadas medidas. S-006 a S-010 arrastraban
-> `SIN_DATOS` en las cinco — un `SIN_DATOS` no es un aprobado, y el propio checkpoint lo dice.
+> `PT-202` dejó el certificado en `STALE` porque `PT-200` tocó `10-Technical-Debt.md`, del alcance
+> auditable. Este sync lo resuelve volviendo a ejecutar **los cinco checkpoints**, no reetiquetando.
+> Deriva medida sobre `ffbdf14`: **cero** ficheros de `auditable_patterns`.
 >
-> **D3 falló, y ése es el resultado que más vale.** Tres `catch` mudos que introdujeron PT-194 y PT-196
-> — `H-036`, corregido y re-verificado antes de emitir: `silent_failure_count` de **27 a 24**, por
-> debajo de la línea base. Los introduje **en el sitio donde mi propio diseño afirmaba que no los
-> había**: `design.md` argumentaba que `null` ≠ `throw`, y el `catch` del llamante se comía el `throw`
-> dos líneas después. **Lo encontró el checkpoint, no una lectura.**
+> **`H-037` (D4, MEDIA), cerrado antes de emitir.** Dos hallazgos citaban evidencia que **nunca se
+> capturó** —`H-008 → E-011` y `H-036 → E-040`—. Verificado en git que ninguna se borró: `[A6]` intacto.
+> `E-040` se escribe con la salida real y se re-verifica ejecutando; **`E-011` no se fabrica**, se
+> declara perdida en una `## Revisión` de `H-008` — rehacerla hoy sería inventar procedencia.
 >
-> **D5 sin cambio**: 2 ciclos de pago resueltos de los 20 que exige la muestra. Es lo único que separa
-> la Confianza de un número mayor, y sigue siendo la limitación declarada de v1.0.
-
-**§15.6 se cumple por los dos lados**: Health ≥ 90 **y** Confidence ≥ 90. `freshness = FRESH` → sin cap.
-`health_unstable = false` → sin cap por D5.
+> **Corregir una cita rota no siempre es crear lo citado.** A veces es decir que no existe.
+>
+> **Y un error mío, que dejó algo mejor de lo que había:** empecé este sync creyendo que el `91.0` se
+> arrastraba sin desglose guardado. Es falso — `RESUMEN.md` y `F9` lo guardan desde **S-005**; yo
+> buscaba `Confidence = ` y el artefacto dice `Conf = `. Medí los cuatro insumos igual, sin mirarlos, y
+> **dan exactamente los mismos**. Es la primera reproducción independiente del número.
+>
+> **Sobre D1, con precisión:** se midió sobre la **misma salida real** que generó S-011 y que sigue en
+> la base. Es medición sobre datos reales, no sobre datos nuevos, y la diferencia se dice.
 
 ---
 

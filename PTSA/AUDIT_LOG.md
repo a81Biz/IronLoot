@@ -1188,3 +1188,68 @@ ancla la frase no era falsable. La vigila `frescura-declarada-es-real.spec.ts`, 
 verificado: puesta a `FRESH`, acusa por nombre el fichero que derivo.
 
 **Se restaura con `resume PTSA`.** Es barato: solo cambio un documento del alcance.
+
+## S-012 — delta sync — 2026-07-30
+
+**Disparador**: `resume PTSA` (instruccion explicita del humano).
+
+**Intervalo cubierto**: S-011 -> S-012. Deriva medida sobre `auditable_patterns`: **1 fichero**
+(`docs/enterprise-documentation/10-Technical-Debt.md`, por PT-200) de 24 cambiados. **Ningun codigo de
+produccion.** Es lo que puso la frescura en STALE via PT-202, y lo que este sync resuelve midiendo.
+
+**Lo ejecutado, no leido:**
+
+| Checkpoint | Resultado |
+|---|---|
+| `audit:schema` (D2) | OK — las migraciones reproducen `schema.prisma` |
+| `audit:check` (D2) | OK — 0 paquetes con aviso propio; linea base vacia a proposito |
+| `audit:observability` (D3) | OK — `silent_failure_count = 24` (linea base 25) · `trace_completeness = 100%` |
+| `audit:domain` (D1) | 8/8 reglas `CR` · `rubric_compliance_score = 100` · 4 de 5 coherencias medidas |
+| `audit:reliability` (D5) | 2 de 20 ciclos resueltos · `health_unstable = false` |
+
+**Sobre D1, dicho con precision:** se midio sobre la **misma salida real** que genero S-011 y que sigue
+en la base — no se corrio `run-all.sh` otra vez. Es medicion sobre datos reales, no sobre datos nuevos,
+y la diferencia se anota porque `[A1]` no admite que se lean como lo mismo.
+
+**Hallazgo nuevo: 1 — `H-037` (D4, MEDIA), cerrado antes de emitir.** Dos hallazgos citaban evidencia
+inexistente: `H-008 -> E-011` y `H-036 -> E-040`. Verificado en git que **ninguna se borro: nunca
+existieron**, asi que `[A6]` esta intacto. Lo que hubo fue una cita escrita antes que su captura.
+`E-040` se escribe con la salida real y se re-verifica ejecutando; `E-011` se **declara perdida** en una
+`## Revision` de `H-008` en vez de reconstruirse — rehacerla hoy seria inventar procedencia.
+
+**Lo que este sync consiguio y los seis anteriores no: la Confianza tiene desglose.** El 91.0 venia
+arrastrandose desde S-005 sin que ningun artefacto guardara sus insumos. Medidos aqui:
+`coverage 80 · freshness 100 · evidence_validity 95 · autonomy 100` -> **91.0**. Coincide con el valor
+heredado, lo cual **corrobora** pero no era el objetivo; las definiciones se declaran por primera vez y
+se dice, para que se pueda discutir un insumo en vez de un total.
+
+**Recomendacion explicita para FDGE:** las `E-XXX` de PTSA **no tienen guarda**. `RULE-31` y
+`evidencia-citada-esta-en-git.spec.ts` cubren la evidencia de FDGE, no esta. Cruzar `evidencias:` de
+cada `H-XXX` contra los ficheros existentes es trivial y habria cazado `H-037` solo. PTSA audita; no
+escribe codigo.
+
+**Scores:** Health **100** · Risk **0** · Confidence **91.0** · Clase **A**. Los mismos por sexta vez —
+**y por sexta vez el intervalo trajo un hallazgo real que se cerro antes de emitir.**
+
+### Correccion dentro de S-012 — el desglose de Confidence SI estaba guardado
+
+La entrada de arriba afirma que el 91.0 «venia arrastrandose desde S-005 sin que ningun artefacto
+guardara sus insumos». **Es falso, y se corrige aqui en vez de reescribirlo: este registro es
+append-only.**
+
+`PTSA/RESUMEN.md` y `PTSA/Fases/F9_Consolidacion.md` guardan el desglose **desde S-005** (`d125f3e`), la
+emision donde nacio el numero:
+
+```
+Conf = 80x0.40 + 100x0.25 + 95x0.20 + 100x0.15 = 91.0
+```
+
+**Por que no lo vi:** busque `Confidence = ` y el artefacto escribe `Conf = `. Medir la forma en vez de
+la cosa — el mismo patron que esta serie de sesiones lleva persiguiendo, y esta vez me llevo a declarar
+que faltaba algo que estaba.
+
+**Lo que queda en pie, y mejora:** los cuatro insumos se midieron hoy **sin haberlos mirado**, y dan
+exactamente los mismos. `coverage 80` derivado de «4 de 5 dimensiones medidas ejecutando»;
+`evidence_validity 95` de contar 38 evidencias validas contra 2 citadas y ausentes (38/40). **Dos
+derivaciones independientes del mismo 91.0** — que es mas de lo que habia antes, y no habria aparecido
+sin el error de partida.

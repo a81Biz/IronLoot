@@ -12,7 +12,7 @@ aportan las guardas de PT-200, PT-201 y PT-202, no por trabajo de producto.)*
 
 **Reglas duras**: **36** `RULE-NN`. **Guardas de documentación**: **20** suites.
 
-**Hallazgos PTSA**: **36** registrados, **0** activos. **Deuda técnica**: **2** abiertas de **19** registradas.
+**Hallazgos PTSA**: **37** registrados, **0** activos. **Deuda técnica**: **2** abiertas de **19** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
 `npm run indice:estado`. **154 encabezados · 1 realmente abierto** (PT-202).
@@ -23,16 +23,17 @@ aportan las guardas de PT-200, PT-201 y PT-202, no por trabajo de producto.)*
 
 ---
 
-## Estado: CERTIFICADO Clase A — pero el score caducó hoy mismo
+## Estado: CERTIFICADO Clase A · `freshness = FRESH`
 
-**S-011 emitido el 2026-07-30** (delta sync) y **`freshness = STALE` desde PT-200**, que tocó
-`10-Technical-Debt.md`, un fichero de `auditable_patterns`. Medido: **1 de 22** ficheros cambiados está
-en el alcance; **ningún código de producción**.
+**S-012 emitido el 2026-07-30** (delta sync), sobre `ffbdf14`. La frescura que `PT-202` había puesto en
+`STALE` se restaura **volviendo a ejecutar los cinco checkpoints**, no reetiquetando: `audit:schema` OK ·
+`audit:check` OK · `audit:observability` 24 sobre línea base 25 · `audit:domain` 8/8 reglas `CR` con
+`rubric = 100` · `audit:reliability` 2 de 20 ciclos.
 
-**La tabla de abajo es la de S-011, no la de hoy.** `freshness` pesa **0.25** en la Confianza
-(FRESH 100 · STALE 50), así que el 91.0 se calculó con un insumo que ya no se sostiene, y `[A8]` dice
-que el score no es válido hasta reemitir. No se recalcula aquí: **inventar ese número es lo que `[A1]`
-prohíbe**. Se restaura con `resume PTSA`, y es barato — sólo cambió un documento.
+**Y apareció `H-037`, cerrado antes de emitir**: dos hallazgos citaban evidencia que **nunca se
+capturó** —`H-008 → E-011`, `H-036 → E-040`—. Ninguna se borró; se escribió la cita antes que la
+captura. `E-040` se escribe con la salida real y se re-verifica; **`E-011` no se fabrica**, se declara
+perdida. *Corregir una cita rota no siempre es crear lo citado.*
 
 | Métrica | Valor |
 |---|---|
@@ -102,12 +103,17 @@ un documento que se sobrescribe y uno que se acumula.
 | **TD-009** | Un 4xx en firma inválida no garantiza que la pasarela deje de reintentar | Riesgo aceptado por PT-080 |
 | **H-005 / P-012** | Emisión de CFDI | Exige un **PAC certificado ante el SAT** y una decisión fiscal. Fuera de alcance de v1.0 por `F-1 § U-006` |
 | **D5 al 0 %** | 18 ciclos de pago resueltos más | Ver abajo — **no lo cierra ninguna corrida de QA** |
+| **Guarda de `E-XXX`** | Nadie vigila que un `H-XXX` cite evidencia que existe | Recomendado por S-012 a FDGE: `RULE-31` cubre la de FDGE, no la de PTSA |
 
 ---
 
 ## Siguiente
 
-1. **Validar PT-200**, o decir qué corregir.
+1. **Validar PT-202**, o decir qué corregir. *(PT-200 y PT-201 ya están cerrados con tu VoBo; esta
+   línea decía «PT-200» y era un resto — corregido al reemitir.)*
+2. **La guarda que S-012 recomienda**: cruzar el campo `evidencias:` de cada `H-XXX` contra los
+   ficheros de `PTSA/Evidencias/`. Es trivial y habría cazado `H-037` solo. Es trabajo de FDGE —
+   PTSA audita, no escribe código.
 2. **Volumen de ciclos de pago.** Es lo único que sube D5 del 0 % y saca la Confianza del filo de 91.
    `U-008` corrigió el 2026-07-30 la vía que `U-007` había declarado: **no son «unas nueve corridas»** de
    `run-all.sh`, porque el script **trunca `payment_cycles` antes de cada corrida** (`run-all.sh:37-38`) —

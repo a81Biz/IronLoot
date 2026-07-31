@@ -1,5 +1,5 @@
 # ESTADO ACTUAL — PTSA V3
-**Última actualización**: 2026-07-30 | **Sesión**: S-011 (delta sync)
+**Última actualización**: 2026-07-30 | **Sesión**: S-012 (delta sync)
 
 ---
 
@@ -10,38 +10,57 @@ Sistema:        IronLoot Auction Platform v1.0.0
 Fase actual:    CERTIFICADO — Clase A
 Health:         100 / 100      cero hallazgos activos
 Risk:           0 / 100        Risk_bruto = 0
-Confidence:     91.0 / 100     EL DE S-011, con freshness = 100. Ya no es valido: ver abajo
-Freshness:      STALE          1 fichero del alcance auditable cambio tras S-011 (PT-200)
-audit_commit:   edebe36d114c1cbcf80baf536b0b4b283cfe243a
+Confidence:     91.0 / 100     POR PRIMERA VEZ DERIVADO: 80/100/95/100 — ver el desglose abajo
+Freshness:      FRESH          S-012 medido sobre ffbdf14 — cero deriva en auditable_patterns
+audit_commit:   ffbdf148e98cc0b8578dbfab9d1d08573c91a07b
 Cobertura:      PARCIAL        D1/D2/D3/D4 medidas EJECUTANDO · D5 al 0 % — LIMITACIÓN DECLARADA de v1.0
 ```
 
-> **Frescura corregida el 2026-07-30 (PT-202) — y esta vez la corrige una guarda, no una lectura.**
+> **S-012 — delta sync ejecutado el 2026-07-30. Frescura restaurada MIDIENDO, y un hallazgo nuevo.**
 >
-> `S-011` se emitio con `commits_since_audit = 0` y era cierto. Dejo de serlo con **PT-200**, que toco
-> `docs/enterprise-documentation/10-Technical-Debt.md` — un fichero de `auditable_patterns`. Medido:
-> **1 de 22** ficheros cambiados desde `edebe36` esta en el alcance; los otros 21 son `*.spec.ts`,
-> `docs/implementation/**` o `PTSA/**`, todos en `ignore_patterns`. **Ningun codigo de produccion
-> cambio.**
+> `PT-202` dejó el score en `STALE` porque `PT-200` tocó `10-Technical-Debt.md`, del alcance auditable.
+> Este sync lo resuelve como debe resolverse: **volviendo a ejecutar los cinco checkpoints**, no
+> reescribiendo la etiqueta. Deriva medida sobre `ffbdf14`: **cero** ficheros de `auditable_patterns`.
 >
-> **La regla no admite matices y esta bien que no los admita.** `[R29]` dice `STALE` si hay commits
-> sobre patrones auditables, sin preguntar si mejoraron el documento — y el cambio de PT-200 lo mejoro:
-> declaro el hueco `TD-018…023` y el recuento real. Una regla que dejara al autor decidir si su propio
-> cambio cuenta no seria una regla.
+> | Checkpoint | Resultado |
+> |---|---|
+> | `audit:schema` (D2) | OK — las migraciones reproducen `schema.prisma` |
+> | `audit:check` (D2) | OK — 0 paquetes con aviso propio |
+> | `audit:observability` (D3) | OK — `silent_failure_count = 24`, línea base 25 · traza 100 % |
+> | `audit:domain` (D1) | 8/8 reglas `CR` · `rubric = 100` · 4 de 5 coherencias medidas |
+> | `audit:reliability` (D5) | 2 de 20 ciclos · `health_unstable = false` |
 >
-> **Lo que NO se hace aqui, y es lo que mas importa:** no se recalculan Health, Risk ni Confidence.
-> Corregir la frescura es medir commits; reemitir una puntuacion exige un delta sync, y PTSA **solo se
-> activa con su disparador explicito**. Inventar el numero seria justo lo que `[A1]` prohibe.
+> **Hallazgo nuevo: `H-037` (D4), cerrado antes de emitir.** Dos hallazgos citaban evidencia que
+> **nunca se capturó** — `H-008 → E-011` y `H-036 → E-040`—. No fue un borrado: `[A6]` está intacto; se
+> escribió la cita antes que la captura y la captura no llegó. `E-040` se escribe con la salida real y
+> se re-verifica ejecutando; `E-011` **no se fabrica**, se declara — reconstruirla hoy sería inventar
+> procedencia, que es lo que `[A1]` prohíbe y lo que el propio hallazgo denuncia.
 >
-> **La consecuencia, dicha en vez de escondida:** `freshness` pesa **0.25** en la Confianza (FRESH = 100,
-> STALE = 50), asi que el **91.0** de la tabla se calculo con un insumo que ya no se sostiene. Por `[A8]`
-> el score **no es valido** hasta el proximo sync. El «Clase A» es el de S-011, no el de hoy.
+> **Y la Confianza se re-derivó desde cero — con un tropiezo mío que vale la pena dejar escrito.**
 >
-> **Se restaura con `resume PTSA`** — un sync que vuelva a medir. Es barato: solo cambio un documento.
+> Al preparar este sync di por hecho que el 91.0 se arrastraba **sin desglose guardado**, y me puse a
+> medir los cuatro insumos de nuevo. **Era falso**: `RESUMEN.md` y `F9_Consolidacion.md` lo guardan
+> desde **S-005** (`d125f3e`), la emisión donde nació el número. Mi búsqueda pedía `Confidence = ` y el
+> artefacto dice `Conf = `. **Buscar la forma en vez de la cosa**, otra vez, y esta vez para concluir
+> que faltaba algo que estaba.
 >
-> Y ahora hay `audit_commit`, que es lo que convierte la frase en falsable: sin declarar desde que
-> commit se mide, «commits_since_audit = 0» no se puede contradecir. Lo vigila
-> `frescura-declarada-es-real.spec.ts`.
+> Lo que sí tiene valor es lo que salió de haberlo medido igual: **cuatro insumos derivados de forma
+> independiente, y coinciden exactamente con los de S-005.** Eso no es redundancia — es la primera
+> reproducción del número por una vía distinta:
+>
+> ```
+> coverage           = 80    4 de 5 dimensiones medidas EJECUTANDO; D5 al 0 % (2 de 20 ciclos)
+> freshness          = 100   FRESH, cero deriva sobre auditable_patterns desde ffbdf14
+> evidence_validity  =  95   38 evidencias declaran validez; 2 citadas estaban MISSING (38/40)
+> autonomy           = 100   los cinco checkpoints ejecutados aqui, sin pedir nada al humano
+>
+> Confidence = 80x0.40 + 100x0.25 + 95x0.20 + 100x0.15 = 32 + 25 + 19 + 15 = 91.0
+> ```
+>
+> **Los cuatro coinciden con los de S-005, medidos hoy sin mirarlos.** `coverage` se derivó de «4 de 5
+> dimensiones medidas ejecutando»; `evidence_validity` de contar 38 evidencias válidas contra 2 citadas
+> y ausentes (38/40). Que dos caminos independientes den el mismo 91.0 es la mejor noticia de este sync,
+> y no habría aparecido sin el error de partida.
 
 > **S-011 — delta sync ejecutado el 2026-07-30, y la frescura vuelve a ser real.**
 >

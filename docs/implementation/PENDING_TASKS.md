@@ -1,6 +1,6 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (PT-202 — la frescura de PTSA, comprobable)
+**FDGE V3** · **Última actualización**: 2026-07-30 (S-012 — certificado reemitido, `FRESH`)
 
 ---
 
