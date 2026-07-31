@@ -1,6 +1,6 @@
 # IronLoot — Documentación Oficial (docs-v2)
 
-> **✅ REMEDIACIÓN COMPLETA Y FUSIONADA A MASTER (2026-07-23):** 36/36 hallazgos resueltos (código + doc), PTs 036–047, sin abiertos. AUD-016 cerrado como interruptor `CFDI_ENABLED` (la integración real del PAC queda como decisión de negocio a contratar). Ver [Informe-Remediacion.md](Informe-Remediacion.md). Verificación de entonces: API `tsc` 0 + 181 tests · core 134 · CLIENT/ADMIN builds OK. **Hoy (2026-07-29): 1078 unitarias en verde** — API 825 en 107 suites · CORE 134 · CLIENT 103 · ADMIN 13 · BASE 3.
+> **✅ REMEDIACIÓN COMPLETA Y FUSIONADA A MASTER (2026-07-23):** 36/36 hallazgos resueltos (código + doc), PTs 036–047, sin abiertos. AUD-016 cerrado como interruptor `CFDI_ENABLED` (la integración real del PAC queda como decisión de negocio a contratar). Ver [Informe-Remediacion.md](Informe-Remediacion.md). Verificación de entonces: API `tsc` 0 + 181 tests · core 134 · CLIENT/ADMIN builds OK. **Hoy (2026-07-30): 1383 unitarias en verde** — API **1130** en **138** suites · CORE **93** · CLIENT **144** · ADMIN 13 · BASE 3. *(CORE baja de 134 porque PT-191 retiró `Money` y el validador de IPN de PayPal: 41 casos verdes sobre código que no corría en producción.)*
 >
 > **Esta carpeta es la documentación oficial del producto.** Negocio, producto, arquitectura,
 > ingeniería, QA, DevOps y UX.

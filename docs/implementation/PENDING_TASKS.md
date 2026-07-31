@@ -1,10 +1,23 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (PT-198 — los seis inventarios vigilados)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-200 — los documentos de estado, medidos)
 
 ---
 
-## Esperando validación humana: nada
+## Esperando validación humana: PT-200
+
+**PT-200 — `VALIDATION_PENDING`.** Es un BUG, y **el agente no cierra bugs** (FDGE STATE 6, RULE-37). El
+VoBo permanente que diste cubría la cadena anterior; esta petición era *«actualiza todos los documentos»*,
+que es una instrucción de trabajo, no un VoBo sobre un defecto que aún no existía cuando la diste.
+
+**Qué hay que validar:** trece afirmaciones corregidas —nueve en `HANDOFF.md`, dos en
+`Master-Test-Plan.md`, una en `docs-v2/README.md`, una en `10-Technical-Debt.md`— y dos guardas nuevas
+(`C4` de RULE-38 y `handoff-es-estado-actual.spec.ts`). Detalle en `HISTORY.log § PT-200` y en
+`evidence/PT-200/`.
+
+---
+
+## Cerrados antes de esto
 
 **PT-181 … PT-185 cerrados con VoBo humano** el 2026-07-29 (*«cierra los PT con mi VoBo»*), con lo que **los
 veintiocho PT de la jornada quedan cerrados**: PT-158 … PT-185.
