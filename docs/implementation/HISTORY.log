@@ -4253,6 +4253,38 @@ diecinueve guardas en verde. **Una guarda demuestra que no ha vuelto lo que ya p
 que encontrar.**
 
 Con esto, **cero trabajo FDGE pendiente**: 153 encabezados, 0 realmente abiertos.
+## PT-202 — BUG: «FRESH» era una afirmacion sobre git que nadie comprobaba
+Date: 2026-07-30
+Status: VALIDATION_PENDING
+Branch: fix/PT-202-frescura-declarada-verificable
+Objective: que la frescura declarada por PTSA sea comprobable, y comprobarla.
+Root cause: `ESTADO_ACTUAL.md` declaraba `FRESH — commits_since_audit = 0`. La especificacion define ese
+estado como «cero commits sobre patrones auditables»: es una afirmacion sobre git, y por tanto medible.
+No se medía, y ha fallado dos veces en dos meses — S-010 con 28 commits (lo vio PT-197 leyendo) y S-011
+en cuanto PT-200 toco 10-Technical-Debt.md, que esta en `auditable_patterns` (lo vi yo, leyendo).
+Y no era falsable: el documento no decia DESDE QUE COMMIT se medía, asi que no habia contra que contar.
+Solution:
+  - `ESTADO_ACTUAL.md` declara `audit_commit:` con el SHA de la emision. Eso convierte la frase en una
+    afirmacion refutable, que es la condicion para poder vigilarla.
+  - `frescura-declarada-es-real.spec.ts` (7 casos): FRESH exige cero deriva sobre `auditable_patterns`
+    desde ese commit; STALE no exige nada. La asimetria es la de RULE-38 con «sin verificar» — se
+    permite declarar que no se sabe, no afirmar que se sabe sin mirar.
+  - Frescura corregida a STALE. Medido: 1 de 22 ficheros cambiados esta en el alcance; ningun codigo de
+    produccion. Health/Risk/Confidence NO se recalculan (exige delta sync, y PTSA no se auto-activa);
+    la consecuencia se anota: freshness pesa 0.25 y el 91.0 ya no se sostiene.
+Modified files: PTSA/ESTADO_ACTUAL.md · PTSA/AUDIT_LOG.md ·
+  src/api/test/unit/documentacion/frescura-declarada-es-real.spec.ts · docs/implementation/HANDOFF.md ·
+  docs/implementation/PENDING_TASKS.md · docs/implementation/evidence/PT-202/
+Evidence: docs/implementation/evidence/PT-202/
+Delta (real vs planned): dos. (a) Mi primera `casa()` traducia el glob con reemplazos encadenados y
+  centinelas, donde el ORDEN es critico: con `*` antes que `**` queda `[^/]*[^/]*`, que no cruza
+  directorios — la guarda habria filtrado de mas y no habria acusado jamas, en verde. Reescrita por
+  segmentos, sin orden que respetar, y `AC-02` lo cubre en los dos sentidos. (b) Al añadir la suite,
+  `handoff-es-estado-actual.spec.ts` seccion C3 se puso roja: HANDOFF declaraba 19 guardas y ya eran 20.
+  La guarda de ayer cobrada hoy, contra su autor.
+PTSA reference: anotacion de frescura en PTSA/AUDIT_LOG.md
+
+
 
 
 
@@ -4271,7 +4303,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**153** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**154** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4428,3 +4460,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-199 | 4131 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4160 |
 | PT-200 | 4167 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4233 |
 | PT-201 | 4204 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4233 |
+| PT-202 | 4256 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |

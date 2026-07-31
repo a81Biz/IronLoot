@@ -3,18 +3,19 @@
 **FDGE V3** · **2026-07-30** · Se **sobrescribe**: es el estado de ahora, no la historia. La historia
 está en [`HISTORY.log`](HISTORY.log), que es append-only y la tiene íntegra con su fecha.
 
-**Rama**: `master`, árbol limpio, al día con `origin` y sin una sola rama suelta.
+**Rama**: `master`, árbol limpio, al día con `origin` y sin una sola rama suelta. **PT-202 espera tu
+validación** — es un BUG, y el agente no cierra bugs.
 
-**Pruebas**: **1385** unitarias en verde — API **1132** (138 suites) · CLIENT **144** (12) · CORE **93** (6) ·
-ADMIN **13** (2) · BASE **3** (1). *(Medido el 2026-07-30. Sube de 1366 a 1385 por las 19 pruebas que
-aportan las guardas de PT-200 y PT-201, no por trabajo de producto.)*
+**Pruebas**: **1392** unitarias en verde — API **1139** (139 suites) · CLIENT **144** (12) · CORE **93** (6) ·
+ADMIN **13** (2) · BASE **3** (1). *(Medido el 2026-07-30. Sube de 1366 a 1392 por las 26 pruebas que
+aportan las guardas de PT-200, PT-201 y PT-202, no por trabajo de producto.)*
 
-**Reglas duras**: **36** `RULE-NN`. **Guardas de documentación**: **19** suites.
+**Reglas duras**: **36** `RULE-NN`. **Guardas de documentación**: **20** suites.
 
 **Hallazgos PTSA**: **36** registrados, **0** activos. **Deuda técnica**: **2** abiertas de **19** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **153 encabezados · 0 realmente abiertos.**
+`npm run indice:estado`. **154 encabezados · 1 realmente abierto** (PT-202).
 
 > **Estas siete cifras están vigiladas** por `handoff-es-estado-actual.spec.ts`, salvo el recuento de
 > pruebas: verificarlo exigiría ejecutar las cinco suites dentro de una prueba. Se dice porque *lo que no
@@ -22,9 +23,16 @@ aportan las guardas de PT-200 y PT-201, no por trabajo de producto.)*
 
 ---
 
-## Estado: CERTIFICADO Clase A · cero hallazgos PTSA activos
+## Estado: CERTIFICADO Clase A — pero el score caducó hoy mismo
 
-**S-011 emitido el 2026-07-30** (delta sync). `freshness = FRESH`, `commits_since_audit = 0`.
+**S-011 emitido el 2026-07-30** (delta sync) y **`freshness = STALE` desde PT-200**, que tocó
+`10-Technical-Debt.md`, un fichero de `auditable_patterns`. Medido: **1 de 22** ficheros cambiados está
+en el alcance; **ningún código de producción**.
+
+**La tabla de abajo es la de S-011, no la de hoy.** `freshness` pesa **0.25** en la Confianza
+(FRESH 100 · STALE 50), así que el 91.0 se calculó con un insumo que ya no se sostiene, y `[A8]` dice
+que el score no es válido hasta reemitir. No se recalcula aquí: **inventar ese número es lo que `[A1]`
+prohíbe**. Se restaura con `resume PTSA`, y es barato — sólo cambió un documento.
 
 | Métrica | Valor |
 |---|---|
@@ -53,12 +61,17 @@ cierra lo que se encuentra, no que no haya nada que encontrar.**
 
 ---
 
-## Esperando tu validación: nada
+## Esperando tu validación: PT-202
 
 **PT-200 y PT-201 cerrados con tu VoBo** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37: un
-BUG `DONE` sin bloque de VoBo que lo nombre no está cerrado). **Cero trabajo FDGE pendiente.**
+BUG `DONE` sin bloque de VoBo que lo nombre no está cerrado).
 
-Lo que corrigieron:
+**PT-202 salió de la revisión que pediste después.** `FRESH` es una afirmación sobre git —«cero commits
+sobre patrones auditables»— y **nadie la comprobaba**: ha fallado dos veces en dos meses, y las dos las
+encontró una lectura. Ahora `ESTADO_ACTUAL.md` declara `audit_commit`, que es lo que hace la frase
+refutable, y `frescura-declarada-es-real.spec.ts` la vigila.
+
+Lo que corrigieron PT-200 y PT-201:
 
 | Dónde | Decía | Es |
 |---|---|---|

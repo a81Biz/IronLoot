@@ -1168,3 +1168,23 @@ sintéticos medirían que nuestro doble notifica siempre. Sería convertir `SIN_
 
 **Resultado**: `U-008` enmienda F-1. La decisión de U-007 se mantiene; se corrige la vía. **Ningún
 número se movió** — Health 100, Confidence 91.0, cobertura de D5 al 0 %.
+
+## Anotacion de frescura — 2026-07-30 (PT-202)
+
+**No es un sync.** Es la correccion de una afirmacion que dejo de ser cierta, y la guarda que impide que
+vuelva a pasar sin que nadie lo note.
+
+`S-011` se emitio con `commits_since_audit = 0` en `edebe36`. **PT-200** toco
+`docs/enterprise-documentation/10-Technical-Debt.md`, que esta en `auditable_patterns`, asi que la
+frescura pasa a **`STALE`**. Medido: **1 de 22** ficheros cambiados esta en el alcance; los otros 21 caen
+en `ignore_patterns`. **Ningun codigo de produccion cambio.**
+
+**Health, Risk y Confidence NO se recalculan** — eso exige un delta sync, y PTSA solo se activa con su
+disparador. Se anota la consecuencia: `freshness` pesa 0.25 en la Confianza, luego el 91.0 de S-011 se
+calculo con un insumo caducado y por `[A8]` el score no es valido hasta reemitir.
+
+**Lo nuevo, y es lo que cierra la clase:** `ESTADO_ACTUAL.md` declara ahora `audit_commit:`. Sin ese
+ancla la frase no era falsable. La vigila `frescura-declarada-es-real.spec.ts`, con el sabotaje
+verificado: puesta a `FRESH`, acusa por nombre el fichero que derivo.
+
+**Se restaura con `resume PTSA`.** Es barato: solo cambio un documento del alcance.

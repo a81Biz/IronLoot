@@ -10,10 +10,38 @@ Sistema:        IronLoot Auction Platform v1.0.0
 Fase actual:    CERTIFICADO — Clase A
 Health:         100 / 100      cero hallazgos activos
 Risk:           0 / 100        Risk_bruto = 0
-Confidence:     91.0 / 100     A UN PUNTO del umbral de A — la baja D5 al 0 %
-Freshness:      FRESH          S-011 emitido el 2026-07-30, commits_since_audit = 0
+Confidence:     91.0 / 100     EL DE S-011, con freshness = 100. Ya no es valido: ver abajo
+Freshness:      STALE          1 fichero del alcance auditable cambio tras S-011 (PT-200)
+audit_commit:   edebe36d114c1cbcf80baf536b0b4b283cfe243a
 Cobertura:      PARCIAL        D1/D2/D3/D4 medidas EJECUTANDO · D5 al 0 % — LIMITACIÓN DECLARADA de v1.0
 ```
+
+> **Frescura corregida el 2026-07-30 (PT-202) — y esta vez la corrige una guarda, no una lectura.**
+>
+> `S-011` se emitio con `commits_since_audit = 0` y era cierto. Dejo de serlo con **PT-200**, que toco
+> `docs/enterprise-documentation/10-Technical-Debt.md` — un fichero de `auditable_patterns`. Medido:
+> **1 de 22** ficheros cambiados desde `edebe36` esta en el alcance; los otros 21 son `*.spec.ts`,
+> `docs/implementation/**` o `PTSA/**`, todos en `ignore_patterns`. **Ningun codigo de produccion
+> cambio.**
+>
+> **La regla no admite matices y esta bien que no los admita.** `[R29]` dice `STALE` si hay commits
+> sobre patrones auditables, sin preguntar si mejoraron el documento — y el cambio de PT-200 lo mejoro:
+> declaro el hueco `TD-018…023` y el recuento real. Una regla que dejara al autor decidir si su propio
+> cambio cuenta no seria una regla.
+>
+> **Lo que NO se hace aqui, y es lo que mas importa:** no se recalculan Health, Risk ni Confidence.
+> Corregir la frescura es medir commits; reemitir una puntuacion exige un delta sync, y PTSA **solo se
+> activa con su disparador explicito**. Inventar el numero seria justo lo que `[A1]` prohibe.
+>
+> **La consecuencia, dicha en vez de escondida:** `freshness` pesa **0.25** en la Confianza (FRESH = 100,
+> STALE = 50), asi que el **91.0** de la tabla se calculo con un insumo que ya no se sostiene. Por `[A8]`
+> el score **no es valido** hasta el proximo sync. El «Clase A» es el de S-011, no el de hoy.
+>
+> **Se restaura con `resume PTSA`** — un sync que vuelva a medir. Es barato: solo cambio un documento.
+>
+> Y ahora hay `audit_commit`, que es lo que convierte la frase en falsable: sin declarar desde que
+> commit se mide, «commits_since_audit = 0» no se puede contradecir. Lo vigila
+> `frescura-declarada-es-real.spec.ts`.
 
 > **S-011 — delta sync ejecutado el 2026-07-30, y la frescura vuelve a ser real.**
 >
