@@ -283,4 +283,88 @@ describe('La evidencia citada esta en git — RULE-31 (PT-152)', () => {
       expect(readdirSync(EVIDENCIA).length).toBeGreaterThan(10);
     });
   });
+
+  /**
+   * **PT-203 (C5) — la otra mitad de la regla, que llevaba tres meses fuera.**
+   *
+   * `RULE-31` decía *«la evidencia que un documento cita está en git»* y su guarda medía **sólo** las
+   * citas a `docs/implementation/evidence/` — la evidencia de FDGE. Las `E-XXX` de PTSA, que son **lo
+   * que sostiene el veredicto de cada hallazgo**, no las miraba nadie.
+   *
+   * `S-012` lo encontró **a mano**, midiendo el campo `evidencias:` de los 37 hallazgos:
+   *
+   * ```
+   * H-008    cita [E-011, E-013]   FALTA: E-011
+   * H-036    cita [E-040]          FALTA: E-040
+   * ```
+   *
+   * Y ninguna se había borrado: **nunca existieron**. Se escribió la cita antes que la captura, y la
+   * captura no llegó. `H-008` incluso **describe el contenido** de `E-011` en su cuerpo, con lo que se
+   * lee como una medición guardada — la familia de `H-016`, dentro del registro de hallazgos. → `H-037`
+   *
+   * **Por qué la regla no llegaba aquí, y es lo que este caso corrige:** `RULE-31` nació de un problema
+   * de `.gitignore` —volcados sin seguir por git— y se escribió mirando esa carpeta. La pregunta que
+   * responde es más general que el sitio donde se aplicó. Ampliarla no es añadir alcance por si acaso:
+   * es que **la mitad no vigilada resultó ser la que falló**.
+   */
+  describe('C5 (PT-203): la evidencia que un hallazgo PTSA cita existe', () => {
+    const HALLAZGOS = join(RAIZ, 'PTSA', 'Hallazgos');
+    const EVIDENCIAS = join(RAIZ, 'PTSA', 'Evidencias');
+
+    /** Las `E-XXX` que un hallazgo declara en su frontmatter. */
+    const citadasPor = (texto: string): string[] => {
+      const m = /^evidencias:\s*\[([^\]]*)\]/m.exec(texto);
+      if (!m) return [];
+
+      return m[1]
+        .split(',')
+        .map((c) => c.trim())
+        .filter((c) => /^E-\d{3}$/.test(c));
+    };
+
+    const existentes = new Set(
+      readdirSync(EVIDENCIAS)
+        .filter((f) => /^E-\d{3}\.md$/.test(f))
+        .map((f) => f.replace(/\.md$/, '')),
+    );
+
+    it('C5: ningun hallazgo cita una evidencia que no existe', () => {
+      const rotas: string[] = [];
+
+      for (const f of readdirSync(HALLAZGOS).filter((x) => /^H-\d{3}\.md$/.test(x))) {
+        const faltan = citadasPor(readFileSync(join(HALLAZGOS, f), 'utf-8')).filter(
+          (e) => !existentes.has(e),
+        );
+        if (faltan.length) rotas.push(`${f.replace(/\.md$/, '')} → ${faltan.join(', ')}`);
+      }
+
+      expect(rotas).toEqual([]);
+    });
+
+    it('AC-08 (control): el lector extrae las citas del frontmatter, y solo de ahi', () => {
+      expect(citadasPor('---\nid: H-001\nevidencias: [E-001, E-002]\n---\ncuerpo')).toEqual([
+        'E-001',
+        'E-002',
+      ]);
+      // Una mencion en la PROSA no es una cita del registro: si contara, la nota que explica un
+      // hallazgo lo acusaria por nombrar la evidencia que discute — el octavo tropiezo de la jornada.
+      expect(citadasPor('El hallazgo se apoya en E-999, ver arriba.')).toEqual([]);
+      expect(citadasPor('evidencias: []')).toEqual([]);
+    });
+
+    it('AC-09 (control): C5 sabe acusar — con una cita inventada, la nombra', () => {
+      const inventada = citadasPor('evidencias: [E-001, E-997]').filter((e) => !existentes.has(e));
+
+      expect(inventada).toEqual(['E-997']);
+    });
+
+    it('AC-10 (control): se leyeron los dos lados — sin esto C5 pasaria en vacio', () => {
+      const conCitas = readdirSync(HALLAZGOS)
+        .filter((x) => /^H-\d{3}\.md$/.test(x))
+        .filter((f) => citadasPor(readFileSync(join(HALLAZGOS, f), 'utf-8')).length > 0);
+
+      expect(existentes.size).toBeGreaterThan(30);
+      expect(conCitas.length).toBeGreaterThan(20);
+    });
+  });
 });

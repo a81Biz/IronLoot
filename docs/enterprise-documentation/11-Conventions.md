@@ -617,7 +617,27 @@ does the watching.
 ### RULE-31: Evidence a document cites must be tracked by git
 **What:** if a `.md` under `docs/implementation/`, `PTSA/` or `changes/` cites a file in
 `evidence/`, that file is in the repository. Working artefacts (DB dumps) are excluded, **declared**
-in `.gitignore`.
+in `.gitignore`. **And since PT-203 the rule covers its other half: the `E-XXX` a PTSA finding
+declares in its `evidencias:` frontmatter must exist in `PTSA/Evidencias/`.**
+
+**Widened by PT-203 — the half that was never watched is the half that failed.** This rule was born
+from a `.gitignore` problem and was written looking at `docs/implementation/evidence/`. The question
+it asks is more general than the folder it was applied to, and PTSA evidence — **the thing that
+sustains every finding's verdict** — fell outside it for three months. `S-012` measured the
+`evidencias:` field of all 37 findings by hand and found two citations to files that **never
+existed**: `H-008 → E-011` and `H-036 → E-040`. Nothing had been deleted — `[A6]` was intact; the
+citation had simply been written before the capture, and the capture never came. `H-008` goes further
+and **describes E-011's contents** in its body, so it reads as a stored measurement. That is `H-016`
+inside the findings register itself. → `H-037`
+**The fix is not always to create what is cited.** `E-040` was written, because the capture existed
+(the D3 checkpoint had run) and could be re-verified by running it again. `E-011` was **not**
+recreated: re-running `npm audit` today would produce a July capture for a June finding, which is
+inventing provenance — the very thing the finding denounces. It is **declared lost** instead, and the
+`evidencias:` field corrected to what does exist.
+**And a citation moves in two places.** `S-012` declared the loss **in prose and left the frontmatter
+citation pointing at nothing**; the new guard caught that on its first run. It is `RULE-38`'s lesson
+mirrored — there the defect was changing the symbol and leaving the sentence, here it was writing the
+sentence and leaving the symbol.
 **Why:** `.gitignore` tracked only `.md` files under `evidence/`, on the reasoning *"the .md is the
 reasoning, the rest are dumps"*. That sounds right and is backwards: **the evidence IS the dump.**
 FDGE says it plainly — *code is not evidence, execution is evidence* — so suite output, before/after
@@ -983,6 +1003,7 @@ When adding a new required environment variable:
 | 2026-07-29 | RULE-33 — a PTSA derived file never contradicts the `H-XXX` (from F-167-A/B) | PT-168 |
 | 2026-07-29 | RULE-34 — the work trail has no gaps, both directions (from F-167-C/E/F) | PT-169 |
 | 2026-07-29 | RULE-31 widened — a citation to a folder is checked too (from F-167-D) | PT-170 |
+| 2026-07-30 | RULE-31 widened again — a PTSA finding’s `evidencias:` must exist (from H-037) | PT-203 |
 | 2026-07-29 | RULE-35 — an `ND-XXX` asserting an absence is checked (from F-167-G) | PT-171 |
 | 2026-07-29 | RULE-17 corollary — a business-rule default must be the **protective** value (from H-031) | PT-182 |
 | 2026-07-29 | RULE-36 — a shared service never decides what its callers do with a failure (from H-032/H-033) | PT-183 |

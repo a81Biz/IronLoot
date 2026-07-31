@@ -4283,6 +4283,51 @@ Delta (real vs planned): dos. (a) Mi primera `casa()` traducia el glob con reemp
   `handoff-es-estado-actual.spec.ts` seccion C3 se puso roja: HANDOFF declaraba 19 guardas y ya eran 20.
   La guarda de ayer cobrada hoy, contra su autor.
 PTSA reference: anotacion de frescura en PTSA/AUDIT_LOG.md
+## CIERRE CON VoBo HUMANO — PT-202
+Date: 2026-07-30
+Status: registro
+Objective: registrar el VoBo humano sobre PT-202, dado explicitamente (*«marca PT-202 con mi VoBo»*).
+
+La frescura que PTSA declara es ahora una afirmacion comprobable: `ESTADO_ACTUAL.md` ancla su
+`audit_commit` y `frescura-declarada-es-real.spec.ts` la mide contra `auditable_patterns`. Verificado
+tras la emision de S-012: 7/7, con `FRESH` sostenido contra git.
+
+**Y el humano señalo, con razon, un defecto de proceso mio en el mismo acto.** S-012 dejo escrito que la
+guarda de las evidencias `E-XXX` era «recomendacion para FDGE» y no la ejecute, invocando la separacion
+de marcos. **Esa separacion me impide escribir codigo DENTRO de la auditoria; no me autoriza a parar.**
+Lo correcto era cerrar el sync y abrir el PT acto seguido — que es lo que hace PT-203.
+## PT-203 — FEATURE: RULE-31 cubre tambien la evidencia de PTSA
+Date: 2026-07-30
+Status: DONE
+Branch: feature/PT-203-evidencia-ptsa-citada-existe
+Objective: que la evidencia que cita un hallazgo PTSA exista, y que lo vigile la regla que ya existia
+para la evidencia de FDGE.
+Root cause: no es un defecto de codigo — es alcance que faltaba. `RULE-31` nacio de un problema de
+`.gitignore` y se escribio mirando `docs/implementation/evidence/`. La pregunta que hace es mas general
+que el sitio donde se aplico, y las `E-XXX` de PTSA —lo que sostiene el veredicto de cada hallazgo—
+quedaron fuera tres meses. S-012 encontro DOS citas a evidencia que nunca existio, midiendo a mano.
+Solution:
+  - `evidencia-citada-esta-en-git.spec.ts` § C5 + AC-08..AC-10: el campo `evidencias:` de cada `H-XXX`
+    tiene que existir en `PTSA/Evidencias/`. Se lee solo el frontmatter — una mencion en la prosa no es
+    una cita, y contarla acusaria a la nota que explica un hallazgo.
+  - `11-Conventions.md`: RULE-31 ampliada con el motivo, y su fila en el Delta Log.
+  - `H-008`: frontmatter corregido a `[E-013]`. S-012 habia declarado la perdida de E-011 EN LA PROSA y
+    dejado la cita apuntando a la nada; la guarda lo cazo en su primera ejecucion.
+Modified files: src/api/test/unit/documentacion/evidencia-citada-esta-en-git.spec.ts ·
+  docs/enterprise-documentation/11-Conventions.md · PTSA/Hallazgos/H-008.md ·
+  docs/implementation/HANDOFF.md · docs/implementation/PENDING_TASKS.md ·
+  docs/implementation/evidence/PT-203/
+Evidence: docs/implementation/evidence/PT-203/
+Delta (real vs planned): la guarda cazo una correccion mia a medias. S-012 declaro la perdida de E-011
+  en prosa y dejo el frontmatter mintiendo — la leccion de RULE-38 girada: alli el defecto era cambiar
+  el simbolo y dejar la frase; aqui fue escribir la frase y dejar el simbolo. Y este PT existe porque
+  S-012 dejo la guarda como «recomendacion para FDGE» sin ejecutarla: la separacion de marcos impide
+  escribir codigo DENTRO del sync, no autoriza a parar.
+PTSA reference: H-037
+
+
+
+
 
 
 
@@ -4303,7 +4348,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**154** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
+**155** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4460,4 +4505,5 @@ falsificaría el registro. Esto añade, no toca.
 | PT-199 | 4131 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4160 |
 | PT-200 | 4167 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4233 |
 | PT-201 | 4204 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4233 |
-| PT-202 | 4256 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |
+| PT-202 | 4256 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4286 |
+| PT-203 | 4299 | `DONE` | **DONE** | — |
