@@ -1,10 +1,15 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (PT-201 cerrado con VoBo — cero pendientes)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-202 — la frescura de PTSA, comprobable)
 
 ---
 
-## Esperando validación humana: nada
+## Esperando validación humana: PT-202
+
+**PT-202 — `VALIDATION_PENDING`.** La frescura que PTSA declaraba (`FRESH`) es una afirmación sobre
+git y **nadie la comprobaba**. Dejó de ser cierta con PT-200, que tocó un fichero de
+`auditable_patterns`. Corregida a `STALE` **sin recalcular la puntuación** —eso exige un delta sync— y
+vigilada desde hoy. **El certificado se restaura con `resume PTSA`.** Detalle en `evidence/PT-202/`.
 
 **PT-200 y PT-201 cerrados con VoBo humano** el 2026-07-30 (*«te doy el VoBo, cierra todos los PT-200 y
 PT-201»*), con constancia en `HISTORY.log` (RULE-37). El índice de estado dice **0 realmente abiertos**.
