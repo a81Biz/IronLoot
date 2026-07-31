@@ -1,7 +1,19 @@
 # 10 — Technical Debt
 
 **Source:** Code inspection, git history references, `.env.example`, schema comments  
-**Last updated:** 2026-06-23
+**Last updated:** 2026-07-30
+
+> **Recuento y hueco de numeración (declarado el 2026-07-30, PT-200).** El registro tiene **19** entradas:
+> `TD-001`…`TD-017`, `TD-024` y `TD-025`. **`TD-018`…`TD-023` no han existido nunca** — al abrir `TD-024`
+> se tomó el siguiente número libre sin comprobar cuántas entradas había, así que el identificador más
+> alto (25) no es el recuento (19).
+>
+> Se **declara en vez de renumerar**: `TD-024` está citada por ADR-058, por `HISTORY.log` y por dos
+> guardas, y renumerar rompería las tres. Es el mismo criterio que `11-Conventions.md` aplica a
+> `RULE-18` y `RULE-21`, huecos legítimos por la misma razón.
+>
+> **Abiertas: 2** — `TD-002` (credenciales de Stripe y HeyBanco) y `TD-009` (riesgo aceptado por PT-080).
+> Las dos dependen de un tercero. Lo vigila `handoff-es-estado-actual.spec.ts § C6`.
 
 ## CONFIRMED STUBS / INCOMPLETE IMPLEMENTATIONS
 

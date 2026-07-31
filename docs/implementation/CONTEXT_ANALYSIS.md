@@ -1585,3 +1585,28 @@ perder**. Es lo que PT-087 construyó el ciclo de pago para impedir.
 - **Tests primero (RED)**: la prueba concurrente tiene que fallar antes de tocar el servicio.
 - `Payment.reference` sigue siendo la clave de idempotencia del asiento; PT-142 no la toca.
 - **PT-143 no puede usar `--runInBand` como solución**, sólo como medida temporal si se declara.
+
+## PT-200 — contexto
+
+**Componentes**: `docs/implementation/HANDOFF.md` · `docs-v2/README.md` ·
+`docs-v2/5-qa/Master-Test-Plan.md` · `docs/enterprise-documentation/10-Technical-Debt.md` ·
+`src/api/test/unit/documentacion/afirmaciones-de-estado-verificadas.spec.ts`.
+
+**Consultado**: `CLAUDE.md` § *Dónde vive un pendiente* (HANDOFF es derivado de `PENDING_TASKS.md`, y
+**estado actual, no historia**) · `11-Conventions.md` RULE-31/33/34/35/**38** · el Registro Maestro de ADR
+(49 decisiones; ninguna cubre esto) · `HISTORY.log` PT-188/189/191/197/198.
+
+**Dependencias**: la guarda nueva lee `docs-v2/transversal/Registro-de-Hallazgos.md`, que es la fuente que
+manda para los veredictos (RULE-38), y `11-Conventions.md`, `PTSA/Hallazgos/`, `HISTORY.log` y
+`10-Technical-Debt.md` para las cifras que `HANDOFF` declara.
+
+**Riesgo principal — y es el que ya mordió cinco veces hoy**: una guarda sobre prosa produce falsos
+positivos, y *un falso positivo enseña a desconfiar de la guarda*, que es la forma silenciosa de perderla.
+Mitigación declarada en el plan: la guarda lee **sólo la cabecera de estado** de `HANDOFF` (las líneas que
+declaran una cifra con formato fijo), no el cuerpo; y la de veredictos exige **un solo `AUD` en la línea**,
+porque una línea con varios atribuye la palabra al que no es — que es el falso positivo que produjo mi
+primera medición, cuatro de cinco.
+
+**Restricción**: `HISTORY.log` es append-only. Lo que se retira de `HANDOFF` **no se pierde**: ya está en
+`HISTORY.log`, que es el registro que manda para el trabajo terminado. Esto es lo que hace que recortar
+`HANDOFF` sea seguro y no una pérdida de información.

@@ -4164,6 +4164,45 @@ Objective: registrar el VoBo humano sobre PT-199, dentro de la autorizacion expl
   cadena (*«tienes todos mis VoBo y ACK … no pares hasta terminar»*).
 
 `H-036` queda **CERRADA**, verificada re-ejecutando el checkpoint que la encontro.
+## PT-200 — BUG: el documento del estado actual llevaba nueve afirmaciones falsas, y la guarda de RULE-38 miraba la forma
+Date: 2026-07-30
+Status: VALIDATION_PENDING
+Branch: fix/PT-200-documentos-al-dia
+Objective: que los documentos que declaran el estado digan lo medido hoy, y que las dos clases que lo
+permitieron queden vigiladas.
+Root cause: dos formas del mismo defecto. (1) `HANDOFF.md` declara sobrescribirse —«el estado de ahora,
+no la historia», y `CLAUDE.md` lo repite como regla— y tenia 428 lineas con siete secciones «Antes de
+eso»: al acumular, arrastro nueve afirmaciones que se volvieron falsas sin que nadie las tocara.
+(2) La guarda de RULE-38 saltaba cualquier linea que CONTUVIERA una palabra de veredicto, sin comprobar
+que fuera la del registro. Con «sin verificar» en cero desde PT-192, eso dejo pasar
+`Master-Test-Plan.md:79`, que negaba las 16 pruebas que el registro cita al cerrar AUD-013.
+Solution:
+  - `afirmaciones-de-estado-verificadas.spec.ts` § C4 + AC-06..AC-10: el veredicto citado tiene que ser
+    el del registro. Acotado a lineas con UN solo AUD — las multi-AUD dieron 4 falsos positivos de 5.
+  - `handoff-es-estado-actual.spec.ts` (11 casos): HANDOFF no acumula historia y sus cifras coinciden con
+    su fuente. Declara que NO comprueba el recuento de pruebas y por que.
+  - 13 afirmaciones corregidas en HANDOFF.md, docs-v2/README.md, Master-Test-Plan.md y 10-Technical-Debt.
+  - `tsconfig.json` de la raiz, restituido: sin el, `npm run indice:estado` —el comando que CLAUDE.md
+    documenta para leer el estado de los PT— no arrancaba (TS5109). Se borro en 004f5dc y `.gitignore`
+    lo des-ignora explicitamente, asi que su ausencia era el descuido, no la regla.
+  - `10-Technical-Debt.md`: el hueco TD-018..023 declarado en vez de renumerado (mismo criterio que
+    RULE-18/21), y el recuento real: 19 entradas, 2 abiertas.
+Modified files: docs/implementation/HANDOFF.md · docs/implementation/DISCOVERY.md ·
+  docs/implementation/CONTEXT_ANALYSIS.md · docs/implementation/PLAN_ACTUAL.md ·
+  docs/enterprise-documentation/10-Technical-Debt.md · docs-v2/README.md ·
+  docs-v2/5-qa/Master-Test-Plan.md · src/api/test/unit/documentacion/(2 ficheros) · tsconfig.json ·
+  changes/PT-200-documentos-al-dia/
+Evidence: docs/implementation/evidence/PT-200/
+Delta (real vs planned): tres cosas que el plan no preveia. (a) Mi propia guarda conto MENCIONES de
+  RULE-NN (38) en vez de definiciones (36) — septima vez en la jornada que mido la forma; RULE-18 y
+  RULE-21 son huecos declarados. (b) `npm run indice:estado` no se ejecutaba en ninguna parte: TS5109 en
+  el host, EROFS en el contenedor. El dato era correcto —lo verifica `indice-de-estado-al-dia.spec.ts`
+  compilando el generador en proceso—, pero el comando documentado estaba roto. (c) Escribi «8 y 8»
+  pruebas de comisiones/reembolsos sin medir el reparto; son 11 y 5. Lo cace antes de comitear, pero es
+  el defecto exacto que este PT corrige, cometido dentro de su propio arreglo.
+PTSA reference: —
+
+
 
 ---
 
@@ -4176,7 +4215,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**151** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**152** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4331,3 +4370,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-197 | 4016 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4056 |
 | PT-198 | 4076 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4115 |
 | PT-199 | 4131 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4160 |
+| PT-200 | 4167 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |

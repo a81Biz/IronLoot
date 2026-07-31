@@ -5528,3 +5528,77 @@ recursos como un defecto del producto.
 El `finally { browser.close() }` de cada fase **no basta**: si el proceso muere por una excepción no
 capturada, no llega a ejecutarse. Corregido limpiando **antes de empezar**, que es el único momento en
 que se puede garantizar.
+
+## PT-200 — BUG: el documento que declara el estado actual llevaba nueve afirmaciones falsas, y la guarda de RULE-38 miraba la forma
+
+**Fecha**: 2026-07-30 · **Complejidad**: STANDARD · **Origen**: la instrucción de actualizar toda la
+documentación. No se buscaba un defecto; salió al medir antes de escribir.
+
+### What
+
+Dos cosas distintas que resultaron ser la misma:
+
+**(a) `HANDOFF.md` dejó de ser el estado actual.** Su propia línea 3 dice *«Se **sobrescribe**: es el
+estado de ahora, no la historia»*, y `CLAUDE.md` lo repite como regla del framework
+(*«HANDOFF.md represents current state only»*). Medido: **428 líneas, 13 secciones, siete de ellas
+tituladas «Antes de eso»**. Al acumular, arrastró **nueve afirmaciones que hoy son falsas** y que se leen
+como vigentes porque el documento entero se presenta como vigente.
+
+**(b) La guarda de RULE-38 comprueba que aparezca una palabra de veredicto, no que sea la del registro.**
+`afirmaciones-de-estado-verificadas.spec.ts:89` salta cualquier línea que contenga
+`corregido|abierto|sin verificar|limitación declarada`. Eso era suficiente mientras los cuatro veredictos
+estuvieran poblados. **Desde PT-192 «sin verificar» está en cero**, así que una línea que diga
+*«sin verificar (AUD-013)»* declara un veredicto **que ya no existe en la tabla** — y la guarda la aprueba.
+
+### Where
+
+| Afirmación | Decía | Es |
+|---|---|---|
+| `HANDOFF.md:7` | API **138** suites | **137** |
+| `HANDOFF.md:10` | Guardas de documentación **15** suites / **159** pruebas | **18 / 184** |
+| `HANDOFF.md:13` | **150** encabezados | **151** |
+| `HANDOFF.md:29-34` | tabla comparando **S-009 / S-010** | el texto de encima describe **S-011** |
+| `HANDOFF.md:36` | Hallazgos: **35** registrados | **36** (H-036) |
+| `HANDOFF.md:145,172` | veredictos **20 · 0 · 1 · 15** | **35 · 0 · 1 · 0** |
+| `HANDOFF.md:170` | `routes` · `components` · `integrations` *«sin guarda — no son mecánicamente enumerables»* | **los tres tienen guarda desde PT-198**, y la frase ya se corrigió allí |
+| `HANDOFF.md:397` | Deuda: 2 abiertas **de 24** | 2 abiertas **de 19** — `TD-018…023` **no han existido nunca** |
+| `docs-v2/README.md:3` | *«Hoy (2026-07-29): 1078 unitarias»* — API 825/107 · CORE 134 · CLIENT 103 | **1366** — API 1113/137 · CORE 93 · CLIENT 144 |
+| `docs-v2/5-qa/Master-Test-Plan.md:23` | core **8** suites / **134** casos | **6 / 93** (PT-191 retiró `Money` y el IPN de PayPal) |
+| `docs-v2/5-qa/Master-Test-Plan.md:25` | api **121** suites / **985** casos «medido 2026-07-29» | **137 / 1113** |
+| `docs-v2/5-qa/Master-Test-Plan.md:78-79` | Comisiones **0 tests** · Reembolsos **0 tests**, *«sin verificar (AUD-013)»* | el registro cierra `AUD-013` **citando esas 16 pruebas en 3 suites** |
+
+### When
+
+Las de `HANDOFF` se acumularon a lo largo de la jornada: cada PT añadió su sección arriba y **ninguno
+retiró la anterior**, que es exactamente lo que la regla de sobrescritura existe para impedir. Las de
+`Master-Test-Plan` y `docs-v2/README` son del 2026-07-29 y las invalidó el trabajo del 30.
+
+### How / Why
+
+**El mecanismo es el mismo en los dos casos, y ya tiene nombre en este repositorio: se comprueba la forma
+en vez de la relación.**
+
+- La guarda de RULE-38 comprueba **que haya** una palabra de veredicto. La relación es **que coincida** con
+  la tabla.
+- `HANDOFF.md` se comprueba… con nada. Es el único registro de la tabla «Dónde vive un pendiente» que
+  **no tiene guarda**, y es el que más se lee: es lo primero que abre quien retoma el trabajo.
+
+Y hay una razón por la que estas dos cosas aparecen juntas y no es casualidad: **un documento que se
+sobrescribe no puede envejecer; uno que se acumula sólo puede envejecer.** Las nueve afirmaciones falsas
+de `HANDOFF` no se escribieron falsas — se volvieron falsas al quedarse.
+
+### Impacto
+
+**Es el documento que un agente lee para saber dónde está.** Le decía que tres inventarios no eran
+enumerables (lo son, y tienen guarda), que quedaban 15 hallazgos sin verificar (cero), y que la deuda
+tenía 24 entradas (19). Las tres mandan a hacer trabajo inexistente o a no hacer el que toca.
+
+`Master-Test-Plan` es peor en un aspecto concreto: **manda a escribir pruebas que ya están escritas**.
+Su §5 lista *«Prioridad 1 (dinero): suites para commissions y refunds»* — que es la familia de TD-002 y
+ND-002, *«una afirmación de ausencia envejece de la peor manera»*.
+
+### Confianza
+
+Root Cause **100 %** (medido, no inferido) · Architecture **100 %** · Solution **95 %** — la única
+decisión abierta es cuánto de `HANDOFF` puede vigilarse sin producir falsos positivos, y se resuelve en el
+plan declarando explícitamente qué **no** se comprueba.

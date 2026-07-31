@@ -38,10 +38,11 @@ import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
  * Comprueba **la cabecera de estado**: las etiquetas de formato fijo que declaran una cifra medible, y
  * que el documento no acumule secciones históricas.
  *
- * **NO comprueba el recuento de pruebas** (1366, 1113, 144…). Verificarlo exigiría ejecutar las cinco
- * suites dentro de una prueba, y eso convierte una guarda de documentación en una corrida completa. Se
- * dice aquí porque *lo que no se cita, no se protege*, y quien lea esta guarda debe saber que esa cifra
- * la sostiene una corrida manual, no un automatismo.
+ * **NO comprueba el recuento de pruebas.** Verificarlo exigiría ejecutar las cinco suites dentro de una
+ * prueba, y eso convierte una guarda de documentación en una corrida completa. Se dice aquí porque *lo
+ * que no se cita, no se protege*, y quien lea esta guarda debe saber que esa cifra la sostiene una
+ * corrida manual, no un automatismo. *(La tabla de arriba se deja con las cifras del día en que se
+ * midió el defecto: es el registro de lo que pasó, no una afirmación sobre hoy.)*
  *
  * Y **no lee el cuerpo del documento**: una guarda sobre prosa produce falsos positivos, y un falso
  * positivo enseña a desconfiar de la guarda — que es la forma silenciosa de perderla.

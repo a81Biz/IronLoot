@@ -11,7 +11,7 @@
 
 ## 1. Estrategia y alcance
 
-- **Niveles:** unitario (core + api), integración (api con Postgres/Redis efímeros), e2e (api con DB). **Frontends: 119 casos** — CLIENT 103, ADMIN 13, BASE 3. ADMIN y BASE no tenían dónde poner una prueba hasta PT-101; CLIENT ya tenía, y ahí viven las guardas estáticas de plantillas.
+- **Niveles:** unitario (core + api), integración (api con Postgres/Redis efímeros), e2e (api con DB). **Frontends: 160 casos** (medido 2026-07-30) — CLIENT **144**, ADMIN 13, BASE 3. ADMIN y BASE no tenían dónde poner una prueba hasta PT-101; CLIENT ya tenía, y ahí viven las guardas estáticas de plantillas.
 - **Herramienta:** Jest, **cinco proyectos** desde PT-099 (antes `npm test` corría uno solo y
   omitía 205 casos). Cifras reales al **2026-07-27**: **85 suites / 720 casos** —
   API 66/467 · CLIENT 8/103 · CORE 8/134 · ADMIN 2/13 · BASE 1/3.
@@ -21,11 +21,11 @@
 
 | Capa | Suites | Bloques aprox | Cobertura |
 |---|---|---|---|
-| core dominio | 8 | 134 casos | Money, wallet-calc, FSM auction/order/dispute, bid-validation, HMAC, validador IPN (**obsoleto desde PT-076**), 4 use-cases |
-| api unit/integ | **121 suites** | **985 casos** (medido 2026-07-29) | users(21), auctions(11), lock(11), auth(9), wallet(8→13), disputes(7), scheduler-lock(7)… **+retiro real (PT-069..072): kyc.service(4), clabe.util(3), settlement(2), withdrawals.service(5)** |
+| core dominio | **6** | **93 casos** (medido 2026-07-30) | Money, wallet-calc, FSM auction/order/dispute, bid-validation, HMAC, validador IPN (**obsoleto desde PT-076**), 4 use-cases |
+| api unit/integ | **138 suites** | **1130 casos** (medido 2026-07-30) | users(21), auctions(11), lock(11), auth(9), wallet(8→13), disputes(7), scheduler-lock(7)… **+retiro real (PT-069..072): kyc.service(4), clabe.util(3), settlement(2), withdrawals.service(5)** |
 | api e2e | 15 | ~79 | watchlist(9), auth(8), settings(7), bids(7), auctions(6), wallet(5), orders(5)… |
 | **QA navegador (Playwright)** | 1 harness, **11 fases** | ~152 checks | smoke + bootstrap del mundo + 41 rutas autenticadas + E2E puja/superado + admin writes + **MP real (Orders API + webhook firmado)** + **historial** + **flujo de retiro end-to-end (KYC→método→venta→holdback→liberación→solicitud→admin approve/mark-paid)** |
-| frontends | **3** | **119 casos** | CLIENT 103 · ADMIN 13 · BASE 3. Decía «ninguna» |
+| frontends | **3** | **160 casos** (medido 2026-07-30) | CLIENT **144** · ADMIN 13 · BASE 3. Decía «ninguna» |
 
 ## 2.b Fase 35 — la cadena completa **sin sembrar** (PT-175)
 
@@ -75,16 +75,16 @@ la protegida.
 | Ledger | unit ✅ (8) | conversión held→settled poco cubierta |
 | Webhooks de pago | firma ✅ (core 7+11); handler API PARTIAL (6) | idempotencia de duplicados sin test dedicado |
 | Disputas | ✅ (core 7 + 7) | — |
-| **Comisiones** | **0 tests** | revenue sin guardas (AUD-013) |
-| **Reembolsos (producción)** | **0 tests** | over-refund/estado inválido sin verificar (AUD-013) |
+| **Comisiones** | **11 tests** en 2 suites | `commissions.service.spec.ts`, `registro-de-comision.spec.ts` |
+| **Reembolsos (producción)** | **5 tests** | `refunds.service.spec.ts`; y la carga al vendedor, en `disputes/resolver-mueve-dinero.spec.ts` (**12**, PT-191) |
 
 ## 5. Brechas de cobertura (ranking)
 
-1. commissions 0 tests · 2. refunds servicio 0 tests · 3. use-cases core probados pero no ejecutados (falsa confianza, AUD-012) · 4. cierre/settlement débil · 5. race de fund-lock · 6. Money VO no usado en prod · 7. idempotencia de webhook en API · 8. divergencia de regla de puja sin test candado (AUD-009) · 9. audit/system-config/cfdi/kyc sin tests · 10. frontend entero sin tests.
+1. ~~commissions 0 tests~~ · 2. ~~refunds servicio 0 tests~~ **(las dos cerradas: 16 pruebas en 3 suites, y es lo que el registro cita al cerrar `AUD-013`)** · 3. use-cases core probados pero no ejecutados (falsa confianza, AUD-012) · 4. cierre/settlement débil · 5. race de fund-lock · 6. Money VO no usado en prod · 7. idempotencia de webhook en API · 8. divergencia de regla de puja sin test candado (AUD-009) · 9. audit/system-config/cfdi/kyc sin tests · 10. frontend entero sin tests.
 
 ## 6. Recomendaciones de QA (alineadas a FDGE tests-first)
 
-- **Prioridad 1 (dinero):** suites para commissions y refunds; tests de settlement de cierre; idempotencia de webhook.
+- **Prioridad 1 (dinero):** ~~suites para commissions y refunds~~ **hechas**; tests de settlement de cierre **hechos** (`35-cierre-y-liquidacion.js`, PT-175); idempotencia de webhook.
 - **Prioridad 2 (regresión):** candado para la divergencia de puja PUBLISHED/ACTIVE (AUD-009/016); decidir cablear core use-cases y mover su cobertura al path real (AUD-012).
 - **Prioridad 3 (frontend):** smoke tests de BFF/auth y de los flujos de escritura de CLIENT (AUD-003) y de la UI de puja cuando exista (AUD-002).
 - **Definir umbral de cobertura** (hoy ND-004, no fijado) y activarlo en CI.
@@ -221,3 +221,30 @@ Esto costó tres intentos fallidos y merece quedar escrito:
 
 `commissions` y `refunds` siguen con **0 tests**. Es la deuda de cobertura más cara que queda:
 ambos tocan dinero. No se ha abierto PT para ellas.
+
+---
+
+## Nota de corrección — 2026-07-30 (PT-200)
+
+Este documento declaraba **cuatro cifras que ya no eran ciertas**, y dos de ellas no eran sólo viejas:
+**negaban pruebas que existen**.
+
+| Decía | Es |
+|---|---|
+| core **8** suites / **134** casos | **6 / 93** — PT-191 retiró `Money` y el validador de IPN de PayPal (41 casos verdes sobre código que no corría) |
+| api **121** suites / **985** casos «medido 2026-07-29» | **138 / 1130**, medido el 2026-07-30 |
+| Comisiones **0 tests** · Reembolsos **0 tests** | **16 pruebas en 3 suites** — y son **exactamente las que el registro cita al declarar corregido el hallazgo `AUD-013`** |
+
+**La segunda pareja es la que importa, y no por la cifra.** §5 las listaba como brechas 1 y 2, y §6 las
+ponía en *«Prioridad 1 (dinero)»*: el documento **mandaba a escribir pruebas ya escritas**. Es la familia
+de `TD-002` y `ND-002/ND-007` — *una afirmación de ausencia envejece de la peor manera*, porque «no hay»
+y «hay, pero no lo he mirado» llevan a decisiones opuestas.
+
+**Y contradecía al registro con aval.** La fila de reembolsos usaba la palabra «sin verificar», que es
+vocabulario de la tabla de veredictos, así que se leía como medido. Desde PT-192 **ningún** hallazgo tiene
+ese veredicto: la palabra ya no describe a nadie. Lo vigila desde hoy el caso `C4` de
+`afirmaciones-de-estado-verificadas.spec.ts`, que exige que el veredicto citado **sea el del registro** y
+no sólo que haya alguno.
+
+**Lo que no se toca**: el anexo *«Estado real de las suites (2026-07-27, PT-109)»* y los recuentos que
+declaran su fecha. Una medición fechada no envejece — informa de cuándo se supo.
