@@ -4201,6 +4201,37 @@ Delta (real vs planned): tres cosas que el plan no preveia. (a) Mi propia guarda
   pruebas de comisiones/reembolsos sin medir el reparto; son 11 y 5. Lo cace antes de comitear, pero es
   el defecto exacto que este PT corrige, cometido dentro de su propio arreglo.
 PTSA reference: —
+## PT-201 — BUG: el inventario de integraciones citaba cuatro ficheros retirados, y la guarda solo miraba la cabecera
+Date: 2026-07-30
+Status: VALIDATION_PENDING
+Branch: fix/PT-201-inventario-cita-lo-que-existe
+Objective: que `integrations.md` cite lo que existe, y que la guarda lea el cuerpo y no solo su cabecera.
+Root cause: `C6` (PT-198) lee SOLO la linea `**Source:**`. Estrecharla fue deliberado —la primera
+version leia 800 caracteres y acusaba a la nota que explica la correccion, que tiene que nombrar el
+directorio retirado—. El estrechamiento resolvio el falso positivo y CREO EL HUECO: la cabecera quedo
+vigilada y el cuerpo no. Ahi vivian cuatro citas a `src/packages/core/src/integrations/`, que PT-193
+retiro por ADR-058, dentro del documento cuya cabecera dice que se retiro.
+Solution:
+  - Caso `C7` + control `AC-08` en `inventarios-completos.spec.ts`: toda ruta anclada en la raiz citada
+    en el CUERPO de un inventario tiene que existir. Excluye lineas de cita (`>`) —prosa sobre el
+    pasado— y solo mira rutas ancladas: las relativas a una base declarada son correctas y acusarlas
+    daria 78 falsos positivos en routes.md y services.md.
+  - `integrations.md`: cinco lineas. IPaymentProvider pasa a su ruta viva en el API; las otras tres
+    declaran que NO HAY contrato, porque no lo hay —se retiraron por no tener implementador—; y el
+    almacen del rate limiter deja de citar TD-002 (credenciales de Stripe/HeyBanco) para decir lo que
+    es: existe desde PT-030, y su ND-002 la cerro PT-171.
+Modified files: docs/enterprise-documentation/inventory/integrations.md ·
+  src/api/test/unit/documentacion/inventarios-completos.spec.ts · docs/implementation/HANDOFF.md ·
+  docs/implementation/PENDING_TASKS.md · docs/implementation/evidence/PT-201/
+Evidence: docs/implementation/evidence/PT-201/
+Delta (real vs planned): dos cosas. (a) NO LO ENCONTRO LA SUITE: salio de la extraccion de graphify
+  sobre docs/enterprise-documentation/, con las 19 guardas en verde y el defecto delante. Es el punto 4
+  de las «Siguientes» de HANDOFF cumpliendose sobre una guarda del dia anterior. (b) Mi control AC-08
+  exigia mas de 20 rutas ancladas y hay 17: puse el listón a ojo y el control fallo con el corpus entero
+  delante. Bajado a 10, y contado en el comentario.
+PTSA reference: —
+
+
 
 
 
@@ -4215,7 +4246,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**152** encabezados · **1** realmente abiertos · **0** sin `Status:` declarado.
+**153** encabezados · **2** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4371,3 +4402,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-198 | 4076 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4115 |
 | PT-199 | 4131 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4160 |
 | PT-200 | 4167 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |
+| PT-201 | 4204 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |

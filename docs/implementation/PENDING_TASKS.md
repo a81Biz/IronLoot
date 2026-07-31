@@ -4,13 +4,18 @@
 
 ---
 
-## Esperando validación humana: PT-200
+## Esperando validación humana: PT-200 y PT-201
 
 **PT-200 — `VALIDATION_PENDING`.** Es un BUG, y **el agente no cierra bugs** (FDGE STATE 6, RULE-37). El
 VoBo permanente que diste cubría la cadena anterior; esta petición era *«actualiza todos los documentos»*,
 que es una instrucción de trabajo, no un VoBo sobre un defecto que aún no existía cuando la diste.
 
-**Qué hay que validar:** trece afirmaciones corregidas —nueve en `HANDOFF.md`, dos en
+**PT-201 — `VALIDATION_PENDING`.** Cuatro citas de `integrations.md` a un directorio que PT-193
+retiró, más una quinta que declaraba pendiente algo cerrado por PT-171. **No lo encontró la suite**: salió
+de la extracción de graphify, con las 19 guardas en verde. La guarda de PT-198 sólo leía la cabecera del
+documento; ahora `C7` lee el cuerpo. Detalle en `evidence/PT-201/`.
+
+**Qué hay que validar de PT-200:** trece afirmaciones corregidas —nueve en `HANDOFF.md`, dos en
 `Master-Test-Plan.md`, una en `docs-v2/README.md`, una en `10-Technical-Debt.md`— y dos guardas nuevas
 (`C4` de RULE-38 y `handoff-es-estado-actual.spec.ts`). Detalle en `HISTORY.log § PT-200` y en
 `evidence/PT-200/`.
