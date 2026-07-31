@@ -120,6 +120,58 @@ export function veredictos(registro: string): Map<string, string> {
   return salida;
 }
 
+/** Las cuatro palabras que son un veredicto, y sólo esas. */
+const PALABRAS = ['corregido', 'abierto', 'sin verificar', 'limitación declarada'];
+
+/**
+ * **PT-200 — citar un veredicto distinto del que el registro declara.**
+ *
+ * ## Por qué esto no lo cazaba la guarda de PT-189
+ *
+ * `presentadosComoDefecto` **salta** cualquier línea que contenga una palabra de veredicto (arriba, la
+ * línea del `continue`). Eso era suficiente mientras los cuatro veredictos estuvieran poblados: si una
+ * línea decía «sin verificar», había 15 hallazgos sin verificar y la frase podía ser cierta.
+ *
+ * **Desde PT-192 «sin verificar» está en cero.** Una línea que hoy diga *«sin verificar (AUD-013)»*
+ * declara un veredicto **que ya no existe en la tabla** — y la guarda la aprobaba, porque comprobaba
+ * **que hubiera** una palabra de veredicto en vez de **que fuera la del registro**.
+ *
+ * Medido el 2026-07-30: `docs-v2/5-qa/Master-Test-Plan.md:79` decía *«over-refund/estado inválido sin
+ * verificar (AUD-013)»*, y el registro cierra `AUD-013` **citando exactamente las 16 pruebas en 3 suites
+ * de comisiones y reembolsos** que esa línea afirma que no existen.
+ *
+ * Es la forma que este repositorio ya tiene nombrada: **comprobar la forma en vez de la relación.**
+ *
+ * ## Por qué sólo líneas con UN `AUD`
+ *
+ * Porque una línea con varios atribuye la palabra al que no es. Mi primera medición dio **cinco**
+ * choques y **cuatro eran falsos**: líneas que dicen «`AUD-003` corregido … `AUD-016` (CFDI)» hacían
+ * que «corregido» se le imputara a `AUD-016`, que es limitación declarada y estaba bien descrito.
+ * Un falso positivo enseña a desconfiar de la guarda, que es la forma silenciosa de perderla.
+ */
+export function veredictoContradicho(
+  texto: string,
+  conocidos: Map<string, string>,
+): Array<{ aud: string; dice: string; registro: string }> {
+  const salida: Array<{ aud: string; dice: string; registro: string }> = [];
+
+  for (const linea of texto.split('\n')) {
+    const auds = [...new Set([...linea.matchAll(/\bAUD-(\d{3})\b/g)].map((m) => `AUD-${m[1]}`))];
+    if (auds.length !== 1) continue;
+
+    const oficial = conocidos.get(auds[0]);
+    if (!oficial) continue;
+
+    const dichas = PALABRAS.filter((p) => new RegExp(`\\b${p}\\b`, 'i').test(linea));
+    // Ninguna palabra: no es una afirmación de veredicto. Alguna que coincide: correcto.
+    if (!dichas.length || dichas.includes(oficial)) continue;
+
+    salida.push({ aud: auds[0], dice: dichas[0], registro: oficial });
+  }
+
+  return salida;
+}
+
 describe('Toda afirmacion de estado sobre un AUD tiene veredicto — PT-189', () => {
   const registro = readFileSync(REGISTRO, 'utf-8');
   const conocidos = veredictos(registro);
@@ -165,7 +217,70 @@ describe('Toda afirmacion de estado sobre un AUD tiene veredicto — PT-189', ()
     }
   });
 
+  it('C4: ninguna linea cita un veredicto distinto del que declara el registro — PT-200', () => {
+    // El defecto medido: `Master-Test-Plan.md:79` decía «sin verificar (AUD-013)» cuando el registro
+    // cierra AUD-013 **citando las 16 pruebas** que esa línea afirmaba que no existían. Un veredicto
+    // caducado se lee con la misma confianza que uno vigente: los dos parecen medidos.
+    const acusados: string[] = [];
+
+    for (const f of markdowns()) {
+      for (const c of veredictoContradicho(readFileSync(f, 'utf-8'), conocidos)) {
+        acusados.push(
+          `${f.slice(f.indexOf('docs-v2'))}: ${c.aud} dice «${c.dice}», el registro «${c.registro}»`,
+        );
+      }
+    }
+
+    expect(acusados).toEqual([]);
+  });
+
   describe('casos de control', () => {
+    it('AC-06: un veredicto que coincide con el registro NO se acusa — PT-200', () => {
+      const reg = new Map([['AUD-013', 'corregido']]);
+
+      expect(veredictoContradicho('| algo | AUD-013 corregido |', reg)).toEqual([]);
+    });
+
+    it('AC-07: uno que NO coincide si se acusa, y dice las dos versiones — PT-200', () => {
+      const reg = new Map([['AUD-013', 'corregido']]);
+
+      expect(veredictoContradicho('| 0 tests | sin verificar (AUD-013) |', reg)).toEqual([
+        { aud: 'AUD-013', dice: 'sin verificar', registro: 'corregido' },
+      ]);
+    });
+
+    it('AC-08: una linea con VARIOS AUD no se acusa — es el falso positivo que dio 4 de 5 — PT-200', () => {
+      // «`AUD-003` **corregido** … Operar ⚠️ (CFDI `AUD-016`)»: la palabra es de AUD-003, y mi primera
+      // medición se la imputó a AUD-016, que es limitación declarada y estaba bien descrito.
+      const reg = new Map([
+        ['AUD-003', 'corregido'],
+        ['AUD-016', 'limitación declarada'],
+      ]);
+
+      expect(
+        veredictoContradicho(
+          'Financiar ✅ (`AUD-003` corregido) · Operar ⚠️ (CFDI `AUD-016`)',
+          reg,
+        ),
+      ).toEqual([]);
+    });
+
+    it('AC-09: sin palabra de veredicto no hay afirmacion que contradecir — PT-200', () => {
+      const reg = new Map([['AUD-013', 'corregido']]);
+
+      expect(veredictoContradicho('La decisión nació de AUD-013, ver el registro.', reg)).toEqual(
+        [],
+      );
+    });
+
+    it('AC-10: C4 leyo docs-v2 de verdad — sin esto pasaria en vacio — PT-200', () => {
+      // Una ruta mal construida daría cero ficheros y C4 pasaría sin comprobar nada, que es como se
+      // pierde una guarda sin que deje de existir.
+      const conAud = markdowns().filter((f) => /\bAUD-\d{3}\b/.test(readFileSync(f, 'utf-8')));
+
+      expect(conAud.length).toBeGreaterThan(10);
+    });
+
     it('AC-01: una linea con senal y veredicto NO se acusa', () => {
       expect(presentadosComoDefecto('| algo | ⚠️ AUD-012 abierto |')).toEqual([]);
       expect(presentadosComoDefecto('| algo | ✗ AUD-008 corregido |')).toEqual([]);
