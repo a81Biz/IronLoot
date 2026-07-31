@@ -277,3 +277,65 @@ en la fase 35.
 **No dice que el sistema sea poco fiable.** Dice que **no se puede afirmar que lo sea**, que es distinto y es la
 razón de que el semáforo esté en `SIN_DATOS` en vez de en verde o en rojo. El instrumento se niega a pronunciarse
 desde PT-180, y esta declaración es la consecuencia de tomarlo en serio.
+
+---
+
+## Update U-008 — 2026-07-30: la vía que U-007 declaró para cerrar D5 no existe
+
+**Medido durante S-011**, a petición del humano (*«revisemos D5»*). **La decisión de U-007 no cambia.**
+Lo que se corrige es **por qué**, porque la razón escrita manda a un sitio al que no se llega.
+
+### La frase que hay que corregir
+
+U-007 dice:
+
+> *«`run-all.sh` produce unos dos por corrida, así que veinte son unas nueve corridas con intervención
+> humana en dos sandboxes.»*
+
+**Nueve corridas no producen veinte ciclos. Producen dos.**
+
+`run-all.sh:37-38` trunca `payment_cycles` y `payment_cycle_events` **antes** de cada corrida:
+
+```bash
+TABLES="account_verifications,payment_cycle_events,payment_cycles,processed_webhook_events,…"
+docker exec "$DB" psql … -c "TRUNCATE TABLE ${TABLES} RESTART IDENTITY CASCADE;"
+```
+
+Medido tras la corrida de S-011: **3 ciclos** (2 `SETTLED`, 1 `REQUESTED`), 34 eventos de traza. La
+misma cifra que en S-007, S-008, S-009 y S-010 — no porque nadie haya insistido, sino porque **la
+muestra no puede acumularse**.
+
+### Por qué el truncado no es el defecto
+
+Es lo que hace la suite determinista. `PT-143` costó descubrir lo contrario: una limpieza sin filtro
+borraba datos de suites que corrían en paralelo, y los fallos **cambiaban de sitio entre corridas**.
+Quitar el truncado para engordar una métrica cambiaría un problema de medición por uno de corrección.
+
+### Y fabricar los veinte sigue sin ser una opción
+
+Es lo que U-007 ya dice y conviene repetir aquí, porque la vía es tentadora: la fase 70 abre y resuelve
+un ciclo **por el camino real** (`POST /payments/initiate` + webhook), así que repetirla veinte veces es
+técnicamente trivial.
+
+**Y daría un verde que no significa nada.** Veinte ciclos idénticos del camino feliz miden que nuestro
+código resuelve el camino feliz veinte veces. `Success Rate` y `Retry Rate` afirman otra cosa: **cómo se
+comportan las pasarelas**. Un `Retry Rate` sintético de 0 % diría «las pasarelas notifican siempre»
+cuando lo único medido es que nuestro doble notifica siempre.
+
+Sería convertir `SIN_DATOS` en **falso verde**, que es peor que no medir — y exactamente la línea que
+`U-007` trazó entre *configurar* y *sembrar*.
+
+### Lo que esto cambia, y lo que no
+
+- **La decisión sigue igual**: v1.0 no afirma fiabilidad operacional demostrada.
+- **La cobertura de D5 sigue en 0 %** y la Confianza en **91.0**.
+- **Cambia la única vía real**: no son nueve corridas de QA, es **volumen de producción**. U-007 ya lo
+  decía en su «Reapertura declarada»; lo que se retira es la otra vía, que no lleva a ninguna parte.
+- **Consecuencia práctica de no corregirlo**: alguien programa nueve corridas para cerrar D5 y obtiene
+  dos ciclos nueve veces. Es la clase de instrucción que cuesta un día antes de que se note.
+
+### Lo que esta enmienda NO dice
+
+No dice que D5 sea inmedible. Dice que **no lo es antes de producción**. El día que haya tráfico real,
+los veinte ciclos aparecen solos y el checkpoint los mide sin que nadie decida nada — que es lo que
+`U-007` dejó escrito y sigue siendo cierto.

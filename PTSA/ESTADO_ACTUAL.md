@@ -28,8 +28,12 @@ Cobertura:      PARCIAL        D1/D2/D3/D4 medidas EJECUTANDO · D5 al 0 % — L
 > **D3 falló y se corrigió antes de emitir** → `H-036`, tres `catch` mudos que introdujeron PT-194 y
 > PT-196. `silent_failure_count` de **27 a 24**, por debajo de la línea base.
 >
-> **D5 sigue al 0 %**: 2 ciclos de pago resueltos de los 20 que exige la muestra. No ha cambiado, y es
-> lo único que separa la Confianza de un número mayor.
+> **D5 sigue al 0 %**, y `U-008` corrige **por qué**. La cifra —2 ciclos de 20— no baja porque nadie
+> insista: `run-all.sh` **trunca `payment_cycles` antes de cada corrida**, así que la muestra **no puede
+> acumularse**. U-007 decía que veinte eran «unas nueve corridas»; nueve corridas dan **dos**.
+>
+> La decisión no cambia: la única vía real es **volumen de producción**. Lo que se retira es una vía que
+> no lleva a ninguna parte, y que habría costado nueve corridas descubrir.
 
 **Regla del Agua Potable: NO activada** — D1 = 100. Se dice porque `[A4]` lo exige.
 

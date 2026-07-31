@@ -1149,3 +1149,22 @@ monederos tienen `held_funds = 0` —la subasta cerró y los fondos se capturaro
 **monederos en reposo**, donde la invariante es trivialmente cierta. La `CR-002` nueva midió **3
 retenciones reales** del ledger. El argumento correcto no es «la vieja habría fallado»: es que **medía
 el momento equivocado**, y su aprobado no informaba de nada.
+
+### S-011 · revisión dirigida de D5 — 2026-07-30
+
+**Disparador**: petición del humano (*«revisemos D5»*), dentro de la misma sesión.
+
+**Qué se midió**: 3 ciclos de pago tras la corrida completa (2 `SETTLED`, 1 `REQUESTED`), 34 eventos de
+traza. La misma cifra que en S-007 … S-010.
+
+**Hallazgo**: **la vía que `U-007` declaró para cerrar D5 no existe.** Decía que veinte ciclos eran
+«unas nueve corridas»; `run-all.sh:37-38` trunca `payment_cycles` y `payment_cycle_events` **antes de
+cada corrida**, así que la muestra no acumula: nueve corridas dan **dos**.
+
+**Qué NO se hizo, y es lo importante**: no se fabricaron los veinte. La fase 70 abre y resuelve un ciclo
+por el camino real, así que repetirla veinte veces es trivial — **y daría un verde que no significa
+nada**. `Success Rate` y `Retry Rate` afirman cómo se comportan **las pasarelas**; veinte ciclos
+sintéticos medirían que nuestro doble notifica siempre. Sería convertir `SIN_DATOS` en falso verde.
+
+**Resultado**: `U-008` enmienda F-1. La decisión de U-007 se mantiene; se corrige la vía. **Ningún
+número se movió** — Health 100, Confidence 91.0, cobertura de D5 al 0 %.
