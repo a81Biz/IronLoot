@@ -3,8 +3,7 @@
 **FDGE V3** · **2026-07-30** · Se **sobrescribe**: es el estado de ahora, no la historia. La historia
 está en [`HISTORY.log`](HISTORY.log), que es append-only y la tiene íntegra con su fecha.
 
-**Rama**: `master`. PT-200 y PT-201 fusionados y **en espera de tu validación** — son BUG, y el agente no
-los cierra.
+**Rama**: `master`, árbol limpio, al día con `origin` y sin una sola rama suelta.
 
 **Pruebas**: **1385** unitarias en verde — API **1132** (138 suites) · CLIENT **144** (12) · CORE **93** (6) ·
 ADMIN **13** (2) · BASE **3** (1). *(Medido el 2026-07-30. Sube de 1366 a 1385 por las 19 pruebas que
@@ -15,7 +14,7 @@ aportan las guardas de PT-200 y PT-201, no por trabajo de producto.)*
 **Hallazgos PTSA**: **36** registrados, **0** activos. **Deuda técnica**: **2** abiertas de **19** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **153 encabezados · 2 realmente abiertos** (PT-200, PT-201).
+`npm run indice:estado`. **153 encabezados · 0 realmente abiertos.**
 
 > **Estas siete cifras están vigiladas** por `handoff-es-estado-actual.spec.ts`, salvo el recuento de
 > pruebas: verificarlo exigiría ejecutar las cinco suites dentro de una prueba. Se dice porque *lo que no
@@ -54,9 +53,12 @@ cierra lo que se encuentra, no que no haya nada que encontrar.**
 
 ---
 
-## Esperando tu validación: PT-200 y PT-201
+## Esperando tu validación: nada
 
-**Es un BUG, y el agente no cierra bugs** (FDGE STATE 6 · RULE-37). Lo corregido:
+**PT-200 y PT-201 cerrados con tu VoBo** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37: un
+BUG `DONE` sin bloque de VoBo que lo nombre no está cerrado). **Cero trabajo FDGE pendiente.**
+
+Lo que corrigieron:
 
 | Dónde | Decía | Es |
 |---|---|---|

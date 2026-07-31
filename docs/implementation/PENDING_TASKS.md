@@ -1,14 +1,17 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (PT-200 — los documentos de estado, medidos)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-201 cerrado con VoBo — cero pendientes)
 
 ---
 
-## Esperando validación humana: PT-200 y PT-201
+## Esperando validación humana: nada
 
-**PT-200 — `VALIDATION_PENDING`.** Es un BUG, y **el agente no cierra bugs** (FDGE STATE 6, RULE-37). El
-VoBo permanente que diste cubría la cadena anterior; esta petición era *«actualiza todos los documentos»*,
-que es una instrucción de trabajo, no un VoBo sobre un defecto que aún no existía cuando la diste.
+**PT-200 y PT-201 cerrados con VoBo humano** el 2026-07-30 (*«te doy el VoBo, cierra todos los PT-200 y
+PT-201»*), con constancia en `HISTORY.log` (RULE-37). El índice de estado dice **0 realmente abiertos**.
+
+**Ninguno de los dos lo encontró una prueba**: PT-200 salió de medir antes de escribir, y PT-201 de una
+lectura ajena con las diecinueve guardas en verde. Una guarda demuestra que no ha vuelto lo que ya pasó;
+no que no haya nada que encontrar.
 
 **PT-201 — `VALIDATION_PENDING`.** Cuatro citas de `integrations.md` a un directorio que PT-193
 retiró, más una quinta que declaraba pendiente algo cerrado por PT-171. **No lo encontró la suite**: salió

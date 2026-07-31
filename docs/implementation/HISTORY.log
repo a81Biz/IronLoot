@@ -4230,6 +4230,31 @@ Delta (real vs planned): dos cosas. (a) NO LO ENCONTRO LA SUITE: salio de la ext
   exigia mas de 20 rutas ancladas y hay 17: puse el listón a ojo y el control fallo con el corpus entero
   delante. Bajado a 10, y contado en el comentario.
 PTSA reference: —
+## CIERRE CON VoBo HUMANO — PT-200 y PT-201
+Date: 2026-07-30
+Status: registro
+Objective: registrar el VoBo humano sobre PT-200 y PT-201, dado explicitamente
+  (*«te doy el VoBo, cierra todos los PT-200 y PT-201 que quedan VALIDATION_PENDING»*).
+
+Los dos eran BUG y quedaron en `VALIDATION_PENDING` a proposito: FDGE STATE 6 dice que el agente no
+cierra bugs, y RULE-37 exige que el cierre conste con quien lo autorizo. Con este bloque queda.
+
+**PT-200** — `HANDOFF.md` reescrito como estado actual; trece afirmaciones medidas y corregidas en
+`HANDOFF.md`, `docs-v2/README.md`, `Master-Test-Plan.md` y `10-Technical-Debt.md`; dos guardas nuevas
+(`C4` de RULE-38 y `handoff-es-estado-actual.spec.ts`); `tsconfig.json` de la raiz restituido.
+
+**PT-201** — `integrations.md` cita lo que existe: una ruta movida y **tres declaradas inexistentes**,
+porque se retiraron por no tener implementador. Mas la quinta linea, que daba por pendiente algo que
+PT-171 cerro. `C7` lee ahora el cuerpo del inventario y no solo su cabecera.
+
+**Lo que estos dos cierres dejan escrito, y vale mas que los dos arreglos:** ninguno de los dos defectos
+lo encontro una prueba. PT-200 salio de medir antes de escribir; PT-201, de una lectura ajena con las
+diecinueve guardas en verde. **Una guarda demuestra que no ha vuelto lo que ya paso; no que no haya nada
+que encontrar.**
+
+Con esto, **cero trabajo FDGE pendiente**: 153 encabezados, 0 realmente abiertos.
+
+
 
 
 
@@ -4246,7 +4271,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**153** encabezados · **2** realmente abiertos · **0** sin `Status:` declarado.
+**153** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4401,5 +4426,5 @@ falsificaría el registro. Esto añade, no toca.
 | PT-197 | 4016 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4056 |
 | PT-198 | 4076 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4115 |
 | PT-199 | 4131 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4160 |
-| PT-200 | 4167 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |
-| PT-201 | 4204 | `VALIDATION_PENDING` | **VALIDATION_PENDING** | — |
+| PT-200 | 4167 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4233 |
+| PT-201 | 4204 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4233 |
