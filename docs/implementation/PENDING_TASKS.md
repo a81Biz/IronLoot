@@ -1,12 +1,16 @@
 # PENDING_TASKS.md — IronLoot
 
-**FDGE V3** · **Última actualización**: 2026-07-30 (S-012 — certificado reemitido, `FRESH`)
+**FDGE V3** · **Última actualización**: 2026-07-30 (PT-203 — RULE-31 cubre la evidencia de PTSA)
 
 ---
 
-## Esperando validación humana: PT-202
+## Esperando validación humana: nada
 
-**PT-202 — `VALIDATION_PENDING`.** La frescura que PTSA declaraba (`FRESH`) es una afirmación sobre
+**PT-202 cerrado con VoBo humano** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37).
+**PT-203** (FEATURE) cerrado con sus criterios verificados: amplía `RULE-31` a la evidencia de
+PTSA, y en su primera ejecución cazó una corrección mía a medias en `H-008`.
+
+**Lo que fue PT-202:** La frescura que PTSA declaraba (`FRESH`) es una afirmación sobre
 git y **nadie la comprobaba**. Dejó de ser cierta con PT-200, que tocó un fichero de
 `auditable_patterns`. Corregida a `STALE` **sin recalcular la puntuación** —eso exige un delta sync— y
 vigilada desde hoy. **El certificado se restaura con `resume PTSA`.** Detalle en `evidence/PT-202/`.

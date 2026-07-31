@@ -3,19 +3,18 @@
 **FDGE V3** · **2026-07-30** · Se **sobrescribe**: es el estado de ahora, no la historia. La historia
 está en [`HISTORY.log`](HISTORY.log), que es append-only y la tiene íntegra con su fecha.
 
-**Rama**: `master`, árbol limpio, al día con `origin` y sin una sola rama suelta. **PT-202 espera tu
-validación** — es un BUG, y el agente no cierra bugs.
+**Rama**: `master`, árbol limpio, al día con `origin` y sin una sola rama suelta. **Cero trabajo FDGE pendiente.**
 
-**Pruebas**: **1392** unitarias en verde — API **1139** (139 suites) · CLIENT **144** (12) · CORE **93** (6) ·
-ADMIN **13** (2) · BASE **3** (1). *(Medido el 2026-07-30. Sube de 1366 a 1392 por las 26 pruebas que
-aportan las guardas de PT-200, PT-201 y PT-202, no por trabajo de producto.)*
+**Pruebas**: **1396** unitarias en verde — API **1143** (139 suites) · CLIENT **144** (12) · CORE **93** (6) ·
+ADMIN **13** (2) · BASE **3** (1). *(Medido el 2026-07-30. Sube de 1366 a 1396 por las 30 pruebas que
+aportan las guardas de PT-200 … PT-203, no por trabajo de producto.)*
 
-**Reglas duras**: **36** `RULE-NN`. **Guardas de documentación**: **20** suites.
+**Reglas duras**: **36** `RULE-NN` (RULE-31 ampliada por PT-203). **Guardas de documentación**: **20** suites.
 
 **Hallazgos PTSA**: **37** registrados, **0** activos. **Deuda técnica**: **2** abiertas de **19** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **154 encabezados · 1 realmente abierto** (PT-202).
+`npm run indice:estado`. **155 encabezados · 0 realmente abiertos.**
 
 > **Estas siete cifras están vigiladas** por `handoff-es-estado-actual.spec.ts`, salvo el recuento de
 > pruebas: verificarlo exigiría ejecutar las cinco suites dentro de una prueba. Se dice porque *lo que no
@@ -62,15 +61,17 @@ cierra lo que se encuentra, no que no haya nada que encontrar.**
 
 ---
 
-## Esperando tu validación: PT-202
+## Esperando tu validación: nada
 
-**PT-200 y PT-201 cerrados con tu VoBo** el 2026-07-30, con constancia en `HISTORY.log` (RULE-37: un
-BUG `DONE` sin bloque de VoBo que lo nombre no está cerrado).
+**PT-200, PT-201 y PT-202 cerrados con tu VoBo**, con constancia en `HISTORY.log` (RULE-37: un BUG
+`DONE` sin bloque de VoBo que lo nombre no está cerrado). **PT-203** es FEATURE y se cierra con sus
+criterios verificados.
 
-**PT-202 salió de la revisión que pediste después.** `FRESH` es una afirmación sobre git —«cero commits
-sobre patrones auditables»— y **nadie la comprobaba**: ha fallado dos veces en dos meses, y las dos las
-encontró una lectura. Ahora `ESTADO_ACTUAL.md` declara `audit_commit`, que es lo que hace la frase
-refutable, y `frescura-declarada-es-real.spec.ts` la vigila.
+**PT-203 existe porque S-012 no debió pararse.** El sync dejó la guarda de las `E-XXX` escrita como
+«recomendación para FDGE» sin ejecutarla. Esa separación impide escribir código **dentro** de la
+auditoría; no autoriza a parar. `RULE-31` cubre desde hoy las dos mitades — y en su primera ejecución
+cazó que mi propia corrección de `H-008` estaba a medias: había declarado la pérdida **en la prosa** y
+dejado la cita del frontmatter apuntando a nada.
 
 Lo que corrigieron PT-200 y PT-201:
 
@@ -103,17 +104,12 @@ un documento que se sobrescribe y uno que se acumula.
 | **TD-009** | Un 4xx en firma inválida no garantiza que la pasarela deje de reintentar | Riesgo aceptado por PT-080 |
 | **H-005 / P-012** | Emisión de CFDI | Exige un **PAC certificado ante el SAT** y una decisión fiscal. Fuera de alcance de v1.0 por `F-1 § U-006` |
 | **D5 al 0 %** | 18 ciclos de pago resueltos más | Ver abajo — **no lo cierra ninguna corrida de QA** |
-| **Guarda de `E-XXX`** | Nadie vigila que un `H-XXX` cite evidencia que existe | Recomendado por S-012 a FDGE: `RULE-31` cubre la de FDGE, no la de PTSA |
 
 ---
 
 ## Siguiente
 
-1. **Validar PT-202**, o decir qué corregir. *(PT-200 y PT-201 ya están cerrados con tu VoBo; esta
-   línea decía «PT-200» y era un resto — corregido al reemitir.)*
-2. **La guarda que S-012 recomienda**: cruzar el campo `evidencias:` de cada `H-XXX` contra los
-   ficheros de `PTSA/Evidencias/`. Es trivial y habría cazado `H-037` solo. Es trabajo de FDGE —
-   PTSA audita, no escribe código.
+1. **Nada espera validación ni queda a medias.** Los cuatro PT del ciclo están cerrados.
 2. **Volumen de ciclos de pago.** Es lo único que sube D5 del 0 % y saca la Confianza del filo de 91.
    `U-008` corrigió el 2026-07-30 la vía que `U-007` había declarado: **no son «unas nueve corridas»** de
    `run-all.sh`, porque el script **trunca `payment_cycles` antes de cada corrida** (`run-all.sh:37-38`) —
