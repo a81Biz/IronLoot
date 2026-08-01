@@ -7,7 +7,7 @@
     {% for n in notifications.items %}
     <div class="notif-linea{% if not n.read %} notif-linea--sin-leer{% endif %}">
       <div class="texto-pequeno{% if not n.read %} notif-sin-leer{% endif %}">{{ n.message }}</div>
-      <div class="nota-ayuda">{{ n.createdAt }}</div>
+      <div class="nota-ayuda">{{ n.createdAt | fecha }}</div>
     </div>
     {% endfor %}
   {% else %}

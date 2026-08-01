@@ -6,11 +6,11 @@
 <div class="card">
   <div class="d-flex justify-between align-center mb-2">
     <strong>Disputa: {{ dispute.id | truncate(8, true, '') }}…</strong>
-    <span class="badge badge-warning">{{ dispute.status }}</span>
+    <span class="badge {{ dispute.status | badge }}">{{ dispute.status | estado }}</span>
   </div>
   <p><strong>Orden:</strong> {{ dispute.orderId }}</p>
   <p><strong>Motivo:</strong> {{ dispute.reason }}</p>
-  <p><strong>Abierta:</strong> {{ dispute.createdAt }}</p>
+  <p><strong>Abierta:</strong> {{ dispute.createdAt | fecha }}</p>
 </div>
 {% else %}
   <p>Disputa no encontrada. <a href="/disputes">Volver</a></p>

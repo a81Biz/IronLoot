@@ -18,6 +18,11 @@ import { interceptarRespuesta } from "./common/bff/reintentar-tras-refresco";
 import { injectAuthHeader } from "./common/bff/inject-auth-header";
 import cookieParser from "cookie-parser";
 import { variableObligatoria } from "./common/config/variable-obligatoria";
+import {
+  etiquetaDeEstado,
+  badgeDeEstado,
+  fechaLegible,
+} from "./common/vista/estados";
 
 const isProd = process.env.NODE_ENV === "production";
 
@@ -70,11 +75,22 @@ async function bootstrap() {
   );
 
   const viewsPath = join(__dirname, "..", "views");
-  nunjucks.configure(viewsPath, {
+  const entorno = nunjucks.configure(viewsPath, {
     autoescape: true,
     express: app.getHttpAdapter().getInstance(),
     watch: true,
   });
+
+  /**
+   * PT-212 (H-UI-037/038/045) — Los filtros de presentación, declarados una vez.
+   *
+   * `estado` y `badge` traducen el enum a lo que `FAQ-y-Mensajes §3` promete que el usuario verá;
+   * `fecha` sustituye al ISO con milisegundos. Van aquí y no en cada plantilla porque es el mismo dato
+   * en nueve pantallas, y duplicarlo garantiza la divergencia (la lección de PT-140).
+   */
+  entorno.addFilter("estado", etiquetaDeEstado);
+  entorno.addFilter("badge", badgeDeEstado);
+  entorno.addFilter("fecha", fechaLegible);
 
   app.useStaticAssets(join(__dirname, "..", "public"));
   app.setBaseViewsDir(viewsPath);

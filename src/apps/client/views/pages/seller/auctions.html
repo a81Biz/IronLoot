@@ -12,9 +12,9 @@
           {% for a in auctions.items %}
           <tr>
             <td>{{ a.title }}</td>
-            <td><span class="badge badge-info">{{ a.status }}</span></td>
+            <td><span class="badge {{ a.status | badge }}">{{ a.status | estado }}</span></td>
             <td>MXN {{ a.currentPrice | default(a.startingPrice) }}</td>
-            <td>{{ a.endsAt | default('—') }}</td>
+            <td>{{ a.endsAt | fecha }}</td>
             <td>
               {% if a.status == 'DRAFT' %}<a href="/auctions/{{ a.id }}/edit" class="btn btn-sm btn-ghost">Editar</a>{% endif %}
             </td>

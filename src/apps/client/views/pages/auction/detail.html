@@ -13,7 +13,7 @@
 
   <div class="caja-oscura">
     <p>Precio actual: <strong id="currentPrice">${{ auction.currentPrice }}</strong> MXN</p>
-    <p>Estado: <span id="auctionStatus">{{ auction.status }}</span></p>
+    <p>Estado: <span id="auctionStatus" class="badge {{ auction.status | badge }}">{{ auction.status | estado }}</span></p>
     <p>Cierra en: <span id="countdown" data-ends-at="{{ auction.endsAt }}">…</span></p>
     <p>Tu saldo disponible: <strong>${{ wallet.balance if wallet else '0' }}</strong> MXN</p>
 
@@ -28,7 +28,7 @@
   <h3>Pujas recientes</h3>
   <ul id="bidList">
     {% if bids and bids.items.length %}
-      {% for b in bids.items %}<li>${{ b.amount }} — {{ b.createdAt }}</li>{% endfor %}
+      {% for b in bids.items %}<li>MXN {{ b.amount }} — {{ b.createdAt | fecha }}</li>{% endfor %}
     {% else %}
       <li id="noBids">Sé el primero en pujar.</li>
     {% endif %}

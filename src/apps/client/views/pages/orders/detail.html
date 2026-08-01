@@ -6,13 +6,13 @@
 <div class="card">
   <div class="d-flex justify-between align-center mb-2">
     <div><strong>Orden:</strong> {{ order.id }}</div>
-    <span class="badge badge-info">{{ order.status }}</span>
+    <span class="badge {{ order.status | badge }}">{{ order.status | estado }}</span>
   </div>
   <table class="ancho-total texto-pequeno">
     <tr><td class="col-160 texto-tenue">Subasta</td><td>{{ order.auction.title | default(order.auctionId) }}</td></tr>
     <tr><td class="texto-tenue">Monto total</td><td><strong>MXN {{ order.totalAmount }}</strong></td></tr>
     <tr><td class="texto-tenue">Vendedor</td><td>{{ order.seller.username | default(order.sellerId) }}</td></tr>
-    <tr><td class="texto-tenue">Fecha</td><td>{{ order.createdAt }}</td></tr>
+    <tr><td class="texto-tenue">Fecha</td><td>{{ order.createdAt | fecha }}</td></tr>
   </table>
 </div>
 {% if order.status == 'PENDING_PAYMENT' %}
@@ -26,9 +26,9 @@
   <div class="card-title">Envío</div>
   <p>Transportista: {{ order.shipment.provider }}</p>
   <p>Tracking: {{ order.shipment.trackingNumber | default('Pendiente') }}</p>
-  <p>Estado: {{ order.shipment.status }}</p>
-  {% if order.shipment.shippedAt %}<p class="texto-tenue texto-pequeno">Enviado: {{ order.shipment.shippedAt }}</p>{% endif %}
-  {% if order.shipment.deliveredAt %}<p class="texto-tenue texto-pequeno">Recepción confirmada: {{ order.shipment.deliveredAt }}</p>{% endif %}
+  <p>Estado: <span class="badge {{ order.shipment.status | badge }}">{{ order.shipment.status | estado }}</span></p>
+  {% if order.shipment.shippedAt %}<p class="texto-tenue texto-pequeno">Enviado: {{ order.shipment.shippedAt | fecha }}</p>{% endif %}
+  {% if order.shipment.deliveredAt %}<p class="texto-tenue texto-pequeno">Recepción confirmada: {{ order.shipment.deliveredAt | fecha }}</p>{% endif %}
 </div>
 {% endif %}
 

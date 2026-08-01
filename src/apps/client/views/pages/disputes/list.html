@@ -16,8 +16,8 @@
           <tr>
             <td><code>{{ d.id | truncate(8, true, '') }}…</code></td>
             <td>{{ d.orderId | truncate(8, true, '') }}…</td>
-            <td><span class="badge badge-warning">{{ d.status }}</span></td>
-            <td>{{ d.createdAt }}</td>
+            <td><span class="badge {{ d.status | badge }}">{{ d.status | estado }}</span></td>
+            <td>{{ d.createdAt | fecha }}</td>
             <td><a href="/disputes/{{ d.id }}" class="btn btn-sm btn-ghost">Ver</a></td>
           </tr>
           {% endfor %}

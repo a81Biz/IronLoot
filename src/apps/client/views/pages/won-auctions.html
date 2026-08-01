@@ -12,7 +12,7 @@
           <tr>
             <td>{{ order.auction.title | default(order.auctionId) }}</td>
             <td>MXN {{ order.totalAmount }}</td>
-            <td><span class="badge badge-info">{{ order.status }}</span></td>
+            <td><span class="badge {{ order.status | badge }}">{{ order.status | estado }}</span></td>
             <td><a href="/orders/{{ order.id }}" class="btn btn-sm btn-ghost">Ver orden</a></td>
           </tr>
           {% endfor %}

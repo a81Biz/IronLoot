@@ -13,8 +13,8 @@
             <td><code>{{ order.id }}</code></td>
             <td>{{ order.auction.title | default('—') }}</td>
             <td>MXN {{ order.totalAmount }}</td>
-            <td><span class="badge badge-info">{{ order.status }}</span></td>
-            <td>{{ order.createdAt }}</td>
+            <td><span class="badge {{ order.status | badge }}">{{ order.status | estado }}</span></td>
+            <td>{{ order.createdAt | fecha }}</td>
             <td><a href="/orders/{{ order.id }}" class="btn btn-sm btn-ghost">Detalle</a></td>
           </tr>
           {% endfor %}

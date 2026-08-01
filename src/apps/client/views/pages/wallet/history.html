@@ -10,8 +10,8 @@
         {% if history and history.transactions %}
           {% for tx in history.transactions %}
           <tr>
-            <td>{{ tx.createdAt }}</td>
-            <td><span class="badge badge-info">{{ tx.type }}</span></td>
+            <td>{{ tx.createdAt | fecha }}</td>
+            <td><span class="badge {{ tx.type | badge }}">{{ tx.type | estado }}</span></td>
             <td>MXN {{ tx.amount }}</td>
             <td>{{ tx.referenceId | default('—') }}</td>
           </tr>
