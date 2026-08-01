@@ -1,0 +1,119 @@
+{% extends "layouts/client.html" %}
+{% block title %}Retirar fondos — IronLoot{% endblock %}
+{% block page_title %}Retirar fondos{% endblock %}
+
+{# PT-216 (H-UI-005) — Esta pantalla sustituye a `/wallet/withdraw`.
+
+   La anterior enviaba `{amount, account}` a un endpoint deprecado que espera `referenceId`, con el
+   ValidationPipe rechazando las dos cosas: **el retiro no podia tener exito nunca**. Y su unica
+   respuesta era «Error al procesar.», que descartaba los cuatro diagnosticos accionables del servidor.
+
+   Las cuatro puertas de RN-65 se nombran ANTES de intentarlo, y las que faltan enlazan a donde se
+   franquean. Descubrirlas de una en una y por rechazo era el segundo defecto. #}
+{% block content %}
+
+{# ── Estado de las puertas ───────────────────────────────────────── #}
+{% if not cobro.puedeSolicitar %}
+<div class="card ancho-680">
+  <div class="card-title">Antes de poder retirar</div>
+  <p class="text-muted texto-pequeno mb-2">
+    Retirar exige tres cosas, en este orden. Te faltan las marcadas.
+  </p>
+  <ul class="lista-requisitos">
+    <li class="{% if cobro.kycAprobado %}requisito-ok{% else %}requisito-falta{% endif %}">
+      <strong>Identidad verificada (KYC).</strong>
+      {% if cobro.kycAprobado %}
+        Aprobada.
+      {% else %}
+        Estado: <span class="badge {{ cobro.kycEstado | badge }}">{{ cobro.kycEstado | estado }}</span>
+        — <a href="/seller/kyc">enviar o revisar documentos</a>.
+      {% endif %}
+    </li>
+    <li class="{% if cobro.metodos.length %}requisito-ok{% else %}requisito-falta{% endif %}">
+      <strong>Una cuenta de cobro registrada.</strong>
+      {% if cobro.metodos.length %}
+        {{ cobro.metodos.length }} registrada(s).
+      {% else %}
+        <a href="/wallet/payment-methods">registrar una CLABE</a>.
+      {% endif %}
+    </li>
+    <li class="{% if cobro.hayMetodoVerificado %}requisito-ok{% else %}requisito-falta{% endif %}">
+      <strong>Esa cuenta, verificada.</strong>
+      {% if cobro.hayMetodoVerificado %}
+        Verificada.
+      {% else %}
+        Te enviamos un importe pequeño con un código; lo confirmas en
+        <a href="/wallet/payment-methods">métodos de cobro</a>.
+      {% endif %}
+    </li>
+  </ul>
+</div>
+{% endif %}
+
+{# ── Solicitud ───────────────────────────────────────────────────── #}
+<div class="card ancho-680">
+  <div class="card-title">Solicitar un retiro</div>
+
+  <p class="text-muted texto-pequeno mb-2">
+    Disponible ahora: <strong>MXN {{ wallet.balance | default('0.00') }}</strong>.
+    Límite diario: <strong>MXN {{ limiteDiario }}</strong>.
+    El importe se reserva de tu disponible al solicitarlo, y un administrador aprueba la transferencia
+    SPEI. Si la rechaza, se te reintegra.
+  </p>
+
+  <form id="withdrawForm">
+    <div class="form-group">
+      <label for="amount">Monto a retirar (MXN)</label>
+      <input class="form-control" type="number" id="amount" min="10" step="0.01"
+             max="{{ limiteDiario }}" placeholder="1000.00" required
+             {% if not cobro.puedeSolicitar %}disabled{% endif %}>
+    </div>
+    <div class="form-group">
+      <label for="paymentMethodId">Cuenta de destino</label>
+      {% if cobro.metodos.length %}
+      <select class="form-control" id="paymentMethodId" {% if not cobro.puedeSolicitar %}disabled{% endif %}>
+        {% for m in cobro.metodos %}
+          {% if m.isVerified %}
+            <option value="{{ m.id }}">{{ m.alias | default(m.type) | default('Cuenta') }}</option>
+          {% endif %}
+        {% endfor %}
+      </select>
+      {% else %}
+      <p class="alert alert-warning">Aún no tienes ninguna cuenta de cobro registrada.</p>
+      {% endif %}
+    </div>
+    <button type="submit" class="btn btn-primary" {% if not cobro.puedeSolicitar %}disabled{% endif %}>
+      Solicitar retiro
+    </button>
+    <div id="withdrawMsg" class="alert oculto mensaje-accion" role="status" aria-live="polite"></div>
+  </form>
+</div>
+
+{# ── Los retiros que ya solicitaste ──────────────────────────────── #}
+<div class="card">
+  <div class="card-title">Mis solicitudes</div>
+  <div class="table-responsive">
+    <table>
+      <thead><tr><th>Fecha</th><th>Monto</th><th>Estado</th><th>Referencia del pago</th></tr></thead>
+      <tbody>
+        {% if retiros and retiros.items.length %}
+          {% for r in retiros.items %}
+          <tr>
+            <td>{{ r.createdAt | fecha }}</td>
+            <td>MXN {{ r.amount }}</td>
+            <td><span class="badge {{ r.status | badge }}">{{ r.status | estado }}</span></td>
+            <td>{{ r.payoutReference | default('—') }}</td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="4" class="text-center text-muted">Todavía no has solicitado ningún retiro.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/pages-wallet-withdraw.js" defer></script>
+{% endblock %}

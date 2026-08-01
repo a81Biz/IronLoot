@@ -3,6 +3,7 @@ import {
   Get,
   Param,
   Query,
+  Redirect,
   Render,
   Req,
   Res,
@@ -22,6 +23,13 @@ import {
   BidRaw,
 } from "./common/bff/bids-view";
 import { toItems } from "./common/bff/list-view";
+// PT-216 (H-UI-005/006) — La cadena de cobro del vendedor: KYC, metodo de pago, verificacion y retiro.
+import {
+  RETIROS_PATH,
+  METODOS_PATH,
+  KYC_PATH,
+  estadoDeCobro,
+} from "./common/bff/retiro-view";
 
 import { variableObligatoria } from "./common/config/variable-obligatoria";
 
@@ -236,10 +244,72 @@ export class AppController {
     };
   }
 
+  /**
+   * PT-216 — La ruta antigua no se retira: se redirige.
+   *
+   * `/wallet/withdraw` esta enlazada desde `/wallet` y puede estar en marcadores. Retirarla produciria
+   * un 404 donde antes habia un formulario — un defecto nuevo para corregir uno viejo.
+   */
   @Get("/wallet/withdraw")
-  @Render("pages/wallet/withdraw.html")
-  withdraw(@Req() _req: Request) {
-    return {};
+  @Redirect("/wallet/withdrawals", 301)
+  withdrawLegacy(): void {}
+
+  /**
+   * PT-216 (H-UI-005) — Solicitar un retiro y **ver los que ya solicitaste**.
+   *
+   * `GET /wallet/withdrawals` existia y no lo consumia nadie: el vendedor solicitaba, el importe se
+   * reservaba de su disponible (RN-65) y **no volvia a ver ese dinero en ninguna pantalla** hasta que el
+   * admin lo pagara. Aqui se ve, con su estado.
+   */
+  @Get("/wallet/withdrawals")
+  @Render("pages/wallet/withdrawals.html")
+  async withdrawals(@Req() req: Request) {
+    const token = getToken(req);
+    const [retiros, metodos, kyc, walletRaw] = await Promise.all([
+      apiGet(token, RETIROS_PATH),
+      apiGet(token, METODOS_PATH),
+      apiGet<{ status?: string | null; approved?: boolean }>(token, KYC_PATH),
+      apiGet<WalletBalanceRaw>(token, WALLET_BALANCE_PATH),
+    ]);
+
+    return {
+      retiros: toItems(retiros),
+      cobro: estadoDeCobro(kyc, metodos),
+      wallet: mapWalletBalance(walletRaw),
+      // El limite diario es una regla de negocio (RN-65, BC-04) y el usuario lo descubria por rechazo.
+      limiteDiario: process.env.WITHDRAWAL_DAILY_LIMIT || "5000",
+    };
+  }
+
+  /**
+   * PT-216 (H-UI-006) — Alta y verificacion de la cuenta de cobro.
+   *
+   * `RN-63` exige CLABE de 18 digitos con digito verificador **y nombre del titular**. No habia ninguna
+   * pantalla: la puerta 2 del retiro era infranqueable, y la 3 —la verificacion por micro-deposito de
+   * PT-092— tampoco tenia por donde pasarse.
+   */
+  @Get("/wallet/payment-methods")
+  @Render("pages/wallet/payment-methods.html")
+  async paymentMethods(@Req() req: Request) {
+    const metodos = await apiGet(getToken(req), METODOS_PATH);
+    return { metodos: toItems(metodos) };
+  }
+
+  /**
+   * PT-216 (H-UI-006) — Envio de documentos KYC y su estado.
+   *
+   * `RN-62` dice que el vendedor envia documentos por `POST /api/v1/kyc`. En todo el portal habia UNA
+   * mencion a KYC: una frase informativa en el onboarding. Ni formulario, ni estado, ni motivo de
+   * rechazo. El vendedor no podia saber si estaba pendiente, aprobado o rechazado.
+   */
+  @Get("/seller/kyc")
+  @Render("pages/seller/kyc.html")
+  async kyc(@Req() req: Request) {
+    const kyc = await apiGet<{ status?: string | null; approved?: boolean }>(
+      getToken(req),
+      KYC_PATH,
+    );
+    return { kyc };
   }
 
   @Get("/wallet/history")

@@ -40,7 +40,14 @@
         <a href="/my-bids" class="nav-item">Mis ofertas</a>
         <a href="/auctions/watchlist" class="nav-item">Watchlist</a>
         <a href="/orders" class="nav-item">Órdenes</a>
-        <a href="/wallet" class="nav-item">Wallet</a>
+        {# PT-216 / PT-222 — El monedero tenia UNA entrada para cinco operaciones, y las tres
+           pantallas de la cadena de cobro no existian. Depositar es el prerrequisito de cualquier puja
+           (RN-22, hold-first) y estaba a dos clics detras de una entrada generica. #}
+        <a href="/wallet" class="nav-item">Monedero</a>
+        <a href="/wallet/deposit" class="nav-item nav-item--hijo">Depositar</a>
+        <a href="/wallet/withdrawals" class="nav-item nav-item--hijo">Retirar</a>
+        <a href="/wallet/payment-methods" class="nav-item nav-item--hijo">Métodos de cobro</a>
+        <a href="/wallet/history" class="nav-item nav-item--hijo">Historial</a>
         <a href="/notifications" class="nav-item">Notificaciones</a>
         <a href="/disputes" class="nav-item">Disputas</a>
         <a href="/reputation" class="nav-item">Reputación</a>
@@ -51,6 +58,7 @@
         <a href="/auctions/create" class="nav-item">Crear subasta</a>
         <a href="/seller/orders" class="nav-item">Pedidos</a>
         <a href="/seller/onboarding" class="nav-item">Onboarding</a>
+        <a href="/seller/kyc" class="nav-item">Verificación (KYC)</a>
       </div>
       <div class="nav-section nav-bottom">
         <a href="/profile" class="nav-item">Perfil</a>

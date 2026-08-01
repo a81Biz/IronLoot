@@ -50,7 +50,10 @@ All routes protected by `ClientAuthGuard` (redirects to BASE `/auth/login` if un
 | GET | `/auctions/watchlist` | `pages/watchlist.html` | `/watchlist` |
 | GET | `/wallet` | `pages/wallet.html` | `/wallet` |
 | GET | `/wallet/deposit` | `pages/wallet/deposit.html` | — |
-| GET | `/wallet/withdraw` | `pages/wallet/withdraw.html` | — |
+| GET | `/wallet/withdraw` | redirección 301 → `/wallet/withdrawals` (PT-216) | — |
+| GET | `/wallet/withdrawals` | `pages/wallet/withdrawals.html` | `/wallet/withdrawals` + `/wallet/payment-methods` + `/kyc/me` + `/wallet/balance` |
+| GET | `/wallet/payment-methods` | `pages/wallet/payment-methods.html` | `/wallet/payment-methods` |
+| GET | `/seller/kyc` | `pages/seller/kyc.html` | `/kyc/me` |
 | GET | `/wallet/history` | `pages/wallet/history.html` | `/wallet/history?page=N` |
 | GET | `/payments` | `pages/payments.html` | `/wallet/history?types=DEBIT_ORDER,CREDIT_SALE` |
 | GET | `/orders` | `pages/orders/list.html` | `/orders?page=N` |
@@ -100,6 +103,7 @@ Auth: session-based (`req.session.isAdmin`). All routes protected by `AdminAuthG
 | GET | `/seo` | SEO config | SEO metadata |
 | GET | `/cms` | CMS content | Content management |
 | GET | `/refunds` | Refunds list | Refund management |
+| GET | `/withdrawals` | Cola de retiros (PT-216) | Aprobar, rechazar y marcar pagado (RN-66) |
 | GET | `/disputes` | Disputes list | Dispute management |
 | GET | `/commissions` | Commission config | Commission management |
 | GET | `/configuration` | System config | Runtime configuration |
@@ -193,6 +197,10 @@ administrador** (`AdminDualAuthGuard`); no se repite en cada fila.
 | GET | `/refunds` | `modules/refunds/refunds.controller.ts` |
 | POST | `/refunds/:id/status` | `modules/refunds/refunds.controller.ts` |
 | POST | `/refunds/create` | `modules/refunds/refunds.controller.ts` |
+| GET | `/withdrawals` | `modules/withdrawals/withdrawals.controller.ts` |
+| POST | `/withdrawals/:id/approve` | `modules/withdrawals/withdrawals.controller.ts` |
+| POST | `/withdrawals/:id/reject` | `modules/withdrawals/withdrawals.controller.ts` |
+| POST | `/withdrawals/:id/mark-paid` | `modules/withdrawals/withdrawals.controller.ts` |
 | GET | `/reports` | `modules/reports/reports.controller.ts` |
 | GET | `/reports/download/:type` | `modules/reports/reports.controller.ts` |
 | GET | `/seo` | `modules/seo/seo.controller.ts` |

@@ -50,6 +50,7 @@ All NestJS modules across all services.
 | `KycModule` | `modules/kyc/` | — | `KycService` |
 | `CfdiModule` | `modules/cfdi/` | — | `CfdiService` |
 | `RefundsModule` | `modules/refunds/` | — | `RefundsService` |
+| `WithdrawalsModule` | `modules/withdrawals/` | — | `WithdrawalsService` |
 | `SeoModule` | `modules/seo/` | — | `SeoService` |
 | `CmsModule` | `modules/cms/` | — | `CmsService` |
 | `FeatureFlagsModule` | `modules/feature-flags/` | — | `FeatureFlagsService` |
@@ -74,6 +75,7 @@ All NestJS modules across all services.
 | `SeoModule` | SEO metadata management |
 | `CmsModule` | Content management |
 | `RefundsModule` | Refund management |
+| `WithdrawalsModule` | Cola de retiros del vendedor: aprobar, rechazar, marcar pagado (PT-216, RN-66) |
 | `DisputesModule` | Dispute management |
 | `LotsModule` | Lot (auction item) management |
 | `CommissionsModule` | Commission management |

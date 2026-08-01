@@ -825,3 +825,15 @@ select.form-control { cursor: pointer; }
    este PT: usar una clase que ningun CSS define no falla, solo se ve mal. */
 .fila-acciones { display: flex; gap: 0.4rem; flex-wrap: wrap; }
 .accion-subasta { white-space: nowrap; }
+
+/* PT-216 — Jerarquia de segundo nivel en el menu del monedero y la lista de requisitos del retiro.
+   Las cuatro operaciones colgaban de una sola entrada «Wallet»: depositar es el prerrequisito de
+   cualquier puja (RN-22) y estaba a dos clics detras de un rotulo generico. */
+.nav-item--hijo { padding-left: 2.5rem; font-size: 0.82rem; opacity: 0.85; }
+
+.lista-requisitos { list-style: none; padding: 0; margin: 0; }
+.lista-requisitos li { padding: 0.5rem 0 0.5rem 1.6rem; position: relative; font-size: 0.875rem; }
+.lista-requisitos li::before { position: absolute; left: 0; font-weight: 700; }
+.requisito-ok::before { content: "OK"; color: #065f46; font-size: 0.7rem; }
+.requisito-falta::before { content: "!"; color: #991b1b; }
+.accion-verificar { white-space: nowrap; }
