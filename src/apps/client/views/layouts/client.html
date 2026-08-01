@@ -32,37 +32,43 @@
         </span>
       </a>
     </div>
+    {# PT-222 (H-UI-013) — `.nav-item.active` estaba DEFINIDA en `client.css` y ninguna plantilla la
+       aplicaba: una regla muerta, orientacion que alguien diseño y nadie conecto. Con dieciseis destinos
+       y un `top-bar` que solo repite el titulo, no habia ninguna señal de posicion. ADMIN si lo resuelve
+       en sus veinte entradas — la herramienta interna estaba mejor orientada que el producto.
+       `activo` lo pone `main.ts` a partir de la ruta, no cada controlador: pasarlo en veintisiete
+       `render` garantiza que el veintiocho se olvide (la leccion de PT-140). #}
     <nav class="sidebar-nav">
       <div class="nav-section">
         <span class="nav-section-title">Comprador</span>
-        <a href="/dashboard" class="nav-item">Dashboard</a>
-        <a href="/auctions/won-auctions" class="nav-item">Ganadas</a>
-        <a href="/my-bids" class="nav-item">Mis ofertas</a>
-        <a href="/auctions/watchlist" class="nav-item">Watchlist</a>
-        <a href="/orders" class="nav-item">Órdenes</a>
+        <a href="/dashboard" class="nav-item {% if activo == '/dashboard' %}active{% endif %}">Dashboard</a>
+        <a href="/auctions/won-auctions" class="nav-item {% if activo == '/auctions/won-auctions' %}active{% endif %}">Ganadas</a>
+        <a href="/my-bids" class="nav-item {% if activo == '/my-bids' %}active{% endif %}">Mis ofertas</a>
+        <a href="/auctions/watchlist" class="nav-item {% if activo == '/auctions/watchlist' %}active{% endif %}">Watchlist</a>
+        <a href="/orders" class="nav-item {% if activo == '/orders' %}active{% endif %}">Órdenes</a>
         {# PT-216 / PT-222 — El monedero tenia UNA entrada para cinco operaciones, y las tres
            pantallas de la cadena de cobro no existian. Depositar es el prerrequisito de cualquier puja
            (RN-22, hold-first) y estaba a dos clics detras de una entrada generica. #}
-        <a href="/wallet" class="nav-item">Monedero</a>
-        <a href="/wallet/deposit" class="nav-item nav-item--hijo">Depositar</a>
-        <a href="/wallet/withdrawals" class="nav-item nav-item--hijo">Retirar</a>
-        <a href="/wallet/payment-methods" class="nav-item nav-item--hijo">Métodos de cobro</a>
-        <a href="/wallet/history" class="nav-item nav-item--hijo">Historial</a>
-        <a href="/notifications" class="nav-item">Notificaciones</a>
-        <a href="/disputes" class="nav-item">Disputas</a>
-        <a href="/reputation" class="nav-item">Reputación</a>
+        <a href="/wallet" class="nav-item {% if activo == '/wallet' %}active{% endif %}">Monedero</a>
+        <a href="/wallet/deposit" class="nav-item nav-item--hijo {% if activo == '/wallet/deposit' %}active{% endif %}">Depositar</a>
+        <a href="/wallet/withdrawals" class="nav-item nav-item--hijo {% if activo == '/wallet/withdrawals' %}active{% endif %}">Retirar</a>
+        <a href="/wallet/payment-methods" class="nav-item nav-item--hijo {% if activo == '/wallet/payment-methods' %}active{% endif %}">Métodos de cobro</a>
+        <a href="/wallet/history" class="nav-item nav-item--hijo {% if activo == '/wallet/history' %}active{% endif %}">Historial</a>
+        <a href="/notifications" class="nav-item {% if activo == '/notifications' %}active{% endif %}">Notificaciones</a>
+        <a href="/disputes" class="nav-item {% if activo == '/disputes' %}active{% endif %}">Disputas</a>
+        <a href="/reputation" class="nav-item {% if activo == '/reputation' %}active{% endif %}">Reputación</a>
       </div>
       <div class="nav-section">
         <span class="nav-section-title">Vendedor</span>
-        <a href="/seller/auctions" class="nav-item">Mis subastas</a>
-        <a href="/auctions/create" class="nav-item">Crear subasta</a>
-        <a href="/seller/orders" class="nav-item">Pedidos</a>
-        <a href="/seller/onboarding" class="nav-item">Onboarding</a>
-        <a href="/seller/kyc" class="nav-item">Verificación (KYC)</a>
+        <a href="/seller/auctions" class="nav-item {% if activo == '/seller/auctions' %}active{% endif %}">Mis subastas</a>
+        <a href="/auctions/create" class="nav-item {% if activo == '/auctions/create' %}active{% endif %}">Crear subasta</a>
+        <a href="/seller/orders" class="nav-item {% if activo == '/seller/orders' %}active{% endif %}">Pedidos</a>
+        <a href="/seller/onboarding" class="nav-item {% if activo == '/seller/onboarding' %}active{% endif %}">Onboarding</a>
+        <a href="/seller/kyc" class="nav-item {% if activo == '/seller/kyc' %}active{% endif %}">Verificación (KYC)</a>
       </div>
       <div class="nav-section nav-bottom">
-        <a href="/profile" class="nav-item">Perfil</a>
-        <a href="/settings" class="nav-item">Configuración</a>
+        <a href="/profile" class="nav-item {% if activo == '/profile' %}active{% endif %}">Perfil</a>
+        <a href="/settings" class="nav-item {% if activo == '/settings' %}active{% endif %}">Configuración</a>
         <a href="/auth/logout" class="nav-item nav-logout">Salir</a>
       </div>
     </nav>

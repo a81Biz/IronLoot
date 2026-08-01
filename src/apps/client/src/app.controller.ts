@@ -101,12 +101,25 @@ export class AppController {
   @Render("pages/dashboard.html")
   async dashboard(@Req() req: Request) {
     const token = getToken(req);
-    const [profile, walletRaw, bidsRaw, auctions] = await Promise.all([
-      apiGet(token, "/api/v1/users/me"),
-      apiGet<WalletBalanceRaw>(token, WALLET_BALANCE_PATH),
-      apiGet<BidRaw[]>(token, MY_ACTIVE_BIDS_PATH),
-      apiGet(token, "/api/v1/auctions?status=ACTIVE&limit=6"),
-    ]);
+    // PT-231 (H-UI-055) — El dashboard obtenia `profile` y `bids` y **la plantilla no los usaba**: dos
+    // cifras y tres botones, sin decir si el correo esta verificado, si eres vendedor, si el KYC esta
+    // pendiente ni si hay algo esperando tu accion. Es la pantalla de aterrizaje del portal y obligaba a
+    // recorrer dieciseis secciones para descubrir si algo requeria atencion.
+    const [profile, walletRaw, bidsRaw, auctions, notifs, kyc, ordenes] =
+      await Promise.all([
+        apiGet<Record<string, unknown>>(token, "/api/v1/users/me"),
+        apiGet<WalletBalanceRaw>(token, WALLET_BALANCE_PATH),
+        apiGet<BidRaw[]>(token, MY_ACTIVE_BIDS_PATH),
+        apiGet(token, "/api/v1/auctions?status=ACTIVE&limit=6"),
+        apiGet<{ count?: number }>(token, "/api/v1/notifications/unread-count"),
+        apiGet<{ status?: string | null; approved?: boolean }>(token, KYC_PATH),
+        apiGet(token, "/api/v1/orders"),
+      ]);
+
+    const misOrdenes = toItems<{
+      status?: string;
+      shipment?: { status?: string };
+    }>(ordenes).items;
     return {
       profile,
       wallet: mapWalletBalance(walletRaw),
@@ -116,6 +129,19 @@ export class AppController {
       // y como el bloque entero vive dentro de ese `{% if %}`, se omitía en silencio.
       auctions: toItems(auctions),
       baseUrl: BASE_URL,
+      // PT-231 — Lo que necesita atencion, resuelto en el servidor.
+      atencion: {
+        sinLeer: Number(notifs?.count ?? 0),
+        kycAprobado: kyc?.approved === true,
+        kycEstado: kyc?.status ?? null,
+        esVendedor: profile?.isSeller === true,
+        correoVerificado: Boolean(profile?.emailVerifiedAt),
+        // Compras entregadas que el comprador todavia no ha confirmado no existen: lo que espera accion
+        // suya es un envio declarado y sin confirmar.
+        porConfirmar: misOrdenes.filter((o) => o.shipment?.status === "SHIPPED")
+          .length,
+        pujasActivas: mapBidsList(bidsRaw).items.length,
+      },
     };
   }
 
@@ -394,10 +420,41 @@ export class AppController {
     return { disputes: toItems(raw) };
   }
 
+  /**
+   * PT-220 (R-035 · H-UI-021) — Abrir una disputa **sin teclear un UUID**.
+   *
+   * El formulario pedía «ID de la orden — UUID de la orden» en un `input` de texto libre, y **ninguna
+   * pantalla generaba el enlace con `?orderId=`**: el único camino era copiar un identificador de
+   * máquina a mano, en el peor momento posible — cuando el usuario ya tiene un problema con su compra.
+   *
+   * Ahora se cargan sus órdenes disputables y se eligen de una lista. `RN-40` acota a órdenes
+   * `PAID`/`SHIPPED`/`DELIVERED`, una disputa por orden y 14 días desde la entrega; la lista lo
+   * refleja para que el usuario vea **por qué** una orden no aparece.
+   */
   @Get("/disputes/create")
   @Render("pages/disputes/create.html")
-  disputeCreate(@Query("orderId") orderId?: string) {
-    return { orderId };
+  async disputeCreate(@Req() req: Request, @Query("orderId") orderId?: string) {
+    const token = getToken(req);
+    const [orders, disputes] = await Promise.all([
+      apiGet(token, "/api/v1/orders?role=buyer"),
+      apiGet(token, "/api/v1/disputes"),
+    ]);
+
+    const yaDisputadas = new Set(
+      toItems<{ orderId?: string }>(disputes).items.map((d) => d.orderId),
+    );
+
+    const disputables = toItems<{
+      id: string;
+      status?: string;
+      auction?: { title?: string };
+    }>(orders).items.filter(
+      (o) =>
+        ["PAID", "SHIPPED", "DELIVERED"].includes(String(o.status)) &&
+        !yaDisputadas.has(o.id),
+    );
+
+    return { orderId, disputables, ventanaDias: 14 };
   }
 
   @Get("/disputes/:id")

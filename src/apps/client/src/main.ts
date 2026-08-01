@@ -92,6 +92,31 @@ async function bootstrap() {
   entorno.addFilter("badge", badgeDeEstado);
   entorno.addFilter("fecha", fechaLegible);
 
+  /**
+   * PT-222 (H-UI-013) — **Dónde estás, resuelto una vez.**
+   *
+   * `.nav-item.active` estaba definida en `client.css` y **ninguna plantilla la aplicaba**: una regla
+   * muerta. Con dieciséis destinos en la barra lateral y un `top-bar` que sólo repite el título de la
+   * página, no había ninguna señal de posición.
+   *
+   * Se resuelve aquí, a partir de la ruta de la petición, y no pasándolo en cada `render`: son
+   * veintisiete pantallas y pasar el mismo valor veintisiete veces garantiza que la veintiocho se
+   * olvide — la lección de PT-140 aplicada a la orientación.
+   */
+  app
+    .getHttpAdapter()
+    .getInstance()
+    .use(
+      (
+        req: { path: string },
+        res: { locals: Record<string, unknown> },
+        next: () => void,
+      ) => {
+        res.locals.activo = req.path;
+        next();
+      },
+    );
+
   app.useStaticAssets(join(__dirname, "..", "public"));
   app.setBaseViewsDir(viewsPath);
   app.setViewEngine("html");

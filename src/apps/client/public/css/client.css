@@ -855,3 +855,7 @@ select.form-control { cursor: pointer; }
 }
 .pagination a { color: var(--cl-gold-texto, #8A6A1F); text-decoration: underline; }
 .current-page { color: var(--cl-text-muted); }
+
+/* PT-231 — El bloque «Necesita tu atención» del dashboard. Se distingue del resto de tarjetas porque
+   es lo único de la pantalla que pide una acción, no que informe. */
+.card--atencion { border-left: 3px solid #92400e; }

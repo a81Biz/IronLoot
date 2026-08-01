@@ -17,12 +17,51 @@
     <div class="stat-nota">Neto de tus ventas. Se libera 72 h despu&eacute;s de que el comprador confirme la recepci&oacute;n, o al vencer los 14 d&iacute;as de disputa.</div>
   </div>
 </div>
+{# PT-231 (H-UI-055) — «¿Qué necesita mi atención?». El controlador ya obtenia `profile` y `bids` y la
+   plantilla no los usaba: dos cifras y tres botones. Ahora lo que espera accion se dice arriba, con su
+   enlace, en vez de obligar a recorrer dieciseis secciones para descubrirlo. #}
+{% if atencion %}
+{% set hayAvisos = (not atencion.correoVerificado) or atencion.sinLeer or atencion.porConfirmar or (atencion.esVendedor and not atencion.kycAprobado) %}
+{% if hayAvisos %}
+<div class="card card--atencion">
+  <div class="card-title">Necesita tu atención</div>
+  <ul class="lista-requisitos">
+    {% if not atencion.correoVerificado %}
+    <li class="requisito-falta">
+      <strong>Tu correo no está verificado.</strong> Hasta que lo confirmes no puedes operar —
+      <a href="{{ baseUrl }}/auth/verify-email-pending">reenviar el enlace</a>.
+    </li>
+    {% endif %}
+    {% if atencion.porConfirmar %}
+    <li class="requisito-falta">
+      <strong>{{ atencion.porConfirmar }} compra(s) en camino esperan que confirmes la recepción.</strong>
+      El vendedor cobra a partir de esa confirmación — <a href="/orders">ver mis órdenes</a>.
+    </li>
+    {% endif %}
+    {% if atencion.esVendedor and not atencion.kycAprobado %}
+    <li class="requisito-falta">
+      <strong>Tu verificación de identidad está {{ atencion.kycEstado | estado | lower }}.</strong>
+      Sin ella no puedes retirar dinero — <a href="/seller/kyc">revisar</a>.
+    </li>
+    {% endif %}
+    {% if atencion.sinLeer %}
+    <li class="requisito-falta">
+      <strong>{{ atencion.sinLeer }} notificación(es) sin leer</strong> —
+      <a href="/notifications">ver</a>.
+    </li>
+    {% endif %}
+  </ul>
+</div>
+{% endif %}
+{% endif %}
+
 <div class="card">
   <div class="card-title">Acciones rápidas</div>
   <div class="d-flex gap-2">
     <a href="/wallet/deposit" class="btn btn-primary">Depositar fondos</a>
     <a href="/auctions/create" class="btn btn-secondary">Crear subasta</a>
-    <a href="/my-bids" class="btn btn-ghost">Ver mis ofertas</a>
+    <a href="/my-bids" class="btn btn-ghost">Mis pujas{% if atencion and atencion.pujasActivas %} ({{ atencion.pujasActivas }} activas){% endif %}</a>
+    <a href="/wallet/withdrawals" class="btn btn-ghost">Retirar</a>
   </div>
 </div>
 {% if auctions and auctions.items %}
