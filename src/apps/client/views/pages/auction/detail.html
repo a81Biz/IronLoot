@@ -15,7 +15,16 @@
     <p>Precio actual: <strong id="currentPrice">${{ auction.currentPrice }}</strong> MXN</p>
     <p>Estado: <span id="auctionStatus" class="badge {{ auction.status | badge }}">{{ auction.status | estado }}</span></p>
     <p>Cierra en: <span id="countdown" data-ends-at="{{ auction.endsAt }}">…</span></p>
-    <p>Tu saldo disponible: <strong>${{ wallet.balance if wallet else '0' }}</strong> MXN</p>
+    <p>Tu saldo disponible: <strong>MXN {{ wallet.balance if wallet else '0' }}</strong></p>
+    {# PT-210 (H-UI-020) — La puja minima aceptable, que RN-14 aplica y el usuario descubria por
+       rechazo con un `min="0"` en el formulario, en los 120 segundos del soft-close. #}
+    {% if pujaMinima %}
+    <p class="nota-ayuda">
+      Puja mínima ahora: <strong>MXN {{ pujaMinima }}</strong>.
+      Si alguien puja en los últimos segundos, la subasta se <strong>extiende</strong> un poco para que
+      puedas responder (anti-sniping).
+    </p>
+    {% endif %}
 
     {# PT-215 (H-UI-017) — El punto donde seguir una subasta tiene sentido: cuando la estas mirando. #}
     <button type="button" class="btn btn-ghost btn-sm accion-watchlist"
@@ -23,8 +32,10 @@
     <div id="msgWatchlist" class="alert oculto mensaje-accion-corto" role="status" aria-live="polite"></div>
 
     <form class="fila-centrada" id="bidForm">
-      <input class="flex-1" type="number" id="bidAmount" step="0.01" min="0" placeholder="Tu puja (MXN)" required
-            >
+      <input class="flex-1" type="number" id="bidAmount" step="0.01"
+             min="{{ pujaMinima | default('0.01') }}"
+             value="{{ pujaMinima | default('') }}"
+             placeholder="Tu puja (MXN)" required>
       <button type="submit" class="btn btn-primary">Pujar ahora</button>
     </form>
     <div id="bidMsg" class="alert oculto mensaje-accion-corto"></div>

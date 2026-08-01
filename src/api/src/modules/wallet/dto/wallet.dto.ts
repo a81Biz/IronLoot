@@ -68,4 +68,20 @@ export class TransactionDto {
 export class TransactionHistoryDto {
   @ApiProperty({ type: [TransactionDto] })
   transactions: TransactionDto[];
+
+  /**
+   * PT-229 (H-UI-044) — El total, la pagina y el tamaño.
+   *
+   * Sin `total`, la interfaz no puede dibujar paginacion sin adivinar: es lo que llevo al catalogo a
+   * la heuristica `length >= 12` de H-UI-043, que fallaba porque el tamaño real de pagina era 10.
+   * Opcionales para no romper a un consumidor que solo lea `transactions`.
+   */
+  @ApiProperty({ required: false })
+  total?: number;
+
+  @ApiProperty({ required: false })
+  page?: number;
+
+  @ApiProperty({ required: false })
+  limit?: number;
 }

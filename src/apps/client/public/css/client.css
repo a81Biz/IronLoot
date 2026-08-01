@@ -842,3 +842,16 @@ select.form-control { cursor: pointer; }
    una clase que ningun CSS define no falla, solo se ve mal. */
 .accion-watchlist { white-space: nowrap; }
 .accion-notificacion { white-space: nowrap; }
+
+/* PT-229 — La paginacion del historial. Existia en `base.css` y no en `client.css`: la guarda de
+   PT-224 la caza en cuanto se usa, que es exactamente para lo que esta. */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 0 0;
+  font-size: 0.875rem;
+}
+.pagination a { color: var(--cl-gold-texto, #8A6A1F); text-decoration: underline; }
+.current-page { color: var(--cl-text-muted); }

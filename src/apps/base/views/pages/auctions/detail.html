@@ -10,9 +10,11 @@
 
       {# ── Columna principal ─────────────────────────── #}
       <div class="detail-main">
+        {# PT-221 (H-UI-018) — Leia `auction.imageUrl`, que el DTO NO emite: el campo es `images`, un
+           array. Nunca habia imagen, con cualquier numero de fotos subidas. #}
         <div class="detail-gallery">
-          {% if auction.imageUrl %}
-            <img src="{{ auction.imageUrl }}" alt="{{ auction.title }}">
+          {% if auction.images and auction.images.length %}
+            <img src="{{ auction.images[0] }}" alt="{{ auction.title }}">
           {% endif %}
         </div>
 
@@ -39,8 +41,10 @@
             {% if auction.totalBids %}
               <span>{{ auction.totalBids }} oferta(s)</span>
             {% endif %}
-            {% if auction.endDate %}
-              <span>Cierra: {{ auction.endDate }}</span>
+            {# PT-221 — Leia `auction.endDate`, que no existe: el campo es `endsAt`. La fecha de cierre
+               —la variable que produce la puja— no se mostraba nunca. #}
+            {% if auction.endsAt %}
+              <span data-cuenta-atras="{{ auction.endsAt }}">Cierra: {{ auction.endsAt }}</span>
             {% endif %}
           </div>
         </div>

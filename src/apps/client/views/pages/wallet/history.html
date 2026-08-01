@@ -22,5 +22,15 @@
       </tbody>
     </table>
   </div>
+
+  {# PT-229 (H-UI-044) — Paginacion derivada del total real que ahora devuelve el API, no de una
+     heuristica sobre el tamaño de la pagina. #}
+  {% if total and total > limit %}
+  <div class="pagination">
+    {% if page > 1 %}<a href="/wallet/history?page={{ page - 1 }}">← Anterior</a>{% endif %}
+    <span class="current-page">Página {{ page }} de {{ ((total - 1) // limit) + 1 }} · {{ total }} movimiento(s)</span>
+    {% if page * limit < total %}<a href="/wallet/history?page={{ page + 1 }}">Siguiente →</a>{% endif %}
+  </div>
+  {% endif %}
 </div>
 {% endblock %}

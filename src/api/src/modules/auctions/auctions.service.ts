@@ -140,7 +140,12 @@ export class AuctionsService {
       this.prisma.auction.findMany({
         where,
         orderBy: { createdAt: 'desc' },
-        include: { seller: { select: { displayName: true } } },
+        // PT-221 — `_count` en vez de una consulta por subasta: el recuento de pujas es lo que convierte
+        // una tarjeta en una decision, y pedirlo de una en una seria N+1 sobre el catalogo publico.
+        include: {
+          seller: { select: { displayName: true } },
+          _count: { select: { bids: true } },
+        },
         skip,
         take: limit,
       }),
@@ -148,7 +153,13 @@ export class AuctionsService {
     ]);
 
     return {
-      data: auctions.map((a) => this.mapToResponse(a, a.seller?.displayName || undefined)),
+      data: auctions.map((a) =>
+        this.mapToResponse(
+          a,
+          a.seller?.displayName || undefined,
+          (a as unknown as { _count?: { bids: number } })._count?.bids,
+        ),
+      ),
       total,
       page,
       limit,
@@ -165,14 +176,32 @@ export class AuctionsService {
 
     const auction = await this.prisma.auction.findUnique({
       where,
-      include: { seller: { select: { displayName: true } } },
+      // PT-221 — El detalle tambien cuenta: es donde el panel decia «Sin ofertas aun» con cualquier
+      // numero de pujas.
+      include: {
+        seller: { select: { displayName: true } },
+        _count: { select: { bids: true } },
+      },
     });
 
     if (!auction) {
       throw new AuctionNotFoundException(idOrSlug);
     }
 
-    return this.mapToResponse(auction, auction.seller?.displayName || undefined);
+    // PT-210 (H-UI-020) — La puja minima aceptable, calculada donde vive la regla.
+    //
+    // `RN-14` la aplica `bids.service.ts` con este mismo `AUCTION_MIN_INCREMENT_AMOUNT`, y el usuario la
+    // descubria por RECHAZO: el formulario declaraba `min="0"`. Se emite aqui —en el detalle, que es
+    // donde se puja— y no en el listado, para no pagar una lectura de configuracion por cada tarjeta.
+    const incrementoMinimo = await this.systemConfig.getNumber('AUCTION_MIN_INCREMENT_AMOUNT', 10);
+
+    const respuesta = this.mapToResponse(
+      auction,
+      auction.seller?.displayName || undefined,
+      (auction as unknown as { _count?: { bids: number } })._count?.bids,
+    );
+    respuesta.minNextBid = Number(auction.currentPrice) + incrementoMinimo;
+    return respuesta;
   }
 
   // ===========================================
@@ -272,7 +301,23 @@ export class AuctionsService {
   // ===========================================
   // HELPERS
   // ===========================================
-  public mapToResponse(auction: Auction, sellerName?: string): AuctionResponseDto {
+  /**
+   * PT-221 (R-029 · H-UI-018) — **El recuento de pujas, que la interfaz pedia y el API no daba.**
+   *
+   * Las plantillas leian `auction.totalBids` desde siempre y **este metodo no lo emitia**: el panel de
+   * puja decia «Sin ofertas aun» con cualquier numero de pujas, y las tarjetas del catalogo no mostraban
+   * ninguna. El recuento es la prueba social que valida un precio — `list.png §6` lo especifica en cada
+   * tarjeta, junto al tiempo restante.
+   *
+   * Es opcional en el DTO porque quien llame a `mapToResponse` sin contar (una creacion, una
+   * publicacion) no tiene por que pagar una consulta extra: ahi vale `undefined`, que la plantilla
+   * distingue de `0`.
+   */
+  public mapToResponse(
+    auction: Auction,
+    sellerName?: string,
+    totalBids?: number,
+  ): AuctionResponseDto {
     return {
       id: auction.id,
       title: auction.title,
@@ -286,6 +331,7 @@ export class AuctionsService {
       sellerId: auction.sellerId,
       sellerName,
       images: Array.isArray(auction.images) ? (auction.images as string[]) : [],
+      totalBids,
       createdAt: auction.createdAt,
       updatedAt: auction.updatedAt,
     };

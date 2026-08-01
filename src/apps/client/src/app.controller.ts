@@ -315,19 +315,28 @@ export class AppController {
   @Get("/wallet/history")
   @Render("pages/wallet/history.html")
   async walletHistory(@Req() req: Request, @Query("page") page = 1) {
-    const history = await apiGet(
+    // PT-229 (H-UI-044) — `page` viajaba y el API lo ignoraba: la lista se truncaba en silencio a los
+    // diez ultimos movimientos. Ahora el API pagina de verdad y devuelve el total.
+    const history = await apiGet<{ total?: number; limit?: number }>(
       getToken(req),
-      `/api/v1/wallet/history?page=${page}`,
+      `/api/v1/wallet/history?page=${page}&limit=20`,
     );
-    return { history, page };
+    return {
+      history,
+      page: Number(page),
+      total: history?.total ?? 0,
+      limit: 20,
+    };
   }
 
   @Get("/payments")
   @Render("pages/payments.html")
   async payments(@Req() req: Request) {
+    // PT-229 — El filtro por tipos ya estaba implementado en el SERVICIO del API; lo descartaba su
+    // controlador. «Mis pagos» mostraba el ledger completo, duplicando «Historial» en vez de filtrarlo.
     const history = await apiGet(
       getToken(req),
-      "/api/v1/wallet/history?types=DEBIT_ORDER,CREDIT_SALE",
+      "/api/v1/wallet/history?types=DEBIT_ORDER,CREDIT_SALE,DEPOSIT,REFUND&limit=50",
     );
     return { history };
   }
@@ -454,7 +463,10 @@ export class AppController {
   async auctionDetail(@Req() req: Request, @Param("id") id: string) {
     const token = getToken(req);
     const [auction, walletRaw, bids] = await Promise.all([
-      apiGet(token, `/api/v1/auctions/${id}`),
+      apiGet<{ currentPrice?: number; status?: string; minNextBid?: number }>(
+        token,
+        `/api/v1/auctions/${id}`,
+      ),
       apiGet<WalletBalanceRaw>(token, WALLET_BALANCE_PATH),
       apiGet(token, `/api/v1/auctions/${id}/bids`),
     ]);
