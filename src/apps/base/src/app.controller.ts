@@ -106,10 +106,22 @@ export class AppController {
 
   @Get("/auctions")
   @Render("pages/auctions/list.html")
-  async auctionsList(@Query("page") page = 1, @Query("q") q?: string) {
+  async auctionsList(
+    @Query("page") page = 1,
+    @Query("q") q?: string,
+    @Query("minPrice") minPrice?: string,
+    @Query("maxPrice") maxPrice?: string,
+    @Query("sort") sort?: string,
+  ) {
+    // PT-209 (H-UI-010) — Los parámetros que la barra lateral emitía y **nadie leía**: ni este
+    // controlador ni el API. El usuario cambiaba un filtro, obtenía lo mismo, y concluía que no había
+    // resultados que cumplieran su criterio — cuando lo que ocurría es que el criterio se descartaba.
     const params = new URLSearchParams({
       page: String(page),
       ...(q ? { q } : {}),
+      ...(minPrice ? { minPrice } : {}),
+      ...(maxPrice ? { maxPrice } : {}),
+      ...(sort ? { sort } : {}),
     });
     // PT-204 (H-UI-001) — Esto leía `data?.items`. **Esa clave no existe**: el API emite
     // `{data,total,page,limit}`. El catálogo público devolvía `[]` siempre y pintaba «No hay subastas
@@ -124,8 +136,11 @@ export class AppController {
       auctions,
       // PT-209 (H-UI-042) — El total real, no el tamaño de la página.
       total: auctions.total ?? 0,
-      page,
+      page: Number(page),
       q,
+      minPrice,
+      maxPrice,
+      sort,
       clientUrl: CLIENT_URL,
       apiUrl: API_URL,
       canonical: `${SITE_URL}/auctions`,

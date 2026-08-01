@@ -94,6 +94,12 @@ export class AuctionsService {
     limit?: number;
     mine?: boolean;
     currentUserId?: string;
+    /** PT-209 (H-UI-010) — Busqueda por texto en titulo y descripcion. */
+    q?: string;
+    minPrice?: number;
+    maxPrice?: number;
+    /** `createdAt_desc` (por defecto) · `price_asc` · `price_desc` · `endDate_asc`. */
+    sort?: string;
   }): Promise<{ data: AuctionResponseDto[]; total: number; page: number; limit: number }> {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
@@ -136,10 +142,41 @@ export class AuctionsService {
       }
     }
 
+    // PT-209 (H-UI-010) — Los filtros que el catalogo ofrecia y nadie leia.
+    //
+    // `q` busca en titulo y descripcion, sin distinguir mayusculas: es lo que espera quien escribe en
+    // una caja de busqueda. `PRD RF-10` declaraba esta capacidad **operable** y no existia.
+    if (query.q?.trim()) {
+      const texto = query.q.trim();
+      where.OR = [
+        { title: { contains: texto, mode: 'insensitive' } },
+        { description: { contains: texto, mode: 'insensitive' } },
+      ];
+    }
+
+    // El rango se aplica sobre el precio ACTUAL, que es el que el usuario ve en la tarjeta. Filtrar por
+    // el inicial daria resultados que no coinciden con lo que esta mirando.
+    if (query.minPrice != null || query.maxPrice != null) {
+      where.currentPrice = {
+        ...(query.minPrice != null ? { gte: Number(query.minPrice) } : {}),
+        ...(query.maxPrice != null ? { lte: Number(query.maxPrice) } : {}),
+      };
+    }
+
+    // Orden declarado, no libre: aceptar un campo arbitrario del cliente en un `orderBy` es dejarle
+    // elegir por que columna se ordena la base.
+    const ORDENES: Record<string, Prisma.AuctionOrderByWithRelationInput> = {
+      createdAt_desc: { createdAt: 'desc' },
+      price_asc: { currentPrice: 'asc' },
+      price_desc: { currentPrice: 'desc' },
+      endDate_asc: { endsAt: 'asc' },
+    };
+    const orderBy = ORDENES[query.sort ?? ''] ?? ORDENES.createdAt_desc;
+
     const [auctions, total] = await Promise.all([
       this.prisma.auction.findMany({
         where,
-        orderBy: { createdAt: 'desc' },
+        orderBy,
         // PT-221 — `_count` en vez de una consulta por subasta: el recuento de pujas es lo que convierte
         // una tarjeta en una decision, y pedirlo de una en una seria N+1 sobre el catalogo publico.
         include: {

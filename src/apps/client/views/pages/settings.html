@@ -14,6 +14,32 @@
     <button type="submit" class="btn btn-primary">Guardar preferencias</button>
   </form>
 </div>
+{# PT-219 (H-UI-029) — **La politica de privacidad promete esto y esta pantalla no lo tenia.**
+
+   Dice, literalmente: «Puedes solicitar la exportacion o eliminacion de tus datos en cualquier momento
+   desde la configuracion de tu cuenta o enviando un correo a privacidad@ironloot.com». La configuracion
+   tenia DOS casillas de notificacion por correo.
+
+   Lo que se entrega es la mitad de interfaz: el canal, señalado donde el documento dice que esta. El
+   automatismo de exportacion y borrado exige decidir plazos, alcance y retencion contable —el ledger es
+   inmutable por RN-26— y eso es la revision juridica que sigue declarada como bloqueo (L-03). Se dice
+   aqui en vez de prometer un boton que no haria lo que promete. #}
+<div class="card ancho-600">
+  <div class="card-title">Tus datos personales</div>
+  <p class="text-muted texto-pequeno mb-2">
+    Puedes pedir una copia de tus datos o su eliminación. Escríbenos a
+    <a href="mailto:privacidad@ironloot.com?subject=Solicitud%20sobre%20mis%20datos">privacidad@ironloot.com</a>
+    desde el correo de tu cuenta y te responderemos con el procedimiento.
+  </p>
+  <p class="nota-ayuda">
+    Ten en cuenta que los asientos contables de tus operaciones no se borran: el libro mayor es
+    inmutable por diseño y hay obligaciones fiscales que lo exigen. Lo que se elimina son tus datos
+    personales; el registro financiero queda anonimizado.
+  </p>
+  <p class="nota-ayuda">
+    Qué datos guardamos y para qué está en el <a href="{{ baseUrl }}/privacy">aviso de privacidad</a>.
+  </p>
+</div>
 {% endblock %}
 {% block scripts %}
 <script src="/js/pages/pages-settings.js"></script>

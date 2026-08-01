@@ -145,10 +145,71 @@ export class AppController {
     };
   }
 
+  /**
+   * PT-227 (R-037 · H-UI-024) — **«Salir» borraba UNA de las dos cookies.**
+   *
+   * Esto limpiaba `access_token` y dejaba `refresh_token` viva **siete días** en el navegador. El guard
+   * de este mismo servicio hace lo contrario, y lo explica con estas palabras:
+   *
+   * > *«Borra **las dos** cookies y manda al login. Dejar la de refresco sería dejar una llave muerta.»*
+   *
+   * La misma decisión de seguridad estaba tomada de dos formas contradictorias en el mismo servicio, y
+   * **la que ejecutaba el usuario era la insegura**. En un equipo compartido, tras «Salir» quedaba una
+   * credencial válida durante una semana.
+   *
+   * Y ademas se **revoca en el servidor**: borrar la cookie deja el token vivo para quien lo tenga
+   * copiado. `POST /auth/logout` invalida la sesión, que es lo que el usuario cree que hace este botón.
+   */
   @Get("/auth/logout")
-  logout(@Res() res: Response): void {
-    res.clearCookie("access_token", { domain: COOKIE_DOMAIN, path: "/" });
+  async logout(@Req() req: Request, @Res() res: Response): Promise<void> {
+    const refresh = req.cookies?.["refresh_token"];
+
+    if (refresh) {
+      try {
+        await fetch(`${API_URL}/api/v1/auth/logout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${getToken(req)}`,
+          },
+          body: JSON.stringify({ refreshToken: refresh }),
+        });
+      } catch (error) {
+        // No se propaga: el usuario pidio salir y tiene que salir. Pero **se registra**, porque una
+        // sesion que no se revoco en el servidor es una llave viva y quien investigue un acceso raro
+        // necesita saber que esto fallo.
+        console.error(
+          `[CLIENT] No se pudo revocar la sesion en el API al cerrar sesion: ` +
+            `${(error as Error).message}. Las cookies SI se borran.`,
+        );
+      }
+    }
+
+    const opciones = { domain: COOKIE_DOMAIN, path: "/" };
+    res.clearCookie("access_token", opciones);
+    res.clearCookie("refresh_token", opciones);
     res.redirect(`${BASE_URL}/auth/login`);
+  }
+
+  /**
+   * PT-227 (R-037 · H-UI-023) — Seguridad de la cuenta.
+   *
+   * No habia cambio de contraseña autenticado en todo el portal: el unico camino era cerrar sesion y
+   * usar «¿Olvidaste tu contraseña?». Y el `Manual de Usuario §1` instruye explicitamente —tras
+   * detectar reuso de token— *«si no fuiste tu, **cambia la contraseña**»*: mandaba a una accion que la
+   * interfaz no ofrecia.
+   *
+   * Tampoco habia forma de activar 2FA, aunque `PRD RF-02` la declara operable y el API expone
+   * `/2fa/generate` y `/2fa/enable`.
+   */
+  @Get("/security")
+  @Render("pages/security.html")
+  async security(@Req() req: Request) {
+    const perfil = await apiGet<{ isTwoFactorEnabled?: boolean }>(
+      getToken(req),
+      "/api/v1/users/me",
+    );
+    return { dosFactores: perfil?.isTwoFactorEnabled === true };
   }
 
   @Get("/profile")
@@ -168,7 +229,8 @@ export class AppController {
     // La pagina «Configuracion» esta en el menu principal y NO CARGABA para ningun usuario. Y el
     // error enga�aba: un 404 habria dicho «esa ruta no existe»; el 400 mandaba a mirar el id.
     const settings = await apiGet(getToken(req), "/api/v1/users/me/settings");
-    return { settings };
+    // PT-219 — La seccion de datos personales enlaza al aviso de privacidad, que vive en BASE.
+    return { settings, baseUrl: BASE_URL };
   }
 
   @Get("/my-bids")

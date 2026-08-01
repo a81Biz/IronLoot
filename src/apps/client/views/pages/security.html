@@ -1,0 +1,104 @@
+{% extends "layouts/client.html" %}
+{% block title %}Seguridad de la cuenta — IronLoot{% endblock %}
+{% block page_title %}Seguridad de la cuenta{% endblock %}
+
+{# PT-227 (R-037 · H-UI-022, H-UI-023) — **Esta pantalla no existía.**
+
+   No había cambio de contraseña autenticado en todo el portal: el único camino era cerrar sesión y usar
+   «¿Olvidaste tu contraseña?». Y el `Manual de Usuario §1`, al explicar la detección de reuso de token,
+   instruye explícitamente *«si no fuiste tú, cambia la contraseña»* — mandaba a una acción que la
+   interfaz no ofrecía.
+
+   Tampoco había forma de activar 2FA, aunque `PRD RF-02` lo declara operable y el API expone
+   `/2fa/generate`, `/2fa/enable` y `/2fa/disable`. Y quien lo activara por cualquier otra vía quedaba
+   **bloqueado de forma permanente**, porque el login no tenía dónde escribir el código (PT-227 lo
+   corrige también ahí). #}
+
+{% block content %}
+
+<div class="card ancho-600">
+  <div class="card-title">Contraseña</div>
+  <form id="passwordForm">
+    <div class="form-group">
+      <label for="currentPassword">Contraseña actual</label>
+      <input class="form-control" type="password" id="currentPassword" required
+             autocomplete="current-password">
+    </div>
+    <div class="form-group">
+      <label for="newPassword">Contraseña nueva</label>
+      <input class="form-control" type="password" id="newPassword" required minlength="8"
+             autocomplete="new-password">
+      <p class="nota-ayuda">Mínimo 8 caracteres.</p>
+    </div>
+    <div class="form-group">
+      <label for="confirmPassword">Repite la nueva</label>
+      <input class="form-control" type="password" id="confirmPassword" required minlength="8"
+             autocomplete="new-password">
+    </div>
+    <button type="submit" class="btn btn-primary">Cambiar contraseña</button>
+    <div id="msgPassword" class="alert oculto mensaje-accion" role="status" aria-live="polite"></div>
+  </form>
+</div>
+
+<div class="card ancho-600">
+  <div class="card-title">Verificación en dos pasos</div>
+
+  {% if dosFactores %}
+    <p><span class="badge badge-success">Activada</span></p>
+    <p class="text-muted texto-pequeno mb-2">
+      Al iniciar sesión te pediremos el código de tu app además de la contraseña.
+    </p>
+    <form id="disable2faForm">
+      <div class="form-group">
+        <label for="tokenDisable">Código actual de tu app</label>
+        <input class="form-control" id="tokenDisable" inputmode="numeric" maxlength="6" required
+               autocomplete="one-time-code" placeholder="6 dígitos">
+        <p class="nota-ayuda">
+          Se pide el código para desactivarla: si no, a quien te robara la sesión le bastaría con
+          apagarla.
+        </p>
+      </div>
+      <button type="submit" class="btn btn-ghost">Desactivar</button>
+    </form>
+  {% else %}
+    <p><span class="badge badge-muted">Desactivada</span></p>
+    <p class="text-muted texto-pequeno mb-2">
+      Añade un segundo factor con una app de autenticación (Google Authenticator, Authy, 1Password…).
+      Con ella, saber tu contraseña no basta para entrar en tu cuenta.
+    </p>
+    <button type="button" class="btn btn-primary" id="empezar2fa">Activar</button>
+
+    <div class="oculto" id="caja2fa">
+      <p class="text-muted texto-pequeno mt-2">
+        Escanea este código con tu app y escribe después el número de seis dígitos que te muestre.
+      </p>
+      <img id="qr2fa" alt="Código QR para configurar la verificación en dos pasos" class="qr-2fa">
+      <form id="enable2faForm">
+        <div class="form-group">
+          <label for="tokenEnable">Código de tu app</label>
+          <input class="form-control" id="tokenEnable" inputmode="numeric" maxlength="6" required
+                 autocomplete="one-time-code" placeholder="6 dígitos">
+        </div>
+        <button type="submit" class="btn btn-primary">Confirmar y activar</button>
+      </form>
+    </div>
+  {% endif %}
+
+  <div id="msg2fa" class="alert oculto mensaje-accion" role="status" aria-live="polite"></div>
+</div>
+
+<div class="card ancho-600">
+  <div class="card-title">Sesión</div>
+  <p class="text-muted texto-pequeno mb-2">
+    Tu sesión dura hasta siete días y se renueva mientras uses el portal. Si el sistema detecta que se
+    está usando desde dos sitios a la vez, la cierra por seguridad — también para ti, porque no hay forma
+    de saber cuál de los dos accesos es el tuyo. Si eso pasa y no fuiste tú, cambia la contraseña aquí
+    arriba.
+  </p>
+  <a href="/auth/logout" class="btn btn-ghost">Cerrar sesión en este dispositivo</a>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/pages-security.js" defer></script>
+{% endblock %}

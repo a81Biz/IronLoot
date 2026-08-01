@@ -110,6 +110,16 @@ export class AuctionsController {
     @Query('mine') mine?: string, // Boolean query params often come as strings
     @Query('page') page?: number,
     @Query('limit') limit?: number,
+    // PT-209 (H-UI-010) — **Estos cuatro llegaban desde el catalogo publico y NADIE los leia.**
+    //
+    // `q`, `minPrice`, `maxPrice` y `sort` viajaban en la URL desde que existe la barra lateral de
+    // filtros. El usuario cambiaba un filtro, obtenia lo mismo, y concluia que no habia resultados que
+    // cumplieran su criterio — cuando lo que pasaba es que el criterio se descartaba. Es peor que no
+    // ofrecer filtros.
+    @Query('q') q?: string,
+    @Query('minPrice') minPrice?: number,
+    @Query('maxPrice') maxPrice?: number,
+    @Query('sort') sort?: string,
   ): Promise<{ data: AuctionResponseDto[]; total: number; page: number; limit: number }> {
     const isMine = mine === 'true';
 
@@ -124,6 +134,10 @@ export class AuctionsController {
       limit,
       mine: isMine,
       currentUserId: user?.id,
+      q,
+      minPrice,
+      maxPrice,
+      sort,
     });
   }
 

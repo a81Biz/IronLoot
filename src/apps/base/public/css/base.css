@@ -1263,3 +1263,31 @@ img { max-width: 100%; display: block; }
 .prose h3 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; }
 .prose ol { margin: 0 0 1rem 1.25rem; color: var(--cl-text-muted); line-height: 1.75; }
 .prose code { font-size: 0.85em; background: rgba(49, 54, 63, 0.08); padding: 0.1em 0.35em; border-radius: 4px; }
+
+/* PT-209 — Etiqueta accesible pero no visible: los campos de filtro y busqueda no tenian `label`, sólo
+   `placeholder`, que desaparece al escribir y no lo anuncia un lector de pantalla. */
+.oculto-visual {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* PT-219 — La casilla de consentimiento del registro: el texto no se pega a la casilla ni se desalinea
+   cuando ocupa varias líneas. */
+.etiqueta-consentimiento {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: var(--cl-text-muted);
+  font-weight: 400;
+}
+.etiqueta-consentimiento a { color: var(--cl-gold-texto); text-decoration: underline; }
+.etiqueta-consentimiento input { margin-top: 0.2rem; flex-shrink: 0; }

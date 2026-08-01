@@ -47,7 +47,8 @@ All routes protected by `ClientAuthGuard` (redirects to BASE `/auth/login` if un
 |---|---|---|---|
 | GET | `/dashboard` | `pages/dashboard.html` | `/users/me`, `/wallet`, `/bids/my?limit=5`, `/auctions?status=ACTIVE&limit=6` |
 | GET | `/profile` | `pages/profile.html` | `/users/me` |
-| GET | `/settings` | `pages/settings.html` | `/users/settings` |
+| GET | `/settings` | `pages/settings.html` | `/users/me/settings` (corregido en PT-132) |
+| GET | `/security` | `pages/security.html` | `/users/me` — contraseña y 2FA (PT-227) |
 | GET | `/my-bids` | `pages/bids/my.html` | `/bids/my?page=N` |
 | GET | `/auctions/won-auctions` | `pages/won-auctions.html` | `/orders?role=buyer` |
 | GET | `/auctions/watchlist` | `pages/watchlist.html` | `/watchlist` |

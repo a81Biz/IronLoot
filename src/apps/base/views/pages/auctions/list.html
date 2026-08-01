@@ -7,66 +7,43 @@
   <div class="list-layout">
 
     {# ── Sidebar de filtros ────────────────────────────── #}
+    {# PT-209 (R-028 · H-UI-010) — **Esta barra lateral ofrecia seis controles y ninguno filtraba.**
+
+       Lo que se conserva —busqueda, rango de precio y orden— ahora llega al API y filtra de verdad.
+
+       Lo que se RETIRA, con su motivo escrito (design.md §3):
+
+         · **Categorias.** El modelo `Auction` **no tiene el campo**. Ofrecer un filtro sin campo detras
+           ES el defecto H-UI-010. Reintroducirlas exige decidir la taxonomia —el diseño dibuja ocho, el
+           catalogo ofrecia cinco, el modelo tiene cero— y migrar el esquema: es un PT propio.
+         · **Estado «Cerradas».** El API prohibe por diseño exponer subastas cerradas en modo publico
+           (`where.status = { in: [] }`, con el comentario «Return nothing»). Publicar el historico es
+           una decision de negocio.
+         · **«Solo vendedores verificados».** Exponer el estado KYC de una persona en un DTO publico es
+           una decision de privacidad. PT-225 deja visible la reputacion, que es la señal equivalente y
+           ya es publica por diseño.
+
+       Las tres son reversibles. Migrar el esquema por una decision no tomada, no. #}
     <aside class="filter-sidebar">
       <form method="GET" action="/auctions">
-        {% if q %}
-          <input type="hidden" name="q" value="{{ q }}">
-        {% endif %}
-
-        <div class="filter-group">
-          <p class="filter-title">Categorías</p>
-          <ul class="filter-list">
-            <li><a href="/auctions" class="{% if not category %}active{% endif %}">Todas</a></li>
-            <li><a href="/auctions?category=collectibles">Coleccionables</a></li>
-            <li><a href="/auctions?category=electronics">Electrónica</a></li>
-            <li><a href="/auctions?category=art">Arte</a></li>
-            <li><a href="/auctions?category=jewelry">Joyería</a></li>
-            <li><a href="/auctions?category=vehicles">Vehículos</a></li>
-          </ul>
-        </div>
-
-        <div class="filter-group">
-          <p class="filter-title">Estado de subasta</p>
-          <ul class="filter-list">
-            <li>
-              <label class="filter-checkbox">
-                <input type="checkbox" name="status" value="ACTIVE" {% if status == 'ACTIVE' %}checked{% endif %}>
-                Activas
-              </label>
-            </li>
-            <li>
-              <label class="filter-checkbox">
-                <input type="checkbox" name="status" value="PUBLISHED" {% if status == 'PUBLISHED' %}checked{% endif %}>
-                Próximas
-              </label>
-            </li>
-            <li>
-              <label class="filter-checkbox">
-                <input type="checkbox" name="status" value="CLOSED" {% if status == 'CLOSED' %}checked{% endif %}>
-                Cerradas
-              </label>
-            </li>
-          </ul>
-        </div>
+        {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+        {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
 
         <div class="filter-group">
           <p class="filter-title">Precio (MXN)</p>
           <div class="price-range">
-            <input type="number" name="minPrice" placeholder="Min" class="form-control" value="{{ minPrice }}">
+            <label class="oculto-visual" for="minPrice">Precio mínimo</label>
+            <input type="number" id="minPrice" name="minPrice" placeholder="Min" class="form-control" value="{{ minPrice }}">
             <span>—</span>
-            <input type="number" name="maxPrice" placeholder="Max" class="form-control" value="{{ maxPrice }}">
+            <label class="oculto-visual" for="maxPrice">Precio máximo</label>
+            <input type="number" id="maxPrice" name="maxPrice" placeholder="Max" class="form-control" value="{{ maxPrice }}">
           </div>
         </div>
 
-        <div class="filter-group">
-          <p class="filter-title">Vendedor</p>
-          <label class="verified-toggle">
-            <input type="checkbox" name="verified" value="true" {% if verified %}checked{% endif %}>
-            Solo verificados
-          </label>
-        </div>
-
         <button type="submit" class="btn btn-primary btn-full">Aplicar filtros</button>
+        {% if q or minPrice or maxPrice or sort %}
+          <a href="/auctions" class="btn btn-ghost btn-full mt-2">Limpiar todo</a>
+        {% endif %}
       </form>
     </aside>
 
@@ -74,8 +51,11 @@
     <div class="auction-results">
       <div class="mb-4">
         <form class="fila-acciones" method="GET" action="/auctions">
-          {% if status %}<input type="hidden" name="status" value="{{ status }}">{% endif %}
-          <input class="form-control flex-1" name="q" value="{{ q }}" placeholder="Buscar subastas...">
+          {% if minPrice %}<input type="hidden" name="minPrice" value="{{ minPrice }}">{% endif %}
+          {% if maxPrice %}<input type="hidden" name="maxPrice" value="{{ maxPrice }}">{% endif %}
+          {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+          <label class="oculto-visual" for="q">Buscar subastas</label>
+          <input class="form-control flex-1" id="q" name="q" value="{{ q }}" placeholder="Buscar subastas...">
           <button type="submit" class="btn btn-primary">Buscar</button>
         </form>
       </div>
@@ -88,11 +68,14 @@
         {# PT-096 - Antes `onchange="window.location.search=..."`, que la CSP bloqueaba: ordenar
            el catalogo no hacia nada. El script conserva los demas parametros de la URL, que
            es lo que aqui se hacia a mano concatenando `&q=`. #}
-        <select class="sort-select" data-navega-param="sort">
-          <option value="createdAt_desc">Más recientes</option>
-          <option value="price_asc">Menor precio</option>
-          <option value="price_desc">Mayor precio</option>
-          <option value="endDate_asc">Próximas a cerrar</option>
+        {# PT-209 — El desplegable navegaba y el parametro se descartaba, y ademas NUNCA reflejaba el
+           orden vigente: al recargar volvia a «Mas recientes» aunque estuvieras ordenando por precio. #}
+        <label class="oculto-visual" for="sort">Ordenar por</label>
+        <select class="sort-select" id="sort" data-navega-param="sort">
+          <option value="createdAt_desc" {% if not sort or sort == 'createdAt_desc' %}selected{% endif %}>Más recientes</option>
+          <option value="price_asc" {% if sort == 'price_asc' %}selected{% endif %}>Menor precio</option>
+          <option value="price_desc" {% if sort == 'price_desc' %}selected{% endif %}>Mayor precio</option>
+          <option value="endDate_asc" {% if sort == 'endDate_asc' %}selected{% endif %}>Próximas a cerrar</option>
         </select>
       </div>
 
@@ -130,11 +113,11 @@
         </div>
         <div class="pagination">
           {% if page and page > 1 %}
-            <a href="/auctions?page={{ page - 1 }}{% if q %}&q={{ q }}{% endif %}">← Anterior</a>
+            <a href="/auctions?page={{ page - 1 }}{% if q %}&q={{ q }}{% endif %}{% if minPrice %}&minPrice={{ minPrice }}{% endif %}{% if maxPrice %}&maxPrice={{ maxPrice }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">← Anterior</a>
           {% endif %}
           <span class="current-page">{{ page | default(1) }}</span>
           {% if total and (page | default(1)) * 10 < total %}
-            <a href="/auctions?page={{ (page | default(1)) + 1 }}{% if q %}&q={{ q }}{% endif %}">Siguiente →</a>
+            <a href="/auctions?page={{ (page | default(1)) + 1 }}{% if q %}&q={{ q }}{% endif %}{% if minPrice %}&minPrice={{ minPrice }}{% endif %}{% if maxPrice %}&maxPrice={{ maxPrice }}{% endif %}{% if sort %}&sort={{ sort }}{% endif %}">Siguiente →</a>
           {% endif %}
         </div>
       {% else %}
