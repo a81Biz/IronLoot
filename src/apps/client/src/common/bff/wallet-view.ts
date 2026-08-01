@@ -13,6 +13,14 @@ export const WALLET_BALANCE_PATH = "/api/v1/wallet/balance";
 export interface WalletBalanceRaw {
   available: number;
   held: number;
+  /**
+   * PT-206 (H-UI-011) — El holdback: el neto de las ventas sin liquidar (`RN-64`).
+   *
+   * El API lo devuelve desde PT-071 y **esta interfaz no lo declaraba**, así que el mapeador de abajo lo
+   * descartaba antes de llegar a ninguna plantilla. Opcional en el tipo porque un API anterior podría no
+   * enviarlo; el mapeador lo resuelve a 0, nunca a `undefined`.
+   */
+  pending?: number;
   currency: string;
   isActive: boolean;
 }
@@ -20,6 +28,8 @@ export interface WalletBalanceRaw {
 export interface WalletView {
   balance: number;
   held_funds: number;
+  /** Ventas cobradas cuyo neto aún no se ha liberado. NO es retirable todavía. */
+  pending_balance: number;
   currency: string;
   isActive: boolean;
 }
@@ -36,6 +46,9 @@ export function mapWalletBalance(
   return {
     balance: raw.available,
     held_funds: raw.held,
+    // PT-206 — `?? 0` y no `raw.pending` a secas: un `undefined` acabaría en la plantilla como saldo
+    // vacío, que es la misma clase de silencio que este PT corrige.
+    pending_balance: raw.pending ?? 0,
     currency: raw.currency,
     isActive: raw.isActive,
   };

@@ -803,3 +803,15 @@ select.form-control { cursor: pointer; }
 .notif-linea { padding: .75rem; border-bottom: 1px solid #f0f2f5; }
 .notif-linea--sin-leer { background: #fffbf0; }
 .notif-sin-leer { font-weight: 600; }
+
+/* PT-206 (H-UI-011) — La nota que acompaña a cada saldo.
+   Las tres cifras del monedero significan cosas distintas y ninguna lo decía: «disponible» es lo
+   retirable, «retenido» es dinero del COMPRADOR bloqueado por sus pujas, y «pendiente» es el neto de
+   las VENTAS que aún no ha vencido su holdback (RN-64). Sin la nota, la tercera cifra sería una cuarta
+   pregunta en vez de una respuesta. */
+.stat-nota {
+  margin-top: 0.4rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--cl-text-muted);
+}

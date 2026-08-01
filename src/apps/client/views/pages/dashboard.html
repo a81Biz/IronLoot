@@ -11,6 +11,11 @@
     <div class="stat-value">MXN {{ wallet.held_funds | default('0.00') }}</div>
     <div class="stat-label">Fondos retenidos</div>
   </div>
+  <div class="stat-card">
+    <div class="stat-value">MXN {{ wallet.pending_balance | default('0.00') }}</div>
+    <div class="stat-label">Pendiente de liquidar</div>
+    <div class="stat-nota">Neto de tus ventas. Se libera 72 h despu&eacute;s de que el comprador confirme la recepci&oacute;n, o al vencer los 14 d&iacute;as de disputa.</div>
+  </div>
 </div>
 <div class="card">
   <div class="card-title">Acciones rápidas</div>
