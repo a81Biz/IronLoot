@@ -11,7 +11,7 @@ subir. Es la tanda FPGE-004, **completa**.
 
 **Reglas duras**: **36** `RULE-NN`. **Guardas de documentación**: **20** suites.
 
-**Hallazgos PTSA**: **37** registrados, **0** activos. **Deuda técnica**: **2** abiertas de **19** registradas.
+**Hallazgos PTSA**: **41** registrados, **0** activos. **Deuda técnica**: **2** abiertas de **19** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
 `npm run indice:estado`. **185 encabezados · 0 realmente abiertos.**
@@ -45,8 +45,10 @@ pregunta si el producto llega a la pantalla.
 
 **Consecuencia: cerrar estos PT no subirá el Health de 100.** No se retira una penalización que nunca se
 aplicó. Quien mire `score-history.json` verá 100 antes y 100 después.
-→ **Acción necesaria: `audit PTSA`** para registrar los 62 como `H-XXX`. FPGE es de sólo lectura sobre
-PTSA y no puede hacerlo; sin ese sync, la mejora no es medible.
+**Hecho el 2026-07-31 (`S-014`):** los 64 hallazgos entran al registro como **cuatro familias** —
+`H-038`…`H-041`, evidencia `E-041`—, una por causa y no una por síntoma. **Sin emitir puntuación**: los
+checkpoints de delta sync necesitan una base con historia y la base está vacía. `freshness` sigue
+`STALE`; se restaura con `resume PTSA` tras `run-all.sh`.
 
 ---
 

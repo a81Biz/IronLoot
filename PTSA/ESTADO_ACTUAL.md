@@ -17,6 +17,12 @@ Freshness:      STALE          la tanda PT-204..PT-233 (FPGE-004) tocó `auditab
                                la afirmación de frescura, que es lo único que se puede saber sin medir.
                                Lo delató `frescura-declarada-es-real.spec.ts` (PT-202), que es para lo que existe.
                                Se restaura con `resume PTSA`.
+
+**S-014 (2026-07-31) — auditoría dirigida, sin puntuación.** Registra cuatro hallazgos —`H-038`…`H-041`,
+evidencia `E-041`— con los que la auditoría de interfaz entra al registro. **NO se emitió Health**: los
+cinco checkpoints no se re-ejecutaron porque `audit:domain` y `audit:reliability` necesitan una base con
+historia y la base está vacía. Los cuatro nacen `CERRADA`, cerrados por la tanda `PT-204`…`PT-233`.
+Hallazgos registrados: **41**. Activos: **0**. Detalle en `AUDIT_LOG.md § S-014`.
 audit_commit:   98e445b3fe0c099001c58aa62699e410d9d3562a
 Cobertura:      PARCIAL        D1/D2/D3/D4 medidas EJECUTANDO · D5 al 0 % — LIMITACIÓN DECLARADA de v1.0
 ```

@@ -238,3 +238,29 @@
 - **Orden de ejecución != orden de prioridad.** PT-204 va primero porque PT-209, PT-221 y PT-223 operan
   sobre un catálogo que hasta entonces no puede pintar una fila. PT-213 va con PT-204, no después.
 - **Estado:** los 29 en `PROMOVIDO`. ACK del Proposal Gate otorgado en el mismo acto.
+
+## 2026-07-31 — Run FPGE-005
+
+- **Trigger:** cierre del ciclo completo pedido por el humano («no pares hasta terminar»), tras la tanda
+  `PT-204`…`PT-233` y el registro `S-014`.
+- **Insumo:** PTSA `S-014` (auditoría dirigida, **sin puntuación**) + el cierre de la tanda FDGE.
+- **Compuerta de frescura: ABIERTA.** `score_freshness = STALE` desde que la tanda tocó
+  `auditable_patterns`. **El orden de esta emisión no se apoya en la puntuación y no puede**: `S-014` no
+  emitió Health porque los checkpoints de delta sync necesitan una base con historia y la base está
+  vacía. Se recomienda `run-all.sh` → suite de navegador → `resume PTSA`, **en ese orden**, porque
+  `run-all.sh` trunca la base al empezar.
+- **Ítems emitidos:** 9 (`R-052`…`R-060`). Ocho `PROPUESTO`, uno `BLOQUEADO` (el texto legal).
+- **Top impacto:** R-052 · R-053 · R-054. **Top quick wins:** R-053 (54.00) · R-056 (27.00) · R-058 (18.00).
+- **Ajustes declarados:** (a) los ítems que nacen de `H-038`…`H-041` usan **penalización evitada** —los
+  cuatro hallazgos nacieron `CERRADA` y nunca penalizaron—; (b) se aplica un **factor 0.5 a R-052 y
+  R-053** porque con penalización evitada CRÍTICA aplastarían la escala y pondrían una ganancia
+  hipotética por delante de trabajo de producto real. Siguen primero y segundo, que es lo correcto, pero
+  sin deformar el orden. (c) `Urgency = 1.0` en los nueve, declarada constante en vez de inventar un
+  bonus.
+- **El ciclo se cerró entero por primera vez:** auditoría → FPGE R-004 (29 ítems) → FDGE (30 PT, 19
+  commits, 7 guardas nuevas) → PTSA S-014 (4 hallazgos) → FPGE R-005. Los dos hallazgos que aparecieron
+  **durante** la corrección —`H-UI-063` y `H-UI-064`— recibieron PT propio en vez de colarse en otro.
+- **Lo que esta emisión recoge es lo que la tanda dejó fuera DECLARÁNDOLO**, no olvidándolo: dirección de
+  envío (cambio de esquema), subida de imágenes, sesiones activas, mediación de disputas, reputación en
+  el punto de decisión, y el texto legal.
+- **Estado:** los 9 esperando revisión humana. FPGE no promueve nada por sí mismo.

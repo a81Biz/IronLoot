@@ -1282,3 +1282,52 @@ se ha vuelto a medir contra el. Que reemitir cueste algo es lo que hace que `FRE
 evidencias (38 validas + 2 ausentes). **Se deja como estaba en vez de mejorarlo por deduccion**: la
 proxima emision que lo mida lo movera si toca. Es la diferencia entre medir y suponer, que es de lo que
 va todo este ciclo.
+
+
+---
+
+## S-014 — 2026-07-31 · AUDITORÍA DIRIGIDA (no delta sync)
+
+**Disparador:** `audit PTSA` tras la tanda FDGE `PT-204`…`PT-233`, para registrar lo que la auditoría de
+interfaz del 2026-07-31 encontró.
+
+**Qué se hizo:** registrar **cuatro hallazgos** —`H-038`…`H-041`— con su evidencia `E-041`, todos
+`CERRADA` por los PT de la tanda.
+
+**Qué NO se hizo, y por qué se dice:** **no se ha emitido puntuación.** Los cinco checkpoints no se
+re-ejecutaron: `audit:domain` y `audit:reliability` necesitan una base **con historia**, y la base está
+vacía porque `run-all.sh` la truncó — medido en `E-041` (`total: 0`). Emitir un Health sobre eso sería
+inventar un veredicto, que es justo lo que `PT-180` enseñó a no hacer. **`freshness` sigue `STALE`** desde
+que la tanda tocó `auditable_patterns`, y se restaura con `resume PTSA` cuando haya datos.
+
+### Los cuatro hallazgos, y por qué son cuatro y no sesenta y cuatro
+
+La auditoría produjo **62 hallazgos `H-UI-XXX`** más **dos** aparecidos durante la corrección. Aquí se
+registran las **cuatro familias** que los explican, cada una citando los `H-UI` que cubre y el PT que la
+cerró. El detalle individual vive en el informe de auditoría, en las tres matrices de cobertura de
+`docs/implementation/ROADMAP.md` y en `changes/PT-204-232-tanda-fpge-004/tasks.md`.
+
+Un hallazgo por síntoma habría dado sesenta y cuatro fichas que se leen una vez; **uno por causa** da
+cuatro que sirven para la próxima auditoría.
+
+| Hallazgo | Dim | Sev | Qué explica | Cerrado por |
+|---|:--:|---|---|---|
+| **H-038** | D2 | CRÍTICA | El instrumento certificó 100 con once P0 vivos: la unidad de auditoría es el producto de datos, no la pantalla | PT-213, PT-232 |
+| **H-039** | D1 | CRÍTICA | El producto no distinguía «no hay datos» de «el contrato está roto» — 7 de los 11 P0 | PT-204, PT-213 |
+| **H-040** | D1 | CRÍTICA | Capacidades declaradas ✅ cuya interfaz no existía: publicar, cobrar, aprobar retiros, calificar, 2FA | PT-205, PT-215, PT-216, PT-225, PT-227 |
+| **H-041** | D1 | ALTA | El producto afirmaba al usuario cosas que sus propias reglas niegan | PT-208, PT-212, PT-219, PT-230, PT-232 |
+
+### Lo que esta sesión deja dicho
+
+**`H-038` es el hallazgo, y los otros tres son su consecuencia.** Un certificado Clase A convivía con un
+escaparate apagado porque la definición de producto dejaba fuera al usuario. Las catorce reglas de
+dominio se cumplían sobre las filas de la base — **y se habrían seguido cumpliendo con el catálogo
+apagado**.
+
+**Y una cifra que no se moverá, dicha por adelantado:** cerrar estos cuatro hallazgos **no sube el Health
+de 100**, porque nunca llegaron a penalizarlo. Quien mire `score-history.json` verá 100 antes y 100
+después. Lo que cambia no es el número: es que **el registro ya no calla lo que pasó**.
+
+**Pendiente de método, propuesto en `FPGE-005`:** incorporar la pantalla como producto auditable, o un
+checkpoint que renderice las rutas SSR contra datos reales y falle si una lista queda vacía teniendo
+filas en la base. Es una decisión de la especificación de PTSA, no de un PT de desarrollo.
