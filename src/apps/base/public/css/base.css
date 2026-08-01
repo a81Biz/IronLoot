@@ -1180,3 +1180,12 @@ img { max-width: 100%; display: block; }
 .mb-4 { margin-bottom: 1.25rem; }
 .contenedor-ancho { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
 .contenedor-ancho--sep { margin-bottom: 2rem; }
+
+/* PT-224 (H-UI-036) — Clases que el marcado usaba sin que ningun CSS las definiera.
+   `.badge-muted` la pinta el detalle de subasta para un estado que no es Activa/Proxima/Cerrada, y
+   `.detail-main` es la columna principal de ese mismo detalle. Las dos existian solo en el HTML: el
+   estado desconocido salia sin badge y la columna sin ancho minimo. Lo vigila
+   `src/api/test/unit/web-views/clases-css-existen.spec.ts`. */
+.badge-muted { background: rgba(107, 114, 128, 0.12); color: var(--cl-text-muted); }
+.detail-main { min-width: 0; }
+.justify-center { justify-content: center; }

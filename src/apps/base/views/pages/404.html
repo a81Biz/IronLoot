@@ -1,12 +1,19 @@
 {% extends "layouts/base.html" %}
 {% block title %}Página no encontrada — IronLoot{% endblock %}
+
+{# PT-224 (H-UI-036) — Esta página estaba escrita con clases de DaisyUI —`hero`, `min-h-screen`,
+   `bg-base-200`, `max-w-md`, `text-5xl`, `py-6`, `font-bold`—, y NINGUNA existe en `base.css`.
+   El framework se retiró por ADR-002 y el marcado se quedó: la pantalla de error se veía rota
+   justo cuando el usuario ya está desorientado, sugiriendo un fallo del sitio y no una URL mal
+   escrita. Ahora usa el sistema de estilos real. Lo vigila `clases-css-existen.spec.ts`. #}
 {% block content %}
-<div class="hero min-h-screen bg-base-200">
-  <div class="hero-content text-center">
-    <div class="max-w-md">
-      <h1 class="text-5xl font-bold">404</h1>
-      <p class="py-6">La página que buscas no existe o ha sido movida.</p>
+<div class="page-container">
+  <div class="empty-state ancho-560">
+    <h1>404</h1>
+    <p>La página que buscas no existe o ha sido movida.</p>
+    <div class="hero-actions">
       <a href="/" class="btn btn-primary">Volver al inicio</a>
+      <a href="/auctions" class="btn btn-ghost">Ver subastas</a>
     </div>
   </div>
 </div>

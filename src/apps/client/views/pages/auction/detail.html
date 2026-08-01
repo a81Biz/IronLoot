@@ -4,14 +4,14 @@
 {% block content %}
 {% if auction %}
 {# PT-096 - El id viaja aqui, no interpolado dentro de un <script>. #}
-<div class="auction-detail ancho-820" data-auction-id="{{ auction.id }}">
+<div class="ancho-820" data-auction-id="{{ auction.id }}">
   {% if auction.images and auction.images.length %}
   <img class="imagen-subasta" src="{{ auction.images[0] }}" alt="{{ auction.title }}"
       >
   {% endif %}
   <p>{{ auction.description }}</p>
 
-  <div class="bid-panel caja-oscura">
+  <div class="caja-oscura">
     <p>Precio actual: <strong id="currentPrice">${{ auction.currentPrice }}</strong> MXN</p>
     <p>Estado: <span id="auctionStatus">{{ auction.status }}</span></p>
     <p>Cierra en: <span id="countdown" data-ends-at="{{ auction.endsAt }}">…</span></p>

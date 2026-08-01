@@ -815,3 +815,6 @@ select.form-control { cursor: pointer; }
   line-height: 1.4;
   color: var(--cl-text-muted);
 }
+
+/* PT-224 — `.justify-center` la usa la 404 y no estaba definida. */
+.justify-center { justify-content: center; }
