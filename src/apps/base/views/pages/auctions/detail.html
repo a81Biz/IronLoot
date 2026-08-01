@@ -1,8 +1,6 @@
 {% extends "layouts/base.html" %}
 {% block title %}{{ auction.title if auction else "Subasta" }} — IronLoot{% endblock %}
 {% block meta_description %}{{ auction.description | truncate(150) if auction else "Subasta en IronLoot" }}{% endblock %}
-{% block og_type %}product{% endblock %}
-{% block og_image %}{% if auction and auction.images and auction.images.length %}<meta property="og:image" content="{{ auction.images[0] }}">{% endif %}{% endblock %}
 
 {% block content %}
 <div class="page-container">

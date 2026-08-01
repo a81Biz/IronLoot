@@ -8,23 +8,15 @@
 ```
 Sistema:        IronLoot Auction Platform v1.0.0
 Fase actual:    CERTIFICADO — Clase A
-Health:         100 / 100      cero hallazgos activos
-Risk:           0 / 100        Risk_bruto = 0
-Confidence:     91.0 / 100     POR PRIMERA VEZ DERIVADO: 80/100/95/100 — ver el desglose abajo
-Freshness:      STALE          la tanda PT-204..PT-233 (FPGE-004) tocó `auditable_patterns`
-                               desde 98e445b: src/apps/{base,client}/**, src/admin/**, docker-compose.yml.
-                               **La puntuación NO se recalcula aquí** —eso exige un delta sync—: se corrige
-                               la afirmación de frescura, que es lo único que se puede saber sin medir.
-                               Lo delató `frescura-declarada-es-real.spec.ts` (PT-202), que es para lo que existe.
-                               Se restaura con `resume PTSA`.
-
-**S-014 (2026-07-31) — auditoría dirigida, sin puntuación.** Registra cuatro hallazgos —`H-038`…`H-041`,
-evidencia `E-041`— con los que la auditoría de interfaz entra al registro. **NO se emitió Health**: los
-cinco checkpoints no se re-ejecutaron porque `audit:domain` y `audit:reliability` necesitan una base con
-historia y la base está vacía. Los cuatro nacen `CERRADA`, cerrados por la tanda `PT-204`…`PT-233`.
-Hallazgos registrados: **41**. Activos: **0**. Detalle en `AUDIT_LOG.md § S-014`.
-audit_commit:   98e445b3fe0c099001c58aa62699e410d9d3562a
-Cobertura:      PARCIAL        D1/D2/D3/D4 medidas EJECUTANDO · D5 al 0 % — LIMITACIÓN DECLARADA de v1.0
+Health:         95.5 / 100     UN hallazgo activo: H-042 (ALTA) penaliza D2
+Risk:           32 / 100       Risk_bruto = 8 — H-042 (ALTA, activa)
+Confidence:     95.0 / 100     coverage 90 · freshness 100 · evidence 95 · autonomy 100
+Freshness:      FRESH          S-015 re-ejecuto LOS CINCO checkpoints sobre el arbol actual.
+                               La secuencia importo: `run-all.sh` genero la historia que D1 y D5
+                               necesitan, y por eso D1 pasa del 50 % al 100 % de cobertura.
+audit_commit:   ca20502095f90fabaa14482f3a7a52a628509881
+Cobertura:      PARCIAL        D1 al 100 % (14/14 sobre salida de ESTA sesion) · D2/D3/D4 al 100 %
+                               D5 al 0 % — 3 ciclos de 20, LIMITACION DECLARADA de v1.0
 ```
 
 > **S-013 — el sync corto que cierra el ciclo, y por qué hizo falta.**
@@ -144,7 +136,7 @@ limitación declarada**, y lo que legitima ese cierre es que la declaración de 
 eso es una **limitación declarada**, no un pendiente: la fiabilidad operacional **no está demostrada** y se dice.
 Cualquier pérdida de cobertura tumba la Clase A.
 
-**3. Cero hallazgos activos es cero defectos CONOCIDOS.** Tercera emisión consecutiva en que un barrido
+**3. Cero hallazgos activos era cero defectos CONOCIDOS — y S-015 lo demostró.** Tercera emisión consecutiva en que un barrido
 dirigido encuentra defectos que **ninguna prueba señalaba**. Este `0` mide lo que se ha buscado, no lo que hay
 — y hoy quedó claro **dónde** buscar: los dos de esta corrida vivían en el **camino de fallo**, que nunca se
 había ejecutado. El camino feliz estaba probado; el otro, nunca.
@@ -165,9 +157,22 @@ había ejecutado. El camino feliz estaba probado; el otro, nunca.
 
 ---
 
-## Hallazgos activos: 0
+## Hallazgos activos: 1
 
-**Cerrados: 35** — H-001 … H-035. Ninguno reabierto; **H-030 revisada** (`[A6]`: se anota, no se reescribe).
+**`H-042` — un webhook de PayPal con firma fabricada obtuvo `SIGNATURE_OK` y llegó a intentar la
+captura.** ALTA · D2 · evidencia `E-042` · detectado en `S-015` al ejecutar la suite de navegador.
+
+Se deja **ABIERTA a propósito**: `verifyWebhookSignature` sí se llama antes de capturar y sí consulta el
+endpoint de PayPal, así que lo que falta por medir es **por qué respondió `SUCCESS`**. Tres hipótesis sin
+separar, y ninguna se cierra escribiendo código sobre el camino por el que entra dinero. Asignado a
+`PT-234` (INVESTIGATION) vía `FPGE-005 / R-061`.
+
+**No lo introdujo la tanda `PT-204`…`PT-233`**: `git diff master -- src/api/src/modules/payments/` está
+vacío.
+
+**Cerrados: 41** — H-001 … H-041. Ninguno reabierto; **H-030 revisada** (`[A6]`: se anota, no se reescribe).
+`H-038`…`H-041` los registró `S-014`: son las cuatro familias que explican los 64 hallazgos de la
+auditoría de interfaz, una por causa y no una por síntoma, cerradas por la tanda `PT-204`…`PT-233`.
 
 ---
 

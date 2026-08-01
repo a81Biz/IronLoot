@@ -1,6 +1,6 @@
 # ROADMAP — FPGE
 
-**Emisión:** R-005 · **2026-07-31** · **Insumo:** PTSA `S-014` (auditoría dirigida) + cierre de la tanda
+**Emisión:** R-005 · **2026-07-31** · *(actualizada tras `S-015`)* · **Insumo:** PTSA `S-014` (auditoría dirigida) + cierre de la tanda
 FDGE `PT-204`…`PT-233`
 **Estado:** los 9 ítems en `PROPUESTO`. FPGE propone; el humano dispone.
 
@@ -13,11 +13,21 @@ FDGE `PT-204`…`PT-233`
 
 ---
 
-## ⚠ Compuerta de frescura: ABIERTA
+## ✅ Compuerta de frescura: CERRADA
 
 ```
-score_freshness:  STALE     la tanda PT-204..PT-233 tocó `auditable_patterns` desde 98e445b
+score_freshness:  FRESH     S-015 re-ejecutó los cinco checkpoints el 2026-07-31
 ```
+
+> **Actualizado tras ejecutar la secuencia.** Esta emisión salió con la compuerta abierta y recomendando
+> `run-all.sh` → suite de navegador → `resume PTSA`. **Se hizo, en ese orden**, y el resultado cambia dos
+> cosas del roadmap: `R-053` pasa a `HECHO`, y aparece **`R-061`** en el primer puesto — `H-042`, el
+> único hallazgo activo, que la suite encontró en el camino del dinero.
+>
+> **Y una predicción mía que no se cumplió**, anotada como manda la casa: dije que *«el `resume PTSA`
+> seguirá diciendo 100»*. **Dice 95.5.** Me equivoqué porque razoné sólo sobre los hallazgos ya cerrados
+> y no conté con que ejecutar la suite **encontraría uno nuevo** — que es exactamente para lo que servía
+> ejecutarla.
 
 **El orden de abajo no se apoya en la puntuación**, y no puede: `S-014` **no emitió Health** porque los
 checkpoints de delta sync necesitan una base con historia y la base está vacía (`total: 0`, medido en
@@ -56,7 +66,8 @@ el registro ya no calla lo que pasó.
 
 | Rank | ID | Tipo | Título | Origen | Dim | Δ Score | Esf. | **Priority** | Estado | PT |
 |---:|---|---|---|---|:--:|---:|:--:|---:|---|:--:|
-| 1 | **R-053** | INVESTIGATION | Ejercitar la interfaz con datos reales (`run-all.sh` + navegador) | HANDOFF · `E-041` | D1 | +9.0 | S | **54.00** | `PROPUESTO` | — |
+| — | **R-053** | INVESTIGATION | Ejercitar la interfaz con datos reales (`run-all.sh` + navegador) | HANDOFF · `E-041` | D1 | +9.0 | S | **54.00** | **`HECHO`** | — |
+| 1 | **R-061** | INVESTIGATION | **`H-042`** — un webhook con firma fabricada obtuvo `SIGNATURE_OK` | **H-042** · `E-042` | D2 | **+4.5 real** | M | **36.00** | `PROPUESTO` | **PT-234** |
 | 2 | **R-052** | REFACTOR | La pantalla como producto auditable en PTSA | **H-038** | D2 | +9.0 | M | **36.00** | `PROPUESTO` | — |
 | 3 | **R-056** | FEATURE | La reputación del vendedor en el punto de decisión | H-UI-056 | D1 | +4.5 | S | **27.00** | `PROPUESTO` | — |
 | 4 | **R-054** | FEATURE | Dirección de envío en la orden (cambio de esquema) | H-UI-049 · A-28 | D1 | +4.5 | M | **20.25** | `PROPUESTO` | — |

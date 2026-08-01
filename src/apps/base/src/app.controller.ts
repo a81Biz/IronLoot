@@ -40,14 +40,27 @@ export class AppController {
     // no llegaba a actuar —el objeto no es nulo—, así que la plantilla hacía `auctions.length` sobre
     // un objeto: `undefined`, falsy, `{% else %}`. **La portada anunciaba «No hay subastas activas en
     // este momento» hubiera las que hubiera**, e invitaba a publicar «la primera».
+    // PT-221 — **Sin `status=ACTIVE`**, y la diferencia la vio ejecutar el sitio con datos reales.
+    //
+    // La portada pedía sólo `ACTIVE` y una subasta recién publicada es `PUBLISHED`: no aparecía en la
+    // página principal **justo cuando más falta le hace la visibilidad**, y sólo entraba al recibir su
+    // primera puja — que es lo que `RN-18` dice que la activa. Círculo cerrado: no se ve, no se puja; no
+    // se puja, no se ve.
+    //
+    // Sin el parámetro, `findAll` devuelve los dos estados públicos, que es exactamente lo que `RN-16`
+    // declara pujable. Es el mismo razonamiento que PT-210 aplicó al CTA del detalle (H-UI-050).
     const auctions = await fetchJson<unknown>(
-      `${API_URL}/api/v1/auctions?status=ACTIVE&limit=6`,
+      `${API_URL}/api/v1/auctions?limit=6`,
     );
     return {
       auctions: toItems(auctions),
       clientUrl: CLIENT_URL,
       apiUrl: API_URL,
       canonical: SITE_URL,
+      ogTitulo: "IronLoot — Subastas en línea con fondos protegidos",
+      ogDescripcion:
+        "Compra y vende en subastas en tiempo real. Tus pujas quedan respaldadas por saldo real, y " +
+        "si te superan recuperas los fondos al instante.",
     };
   }
 
@@ -144,6 +157,9 @@ export class AppController {
       clientUrl: CLIENT_URL,
       apiUrl: API_URL,
       canonical: `${SITE_URL}/auctions`,
+      ogTitulo: "Subastas activas — IronLoot",
+      ogDescripcion:
+        "Explora las subastas activas: puja en tiempo real con fondos protegidos y vendedores verificados.",
     };
   }
 
@@ -155,11 +171,20 @@ export class AppController {
     if (!auction) throw new NotFoundException();
     // PT-223 — La canonica de un lote usa su `slug`, que el modelo tiene desde siempre y las URL no
     // usaban: `/auctions/<uuid>` no dice nada a un buscador ni a una persona.
+    // PT-223 — Los metadatos sociales de un lote salen del lote. Sin esto, una subasta compartida en
+    // redes o por mensajeria aparece con el titulo y la descripcion genericos del sitio.
     return {
       auction,
       clientUrl: CLIENT_URL,
       apiUrl: API_URL,
       canonical: `${SITE_URL}/auctions/${auction.slug || id}`,
+      ogTipo: "product",
+      ogTitulo: `${auction.title} — IronLoot`,
+      ogDescripcion: String(auction.description || "").slice(0, 200),
+      ogImagen:
+        Array.isArray(auction.images) && auction.images.length
+          ? auction.images[0]
+          : undefined,
     };
   }
 

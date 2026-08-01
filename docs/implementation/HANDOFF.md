@@ -11,7 +11,7 @@ subir. Es la tanda FPGE-004, **completa**.
 
 **Reglas duras**: **36** `RULE-NN`. **Guardas de documentación**: **20** suites.
 
-**Hallazgos PTSA**: **41** registrados, **0** activos. **Deuda técnica**: **2** abiertas de **19** registradas.
+**Hallazgos PTSA**: **42** registrados, **1** activo (`H-042`). **Deuda técnica**: **2** abiertas de **19** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
 `npm run indice:estado`. **185 encabezados · 0 realmente abiertos.**
@@ -129,10 +129,10 @@ checkpoints de delta sync necesitan una base con historia y la base está vacía
 
 ## Riesgos vivos
 
-1. **Ninguna corrección se ha visto con datos reales.** La base está vacía (`total: 0`, medido) porque
-   `run-all.sh` la truncó. Lo demostrado es que los contratos **coinciden** y que hay siete guardas que
-   fallan si dejan de coincidir. **Que el catálogo pinte subastas exige `run-all.sh` + la suite de
-   navegador**, y hasta entonces no está demostrado. Es el riesgo número uno de esta tanda.
+1. **`H-042` — el único hallazgo activo, y está en el camino del dinero.** Un webhook de PayPal con
+   firma fabricada obtuvo `SIGNATURE_OK` y llegó a intentar la captura; sólo lo detuvo un 404 de PayPal.
+   **No lo introdujo esta tanda.** Asignado a `PT-234` como INVESTIGATION: no se toca sin medir por qué
+   la verificación respondió `SUCCESS`.
 2. **La rama no está fusionada ni subida.** Diecinueve commits locales.
 3. **Los contenedores no se han reconstruido.** ADMIN y BASE exigen ahora `ADMIN_API_URL` y
    `PUBLIC_SITE_URL` respectivamente, y **abortan al arrancar si faltan** (RULE-17, y es a propósito).
@@ -146,9 +146,28 @@ checkpoints de delta sync necesitan una base con historia y la base está vacía
 
 ---
 
+## Ejecutado el 2026-07-31: `run-all.sh` → suite de navegador → `resume PTSA`
+
+**Suite de navegador: 209 de 210** comprobaciones. El único fallo es `QA-PP-15`, que es `H-042`.
+
+**Verificado con datos reales**, que era el riesgo número uno: el catálogo público y la portada
+**pintan la subasta**. `bootstrap` 13/13, `e2e` 5/5, puja en vivo 8/8, cierre y liquidación 17/17,
+retiro real 13/13, traza de pago 16/16.
+
+**Y encontró dos regresiones de la tanda que 1.441 pruebas unitarias no vieron**, corregidas en el acto:
+`{{ self.title() }}` —sintaxis de Jinja2 que Nunjucks no implementa, **500 en todas las páginas
+públicas**— y un desbordamiento de 4 px a 768 px visible sólo en modo `headed`. Más dos fallos de la
+propia suite, que no marcaba la casilla de consentimiento que PT-219 hizo obligatoria.
+
+**`resume PTSA` → S-015**: Health **95.5** (baja desde 100 por `H-042`), Risk 32, Confidence **95.0**
+(sube desde 91.0), Clase A. **D1 pasa del 50 % al 100 % de cobertura**, porque por primera vez desde
+S-005 se midió sobre salida generada en la misma sesión.
+
+---
+
 ## Siguientes acciones, en orden
 
-1. **`run-all.sh` + suite de navegador** sobre lo entregado. Es lo único que demuestra que el catálogo
+1. **`PT-234` — `H-042`.** Es el único hallazgo activo. Su Discovery separa las tres hipótesis midiendo.
    pinta subastas de verdad, y no sólo que el contrato coincide.
 2. **PT-216** — el P0 con más impacto de negocio pendiente y el único `L`. Empezarlo antes que los cinco
    `S` restantes: los `S` caben en una sesión y éste no.

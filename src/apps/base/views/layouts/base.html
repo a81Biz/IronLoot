@@ -9,13 +9,19 @@
   {# PT-223 (H-UI-039) — No habia Open Graph, ni canonical, ni robots, ni meta por pagina: las quince
      paginas compartian la misma descripcion, y una subasta compartida en redes salia sin titulo y sin
      imagen. El descubrimiento organico es el canal natural de un marketplace de lotes unicos. #}
+  {# PT-223 — Los valores de Open Graph vienen del CONTROLADOR, no de leer los bloques de la plantilla.
+
+     La primera version escribia `{{ self.title() }}`: eso es **sintaxis de Jinja2**, y Nunjucks no
+     implementa `self`. Resultado: `Unable to call self["title"]` y **500 en TODAS las paginas publicas**.
+     No lo caza ningun tipo ni ninguna prueba unitaria — lo caza arrancar el sitio, que es justo el paso
+     que estaba pendiente cuando se escribio. #}
   {% if canonical %}<link rel="canonical" href="{{ canonical }}">{% endif %}
   <meta property="og:site_name" content="IronLoot">
-  <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-  <meta property="og:title" content="{% block og_title %}{{ self.title() }}{% endblock %}">
-  <meta property="og:description" content="{% block og_description %}{{ self.meta_description() }}{% endblock %}">
+  <meta property="og:type" content="{{ ogTipo | default('website') }}">
+  <meta property="og:title" content="{{ ogTitulo | default('IronLoot — Subastas en línea con fondos protegidos') }}">
+  <meta property="og:description" content="{{ ogDescripcion | default('Compra y vende en subastas en tiempo real. Tus pujas quedan respaldadas por saldo real.') }}">
   {% if canonical %}<meta property="og:url" content="{{ canonical }}">{% endif %}
-  {% block og_image %}{% endblock %}
+  {% if ogImagen %}<meta property="og:image" content="{{ ogImagen }}">{% endif %}
   <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">

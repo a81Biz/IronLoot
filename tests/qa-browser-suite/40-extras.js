@@ -41,6 +41,11 @@ function rec(id, desc, status, detail) {
     await p.fill('#username', 'dup_user');
     await p.fill('#email', actors.BUYER.email); // ya existe
     await p.fill('#password', cfg.TEST_PASSWORD);
+    // PT-219 — La casilla de consentimiento es obligatoria: sin marcarla el navegador NO envia el
+    // formulario, `#registerError` queda vacio y esta comprobacion falla con `err=""` — que no se
+    // parece en nada a su causa. Igual que en `lib.js`.
+    const consentimiento = await p.$('#acepta');
+    if (consentimiento) await consentimiento.check();
     await p.click('button[type=submit]');
     await p.waitForTimeout(1800);
     const err = ((await p.textContent('#registerError').catch(() => '')) || '').trim();

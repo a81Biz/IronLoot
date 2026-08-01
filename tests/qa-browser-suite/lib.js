@@ -165,6 +165,20 @@ async function registerBase(ctx, u, opts = {}) {
       await fillWhenReady(page, '#username', u.username);
       await fillWhenReady(page, '#email', u.email);
       await fillWhenReady(page, '#password', u.password);
+
+      // PT-219 (H-UI-030) — La casilla de consentimiento es OBLIGATORIA desde este PT.
+      //
+      // El registro no presentaba ni enlazaba los terminos ni el aviso de privacidad, y no recogia
+      // ningun acto afirmativo: la aceptacion era tacita. Ahora hay un `<input type="checkbox" required>`
+      // y **el navegador no envia el formulario sin marcarlo**, asi que la suite tiene que marcarlo como
+      // lo haria una persona.
+      //
+      // Esta linea es la diferencia entre una suite que prueba el producto y una que prueba una version
+      // anterior de el. La corrida del 2026-07-31 fallo aqui: bootstrap 2/12 y todo lo posterior
+      // BLOCKED por «login fallo», sesenta lineas mas abajo y sin parecerse a su causa.
+      const consentimiento = await page.$('#acepta');
+      if (consentimiento) await consentimiento.check();
+
       if (opts.beforeSubmit) await opts.beforeSubmit(page);
       const r = await submitAndSettle(page, /verify-email-pending|dashboard/);
       if (opts.shot) await opts.shot(page, `register_${u.username}`);

@@ -1157,7 +1157,12 @@ img { max-width: 100%; display: block; }
 .menu-toggle { display: none; }
 .menu-toggle-input:checked ~ .nav-links { display: flex; }
 
-@media (max-width: 640px) {
+/* El umbral es **820px y no 640px**, y la diferencia la midió la suite de navegador.
+   PT-226 añadió un tercer enlace al menú («Ayuda»), y a 768 px —con la barra de desplazamiento
+   restando 15 px al ancho útil— el logo, tres enlaces y dos botones de sesión dejan de caber:
+   `QA-X-04-base-tablet` acusó `overflowX=4px`, reproducible sólo en modo `headed`.
+   El menú de hamburguesa tiene que entrar **donde deja de caber la fila**, no en una cifra redonda. */
+@media (max-width: 820px) {
   .nav-container { gap: 0.6rem; padding: 0 0.75rem; flex-wrap: wrap; }
 
   .menu-toggle {
