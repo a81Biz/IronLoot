@@ -103,7 +103,10 @@ export class AppController {
       profile,
       wallet: mapWalletBalance(walletRaw),
       bids: mapBidsList(bidsRaw),
-      auctions,
+      // PT-204 (H-UI-001) — `auctions` llegaba crudo del API (`{data,total,page,limit}`) y la
+      // plantilla comprobaba `auctions.items`. La tarjeta «Subastas activas» **no se pintaba nunca**,
+      // y como el bloque entero vive dentro de ese `{% if %}`, se omitía en silencio.
+      auctions: toItems(auctions),
       baseUrl: BASE_URL,
     };
   }
@@ -151,8 +154,10 @@ export class AppController {
   @Get("/auctions/watchlist")
   @Render("pages/watchlist.html")
   async watchlist(@Req() req: Request) {
-    const items = await apiGet(getToken(req), "/api/v1/watchlist");
-    return { items, baseUrl: BASE_URL };
+    // PT-204 — `/watchlist` devuelve un array plano hoy, y la plantilla lo recorría en crudo. Funciona
+    // hasta el dia en que el API pagine, que es como se rompieron las otras cuatro. Se normaliza igual.
+    const raw = await apiGet(getToken(req), "/api/v1/watchlist");
+    return { watchlist: toItems(raw), baseUrl: BASE_URL };
   }
 
   @Get("/wallet")
@@ -294,15 +299,20 @@ export class AppController {
   @Get("/notifications")
   @Render("pages/notifications/list.html")
   async notifications(@Req() req: Request) {
-    const notifications = await apiGet(getToken(req), "/api/v1/notifications");
-    return { notifications };
+    // PT-204 (H-UI-003) — El API devuelve `NotificationDto[]`, un array plano, y la plantilla iteraba
+    // `notifications.items`. Un array no tiene `.items`: la pagina decia «No tienes notificaciones»
+    // **siempre**. Es el aviso de «te han superado» (RN-23), que es como un comprador vuelve a pujar.
+    const raw = await apiGet(getToken(req), "/api/v1/notifications");
+    return { notifications: toItems(raw) };
   }
 
   @Get("/disputes")
   @Render("pages/disputes/list.html")
   async disputes(@Req() req: Request) {
-    const disputes = await apiGet(getToken(req), "/api/v1/disputes");
-    return { disputes };
+    // PT-204 (H-UI-004) — Mismo defecto que en notificaciones: `Dispute[]` contra `.items`. Quien abria
+    // una disputa recibia su confirmacion y **no la volvia a ver jamas**.
+    const raw = await apiGet(getToken(req), "/api/v1/disputes");
+    return { disputes: toItems(raw) };
   }
 
   @Get("/disputes/create")
@@ -378,6 +388,12 @@ export class AppController {
       apiGet<WalletBalanceRaw>(token, WALLET_BALANCE_PATH),
       apiGet(token, `/api/v1/auctions/${id}/bids`),
     ]);
-    return { auction, wallet: mapWalletBalance(walletRaw), bids };
+    // PT-204 — `bids` se recorria en crudo. Hoy el API devuelve un array; se normaliza por el mismo
+    // motivo que la watchlist.
+    return {
+      auction,
+      wallet: mapWalletBalance(walletRaw),
+      bids: toItems(bids),
+    };
   }
 }

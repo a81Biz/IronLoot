@@ -3,9 +3,9 @@
 {% block page_title %}Watchlist{% endblock %}
 {% block content %}
 <div class="card">
-  {% if items and items.length > 0 %}
+  {% if watchlist and watchlist.items.length > 0 %}
     <div class="rejilla-auto">
-      {% for item in items %}
+      {% for item in watchlist.items %}
       <div class="caja-clara">
         <h3 class="texto-medio">{{ item.auction.title }}</h3>
         <div class="cifra-destacada">MXN {{ item.auction.currentPrice }}</div>

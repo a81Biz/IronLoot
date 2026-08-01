@@ -81,7 +81,7 @@
 
       <div class="results-header">
         <span class="results-count">
-          {% if auctions %}{{ auctions.length }} resultado(s){% endif %}
+          {% if total %}{{ total }} resultado(s){% endif %}
           {% if q %} para "<strong>{{ q }}</strong>"{% endif %}
         </span>
         {# PT-096 - Antes `onchange="window.location.search=..."`, que la CSP bloqueaba: ordenar
@@ -95,9 +95,9 @@
         </select>
       </div>
 
-      {% if auctions and auctions.length > 0 %}
+      {% if auctions and auctions.items.length > 0 %}
         <div class="auctions-grid">
-          {% for auction in auctions %}
+          {% for auction in auctions.items %}
             <div class="auction-card">
               <div class="card-image card-image--placeholder">
                 {% if auction.imageUrl %}
@@ -132,7 +132,7 @@
             <a href="/auctions?page={{ page - 1 }}{% if q %}&q={{ q }}{% endif %}">← Anterior</a>
           {% endif %}
           <span class="current-page">{{ page | default(1) }}</span>
-          {% if auctions.length >= 12 %}
+          {% if total and (page | default(1)) * 10 < total %}
             <a href="/auctions?page={{ (page | default(1)) + 1 }}{% if q %}&q={{ q }}{% endif %}">Siguiente →</a>
           {% endif %}
         </div>

@@ -64,9 +64,9 @@
     <h2>Subastas activas</h2>
     <a href="/auctions" class="section-link">Ver todas →</a>
   </div>
-  {% if auctions and auctions.length > 0 %}
+  {% if auctions and auctions.items.length > 0 %}
     <div class="auctions-grid contenedor-ancho">
-      {% for auction in auctions %}
+      {% for auction in auctions.items %}
         <div class="auction-card">
           <div class="card-image card-image--placeholder">
             {% if auction.imageUrl %}
