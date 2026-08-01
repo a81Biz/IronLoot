@@ -11,8 +11,8 @@
       Donde el valor cambia de manos con<em> total confianza</em>
     </h1>
     <p class="hero-sub">
-      Compra y vende en subastas transparentes y en tiempo real. Fondos protegidos,
-      pujas verificadas y entrega garantizada.
+      Compra y vende en subastas transparentes y en tiempo real. Tus pujas quedan
+      respaldadas por saldo real, y si te superan recuperas tus fondos al instante.
     </p>
     <div class="hero-actions">
       <a href="/auctions" class="btn btn-primary btn-lg">Ver subastas activas</a>
@@ -33,8 +33,8 @@
           <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
         </svg>
       </div>
-      <h3 class="pillar-title">Pagos protegidos</h3>
-      <p class="pillar-text">Tus fondos quedan retenidos de forma segura hasta confirmar la entrega. Nunca pierdes dinero por una subasta fallida.</p>
+      <h3 class="pillar-title">Pujas con respaldo real</h3>
+      <p class="pillar-text">Al pujar se retiene el importe de tu monedero, y vuelve a estar disponible en cuanto alguien te supera. Nadie puja con dinero que no tiene.</p>
     </div>
     <div class="pillar-item">
       <div class="pillar-icon">
@@ -52,8 +52,8 @@
           <polyline points="20 6 9 17 4 12"/>
         </svg>
       </div>
-      <h3 class="pillar-title">Vendedores verificados</h3>
-      <p class="pillar-text">Los vendedores pasan por un proceso KYC riguroso. Compras solo a personas y empresas validadas.</p>
+      <h3 class="pillar-title">Vendedores con identidad verificada</h3>
+      <p class="pillar-text">Para vender hay que enviar documentos de identidad y que el equipo los apruebe. Y si algo sale mal tras la entrega, tienes 14 días para abrir una disputa.</p>
     </div>
   </div>
 </section>
@@ -113,39 +113,39 @@
       <div class="step">
         <div class="step-number">03</div>
         <h3 class="step-title">Paga y recibe</h3>
-        <p>El ganador paga de forma segura. El vendedor despacha el artículo. Los fondos se liberan al confirmar la entrega.</p>
+        <p>Al cerrar la subasta se cobra al ganador y se genera la orden. El vendedor envía; tú confirmas que lo recibiste, y a partir de esa confirmación empieza a contar el plazo tras el cual cobra.</p>
       </div>
     </div>
   </div>
 </section>
 
 {# ── Sección 5: Partners (placeholder) ───────────────────── #}
+{# PT-208 (H-UI-027) — Esta seccion se titulaba «Socios y aliados estrategicos» y nombraba a DHL y
+   FedEx. `RN-35` dice literalmente: «Sin integracion de transportista real: carrier/trackingNumber
+   son campos manuales». Eran dos marcas ajenas afirmando una alianza inexistente.
+   Ahora dice lo unico que si es cierto y comprobable: por donde entra el dinero. #}
 <section class="partners">
-  <p class="partners-label">Socios y aliados estratégicos</p>
+  <p class="partners-label">Pagos procesados por</p>
   <div class="partners-logos">
-    <span class="partner-placeholder">PayPal</span>
     <span class="partner-placeholder">Mercado Pago</span>
-    <span class="partner-placeholder">DHL</span>
-    <span class="partner-placeholder">FedEx</span>
+    <span class="partner-placeholder">PayPal</span>
   </div>
 </section>
 
-{# ── Sección 6: Newsletter ────────────────────────────────── #}
+{# ── Sección 6: CTA final ──────────────────────────────────
+   PT-208 (H-UI-041) — Aqui habia un formulario de suscripcion con `action="#"` en un sitio cuyo
+   propio `main.ts` declara «BASE has no SSR POST routes», sin JS asociado, sin consentimiento y sin
+   enlace a la privacidad. Recogia un correo que no llegaba a ninguna parte y no daba ninguna
+   respuesta al usuario. `docs/design/Index.png §9` especifica en esta posicion un CTA final de
+   registro, que es lo que ahora hay. #}
 <section class="newsletter">
   <div class="newsletter-inner">
-    <h2>Mantente al día</h2>
-    <p>Recibe alertas de nuevas subastas, artículos de colección y ofertas exclusivas directamente en tu correo.</p>
-    <form class="newsletter-form" action="#" method="post">
-      <input
-        type="email"
-        name="email"
-        placeholder="tu@correo.com"
-        class="form-control newsletter-input"
-        required
-      >
-      <button type="submit" class="btn btn-primary">Suscribirme</button>
-    </form>
+    <h2>¿Listo para tu próxima oportunidad?</h2>
+    <p>Crea tu cuenta gratis y empieza a pujar en minutos. Vender requiere además verificar tu identidad.</p>
+    <div class="hero-actions justify-center">
+      <a href="/auth/register" class="btn btn-primary btn-lg">Crear cuenta gratis</a>
+      <a href="/auth/login" class="btn btn-ghost btn-lg">Ya tengo cuenta</a>
+    </div>
   </div>
 </section>
-
 {% endblock %}
