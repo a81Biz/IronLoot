@@ -79,3 +79,60 @@
 | ADR-057 | **El registro de cambios es `HISTORY.log`; `CHANGELOG.md` apunta a él** | Aceptada | `CHANGELOG.md` se quedó en `[0.5.1] - 2026-01-12`: **seis meses y unos 150 PT** sin una línea (AUD-031). No es olvido, es que el trabajo se registra en `docs/implementation/HISTORY.log`, que es append-only, lo exige FDGE STATE 7 y tiene su **índice de estado generado**. Mantener los dos garantizaba la divergencia — el mismo razonamiento de **ADR-049** con `docs/enterprise-documentation` y `docs-v2`. Se conserva el histórico 0.2.x–0.5.1 tal cual (es real y es de antes de FDGE) y se añade una cabecera que manda al registro vivo. **La alternativa descartada**, reconstruir seis meses de CHANGELOG desde el log, produciría un derivado que nadie mantendría la semana siguiente. | `CHANGELOG.md`, `HISTORY.log` | AUD-031 |
 | ADR-058 | **Se retira la superficie de `@ironloot/core` que nadie importa, salvo los puertos que ADR-033 conserva** | Aceptada | PT-191 midió que **30 de los 42 símbolos** exportados por `core` no tenían un solo consumidor fuera del paquete, y abrió `TD-024`. Medido de nuevo en PT-193, **8 de ellos ya estaban decididos por ADR-033** (los `I*Repository` y sus `*Summary`, conservados como previstos-no-adoptados con criterio de revisión) y 2 eran falsos positivos de medir por nombre. Los **15 restantes se retiran**: `integrations/` entero (9), cuatro eventos que nadie emite (4) y los DTO de paginación (2) — con ellos, `shared/` se queda sin contenido y se retira también. **El caso que decide** es `IPaymentProvider`: declaraba qué debe cumplir una pasarela y **ningún adaptador lo implementaba**, porque el contrato vivo lo declara el API. Eso no es código muerto —que se ignora—: es **documentación falsa ejecutable**, que se lee y se cree. Familia de H-016. **Precedente**: ADR-047 (*un endpoint sin llamantes se retira, no se pule*) y PT-042, que retiró los cuatro use-cases del mismo paquete por el mismo motivo. **La alternativa descartada** era conservarlos declarados, como ADR-033 hace con los puertos: vale para un puerto —una intención de diseño sin adaptador todavía— y no vale para un **contrato duplicado**, porque ahí lo que se conserva es una segunda respuesta a una pregunta que ya tiene una. **Criterio para revisar**: si aparece un segundo consumidor del dominio (otro servicio, otra persistencia), los puertos de `contracts/` son el sitio por donde empezar — no éstos. Lo vigila `core-sin-superficie-huerfana.spec.ts`, que impide que la cifra crezca. | `src/packages/core/src/index.ts`, `core-sin-superficie-huerfana.spec.ts` | TD-024, AUD-012 |
 | ADR-059 | **El refresh token rota, y su reuso revoca la sesión** | Aceptada | Un token robado servía **siete días** y nadie se enteraba: el legítimo y el ladrón presentaban lo mismo. Ahora cada refresco entrega uno nuevo. **La familia es la fila de sesión** —ni cadena `replacedById` ni grupo `familyId`—: se rota dentro de la fila guardando el anterior, así que revocar es escribir `revokedAt` donde ya estás, sin recorrer nada y sin una fila por refresco. Presentar un token cae en **cuatro casos**: el vigente rota; el anterior **dentro de `ROTATION_GRACE_SEC`** devuelve los vigentes sin rotar —es una carrera de dos peticiones del mismo navegador, no un robo—; el anterior **fuera** de la gracia es **reuso** y revoca la sesión entera; cualquier otro es sesión no encontrada. **Los 30 s de gracia se derivan**, no se eligen: el peor caso es un refresco que agota el tope declarado del CLIENT (8 s, PT-194) más una segunda petición que llega justo antes de que termine. **Consecuencia aceptada y visible**: al detectar reuso, el usuario legítimo **también** pierde la sesión — no se sabe cuál de las dos copias es la suya, y dejarla viva sería dejar viva la del ladrón. **Limitación declarada**: se recuerda **un** token hacia atrás; un robo que llega tras dos rotaciones del legítimo se lee como sesión caducada — se detecta menos, no se falla más, y la alternativa era crecimiento no acotado de filas para una forensia que llega tarde. **Alternativa descartada**: rotar sin detección de reuso, que es más barato y tira el motivo del PT. | `auth.service.ts`, `rotation-grace.ts`, migración `20260730120000` | TD-025, PT-194 |
+
+---
+
+## ADR-060 — El catálogo retira lo que no puede filtrar, en vez de fingirlo
+
+**Fecha:** 2026-07-31 · **Estado:** aceptada · **Origen:** `PT-209` (`H-UI-010`)
+
+**Contexto.** La barra lateral del catálogo público ofrecía seis controles —categorías, estado, rango de
+precio, «solo vendedores verificados», búsqueda y orden— y **ninguno filtraba**: `q`, `minPrice`,
+`maxPrice` y `sort` viajaban en la URL y **ni el SSR ni el API los leían**. El usuario cambiaba un filtro,
+obtenía lo mismo, y concluía que no había resultados que cumplieran su criterio, cuando lo que ocurría es
+que el criterio se descartaba.
+
+**Decisión.** Se conectan búsqueda, precio y orden — que sí pueden funcionar. Y se **retiran tres**:
+
+1. **Categorías.** El modelo `Auction` **no tiene el campo**. El diseño oficial dibuja ocho categorías, el
+   catálogo ofrecía cinco, el modelo tiene cero: tres taxonomías incompatibles. Ofrecer un filtro sin
+   campo detrás **es** el defecto.
+2. **Estado «Cerradas».** `auctions.service.ts` lo prohíbe **por diseño** en modo público
+   (`where.status = { in: [] }`, con el comentario *«Return nothing»*). Publicar el histórico es una
+   decisión de negocio.
+3. **«Solo vendedores verificados».** Exponer el estado KYC de una persona en un DTO público es una
+   decisión de privacidad, no de interfaz.
+
+**Alternativa rechazada:** inventar el campo `category` y migrar el esquema. Se rechaza porque la
+taxonomía **no está decidida** y una migración por una decisión no tomada no es reversible; retirar un
+filtro sí lo es.
+
+**Consecuencia.** El catálogo ofrece menos y **todo lo que ofrece funciona**. Reintroducir cualquiera de
+las tres exige antes la decisión que falta. Y la señal que el filtro de «verificados» buscaba dar —¿es
+fiable este vendedor?— la da la **reputación**, que ya es pública por diseño y que `PT-225` hizo por fin
+alimentable; mostrarla en el punto de decisión está priorizado como `R-056`.
+
+---
+
+## ADR-061 — Un ✅ en el PRD significa que la capacidad llega al usuario
+
+**Fecha:** 2026-07-31 · **Estado:** aceptada · **Origen:** `PT-232`, hallazgo `H-038`
+
+**Contexto.** El `PRD` marcaba **✅ Operable** capacidades que el usuario **no podía ejecutar**: publicar
+una subasta, retirar dinero, aprobar retiros, calificar, usar 2FA. En los cinco casos la regla estaba
+implementada en el API y **la pantalla no existía**, o leía un campo que el API no emite.
+
+Los estados se habían verificado contra **el código del API**, y con ese criterio eran ciertos. Por eso
+convivieron con un certificado PTSA de `Health 100` y once defectos P0 en la interfaz.
+
+**Decisión.** Un `✅` en la tabla de épicas y en los requisitos funcionales del `PRD` significa desde ahora
+**«la capacidad llega al usuario»**, no «el servicio la implementa». La distinción queda escrita como
+aviso de método en el propio documento.
+
+**Consecuencia.** Marcar ✅ exige haber recorrido la pantalla, no haber leído el servicio. Es la aplicación
+de `PTSA [A2]` —auditar el **producto**, no el componente— al documento que gobierna la aceptación.
+
+**Y lo que esta ADR no resuelve:** la unidad de auditoría de PTSA sigue siendo el producto de datos.
+Incorporar la pantalla como producto auditable está propuesto en `FPGE-005 / R-052` y es una decisión de
+la especificación de PTSA, no de un PT de desarrollo.
+

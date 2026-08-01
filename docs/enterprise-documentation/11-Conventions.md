@@ -952,6 +952,68 @@ positive kills a control just as dead as a blind spot (AC-07 pins exactly that).
 
 ---
 
+
+### RULE-39: The SSR↔API contract is about the SHAPE of the response, not only the route
+**What:** any value an SSR site takes from the API and a template walks as a list must go through
+`toItems()` and be read as `X.items`. Never `X.length` or `{% for … in X %}` over a raw API payload.
+**Why:** measured 2026-07-31. `GET /auctions` returns `{data,total,page,limit}` and the public catalogue read
+`data.items` — a key that does not exist. The home page measured `auctions.length` on the object. Both yield
+`undefined`, and in Nunjucks `undefined` is **not an error: it is an `{% else %}`**. Four P0 surfaces — the
+catalogue, the home page, notifications and disputes — painted *"No hay subastas disponibles"* with any amount
+of data behind them, **indistinguishable from an empty catalogue**. Seven of the eleven P0 findings of that
+audit were this same failure.
+**The normaliser already existed**, written and tested since PT-067, used by three routes of the same file.
+What was missing was not the function: it was that **nothing checked that consumers used it**.
+**Correct:** `return { orders: toItems(raw) }` and `{% for o in orders.items %}`.
+**Incorrect:** `return { orders: raw }` with `{% if orders.items %}` — green tests, empty screen.
+**Enforced by:** `forma-de-lista-ssr.spec.ts`. Note that `rutas-que-los-ssr-invocan.spec.ts` was **green** the
+whole time: it compares literal routes — that the endpoint exists — which is the easy half to measure. This is
+the direct answer to the question S-013 left written: *look for guards that watch beside the hole.*
+
+### RULE-40: Every class in the markup exists in the site's CSS
+**What:** no template may use a `class=` that no stylesheet of that site defines.
+**Why:** measured 2026-07-31. Both 404 pages were written with **twelve DaisyUI classes** — `hero`,
+`min-h-screen`, `bg-base-200`, `max-w-md`, `text-5xl`, `py-6`, `font-bold`, `text-4xl`, `text-error`, `mb-4`,
+`p-5`, `text-xl` — and **not one exists** in `base.css` (1,182 lines) or `client.css` (805). The framework was
+removed by ADR-002 and the markup stayed. The error screen appeared broken **exactly when the user is already
+disoriented**, suggesting a site-wide failure rather than a wrong URL.
+It is the same family as the CSP rule already in this document — *"a new `style=` or `onclick=` will not work
+and the browser will say nothing — it will just look wrong"* — reached by another road, and nothing watched it.
+**Enforced by:** `clases-css-existen.spec.ts`. It has caught new code three times since it was written, which
+is what it is for. The reverse direction — CSS defined and never used — is **not** checked: dead code is waste,
+not breakage, and a guard with false positives ends up deleted (PT-103).
+
+### RULE-41: A user action blocks its control and announces its outcome
+**What:** every browser script that writes on a user action must disable the control while the request is in
+flight, and every message container must declare a live region (`role="status"` + `aria-live`).
+**Why:** measured 2026-07-31. **No form disabled its button — except one.** Without it, a double click on
+"Depositar" or "Solicitar retiro" fires **two money movements**. And the standard already existed inside the
+repository: `pages-orders-detail.js` (PT-174) did it, and asked with `window.confirm` before an action with
+economic consequence. It was applied in **one file out of twelve**.
+No message container declared a live region either: they are filled by JavaScript and shown by removing a
+class, so for assistive technology **nothing happens**. A user who cannot see the screen cannot know whether a
+bid was accepted or a withdrawal registered. It is dimension D3 — observability — applied to the interface: **a
+message nobody can perceive is the on-screen equivalent of a silent `catch`.**
+**Enforced by:** `feedback-de-formularios.spec.ts`. Its definition of "sends" requires **a user-triggered
+handler**, not merely a `POST`: a fetch that fires on page load — email verification consuming the URL token —
+has no button to block. That refinement came from a real false positive, not from theory.
+
+### RULE-42: The product does not claim what one of its own rules denies
+**What:** no user-facing surface may assert a capability, a guarantee or a partnership that an `RN-XX` or a
+project document contradicts. This covers the public site, the legal documents it publishes, and the manuals.
+**Why:** measured 2026-07-31. The home page presented **DHL and FedEx as "strategic partners"** while `RN-35`
+states literally *"no real carrier integration"*; promised *"funds held until delivery is confirmed"* when
+`RN-30` captures at close and what is held afterwards is the **seller's** net (`RN-64`); and closed with a
+newsletter form posting to `action="#"` in a site whose own `main.ts` declares *"BASE has no SSR POST routes"*.
+The privacy policy promised data export "from your account settings" — a screen holding two e-mail checkboxes —
+and the terms pointed to fees "in your seller panel", which displayed none.
+PTSA defines its purpose as proving products are *"**legally**, operationally and semantically valid"*. A
+published legal document **is** an output of the product: one describing a screen that does not exist is not a
+documentation typo, it is an invalid output.
+**Enforced by:** `afirmaciones-del-sitio.spec.ts`. It does **not** judge wording — a guard that reads prose
+accuses itself, as this repository has paid for more than once. It checks three falsifiable facts against an
+`RN-XX`, and all three had already happened.
+
 ## 5. Files Requiring Extra Care Before Modification
 
 | File | Risk | Why |

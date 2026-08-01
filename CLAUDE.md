@@ -86,6 +86,30 @@ node 90-validacion-hallazgos.js    # validación dirigida de hallazgos PTSA corr
 `run-all.sh` **trunca la base de datos**. Hacer copia antes si contiene salida real que sostenga
 una validación PTSA.
 
+**Y el orden importa: `run-all.sh` → suite de navegador → `resume PTSA`.** Los dos checkpoints de delta
+sync —`audit:domain` y `audit:reliability`— necesitan una base **con historia**, y `run-all.sh` es lo que
+la genera. Medir antes es medir lo que la corrida va a borrar. La diferencia no es teórica: `S-013` midió
+`D1` con **50 % de cobertura** sobre datos preexistentes; `S-015`, ejecutando en este orden, la midió al
+**100 %** sobre salida de la misma sesión.
+
+**La suite de navegador ve cosas que ninguna prueba unitaria puede ver.** El 2026-07-31, con **1.441
+pruebas unitarias en verde**, `tsc --noEmit` limpio y ESLint sin quejas, encontró en una corrida:
+
+- una plantilla que **no renderizaba** —`{{ self.title() }}` es sintaxis de Jinja2 y Nunjucks no
+  implementa `self`—, con **500 en todas las páginas públicas**;
+- un desbordamiento de 4 px a 768 px **reproducible sólo en modo `headed`**, porque la barra de
+  desplazamiento resta ancho útil;
+- y `H-042`, un webhook de PayPal con firma fabricada que obtuvo `SIGNATURE_OK` y llegó a intentar la
+  captura.
+
+**Ninguna herramienta estática puede ver que una plantilla no renderiza.** Ejecutar la suite antes de
+emitir un certificado no es celo: es la diferencia entre medir el producto y medir sus piezas.
+
+**Cuidado al cambiar un formulario del producto: la suite lo replica.** `PT-219` hizo obligatoria la
+casilla de consentimiento del registro y la suite no la marcaba, así que el navegador **no enviaba el
+formulario**: `bootstrap` daba 2/12 y todo lo posterior salía `BLOCKED` por «login falló» — sesenta líneas
+más abajo y sin parecerse en nada a su causa. Si tocas un formulario, mira `lib.js` y `40-extras.js`.
+
 **Y ninguna prueba borra sin filtro** (RULE-23). `orders-flow.e2e-spec.ts` truncaba once tablas en su
 `beforeAll`, y como Jest corre las suites en paralelo, borraba los datos de las demás mientras las
 demás los usaban: de ahí `404` en suites que no tenían nada roto, y fallos que **cambiaban de sitio
@@ -334,6 +358,16 @@ Each SSR site follows the same convention:
   declarada: `tests/qa-browser-suite/` instala en el host porque Playwright conduce un navegador real,
   y es segura porque su lock tiene **cero** paquetes divididos por plataforma — hay una prueba que
   vigila que siga siendo cero.
+- **El contrato SSR↔API es de RUTA y de FORMA** (RULE-39, PT-204/PT-213). `GET /auctions` devuelve
+  `{data,total,page,limit}` y el catálogo público leía `data.items` — una clave que no existe—; la portada
+  medía `auctions.length` sobre el objeto. Las dos operaciones dan `undefined`, y en Nunjucks **`undefined`
+  no es un error: es un `{% else %}`**. Cuatro pantallas P0 —catálogo, portada, notificaciones y disputas—
+  pintaban *«No hay subastas disponibles»* con cualquier cantidad de datos detrás, **indistinguible de un
+  catálogo vacío de verdad**. Siete de los once P0 de aquella auditoría eran este mismo fallo.
+  **El normalizador ya existía**, escrito y probado desde PT-067 y usado por tres rutas del mismo fichero:
+  lo que faltaba no era la función, era que **nada comprobara que los consumidores la usaran**. Y la guarda
+  que sí existía —`rutas-que-los-ssr-invocan.spec.ts`— estuvo **en verde todo el tiempo**, porque compara
+  rutas literales: la mitad fácil de medir. Lo vigila `forma-de-lista-ssr.spec.ts`.
 - **Toda ruta del API que un SSR invoca tiene que existir en el API.** El CLIENT pedía
   `/api/v1/users/settings`, que no existe: caía en el comodín `@Get(':id')`, el `ParseUUIDPipe`
   rechazaba la cadena y devolvía **400 «uuid inválido»**. La página «Configuración» no cargaba para

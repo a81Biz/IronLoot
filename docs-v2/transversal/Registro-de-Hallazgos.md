@@ -200,6 +200,49 @@ puede es seguir diciendo «36/36» sobre ellos.
 | AUD-035 | BAJA | Cookie maxAge vs JWT TTL no reconciliados | RN-02 | Documentar ambos ejes juntos |
 | AUD-036 | BAJA | Acoplamiento cruzado admin↔client helpers | — | Extraer helper compartido |
 
+## Auditoría de interfaz — 2026-07-31
+
+Los `AUD-XXX` de arriba son de la auditoría de julio y miden el **API, el esquema y la documentación**. El
+2026-07-31 se auditó por primera vez **la superficie que el usuario recibe**: las 42 plantillas de los dos
+SSR, las 28 vistas de ADMIN, los 12 ficheros de JavaScript de navegador, ambos CSS y los contratos del API
+**contra lo que cada plantilla lee**.
+
+Encontró **62 hallazgos** `H-UI-001`…`H-UI-062` —11 P0, 30 P1, 16 P2, 5 P3—, **36 ausencias** y **28
+contradicciones**. Durante la corrección aparecieron **dos más**, `H-UI-063` y `H-UI-064`.
+
+**Y los encontró sobre un sistema certificado `Health 100 / Clase A / cero hallazgos activos` el día
+anterior, sin un solo commit de código intermedio.** Las dos cosas eran ciertas: PTSA audita productos de
+**datos**, y las 14 reglas de dominio se cumplían sobre las filas — y se habrían seguido cumpliendo con el
+catálogo apagado.
+
+### Cómo se registraron: cuatro familias, no sesenta y cuatro fichas
+
+`PTSA/Hallazgos/` los recoge por **causa**, no por síntoma. Un hallazgo por síntoma habría dado sesenta y
+cuatro fichas que se leen una vez; uno por causa da cuatro que sirven para la próxima auditoría.
+
+| Hallazgo | Dim | Sev | Qué explica | Veredicto |
+|---|:--:|---|---|---|
+| **H-038** | D2 | CRÍTICA | El instrumento certificó 100 con once P0 vivos: la unidad de auditoría es el producto de datos, no la pantalla | **corregido** — PT-213, PT-232 |
+| **H-039** | D1 | CRÍTICA | El producto no distinguía «no hay datos» de «el contrato está roto» — 7 de los 11 P0 | **corregido** — PT-204, PT-213 |
+| **H-040** | D1 | CRÍTICA | Capacidades declaradas ✅ cuya interfaz no existía: publicar, cobrar, aprobar retiros, calificar, 2FA | **corregido** — PT-205, PT-215, PT-216, PT-225, PT-227 |
+| **H-041** | D1 | ALTA | El producto afirmaba al usuario cosas que sus propias reglas niegan | **corregido (parcial)** — PT-208, PT-212, PT-219, PT-230, PT-232. El **texto legal** sigue bloqueado: `TD-028` |
+| **H-042** | D2 | ALTA | Un webhook de PayPal con firma fabricada obtuvo `SIGNATURE_OK` y llegó a intentar la captura | **abierto** — `PT-234` |
+
+Evidencias: `E-041` (la auditoría) y `E-042` (el webhook fabricado). Trazabilidad hallazgo a hallazgo en las
+tres matrices de cobertura de `docs/implementation/ROADMAP.md` (62/62 · 36/36 · 28/28) y en
+`changes/PT-204-232-tanda-fpge-004/tasks.md`.
+
+### Lo que este bloque deja dicho, y aplica también a los `AUD-XXX` de arriba
+
+**Verificar un estado contra el código del API no es verificarlo contra el producto.** Los cinco requisitos
+que `H-040` recoge estaban marcados ✅ en el `PRD` y eran ciertos *desde el servicio*: la regla existía,
+implementada y probada. Lo que no existía era la pantalla.
+
+Desde `ADR-061`, un ✅ en el `PRD` significa **«la capacidad llega al usuario»**. Es la misma corrección que
+`RULE-38` hizo con los veredictos: no exige omnisciencia, exige que **conste desde dónde se miró**.
+
+---
+
 ## Reglas de gobierno de este registro
 
 - **Inmutabilidad auditable:** los hallazgos se cierran, no se borran. Al corregirse bajo FDGE, se marca `VALIDATION_PENDING`→`CLOSED` con evidencia post-fix.

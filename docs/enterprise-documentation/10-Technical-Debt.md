@@ -691,3 +691,58 @@ que el estado del navegador dejó de contradecir al del servidor. La sesión sig
 deuda sigue abierta.
 
 </details>
+
+### TD-026 — La orden no guarda la dirección de envío
+**Status:** ABIERTA. Registrada 2026-07-31 por PT-230.
+
+El modelo `Order` no tiene dirección de entrega, y `PT-230` entregó el desglose económico del pedido
+**sin ella** porque añadirla es un cambio de esquema con su migración.
+
+Consecuencia hoy: **el vendedor tiene que enviar un artículo físico y la pantalla de la venta no dice a
+dónde.** El cumplimiento post-venta ocurre fuera del sistema, lo que además deja sin base documental la
+resolución de una disputa por no entrega — el admin resuelve sobre `RN-41` sin poder comprobar a qué
+dirección se envió.
+
+`RN-56` ya exige dirección, ciudad y país **al vendedor** en su onboarding; lo que falta es la del
+**comprador**, capturada en el momento de la compra. No se resuelve leyendo el perfil: una persona puede
+comprar para enviar a otra dirección.
+
+**Cómo comprobarlo:** `grep -n "shippingAddress\|address" src/api/prisma/schema.prisma` sobre el modelo
+`Order` — no aparece. **Priorizada como `R-054`** en `docs/implementation/ROADMAP.md`.
+
+### TD-027 — El campo `images` existe y nadie puede llenarlo
+**Status:** ABIERTA. Registrada 2026-07-31 por PT-221.
+
+`Auction.images` es `Json @default("[]")` desde siempre, existe un módulo `upload` en el API, la portada
+promete *«crea tu propia subasta **con fotos**»* y **el formulario de creación no tiene ningún campo de
+fichero**.
+
+`PT-221` corrigió que las plantillas leyeran `images` —antes leían `imageUrl`, que el DTO no emite—, así
+que hoy el array se lee bien y **siempre está vacío**. Lotes de alto valor —relojes, arte, vehículos según
+el propio diseño— presentados sin una sola imagen.
+
+No entró en la tanda porque exige decidir **almacenamiento, límites de tamaño y moderación**: es un PT
+propio, no un campo más en un formulario.
+
+**Cómo comprobarlo:** `grep -n "type=\"file\"" src/apps/client/views/pages/auction/create.html` — sin
+resultados. **Priorizada como `R-055`.**
+
+### TD-028 — El texto de los documentos legales, pendiente de revisión jurídica
+**Status:** ABIERTA — **bloqueada por decisión externa**. Registrada 2026-07-31 por PT-219.
+
+`PT-219` entregó la **mitad de interfaz** de las contradicciones legales: casilla de consentimiento en el
+registro con enlace a los tres documentos, política de cookies que describe lo que el sistema hace medido
+en el código, y la sección de datos personales señalada donde la privacidad dice que está.
+
+**El texto de términos y privacidad no se toca.** Redactar cláusulas es asesoría jurídica, y fingir que es
+trabajo de desarrollo sería la misma clase de afirmación sin respaldo que la auditoría de interfaz
+persigue.
+
+Los ocho puntos que esa revisión tiene que resolver están enumerados como `L-01`…`L-08` en el informe de
+auditoría del 2026-07-31: aviso de privacidad en el punto de recogida, cookies y terceros no declarados,
+derechos ARCO frente a la inmutabilidad del ledger (`RN-26`), transparencia de la comisión, vinculación
+contractual sin acto afirmativo, y la mención fiscal frente al CFDI no funcional.
+
+**Se registra como deuda y no como pendiente de roadmap** porque no depende de priorización nuestra.
+**Priorizada como `R-060`, en estado `BLOQUEADO`.**
+

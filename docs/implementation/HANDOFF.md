@@ -3,15 +3,15 @@
 **FDGE V3** · **2026-07-31** · Se **sobrescribe**: es el estado de ahora, no la historia. La historia
 está en [`HISTORY.log`](HISTORY.log), que es append-only y la tiene íntegra con su fecha.
 
-**Rama**: `fix/PT-204-contrato-forma-de-lista`, **19 commits locales sobre `master`**, sin fusionar y sin
-subir. Es la tanda FPGE-004, **completa**.
+**Rama**: `master`. La tanda FPGE-004 está **fusionada** (21 commits, merge `--no-ff`). **Sin subir a
+`origin`**: eso lo decide el humano.
 
 **Pruebas**: API **1.140** (135 suites) · CLIENT **172** (14) · BASE **23** (4) · ADMIN **13** (2).
 *(Medido el 2026-07-31 al cerrar la tanda. `tsc --noEmit` limpio en los cuatro servicios.)*
 
-**Reglas duras**: **36** `RULE-NN`. **Guardas de documentación**: **20** suites.
+**Reglas duras**: **40** `RULE-NN` (RULE-39…42 las añade la tanda FPGE-004). **Guardas de documentación**: **20** suites.
 
-**Hallazgos PTSA**: **42** registrados, **1** activo (`H-042`). **Deuda técnica**: **2** abiertas de **19** registradas.
+**Hallazgos PTSA**: **42** registrados, **1** activo (`H-042`). **Deuda técnica**: **5** abiertas de **22** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
 `npm run indice:estado`. **185 encabezados · 0 realmente abiertos.**
