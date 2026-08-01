@@ -17,6 +17,11 @@
     <p>Cierra en: <span id="countdown" data-ends-at="{{ auction.endsAt }}">…</span></p>
     <p>Tu saldo disponible: <strong>${{ wallet.balance if wallet else '0' }}</strong> MXN</p>
 
+    {# PT-215 (H-UI-017) — El punto donde seguir una subasta tiene sentido: cuando la estas mirando. #}
+    <button type="button" class="btn btn-ghost btn-sm accion-watchlist"
+            data-accion="seguir" data-id="{{ auction.id }}">Seguir esta subasta</button>
+    <div id="msgWatchlist" class="alert oculto mensaje-accion-corto" role="status" aria-live="polite"></div>
+
     <form class="fila-centrada" id="bidForm">
       <input class="flex-1" type="number" id="bidAmount" step="0.01" min="0" placeholder="Tu puja (MXN)" required
             >
@@ -63,5 +68,6 @@
         integrity="sha384-2huaZvOR9iDzHqslqwpR87isEmrfxqyWOF7hr7BY6KG0+hVKLoEXMPUJw3ynWuhO"
         crossorigin="anonymous"></script>
 <script src="/js/pages/pages-auction-detail.js" defer></script>
+<script src="/js/pages/pages-watchlist.js" defer></script>
 {% endif %}
 {% endblock %}

@@ -837,3 +837,8 @@ select.form-control { cursor: pointer; }
 .requisito-ok::before { content: "OK"; color: #065f46; font-size: 0.7rem; }
 .requisito-falta::before { content: "!"; color: #991b1b; }
 .accion-verificar { white-space: nowrap; }
+
+/* PT-215 / PT-217 — Ganchos de las acciones nuevas. Los exigio la guarda de PT-224 al escribirlas:
+   una clase que ningun CSS define no falla, solo se ve mal. */
+.accion-watchlist { white-space: nowrap; }
+.accion-notificacion { white-space: nowrap; }

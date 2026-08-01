@@ -515,6 +515,81 @@ export class AuthService {
   }
 
   // ===========================================
+  // RESEND VERIFICATION (PT-214)
+  // ===========================================
+
+  /**
+   * PT-214 (R-038 · H-UI-025, H-UI-064) — **La vía de reenvío que el código decía tener y no existía.**
+   *
+   * `register()` captura el fallo de envío a propósito y lo justifica así, literalmente:
+   *
+   * > *«hacer fallar un registro consumado porque el SMTP esté caído sería peor que no enviar el correo
+   * > — **el usuario tiene la vía de reenvío, que desde PT-182 funciona de verdad**»*
+   *
+   * **Esa vía no existía.** No había ruta, ni método, ni nada que la invocara. La captura era correcta;
+   * la salida que la justificaba, no. Y `RN-03`/`BC-06` hacen la verificación **obligatoria**: una cuenta
+   * cuyo correo no llegó quedaba inutilizable, sin remedio, en su primer minuto de vida.
+   *
+   * La pantalla `verify-email-pending` llegaba a enunciar el modo de fallo —*«¿No lo ves? Revisa la
+   * carpeta de spam»*— y ofrecía un solo botón: volver al login.
+   *
+   * ## Por qué la respuesta es opaca
+   *
+   * Igual que `forgotPassword`: responder distinto según exista o no la cuenta convierte este endpoint en
+   * un **oráculo de enumeración de correos**. Es la misma decisión que RULE-36 razona para la
+   * recuperación de contraseña, y por el mismo motivo.
+   *
+   * ## Y qué NO hace
+   *
+   * No reenvía a una cuenta ya verificada —no habría nada que verificar— ni a una suspendida o baneada.
+   * En los dos casos responde lo mismo que en el éxito. Y **renueva el token**: reenviar el viejo dejaría
+   * al usuario con un enlace que caduca a la misma hora que el que no le llegó.
+   */
+  async resendVerification(email: string): Promise<void> {
+    const traceId = this.ctx.getTraceId();
+    this.log.info('Resend verification requested');
+
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.toLowerCase().trim() },
+    });
+
+    if (!user || user.state !== UserState.PENDING_VERIFICATION) {
+      // Se registra, pero la respuesta al cliente es la misma. Sin esta línea, el operador no puede
+      // distinguir «nadie lo pide» de «se pide para cuentas que no existen» — que es una señal de abuso.
+      this.log.info('Resend verification: nothing to send', {
+        motivo: !user ? 'sin_cuenta' : 'no_pendiente',
+      });
+      return;
+    }
+
+    const emailVerificationToken = this.generateSecureToken();
+    const emailVerificationExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { emailVerificationToken, emailVerificationExpiresAt },
+    });
+
+    // **Aquí se PROPAGA**, al contrario que en el registro, y la asimetría es del dominio (RULE-36):
+    // en el registro la cuenta ya está creada y el correo es accesorio; aquí el correo **es** la acción
+    // que el usuario pidió. Decirle «enviado» cuando el SMTP está caído lo deja esperando un correo que
+    // no va a llegar, que es exactamente el estado del que viene huyendo.
+    await this.emailService.sendVerificationEmail(user.email, emailVerificationToken);
+
+    this.log.info('Verification email resent', { userId: user.id });
+    this.metrics.increment('auth_resend_verification_success');
+
+    await this.audit.recordAudit(
+      traceId,
+      AuditEventType.USER_REGISTERED,
+      EntityType.USER,
+      user.id,
+      AuditResult.SUCCESS,
+      { actorUserId: user.id, payload: { accion: 'resend_verification' } },
+    );
+  }
+
+  // ===========================================
   // VERIFY EMAIL
   // ===========================================
 
