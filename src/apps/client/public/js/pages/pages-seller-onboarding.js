@@ -1,3 +1,9 @@
+// PT-228 (H-UI-046) — **El boton se bloquea mientras la peticion esta en vuelo.**
+//
+// Sin esto, un doble clic dispara la accion dos veces — y en los formularios de dinero eso son dos
+// movimientos. El estandar ya existia dentro del repositorio: `pages-orders-detail.js` (PT-174) lo
+// hacia, y se aplicaba en UNO de doce ficheros. Lo vigila
+// `src/api/test/unit/web-views/feedback-de-formularios.spec.ts`.
 // PT-096 - Extraido de views/pages/seller/onboarding.html
 //
 // Vivia dentro de la plantilla, lo que obligaba a `script-src 'unsafe-inline'` en la CSP de todo
@@ -8,9 +14,12 @@
 // irrevisable — misma razon por la que PT-091 separo formato de fondo en dos commits.
 
 document.getElementById('onboardingForm').addEventListener('submit', async (e) => {
+  const _boton = e.target.querySelector('button[type="submit"]');
+  if (_boton) _boton.disabled = true;
   e.preventDefault();
   const msgEl = document.getElementById('onboardingMsg');
-  const show = (ok, txt) => { msgEl.className = 'alert ' + (ok ? 'alert-success' : 'alert-error'); msgEl.textContent = txt; msgEl.style.display = 'block'; };
+  const show = (ok, txt) => { msgEl.className = 'alert ' + (ok ? 'alert-success' : 'alert-error'); msgEl.textContent = txt; msgEl.style.display = 'block';
+  if (_boton) _boton.disabled = false; };
   try {
     // 1) Guardar datos de perfil (nombre legal, dirección, teléfono sin espacios)
     const profileRes = await fetch('/api/v1/users/me', {
@@ -30,6 +39,8 @@ document.getElementById('onboardingForm').addEventListener('submit', async (e) =
     });
     if (!profileRes.ok) {
       const d = await profileRes.json().catch(() => ({}));
+      // `show()` reactiva el boton en su propio cuerpo, asi que aqui no hace falta nada mas: una
+      // linea despues del `return` seria codigo muerto.
       return show(false, d.message || 'Error al guardar tus datos. Verifica el formato del teléfono.');
     }
     // 2) Activar cuenta de vendedor (aceptación de términos)

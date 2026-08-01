@@ -1,3 +1,9 @@
+// PT-228 (H-UI-046) — **El boton se bloquea mientras la peticion esta en vuelo.**
+//
+// Sin esto, un doble clic dispara la accion dos veces — y en los formularios de dinero eso son dos
+// movimientos. El estandar ya existia dentro del repositorio: `pages-orders-detail.js` (PT-174) lo
+// hacia, y se aplicaba en UNO de doce ficheros. Lo vigila
+// `src/api/test/unit/web-views/feedback-de-formularios.spec.ts`.
 // PT-096 - Extraido de views/pages/auth/login.html
 //
 // Vivia dentro de la plantilla, lo que obligaba a `script-src 'unsafe-inline'` en la CSP de todo
@@ -12,6 +18,8 @@
 // servidor, pero el codigo ya no.
 const CLIENT = document.body.dataset.clientUrl || '';
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  const _boton = e.target.querySelector('button[type="submit"]');
+  if (_boton) _boton.disabled = true;
   e.preventDefault();
   const errEl = document.getElementById('loginError');
   errEl.style.display = 'none';
@@ -42,12 +50,15 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
         ? 'Ese codigo no es valido. Revisa tu app y vuelve a intentarlo.'
         : 'Tu cuenta tiene verificacion en dos pasos. Escribe el codigo de tu app.';
       errEl.style.display = 'block';
+    if (_boton) _boton.disabled = false;
     } else {
       errEl.textContent = data.message || 'Credenciales incorrectas.';
       errEl.style.display = 'block';
+    if (_boton) _boton.disabled = false;
     }
   } catch {
     errEl.textContent = 'Error de conexión. Intenta de nuevo.';
     errEl.style.display = 'block';
+    if (_boton) _boton.disabled = false;
   }
 });

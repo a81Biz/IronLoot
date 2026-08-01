@@ -21,7 +21,7 @@
       {% endif %}
     </div>
     <button type="submit" class="btn btn-primary" {% if not providers or not providers.length %}disabled{% endif %}>Continuar al pago</button>
-    <div id="depositError" class="alert alert-error oculto mensaje-accion"></div>
+    <div id="depositError" class="alert alert-error oculto mensaje-accion" role="status" aria-live="polite"></div>
   </form>
 </div>
 {% endblock %}
