@@ -11,7 +11,12 @@ Fase actual:    CERTIFICADO — Clase A
 Health:         100 / 100      cero hallazgos activos
 Risk:           0 / 100        Risk_bruto = 0
 Confidence:     91.0 / 100     POR PRIMERA VEZ DERIVADO: 80/100/95/100 — ver el desglose abajo
-Freshness:      FRESH          S-013 medido sobre 98e445b — cero deriva en auditable_patterns
+Freshness:      STALE          la tanda PT-204..PT-233 (FPGE-004) tocó `auditable_patterns`
+                               desde 98e445b: src/apps/{base,client}/**, src/admin/**, docker-compose.yml.
+                               **La puntuación NO se recalcula aquí** —eso exige un delta sync—: se corrige
+                               la afirmación de frescura, que es lo único que se puede saber sin medir.
+                               Lo delató `frescura-declarada-es-real.spec.ts` (PT-202), que es para lo que existe.
+                               Se restaura con `resume PTSA`.
 audit_commit:   98e445b3fe0c099001c58aa62699e410d9d3562a
 Cobertura:      PARCIAL        D1/D2/D3/D4 medidas EJECUTANDO · D5 al 0 % — LIMITACIÓN DECLARADA de v1.0
 ```

@@ -110,3 +110,131 @@
   sin el no hay forma de comprobar que PT-149 quedo bien. PT-150 antes que PT-161: mide antes de
   recortar.
 - **Estado:** los quince en `PROMOVIDO`. Esperando ACK del Proposal Gate.
+
+## 2026-07-31 — Run FPGE-004
+
+- **Trigger:** petición explícita del humano — *«toma estos hallazgos para FPGE y como si fuera el insumo
+  de PTSA (en lugar de PTSA)… que no quede nada suelto, que se ataque todo»*.
+- **Insumo de evidencia: NO es PTSA.** Es la **auditoría integral de UI/UX, contenido y coherencia de
+  producto del 2026-07-31**: 62 hallazgos `H-UI-001`…`H-UI-062` (11 P0 · 30 P1 · 16 P2 · 5 P3), 36
+  ausencias y 28 contradicciones. Se declara porque cambiar la fuente de evidencia sin decirlo sería el
+  defecto que este repositorio persigue desde H-016.
+- **Origen PTSA de referencia:** S-013 (2026-07-30) — Health 100 / Clase A / Risk 0 / Confidence 91.0.
+- **Compuerta de frescura: CERRADA, y verificada de forma independiente.** `git log 98e445b..HEAD`
+  devuelve un commit (`3408f3c`) que toca cuatro ficheros, los cuatro bajo `PTSA/**`, que
+  `audit-scope.yaml` declara en `ignore_patterns`. `commits_since_audit = 0` efectivo.
+- **El hallazgo de fondo de esta corrida, y la razón de que exista R-051:** el certificado dice **100/100
+  con cero hallazgos activos** y la auditoría encontró **once P0**, entre ellos un catálogo público que no
+  puede renderizar una sola subasta. **Las dos afirmaciones son ciertas a la vez.** `audit-scope.yaml` sí
+  incluye las vistas y los `src/**/*.ts` de los tres SSR desde S-001: el hueco no es de alcance de
+  ficheros, es de **unidad de auditoría**. PTSA mide productos de datos sobre la salida real en la base;
+  las 14 reglas de dominio se cumplen sobre las filas **y se seguirían cumpliendo con el catálogo
+  apagado**, porque ninguna pregunta si el producto llega a la pantalla.
+- **Y ya estaba anotado:** S-013 §SIGUIENTE·3 dejó escrita la pregunta —*«buscar guardas que miran al lado
+  del agujero»*—. `rutas-que-los-ssr-invocan.spec.ts` (PT-132, ampliada por PT-148 desde R-009) compara
+  **rutas literales**: comprueba que el endpoint exista, no que la forma de la respuesta coincida con lo
+  que la plantilla lee. La guarda está verde y cuatro pantallas están permanentemente vacías. La auditoría
+  formuló la pregunta y esta corrida la responde.
+- **Ítems emitidos:** 29 (`R-023`…`R-051`, todos `PROPUESTO`). Identificadores `R-001`…`R-022` consumidos
+  por las emisiones anteriores.
+- **Top por impacto:** R-023 (+9.0) · R-024 (+9.0) · R-025 (+9.0). Siete ítems comparten el máximo Δ;
+  se listan los tres de mayor Priority.
+- **Top quick wins:** R-023 (216.00) · R-024 (216.00) · R-025 (216.00) — **coinciden con el top de
+  impacto**, lo que es información y no un defecto: los tres defectos más graves del producto se arreglan
+  tocando pocas líneas. Como esa coincidencia deja la segunda lista sin utilidad de decisión, se publican
+  también los tres siguientes: R-026 (162.00) · R-030 (81.00) · R-036 (81.00).
+- **Ajustes declarados en el algoritmo (tres):**
+  1. **`ScoreImpact` imputado.** Ninguno de los 62 está registrado como `H-XXX`, así que la penalización
+     literalmente removida sería 0 para los 29 ítems y todo empataría. Se usa la penalización que PTSA
+     aplicaría con la severidad mapeada `P0→CRÍTICA(30)` · `P1→ALTA(15)` · `P2→MEDIA(5)` · `P3→BAJA(1)`.
+     Mismo recurso que FPGE-002 («penalización evitada») y FPGE-003, y marcado igual.
+  2. **`Urgency` constante en 1.0 para los 29.** No hay dimensión en regresión (D1–D4 estables en 100
+     desde S-009) ni `audit_due` vencido (0 hallazgos activos). Se declara constante **en vez de inventar
+     un bonus**; el factor no ordena nada esta vez, y eso es honesto decirlo.
+  3. **Rúbricas escritas** de `EvidenceWeight` (Impacto 1-4 × Probabilidad 1-4) y de asignación de
+     dimensión, para que la corrida sea reproducible sin PTSA detrás.
+- **Consecuencia que hay que decir antes de que alguien la descubra:** ejecutar estos PT **no subirá el
+  Health de 100** — no se puede retirar una penalización que nunca se aplicó. Quien mire
+  `score-history.json` dentro de un mes verá 100 antes y 100 después. **Recomendación explícita al humano:
+  correr `audit PTSA` para registrar los 62 como hallazgos antes de cerrar la tanda.** FPGE es de sólo
+  lectura sobre PTSA y no puede hacerlo.
+- **Cobertura declarada, por requisito explícito («que no quede nada suelto»):** **62/62** hallazgos,
+  **36/36** ausencias y **28/28** contradicciones tienen ítem primario asignado, con las tres matrices de
+  trazabilidad publicadas en `ROADMAP.md`. Ningún hallazgo sin ítem; ninguno como primario en dos ítems.
+- **Reparto por dimensión, con su sesgo declarado:** 24 de 29 ítems en D1 (multiplicador 1.5). No es un
+  ajuste para inflar la lista: es la consecuencia de auditar la superficie donde el producto se entrega.
+  Una auditoría de infraestructura habría dado el reparto contrario.
+- **Desempates aplicados:** seis grupos (216.00 ×3 · 81.00 ×5 · 60.75 ×2 · 54.00 ×3 · 27.00 ×3 · 9.00 ×2),
+  resueltos por regla 2 (D1 primero) y, donde el `EvidenceWeight` también empataba, por riesgo cualitativo
+  declarado ítem a ítem — el mismo procedimiento que FPGE-003 usó en R-018/R-014.
+- **Donde el algoritmo y el criterio del agente no coinciden, manda el algoritmo:** en el empate de 27.00,
+  la supremacía del dominio pone R-045 (contenido de ayuda, D1) por encima de R-037 (2FA, contraseña y
+  cierre de sesión real, D2). Se deja el orden de la regla —es lo que la hace reproducible— y se anota que
+  el riesgo real de R-037 es mayor que su puesto 24.º.
+- **Lo que el algoritmo no modela, dicho aparte:** (a) **R-027** vale más que su puesto 13.º — es la cadena
+  completa de cobro del vendedor y sólo baja por esfuerzo `L`; (b) **R-051** no corrige un síntoma sino el
+  instrumento, y sin él la próxima auditoría vuelve a certificar 100; (c) **R-023 + R-051 son el mismo
+  defecto en dos capas** y deben aprobarse juntos; (d) cuatro dependencias de orden de ejecución
+  documentadas (R-023 antes que R-028/R-029/R-042; R-024 antes que R-029; R-027 en un solo PT; R-031
+  espera revisión jurídica para su texto).
+- **Bloqueos externos declarados, no descubiertos a mitad:** revisión jurídica (`L-01`…`L-08`, R-031),
+  taxonomía de categorías y publicidad del histórico de cerradas (R-028), destino de los diseños oficiales
+  (R-050), y los dos de siempre — CFDI/PAC (`TD-001`) y Stripe/HeyBanco (`TD-002`).
+- **Trabajo FDGE en vuelo: ninguno.** `PENDING_TASKS.md` declara «Cero trabajo FDGE pendiente» y el índice
+  de estado dice 0 realmente abiertos. Ninguno de los 29 ítems duplica un Proposal Package de `changes/`.
+  Los PT disponibles empiezan en **PT-204**.
+- **Estado:** los 29 en `PROPUESTO`, esperando revisión humana. FPGE no promueve nada por sí mismo.
+
+## 2026-07-31 — Promoción masiva R-023..R-051 -> PT-204..PT-232
+
+- **Trigger:** `promote FPGE` sobre los veintinueve, por decisión humana explícita: *«pasa todas a
+  aprobado y trabaja de forma automática promoviendo cada una a su FPGE y comienza FDGE teniendo todos
+  los ACK y VoBos necesarios hasta terminar»*.
+- **Alcance de la autorización, escrito para que quede constancia (RULE-37):** esa frase cubre el ACK de
+  STATE 1, el ACK de STATE 2, el **ACK del Proposal Gate** y el **VoBo de STATE 6** para los BUG de la
+  tanda. Se transcribe literal en `changes/PT-204-232-tanda-fpge-004/design.md` porque un cierre sin
+  constancia de quién lo autorizó es indistinguible de uno que el agente se dio a sí mismo.
+- **Promotions** (por orden de prioridad de R-004):
+  - R-023 -> PT-204 (BUG, STATE 1-B)           - contrato de forma de lista SSR<->API
+  - R-024 -> PT-205 (FEATURE, STATE 1-E)       - publicar y cancelar subasta
+  - R-025 -> PT-206 (BUG, STATE 1-B)           - el pendiente de liquidación llega a la interfaz
+  - R-026 -> PT-207 (BUG, STATE 1-B)           - registro alcanzable desde el detalle público
+  - R-030 -> PT-208 (BUG, STATE 1-B)           - la portada dice lo que el sistema hace
+  - R-028 -> PT-209 (FEATURE, STATE 1-E)       - el catálogo como superficie de búsqueda
+  - R-036 -> PT-210 (BUG, STATE 1-B)           - la puja informa mínimo, reloj y estado
+  - R-040 -> PT-211 (BUG, STATE 1-B)           - contraste y distinción visual
+  - R-032 -> PT-212 (BUG, STATE 1-B)           - estados, badges y fechas en español
+  - R-051 -> PT-213 (INVESTIGATION, STATE 1-B) - el alcance de auditoría alcanza a la pantalla
+  - R-038 -> PT-214 (BUG, STATE 1-B)           - reenvío de la verificación de correo
+  - R-034 -> PT-215 (FEATURE, STATE 1-E)       - watchlist con alta y baja
+  - R-027 -> PT-216 (FEATURE MAJOR, STATE 1-E) - cadena de cobro del vendedor
+  - R-044 -> PT-217 (FEATURE, STATE 1-E)       - notificaciones accionables
+  - R-049 -> PT-218 (BUG, STATE 1-B)           - backoffice sin localhost fijo
+  - R-031 -> PT-219 (BUG, STATE 1-B)           - legales y producto dicen lo mismo. **PARCIAL**
+  - R-035 -> PT-220 (FEATURE, STATE 1-E)       - disputa sin UUID, con contexto
+  - R-029 -> PT-221 (FEATURE, STATE 1-E)       - cuenta atrás, imágenes y nº de pujas
+  - R-039 -> PT-222 (REFACTOR, STATE 1-R)      - navegación móvil, orientación y jerarquía
+  - R-042 -> PT-223 (FEATURE, STATE 1-E)       - SEO y contenido indexable
+  - R-041 -> PT-224 (BUG, STATE 1-B)           - las 404 vuelven al sistema de estilos
+  - R-033 -> PT-225 (FEATURE, STATE 1-E)       - cerrar el bucle de reputación
+  - R-045 -> PT-226 (FEATURE, STATE 1-E)       - contenido institucional y de ayuda
+  - R-037 -> PT-227 (FEATURE, STATE 1-E)       - seguridad de cuenta en el portal
+  - R-043 -> PT-228 (BUG, STATE 1-B)           - el sistema dice lo que pasa
+  - R-048 -> PT-229 (BUG, STATE 1-B)           - historial financiero: paginación y filtro
+  - R-046 -> PT-230 (FEATURE, STATE 1-E)       - la orden como documento de cumplimiento
+  - R-047 -> PT-231 (FEATURE, STATE 1-E)       - dashboard como panel de estado
+  - R-050 -> PT-232 (BUG, STATE 1-B)           - la documentación refleja lo medido
+- **Paquete de propuesta:** `changes/PT-204-232-tanda-fpge-004/` — **uno para los veintinueve**, no
+  veintinueve. Mismo criterio que la tanda FPGE-003 (`PT-148-162`): el Proposal Gate se cumple igual con un
+  documento que con veintinueve; lo que no se cumpliría es tocar código sin ninguno.
+- **Un bloqueo parcial declarado por adelantado, no descubierto a mitad:** **PT-219** entrega su mitad de
+  interfaz (consentimiento en el registro, enlaces legales, sección de datos personales, mostrar tarifas)
+  y **deja fuera el texto de los documentos legales**, que exige revisión jurídica y no es trabajo FDGE.
+  Los ocho riesgos `L-01`…`L-08` quedan anotados como entregable para esa revisión.
+- **Dos decisiones de producto tomadas por el agente y declaradas**, porque la autorización pedía no
+  parar: (a) **la taxonomía de categorías se retira** en vez de inventarse — el modelo no la tiene, y
+  ofrecer un filtro sin campo es lo que produjo H-UI-010; (b) **el histórico de subastas cerradas NO se
+  publica** — el API lo prohíbe por diseño en modo público y cambiarlo es una decisión de negocio.
+- **Orden de ejecución != orden de prioridad.** PT-204 va primero porque PT-209, PT-221 y PT-223 operan
+  sobre un catálogo que hasta entonces no puede pintar una fila. PT-213 va con PT-204, no después.
+- **Estado:** los 29 en `PROMOVIDO`. ACK del Proposal Gate otorgado en el mismo acto.
