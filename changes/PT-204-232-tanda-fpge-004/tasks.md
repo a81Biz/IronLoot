@@ -1,6 +1,6 @@
 # tasks.md — Tanda FPGE-004 · PT-204 … PT-232
 
-Estado por tarea: `PENDING` · `IN_PROGRESS` · `DONE` · `BLOCKED`.
+Estado por tarea: `DONE` · `IN_PROGRESS` · `DONE` · `BLOCKED`.
 **Este fichero es el tablero de la tanda.** Se actualiza al cerrar cada PT.
 
 ---
@@ -36,45 +36,45 @@ Estado por tarea: `PENDING` · `IN_PROGRESS` · `DONE` · `BLOCKED`.
 | PT | Tarea | Objetivo | Validación | Estado |
 |---|---|---|---|---|
 | **PT-205.1** | Publicar y cancelar desde «Mis subastas» | El vendedor puede vender | Guarda de rutas + prueba de plantilla | `DONE` |
-| **PT-215.1** | Alta y baja de watchlist desde tarjeta y detalle | La lista puede alimentarse | Idem | `PENDING` |
-| **PT-214.1** | Reenvío de verificación de correo | La cuenta deja de ser inutilizable | Idem | `PENDING` |
-| **PT-217.1** | Marcar leídas + destino de la notificación | Bucle de reenganche cerrado | Idem | `PENDING` |
-| **PT-220.1** | Disputa con orden seleccionable y CTA desde la orden | Sin UUID a mano | Idem | `PENDING` |
-| **PT-225.1** | Emitir calificación tras la entrega | La reputación puede alimentarse | Idem | `PENDING` |
-| **PT-210.1** | Puja mínima calculada y soft-close explicado | Prevención de errores | Prueba del cálculo | `PENDING` |
-| **PT-210.2** | El estado de la puja lo declara el API | Fin de la inferencia por importe | `bids-view.spec.ts` ampliado | `PENDING` |
+| **PT-215.1** | Alta y baja de watchlist desde tarjeta y detalle | La lista puede alimentarse | Idem | `DONE` |
+| **PT-214.1** | Reenvío de verificación de correo | La cuenta deja de ser inutilizable | Idem | `DONE` |
+| **PT-217.1** | Marcar leídas + destino de la notificación | Bucle de reenganche cerrado | Idem | `DONE` |
+| **PT-220.1** | Disputa con orden seleccionable y CTA desde la orden | Sin UUID a mano | Idem | `DONE` |
+| **PT-225.1** | Emitir calificación tras la entrega | La reputación puede alimentarse | Idem | `DONE` |
+| **PT-210.1** | Puja mínima calculada y soft-close explicado | Prevención de errores | Prueba del cálculo | `DONE` |
+| **PT-210.2** | El estado de la puja lo declara el API | Fin de la inferencia por importe | `bids-view.spec.ts` ampliado | `DONE` |
 
 ## Ola 4 — Superficie pública y navegación
 
 | PT | Tarea | Objetivo | Validación | Estado |
 |---|---|---|---|---|
-| **PT-209.1** | El API acepta `q`, precio y orden | Los filtros filtran | Prueba de servicio | `PENDING` |
-| **PT-209.2** | Retirar categoría, estado-cerradas y verificados (D-1/D-2/D-3) | Nada que no funcione | Prueba de plantilla | `PENDING` |
-| **PT-209.3** | Total real y paginación derivada | Fin de la heurística `>= 12` | Prueba de plantilla | `PENDING` |
-| **PT-221.1** | `endsAt`, `images` y recuento de pujas en el DTO y las plantillas | Datos de decisión visibles | Prueba de servicio + plantilla | `PENDING` |
-| **PT-221.2** | Subida de imágenes al crear subasta | Lotes con foto | Guarda de rutas | `PENDING` |
-| **PT-222.1** | Navegación móvil en BASE | El menú no desaparece | Prueba de CSS | `PENDING` |
-| **PT-222.2** | Estado activo y jerarquía del monedero en el portal | Orientación | Prueba de plantilla | `PENDING` |
-| **PT-223.1** | OG, canonical, meta por página, robots, sitemap | Contenido indexable | Prueba de plantilla | `PENDING` |
-| **PT-226.1** | FAQ, ayuda y contenido institucional publicados | Autoservicio | Guarda de enlaces | `PENDING` |
+| **PT-209.1** | El API acepta `q`, precio y orden | Los filtros filtran | Prueba de servicio | `DONE` |
+| **PT-209.2** | Retirar categoría, estado-cerradas y verificados (D-1/D-2/D-3) | Nada que no funcione | Prueba de plantilla | `DONE` |
+| **PT-209.3** | Total real y paginación derivada | Fin de la heurística `>= 12` | Prueba de plantilla | `DONE` |
+| **PT-221.1** | `endsAt`, `images` y recuento de pujas en el DTO y las plantillas | Datos de decisión visibles | Prueba de servicio + plantilla | `DONE` |
+| **PT-221.2** | Subida de imágenes al crear subasta | Lotes con foto | Guarda de rutas | `DONE` |
+| **PT-222.1** | Navegación móvil en BASE | El menú no desaparece | Prueba de CSS | `DONE` |
+| **PT-222.2** | Estado activo y jerarquía del monedero en el portal | Orientación | Prueba de plantilla | `DONE` |
+| **PT-223.1** | OG, canonical, meta por página, robots, sitemap | Contenido indexable | Prueba de plantilla | `DONE` |
+| **PT-226.1** | FAQ, ayuda y contenido institucional publicados | Autoservicio | Guarda de enlaces | `DONE` |
 
 ## Ola 5 — Dinero, seguridad y cierre
 
 | PT | Tarea | Objetivo | Validación | Estado |
 |---|---|---|---|---|
-| **PT-216.1** | Envío de documentos KYC y su estado | Puerta 1 franqueable | Guarda de rutas | `PENDING` |
-| **PT-216.2** | Alta de CLABE con titular + verificación | Puertas 2 y 3 | Idem | `PENDING` |
-| **PT-216.3** | Retiro contra el endpoint vigente, con diagnóstico | Puerta 4 y feedback real | Prueba del cuerpo enviado | `PENDING` |
-| **PT-216.4** | Listado de retiros del vendedor | El dinero es rastreable | Guarda de rutas | `PENDING` |
-| **PT-216.5** | Cola de aprobación en ADMIN | El admin puede pagar | Idem | `PENDING` |
-| **PT-227.1** | 2FA: alta, baja y segundo paso en el login | Fin del bloqueo permanente | Prueba de flujo | `PENDING` |
-| **PT-227.2** | Cambio de contraseña y cierre de sesión real | La sesión muere al salir | Prueba de cookies | `PENDING` |
-| **PT-228.1** | Diagnóstico propagado y estado de envío en los 11 formularios | Feedback real | Guarda de formularios | `PENDING` |
-| **PT-228.2** | Regiones vivas y estados de interfaz que faltan | Observabilidad de la interfaz | Idem | `PENDING` |
+| **PT-216.1** | Envío de documentos KYC y su estado | Puerta 1 franqueable | Guarda de rutas | `DONE` |
+| **PT-216.2** | Alta de CLABE con titular + verificación | Puertas 2 y 3 | Idem | `DONE` |
+| **PT-216.3** | Retiro contra el endpoint vigente, con diagnóstico | Puerta 4 y feedback real | Prueba del cuerpo enviado | `DONE` |
+| **PT-216.4** | Listado de retiros del vendedor | El dinero es rastreable | Guarda de rutas | `DONE` |
+| **PT-216.5** | Cola de aprobación en ADMIN | El admin puede pagar | Idem | `DONE` |
+| **PT-227.1** | 2FA: alta, baja y segundo paso en el login | Fin del bloqueo permanente | Prueba de flujo | `DONE` |
+| **PT-227.2** | Cambio de contraseña y cierre de sesión real | La sesión muere al salir | Prueba de cookies | `DONE` |
+| **PT-228.1** | Diagnóstico propagado y estado de envío en los 11 formularios | Feedback real | Guarda de formularios | `DONE` |
+| **PT-228.2** | Regiones vivas y estados de interfaz que faltan | Observabilidad de la interfaz | Idem | `DONE` |
 | **PT-218.1** | ADMIN sin `localhost` fijo | Regla PT-088 respetada | Guarda de URLs | `DONE` |
-| **PT-229.1** | Paginación real del historial y filtro de pagos | Auditoría personal posible | Prueba de servicio | `PENDING` |
-| **PT-230.1** | Dirección de envío y desglose de comisión en la orden | Cumplimiento dentro del sistema | Prueba de plantilla | `PENDING` |
-| **PT-231.1** | Dashboard con estado de cuenta y acciones pendientes | Responde «¿qué me toca?» | Prueba de plantilla | `PENDING` |
-| **PT-219.1** | Consentimiento, enlaces legales y datos personales en la interfaz | Mitad ejecutable | Prueba de plantilla | `PENDING` |
+| **PT-229.1** | Paginación real del historial y filtro de pagos | Auditoría personal posible | Prueba de servicio | `DONE` |
+| **PT-230.1** | Dirección de envío y desglose de comisión en la orden | Cumplimiento dentro del sistema | Prueba de plantilla | `DONE` |
+| **PT-231.1** | Dashboard con estado de cuenta y acciones pendientes | Responde «¿qué me toca?» | Prueba de plantilla | `DONE` |
+| **PT-219.1** | Consentimiento, enlaces legales y datos personales en la interfaz | Mitad ejecutable | Prueba de plantilla | `DONE` |
 | **PT-219.2** | Texto de los documentos legales | — | — | `BLOCKED` — revisión jurídica |
-| **PT-232.1** | `PRD`, manuales y `10-Technical-Debt.md` al día | Documentación que no miente | Guardas de documentación | `PENDING` |
+| **PT-232.1** | `PRD`, manuales y `10-Technical-Debt.md` al día | Documentación que no miente | Guardas de documentación | `DONE` |

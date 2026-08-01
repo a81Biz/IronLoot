@@ -3,19 +3,18 @@
 **FDGE V3** · **2026-07-31** · Se **sobrescribe**: es el estado de ahora, no la historia. La historia
 está en [`HISTORY.log`](HISTORY.log), que es append-only y la tiene íntegra con su fecha.
 
-**Rama**: `fix/PT-204-contrato-forma-de-lista`, **13 commits locales sobre `master`**, sin fusionar y sin
-subir. Es la tanda FPGE-004 en curso.
+**Rama**: `fix/PT-204-contrato-forma-de-lista`, **19 commits locales sobre `master`**, sin fusionar y sin
+subir. Es la tanda FPGE-004, **completa**.
 
-**Pruebas**: API `web-views` **64** (8 suites) · CLIENT **156** (13) · BASE **23** (4). *(Medido el
-2026-07-31 tras cada commit. Sube desde 144/3 en CLIENT y 3/1 en BASE por las cinco guardas nuevas de la
-tanda, no por trabajo de producto.)*
+**Pruebas**: API **1.140** (135 suites) · CLIENT **172** (14) · BASE **23** (4) · ADMIN **13** (2).
+*(Medido el 2026-07-31 al cerrar la tanda. `tsc --noEmit` limpio en los cuatro servicios.)*
 
 **Reglas duras**: **36** `RULE-NN`. **Guardas de documentación**: **20** suites.
 
 **Hallazgos PTSA**: **37** registrados, **0** activos. **Deuda técnica**: **2** abiertas de **19** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **166 encabezados · 0 realmente abiertos.**
+`npm run indice:estado`. **185 encabezados · 0 realmente abiertos.**
 
 > **Aviso para quien regenere ese índice.** `HISTORY.log` tiene que estar en **LF**. Al anotar esta tanda
 > lo convertí sin querer a CRLF y `indice-de-estado.ts` dejó de reconocer **las 166 entradas** —en
@@ -33,7 +32,8 @@ priorizó en la emisión **R-004** (29 ítems, `R-023`…`R-051`) y el humano lo
 bloque** a `PT-204`…`PT-232`, con ACK del Proposal Gate y VoBo anticipado.
 
 **Paquete de propuesta:** `changes/PT-204-232-tanda-fpge-004/`
-**Tablero por tarea:** ese mismo directorio, `tasks.md` — **19 `DONE` · 31 `PENDING` · 2 `BLOCKED`**
+**Tablero por tarea:** ese mismo directorio, `tasks.md` — **50 `DONE` · 0 `PENDING` · 2 `BLOCKED`**
+(los dos bloqueados son el texto legal, que exige revisión jurídica).
 
 ### Lo que hay que saber antes de tocar nada
 
@@ -50,53 +50,61 @@ PTSA y no puede hacerlo; sin ese sync, la mejora no es medible.
 
 ---
 
-## Entregado en la rama: 11 PT · 21 de 62 hallazgos
+## Entregado: 30 PT · 62 de 62 hallazgos
 
 | PT | Qué cierra | Hallazgos |
 |---|---|---|
-| **PT-204** | El contrato de forma de lista SSR↔API en **7** consumidores | H-UI-001·002·003·004 |
+| **PT-204** | El contrato de forma de lista SSR↔API en **7** consumidores | 001·002·003·004 |
+| **PT-205** | Publicar y cancelar una subasta | 007 |
+| **PT-206** | El saldo pendiente de liquidación llega a la interfaz | 011 |
+| **PT-207** | El registro alcanzable desde el detalle público | 009 |
+| **PT-208** | La portada deja de afirmar lo que el sistema no hace | 027·028·041 |
+| **PT-209** | El catálogo filtra de verdad (y retira lo que no puede funcionar) | 010·042·043·051 |
+| **PT-210** | La puja informa su mínimo, su reloj y su estado | 020·048·050 |
+| **PT-211** | Contraste WCAG AA del precio y la prosa legal | 033·034·035 |
+| **PT-212** | Estados, badges y fechas en español | 037·038·045·052 |
 | **PT-213** | Guarda de **forma** de respuesta, no sólo de ruta | (meta) |
-| **PT-206** | El saldo pendiente de liquidación llega a la interfaz | H-UI-011 |
-| **PT-207** | El registro alcanzable desde el detalle público | H-UI-009 |
-| **PT-208** | La portada deja de afirmar lo que el sistema no hace | H-UI-027·028·041 |
-| **PT-211** | Contraste WCAG AA del precio y la prosa legal | H-UI-033·034·035 |
-| **PT-212** | Estados, badges y fechas en español | H-UI-037·038·045·052 |
-| **PT-218** | ADMIN sin `localhost` fijo | H-UI-040·060·061 |
-| **PT-224** | Las dos 404 vuelven al sistema de estilos | H-UI-036·062 |
-| **PT-205** | Publicar y cancelar una subasta | H-UI-007 |
-| **PT-233** | **Hallazgo nuevo:** ADMIN sin reservas de conexión | H-UI-063 |
+| **PT-214** | Reenvío de la verificación de correo | 025 · **064** |
+| **PT-215** | Watchlist con alta y baja | 017 |
+| **PT-216** | **La cadena de cobro del vendedor** (5 pantallas) | 005·006·008·026 |
+| **PT-217** | Notificaciones accionables | (A-17) |
+| **PT-218** | ADMIN sin `localhost` fijo | 040·060·061 |
+| **PT-219** | Consentimiento, cookies y datos personales — **parcial** | 029·030·031·032 |
+| **PT-220** | Disputa sin UUID, con contexto | 021 |
+| **PT-221** | Cuenta atrás, imágenes y nº de pujas | 018·019 |
+| **PT-222** | Navegación móvil y orientación | 012·013·014·015·053·054 |
+| **PT-223** | SEO y contenido indexable | 039·058·059 |
+| **PT-224** | Las dos 404 vuelven al sistema de estilos | 036·062 |
+| **PT-225** | Cerrar el bucle de reputación | 016·056 |
+| **PT-226** | Centro de ayuda | (A-10·A-11) |
+| **PT-227** | Seguridad de cuenta: 2FA, contraseña, cierre real | 022·023·024 |
+| **PT-228** | La interfaz dice lo que pasa | 046·047 |
+| **PT-229** | Historial financiero: paginación y filtro | 044 |
+| **PT-230** | La orden como documento de cumplimiento | 049 |
+| **PT-231** | El dashboard como panel de estado | 055 |
+| **PT-232** | La documentación refleja lo medido | 057 |
+| **PT-233** | **Hallazgo nuevo:** ADMIN sin reservas de conexión | **063** |
 
-**Cinco guardas nuevas**: forma de lista SSR↔API · clases CSS existentes · contraste calculado · enlaces
-entre sitios · afirmaciones del sitio. Las cinco fallan contra el árbol previo (RED documentado en
-`evidence/PT-204/`).
+**Dos hallazgos nuevos aparecieron durante la tanda** y tienen PT propio, no se colaron en otro:
 
----
+- **H-UI-063** — `ADMIN_API_URL` con reserva en tres ficheros, invisible para la guarda de `H-035`
+  porque esa variable no estaba en su lista. Es la reaparición que `S-013 §SIGUIENTE·4` predijo palabra
+  por palabra. → `PT-233`.
+- **H-UI-064** — `auth.service.ts:225` justificaba capturar un fallo de envío diciendo que *«el usuario
+  tiene la vía de reenvío»*. **Esa vía no existía.** Un comentario que declara una capacidad ausente es
+  la familia de H-016 dentro del código. → `PT-214`.
 
-## Pendiente de la tanda: 19 PT, ninguno empezado
+**Siete guardas nuevas**, todas con RED documentado y casos de control en las dos direcciones:
 
-Por orden de `Priority` de R-004. **No tienen código escrito**: están promovidos y sin abrir.
-
-| PT | Ítem | Esf. | Nota |
-|---|---|:--:|---|
-| **PT-209** | El catálogo como superficie de búsqueda | M | **Bloqueado por dos decisiones de producto** |
-| **PT-210** | La puja informa mínimo, reloj y estado | S | Toca el API |
-| **PT-214** | Reenvío de la verificación de correo | S | — |
-| **PT-215** | Watchlist con alta y baja | S | — |
-| **PT-216** | **Cadena de cobro del vendedor** | **L** | 5 pantallas. El P0 más caro que queda |
-| **PT-217** | Notificaciones accionables | S | — |
-| **PT-219** | Legales — mitad de interfaz | M | La otra mitad, `BLOCKED` |
-| **PT-220** | Disputa sin UUID, con contexto | M | — |
-| **PT-221** | Cuenta atrás, imágenes y nº de pujas | M | Toca el API y el DTO |
-| **PT-222** | Navegación: móvil, orientación y jerarquía | M | — |
-| **PT-223** | SEO y contenido indexable | M | — |
-| **PT-225** | Cerrar el bucle de reputación | M | — |
-| **PT-226** | Contenido institucional y de ayuda | M | Publicar el FAQ que ya existe escrito |
-| **PT-227** | Seguridad de cuenta: 2FA, contraseña, sesiones | M | — |
-| **PT-228** | El sistema dice lo que pasa: estados y feedback | M | — |
-| **PT-229** | Historial financiero: paginación y filtro | S | — |
-| **PT-230** | La orden como documento de cumplimiento | M | — |
-| **PT-231** | El dashboard como panel de estado | M | — |
-| **PT-232** | La documentación refleja lo medido | M | Incluye corregir `PRD RF-10` |
+| Guarda | Qué impide que vuelva |
+|---|---|
+| `forma-de-lista-ssr.spec.ts` | Que un consumidor SSR lea una clave que el API no emite |
+| `clases-css-existen.spec.ts` | Que el marcado use una clase que ningún CSS define |
+| `contraste-de-texto.spec.ts` | Que un token de texto baje del umbral AA — **calcula** el ratio |
+| `feedback-de-formularios.spec.ts` | Que un formulario envíe sin bloquear, o que un mensaje sea mudo |
+| `enlaces-entre-sitios.spec.ts` | Que BASE mande al portal una ruta que sirve él mismo |
+| `afirmaciones-del-sitio.spec.ts` | Que la portada afirme lo que una `RN-XX` niega |
+| `estados.spec.ts` | Que una tabla vuelva a imprimir el enum crudo |
 
 ---
 
@@ -120,13 +128,18 @@ Por orden de `Priority` de R-004. **No tienen código escrito**: están promovid
 ## Riesgos vivos
 
 1. **Ninguna corrección se ha visto con datos reales.** La base está vacía (`total: 0`, medido) porque
-   `run-all.sh` la truncó. Lo demostrado es que los contratos **coinciden** y que hay guardas que fallan
-   si dejan de coincidir. **Que el catálogo pinte subastas exige `run-all.sh` + la suite de navegador.**
-2. **41 de 62 hallazgos siguen vivos**, incluidos **cuatro P0**: la cadena de cobro del vendedor
-   (PT-216, tres puertas sin interfaz y sin cola de aprobación en ADMIN) y los filtros del catálogo
-   (PT-209).
-3. **La rama no está fusionada ni subida.**
-4. **D5 sigue al 0 %** y la Confianza a un punto del umbral de Clase A. Nada de esta tanda lo mueve:
+   `run-all.sh` la truncó. Lo demostrado es que los contratos **coinciden** y que hay siete guardas que
+   fallan si dejan de coincidir. **Que el catálogo pinte subastas exige `run-all.sh` + la suite de
+   navegador**, y hasta entonces no está demostrado. Es el riesgo número uno de esta tanda.
+2. **La rama no está fusionada ni subida.** Diecinueve commits locales.
+3. **Los contenedores no se han reconstruido.** ADMIN y BASE exigen ahora `ADMIN_API_URL` y
+   `PUBLIC_SITE_URL` respectivamente, y **abortan al arrancar si faltan** (RULE-17, y es a propósito).
+   `docker-compose.yml` las declara; un despliegue que no recoja el compose nuevo no arrancará.
+4. **Ocho cosas quedan fuera y están declaradas**, no olvidadas: el texto legal, la dirección de envío en
+   la orden (cambio de esquema), la subida de imágenes, la lista de sesiones activas, la respuesta en
+   disputas mediadas, la reputación en el punto de decisión, la taxonomía de categorías y el histórico
+   público de cerradas.
+5. **D5 sigue al 0 %** y la Confianza a un punto del umbral de Clase A. Nada de esta tanda lo mueve:
    exige volumen de ciclos de pago reales.
 
 ---

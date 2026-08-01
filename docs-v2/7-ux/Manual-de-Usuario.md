@@ -91,7 +91,35 @@ Si hay un problema tras la entrega, abre una **disputa dentro de 14 días**. El 
 
 ## 6. Notas y limitaciones actuales (transparencia)
 
-- La **puja en la interfaz** y varias **acciones de escritura** (depósito, crear subasta, disputa) tienen limitaciones técnicas hoy (`AUD-002`, `AUD-003`).
 - La **facturación fiscal (CFDI)** aún no está disponible (`AUD-016`).
+- Las **categorías de subasta** no existen todavía: el catálogo se explora por búsqueda, precio y orden.
+  Se retiró el filtro de categorías en `PT-209` porque **el modelo de datos no tiene ese campo** y
+  ofrecer un filtro que no filtra es peor que no ofrecerlo.
+- El **histórico de subastas cerradas no es público**. Es una decisión pendiente, no un olvido.
+
+> **Corregido en PT-232.** Esta sección declaraba limitaciones en la puja y en «varias acciones de
+> escritura» citando `AUD-002` y `AUD-003`, **que estaban cerrados desde julio**. Lo que sí estaba roto
+> era otra cosa y más grave —el catálogo no podía mostrar subastas, el retiro no podía completarse, no se
+> podía publicar una subasta ni calificar—, y **este documento no lo decía**. Un manual que enumera
+> limitaciones que ya no existen y calla las que sí, entrena a no creerle.
+
+## 7. Qué cambió el 2026-07-31
+
+Una auditoría de interfaz midió el producto **desde la pantalla** y no desde el API. Lo que ahora
+funciona y antes no:
+
+| Antes | Ahora |
+|---|---|
+| El catálogo y la portada no podían mostrar ninguna subasta | Muestran el catálogo real, con imagen, cierre y número de pujas |
+| Los filtros del catálogo no filtraban nada | Búsqueda, rango de precio y orden funcionan |
+| No se podía publicar una subasta desde el portal | «Publicar» y «Cancelar» en *Mis subastas* |
+| El retiro fallaba siempre, con el mensaje «Error al procesar» | Cadena completa: KYC → cuenta CLABE → verificación → solicitud, con el motivo exacto de cada rechazo |
+| El neto de tus ventas no aparecía en ninguna pantalla | «Pendiente de liquidar» en el monedero, con su fecha de liberación |
+| No se podía calificar a la contraparte | Formulario de calificación tras la entrega |
+| La watchlist no se podía alimentar ni vaciar | «Seguir esta subasta» y «Dejar de seguir» |
+| Notificaciones y disputas salían siempre vacías | Se ven, se marcan como leídas y llevan a su origen |
+| No había forma de activar 2FA ni de cambiar la contraseña | Pantalla de **Seguridad** |
+| Si el correo de verificación no llegaba, la cuenta quedaba inutilizable | «Reenviar enlace» |
+| No había ninguna ayuda publicada | [Centro de ayuda](/help) |
 
 Ver [FAQ y Mensajes](FAQ-y-Mensajes.md).
