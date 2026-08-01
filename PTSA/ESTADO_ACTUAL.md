@@ -13,11 +13,12 @@ Risk:           32 / 100       Risk_bruto = 8 — H-042 (ALTA, activa)
 Confidence:     95.0 / 100     coverage 90 · freshness 100 · evidence 95 · autonomy 100
 Freshness:      FRESH          S-015 re-ejecuto LOS CINCO checkpoints sobre el arbol actual, y los
                                volvio a ejecutar tras actualizar 11-Conventions y 10-Technical-Debt
-                               —ambos del alcance auditable—: mismo resultado. Se RE-MIDIO en vez de
-                               reetiquetar, que es la leccion de S-012.
+                               —ambos del alcance auditable—, y una TERCERA vez tras PT-235 y PT-236.
+                               Los cinco dan el mismo resultado las tres veces. Se RE-MIDIO cada vez en
+                               vez de reetiquetar, que es la leccion de S-012.
                                La secuencia importo: `run-all.sh` genero la historia que D1 y D5
                                necesitan, y por eso D1 pasa del 50 % al 100 % de cobertura.
-audit_commit:   258c3c93b0a68345dfe1310a1e9ede3c8541bde0
+audit_commit:   b89a97b3637a5fefb233877af12b28f794e67a6a
 Cobertura:      PARCIAL        D1 al 100 % (14/14 sobre salida de ESTA sesion) · D2/D3/D4 al 100 %
                                D5 al 0 % — 3 ciclos de 20, LIMITACION DECLARADA de v1.0
 ```
