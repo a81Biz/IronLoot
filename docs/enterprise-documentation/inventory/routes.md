@@ -28,6 +28,9 @@ All frontend routes across BASE, CLIENT, and ADMIN services.
 | GET | `/auth/verify-email-pending` | `pages/auth/verify-email-pending.html` | Public | — |
 | GET | `/about` | `pages/static/about.html` | Public | — |
 | GET | `/privacy` | `pages/static/privacy.html` | Public | — |
+| GET | `/help` | `pages/static/help.html` | Public | Centro de ayuda (PT-226): publica el FAQ que ya existía escrito |
+| GET | `/cookies` | `pages/static/cookies.html` | Public | Política de cookies (PT-219) |
+| GET | `/sitemap.xml` | — (XML generado) | Public | Sitemap derivado del catálogo real (PT-223) |
 | GET | `/terms` | — | Public | 301 → /static/terms |
 | GET | `/static/terms` | `pages/static/terms.html` | Public | — |
 | POST | `/api/*` | — | BFF proxy | Proxied to API with cookie token |
@@ -117,6 +120,9 @@ Source: `src/admin/src/app.module.ts` (18 admin modules)
 | Sitio | Ruta | Qué es |
 |---|---|---|
 | BASE | `/contact` | Página de contacto pública. |
+| BASE | `/help` | Centro de ayuda: FAQ, tarifas y estados (PT-226). |
+| BASE | `/cookies` | Qué cookies instala el sistema y para qué (PT-219). |
+| BASE | `/sitemap.xml` | Sitemap generado desde el catálogo, con `slug` (PT-223). |
 | CLIENT | `/wallet/deposit/return` | **La ruta canónica de retorno de TODAS las pasarelas** (ADR-042). Antes cada proveedor volvía a una ruta distinta y **ninguna existía**, así que un pago real acababa en 404 después de haber cobrado. El `status` que llega por la URL **no es fuente de verdad** —lo escribe el navegador—: la página pregunta a `GET /payments/status/:reference` (ADR-043). Un ciclo abierto se informa **pendiente**, jamás fallido: efectivo y SPEI tardan horas, y decir «falló» provoca un segundo pago. |
 
 Que la ruta de retorno de los pagos no estuviera en el inventario de rutas es exactamente la clase de omisión

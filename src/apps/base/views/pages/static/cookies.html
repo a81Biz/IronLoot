@@ -1,0 +1,74 @@
+{% extends "layouts/base.html" %}
+{% block title %}Uso de cookies — IronLoot{% endblock %}
+{% block meta_description %}Qué cookies usa IronLoot, para qué sirven y cuánto duran.{% endblock %}
+
+{# PT-219 (R-031 · H-UI-031) — **La política de privacidad no mencionaba cookies en ningún punto.**
+
+   Y el sistema instala cookies de sesión compartidas entre subdominios (`COOKIE_DOMAIN`), además de
+   cargar tipografías desde Google en toda página pública.
+
+   Esta página describe **lo que el sistema hace de verdad**, medido en el código, no un texto genérico.
+   Lo que NO hace es dar una opinión jurídica: la calificación legal de estos tratamientos —y la
+   redacción definitiva del aviso— está declarada como bloqueo pendiente de revisión jurídica
+   (`L-02` del informe de auditoría). Se publica el hecho; la valoración la firma quien deba. #}
+
+{% block content %}
+<div class="page-header">
+  <h1>Uso de cookies</h1>
+</div>
+
+<div class="prose ancho-720">
+  <p><em>Última actualización: 2026-07-31</em></p>
+
+  <h2>Qué cookies instalamos</h2>
+  <p>
+    IronLoot usa <strong>únicamente cookies necesarias</strong> para que la sesión funcione. No usamos
+    cookies de publicidad, ni de perfilado, ni de analítica de terceros.
+  </p>
+
+  <table class="tabla-ayuda">
+    <thead><tr><th>Cookie</th><th>Para qué</th><th>Duración</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><code>access_token</code></td>
+        <td>Te identifica en cada petición mientras navegas por tu cuenta.</td>
+        <td>Lo que dure el token de acceso.</td>
+      </tr>
+      <tr>
+        <td><code>refresh_token</code></td>
+        <td>Renueva la sesión sin pedirte la contraseña otra vez.</td>
+        <td>Lo que dure el token de refresco.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Las dos son <strong>HttpOnly</strong>: el JavaScript de la página no puede leerlas. Se comparten
+    entre los subdominios de IronLoot para que iniciar sesión en el sitio público te deje dentro del
+    portal privado sin volver a escribir la contraseña.
+  </p>
+
+  <h2>Servicios de terceros que cargan las páginas</h2>
+  <p>
+    Las páginas públicas cargan tipografías desde <strong>Google Fonts</strong>
+    (<code>fonts.googleapis.com</code> y <code>fonts.gstatic.com</code>). Eso implica que tu navegador se
+    conecta a servidores de Google al abrirlas. No les enviamos datos de tu cuenta.
+  </p>
+  <p>
+    El portal privado carga además la librería de tiempo real desde <code>cdn.socket.io</code>, que es lo
+    que hace que veas subir el precio de una subasta sin recargar.
+  </p>
+
+  <h2>Cómo desactivarlas</h2>
+  <p>
+    Puedes bloquear cookies desde tu navegador, pero <strong>no podrás iniciar sesión</strong>: son las
+    que sostienen la sesión. No hay forma de usar tu cuenta sin ellas.
+  </p>
+
+  <h2>Dónde encaja esto</h2>
+  <p>
+    Esta página complementa la <a href="/privacy">política de privacidad</a> y los
+    <a href="/terms">términos de uso</a>.
+  </p>
+</div>
+{% endblock %}

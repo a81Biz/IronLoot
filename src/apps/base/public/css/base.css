@@ -1146,9 +1146,49 @@ img { max-width: 100%; display: block; }
 
 /* PT-055 (FINDING-QA-13): header responsive — evitar overflow horizontal en móvil.
    El nav no tenía reglas para viewports estrechos y .nav-auth se desbordaba (>375px). */
+/* PT-222 (H-UI-012) — **La navegacion movil que no existia.**
+
+   Debajo de 640px `.nav-links` se ocultaba y no habia sustituto: la unica navegacion del sitio
+   publico desaparecia en el dispositivo mayoritario. Desde una pagina interior —un detalle de
+   subasta, los legales, el login— no habia forma de llegar al catalogo salvo volver a la portada.
+
+   Se resuelve con casilla + `:checked` y NO con JavaScript: la CSP no lleva `unsafe-inline` en
+   `script-src` (PT-096), asi que un `onclick=` no funcionaria y el navegador no diria nada. */
+.menu-toggle { display: none; }
+.menu-toggle-input:checked ~ .nav-links { display: flex; }
+
 @media (max-width: 640px) {
-  .nav-container { gap: 0.6rem; padding: 0 0.75rem; }
-  .nav-links { display: none; }
+  .nav-container { gap: 0.6rem; padding: 0 0.75rem; flex-wrap: wrap; }
+
+  .menu-toggle {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 40px;
+    height: 40px;
+    padding: 0.5rem;
+    cursor: pointer;
+    order: 3;
+  }
+  .menu-toggle-barra {
+    display: block;
+    height: 2px;
+    width: 100%;
+    background: var(--cl-white);
+    border-radius: 2px;
+  }
+
+  .nav-links {
+    display: none;
+    order: 4;
+    flex-basis: 100%;
+    flex-direction: column;
+    gap: 0;
+    padding: 0.5rem 0 0.75rem;
+    border-top: 1px solid rgba(246, 246, 246, 0.12);
+  }
+  .nav-links .nav-link { padding: 0.6rem 0.25rem; }
   .nav-brand svg { height: 26px; width: auto; }
   .nav-auth { gap: 0.4rem; }
   .nav-auth .btn { padding: 0.4rem 0.6rem; font-size: 0.75rem; letter-spacing: 0; }
@@ -1214,3 +1254,12 @@ img { max-width: 100%; display: block; }
 
 /* PT-208 — El CTA final sustituye al formulario de newsletter: los botones se centran. */
 .newsletter-inner .hero-actions { justify-content: center; }
+
+/* PT-226 — La tabla del centro de ayuda y de la política de cookies. */
+.tabla-ayuda { width: 100%; border-collapse: collapse; margin: 1rem 0 1.5rem; font-size: 0.9rem; }
+.tabla-ayuda th,
+.tabla-ayuda td { text-align: left; padding: 0.6rem 0.75rem; border-bottom: 1px solid var(--cl-border); }
+.tabla-ayuda th { font-family: var(--ff-heading); font-weight: 600; }
+.prose h3 { font-size: 1.05rem; margin: 1.5rem 0 0.5rem; }
+.prose ol { margin: 0 0 1rem 1.25rem; color: var(--cl-text-muted); line-height: 1.75; }
+.prose code { font-size: 0.85em; background: rgba(49, 54, 63, 0.08); padding: 0.1em 0.35em; border-radius: 4px; }
