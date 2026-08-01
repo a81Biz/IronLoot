@@ -4861,6 +4861,35 @@ Delta (real vs planned): no estaba planificado. Los tres casos que el grafo señ
   acusa `pages/payments.html`.
 PTSA reference: amplia la cobertura de H-039 (RULE-39). No abre hallazgo: no habia defecto de producto.
 
+## PT-236 — REFACTOR: la guarda de citas no miraba como este repositorio cita
+Date: 2026-07-31
+Status: DONE
+Branch: master
+Objective: cerrar tres defectos encadenados que aparecieron al revisar los inventarios.
+Root cause: `citas-de-fichero-existen.spec.ts` exigia que la cita empezara por `src/`, `docs/`… y este
+  repositorio cita sus guardas por el nombre a secas. 254 citas sueltas solo en el contrato, invisibles
+  para la guarda que existe para verificarlas, y OCHO rotas — tres de ellas al nombre viejo de
+  `rutas-que-los-ssr-invocan.spec.ts`, que es la tercera vez que RULE-32 se rompe por su propio caso.
+  Ademas `CONTRATO` no incluia los seis inventarios, que ADR-049 declara parte del contrato de agente.
+  Y `C3` de `inventarios-completos.spec.ts` comparaba NOMBRES DE CLASE contra el documento entero: 18 de
+  los 19 servicios de modulo de ADMIN se llaman igual que uno del API, asi que la fila del API satisfacia
+  la del de ADMIN y `services.md` documentaba 8 de 21 en verde. Falso NEGATIVO por medir por nombre.
+Solution: las citas sueltas se resuelven por nombre contra el disco; los seis inventarios entran en el
+  contrato; `events.gateway.ts` se declara como retirada a proposito (se cita para decir que ya no
+  existe). `C3-bis` resuelve los servicios de ADMIN POR SECCION. `services.md` gana los 21, fundiendo
+  las dos secciones de ADMIN que convivian. `entities.md` pierde nueve lineas duplicadas.
+Modified files: src/api/test/unit/documentacion/citas-de-fichero-existen.spec.ts,
+  src/api/test/unit/documentacion/inventarios-completos.spec.ts,
+  docs/enterprise-documentation/inventory/services.md,
+  docs/enterprise-documentation/inventory/entities.md,
+  docs/enterprise-documentation/11-Conventions.md, CLAUDE.md
+Evidence: docs/implementation/evidence/PT-236/
+Delta (real vs planned): no estaba planificado. Salio de comprobar si los inventarios seguian al dia
+  durante la revision final. El tercer defecto explica a los dos primeros: sobrevivieron porque la
+  guarda no los miraba.
+PTSA reference: D4 (fidelidad documental). No abre hallazgo nuevo: es la misma familia que H-016, con
+  su leccion ya escrita — un documento con citas rotas se lee con confianza y es falso.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -4872,7 +4901,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**186** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**187** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -5062,3 +5091,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-219 | 4784 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4820 |
 | PT-232 | 4802 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4820 |
 | PT-235 | 4844 | `DONE` | **DONE** | — |
+| PT-236 | 4864 | `DONE` | **DONE** | — |

@@ -103,7 +103,7 @@ views/
 | Spec file | `<name>.spec.ts` | `auctions.service.spec.ts` |
 | Integration test | `<name>.integration.spec.ts` | `scheduler-lock.integration.spec.ts` |
 | Nunjucks template | `<name>.html` | `detail.html` |
-| Per-page JS | `<page>.js` under `pages/<feature>/` | `deposit.js` |
+| Per-page JS | `pages-<feature>-<page>.js`, flat under `public/js/pages/` | `pages-wallet-deposit.js` |
 
 ### Classes
 | Type | Pattern | Example |
@@ -281,7 +281,7 @@ await prisma.ledger.delete({ where: { id } }); // ❌ FORBIDDEN
 ### RULE-06: Write tests (RED) before implementation code (GREEN)
 **What:** No implementation code may be written before a failing test exists for it.  
 **Why:** FDGE State 4 mandate — "Tests-first is not optional."  
-**Correct:** Write `spec.ts` → run and confirm RED → write implementation → confirm GREEN.  
+**Correct:** Write `*.spec.ts` → run and confirm RED → write implementation → confirm GREEN.  
 **Incorrect:** Writing implementation then writing tests to match.
 
 ### RULE-07: A dependency between scripts is declared, not inherited from file order
@@ -593,7 +593,7 @@ next one.**
 **What:** the `--testPathPattern` list in `test:guardas` names guard suites. Every pattern must match
 a real file.
 > **PT-191 — esta regla estaba rota por lo que documenta.** RULE-31, sixty lines above, still cited
-> `rutas-que-el-client-invoca.spec.ts` — **the old name**, the very rename this rule exists to describe.
+> `rutas-que-los-ssr-invocan.spec.ts` — **the old name**, the very rename this rule exists to describe.
 > Two other citations in this document pointed nowhere as well: the live-bidding QA suite was cited with
 > a `.cjs` extension it does not have, and the schema-drift script was cited without its `src/api/`
 > prefix. None of the three broke anything: they just stopped resolving, quietly, in the document
@@ -605,7 +605,7 @@ a real file.
 > Now guarded by `src/api/test/unit/documentacion/citas-de-fichero-existen.spec.ts` — the class
 > PT-189 had left declared as *unguarded*.
 
-**Why:** PT-148 renamed `rutas-que-el-client-invoca.spec.ts` and the pattern `rutas-que-el-client`
+**Why:** PT-148 renamed `rutas-que-los-ssr-invocan.spec.ts` and the pattern `rutas-que-el-client`
 **stopped matching anything**. The script stayed green — Jest does not complain when a pattern finds
 no files, the others pass and the summary says OK. The SSR↔API contract guard silently dropped out of
 the guard script **four hours after being widened**.

@@ -130,6 +130,39 @@ describe('Los inventarios que dicen «todos» los nombran todos — PT-197', () 
       expect(enElDoc.size).toBeGreaterThan(40);
     });
 
+    it('C3-bis: un servicio de ADMIN se cuenta en la seccion de ADMIN, no en la del API', () => {
+      // **PT-236 — la ceguera que este caso cierra.** `C3` compara NOMBRES DE CLASE contra el
+      // documento entero, y 18 de los 19 servicios de ADMIN se llaman **igual** que uno del API:
+      // `AuditService`, `CmsService`, `KycService`, `OrdersService`, `UsersService`,
+      // `WithdrawalsService`… Asi que la fila del API satisfacia la comprobacion del de ADMIN y el
+      // inventario podia listar **2 de 21** estando en verde. Es un falso NEGATIVO por medir por
+      // nombre — la otra cara del falso positivo que `core-sin-superficie-huerfana.spec.ts` ya
+      // documenta, y mas caro, porque no se ve.
+      //
+      // Se resuelve por SECCION: una seccion es de ADMIN si su encabezado nombra `src/admin/src`.
+      // No se extiende la exigencia a las demas secciones porque no se ha medido que sus
+      // encabezados basten, y una guarda que opina sobre lo que no ha visto acusa a codigo correcto.
+      const md = leer(join(INV, 'services.md'));
+
+      const seccionesAdmin = md
+        .split(/^## /m)
+        .filter((sec) => /^[^\n]*src\/admin\/src/.test(sec))
+        .join('\n');
+
+      expect(seccionesAdmin.length).toBeGreaterThan(200);
+
+      const deAdmin = new Set<string>();
+      for (const f of ficheros(join(RAIZ, 'src', 'admin', 'src'), '.service.ts')) {
+        for (const m of leer(f).matchAll(/export class (\w+)/g)) deAdmin.add(m[1]);
+      }
+
+      expect(deAdmin.size).toBeGreaterThan(15);
+
+      const faltan = [...deAdmin].filter((c) => !seccionesAdmin.includes(`\`${c}\``)).sort();
+
+      expect(faltan).toEqual([]);
+    });
+
     it('AC-03: el alcance declarado incluye los cuatro servicios, no solo el API', () => {
       // La contradiccion que habia: el titulo prometia «across services» y el origen declaraba solo
       // `src/api/src/modules/**`. Un documento no puede prometer mas de lo que su fuente alcanza.

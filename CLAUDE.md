@@ -372,7 +372,7 @@ Each SSR site follows the same convention:
   `/api/v1/users/settings`, que no existe: caía en el comodín `@Get(':id')`, el `ParseUUIDPipe`
   rechazaba la cadena y devolvía **400 «uuid inválido»**. La página «Configuración» no cargaba para
   nadie, y el error mandaba a mirar el identificador (H-020). Lo vigila
-  `rutas-que-el-client-invoca.spec.ts`, que cubre el SSR **y el JavaScript de navegador** — ahí vive
+  `rutas-que-los-ssr-invocan.spec.ts`, que cubre el SSR **y el JavaScript de navegador** — ahí vive
   la otra mitad del contrato.
 - **«No enviado» no es «enviado vacío».** Con `transform: true` en el `ValidationPipe`, a un
   servicio no le llega un objeto plano sino una **instancia con todas las propiedades declaradas**,

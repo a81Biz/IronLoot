@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'fs';
+import { existsSync, readdirSync, readFileSync } from 'fs';
 import { join } from 'path';
 import { raizDelMonorepo } from '../../../scripts/raiz-monorepo';
 
@@ -52,6 +52,15 @@ const CONTRATO = [
   'docs/enterprise-documentation/README.md',
   'docs/implementation/HANDOFF.md',
   'docs/implementation/PENDING_TASKS.md',
+  // PT-236 — Los seis inventarios faltaban, y `CLAUDE.md` los declara parte del contrato de agente
+  // desde ADR-049: «11-Conventions · 10-Technical-Debt · inventory/». Dos de ellos citaban guardas
+  // con nombres que **nunca han existido**.
+  'docs/enterprise-documentation/inventory/services.md',
+  'docs/enterprise-documentation/inventory/entities.md',
+  'docs/enterprise-documentation/inventory/routes.md',
+  'docs/enterprise-documentation/inventory/endpoints.md',
+  'docs/enterprise-documentation/inventory/components.md',
+  'docs/enterprise-documentation/inventory/integrations.md',
 ];
 
 /** Raíces que indican «esto es una ruta del repositorio», no una frase. */
@@ -66,6 +75,10 @@ const RETIRADAS_A_PROPOSITO: Record<string, string> = {
     'PT-141 — citado para decir que NUNCA existió; crear el fichero sería arreglarlo al revés',
   'PTSA/PTSA.md':
     'PT-141 — citado para decir que NUNCA existió; crear el fichero sería arreglarlo al revés',
+  'events.gateway.ts':
+    'PT-191 (AUD-006) — `TD-024` lo cita para decir que YA NO EXISTE: era un segundo namespace ' +
+    'público sin autenticar cuyo emisor genérico hacía indecidible la guarda de emisiones. Una ' +
+    'cita a algo retirado, escrita para constar que se retiró, es lo contrario de una cita rota',
 };
 
 /** Marcas de plantilla: no son rutas, son formas de nombre. */
@@ -75,7 +88,46 @@ interface Cita {
   ruta: string;
   documento: string;
   linea: number;
+  /** `true` si la cita es un nombre de fichero a secas, sin carpeta. */
+  suelta?: boolean;
 }
+
+/**
+ * Los nombres de fichero que existen en el repositorio, indexados por su nombre a secas.
+ *
+ * **Esto es la mitad que faltaba.** `RAICES` exige que la cita empiece por `src/`, `docs/`… y este
+ * repositorio **no cita así sus guardas**: escribe `` `forma-de-lista-ssr.spec.ts` `` a secas, 254
+ * veces sólo en el contrato. Todas esas citas eran invisibles para la guarda que existe para
+ * verificarlas, y **ocho estaban rotas** — tres de ellas al nombre viejo de
+ * `rutas-que-los-ssr-invocan.spec.ts`, que es **la tercera vez** que `RULE-32` se rompe por su
+ * propio caso: *un renombrado vacía una referencia sin dejar rastro.*
+ */
+function nombresDelRepositorio(): Set<string> {
+  const IGNORAR = new Set(['node_modules', '.git', 'dist', 'coverage', 'graphify-out', '.next']);
+  const nombres = new Set<string>();
+
+  const recorrer = (dir: string): void => {
+    for (const e of readdirSync(dir, { withFileTypes: true })) {
+      if (IGNORAR.has(e.name)) continue;
+      if (e.isDirectory()) recorrer(join(dir, e.name));
+      else nombres.add(e.name);
+    }
+  };
+  recorrer(RAIZ);
+
+  return nombres;
+}
+
+const NOMBRES_REALES = nombresDelRepositorio();
+
+/**
+ * Extensiones que hacen de un nombre suelto una cita a fichero y no una palabra.
+ *
+ * Deliberadamente cerrada: `README.md` o `deposit.js` son citas; «`spec.ts`» en una frase como
+ * *«escribe `spec.ts`»* no lo es, y por eso el texto que lo decía se reescribió a `*.spec.ts` en vez
+ * de ensanchar aquí la excepción. **Una guarda que se ensancha para no acusar deja de medir.**
+ */
+const EXT_DE_FICHERO = /\.(?:ts|js|tsx|json|ya?ml|sh|md|css|html)$/;
 
 function citas(documento: string): Cita[] {
   const salida: Cita[] = [];
@@ -86,9 +138,19 @@ function citas(documento: string): Cita[] {
     .forEach((l, i) => {
       for (const m of l.matchAll(patron)) {
         const ruta = m[1];
-        if (!RAICES.some((r) => ruta.startsWith(r))) continue;
         if (ES_PLANTILLA.test(ruta)) continue;
-        salida.push({ ruta, documento, linea: i + 1 });
+
+        // Cita con raíz: se resuelve contra el disco, tal cual.
+        if (RAICES.some((r) => ruta.startsWith(r))) {
+          salida.push({ ruta, documento, linea: i + 1 });
+          continue;
+        }
+
+        // Cita suelta: un nombre de fichero sin carpeta. Se resuelve por nombre, que es lo único
+        // que la cita dice. No se exige que sea único: dos ficheros homónimos no la vuelven falsa.
+        if (!ruta.includes('/') && EXT_DE_FICHERO.test(ruta)) {
+          salida.push({ ruta, documento, linea: i + 1, suelta: true });
+        }
       }
     });
 
@@ -101,7 +163,7 @@ describe('Las citas a fichero del contrato existen — PT-191', () => {
   it('C1: ninguna cita apunta a un fichero que no existe', () => {
     const rotas = todas
       .filter((c) => !(c.ruta in RETIRADAS_A_PROPOSITO))
-      .filter((c) => !existsSync(join(RAIZ, c.ruta)))
+      .filter((c) => (c.suelta ? !NOMBRES_REALES.has(c.ruta) : !existsSync(join(RAIZ, c.ruta))))
       .map((c) => `${c.documento}:${c.linea} → ${c.ruta}`);
 
     expect(rotas).toEqual([]);
@@ -112,6 +174,22 @@ describe('Las citas a fichero del contrato existen — PT-191', () => {
       // Sin esto, un patrón que no case daría cero citas y **cero rotas**: verde por no medir nada.
       // Es el modo en que una guarda se vuelve inútil sin dejar de existir, y hoy ya pasó una vez.
       expect(todas.length).toBeGreaterThan(40);
+    });
+
+    it('AC-05: las citas SUELTAS se leen, y una inventada se acusa', () => {
+      // Las dos mitades. Sin la primera, ensanchar el patrón y que no case daría verde por no medir;
+      // sin la segunda, bastaría con que `NOMBRES_REALES` lo contuviera todo.
+      const sueltas = todas.filter((c) => c.suelta);
+
+      expect(sueltas.length).toBeGreaterThan(150);
+      expect(NOMBRES_REALES.has('citas-de-fichero-existen.spec.ts')).toBe(true);
+      expect(NOMBRES_REALES.has('guarda-que-nadie-ha-escrito.spec.ts')).toBe(false);
+    });
+
+    it('AC-06: `*.spec.ts` es una forma de nombre, no una cita', () => {
+      // El asterisco lo marca como plantilla. Es la diferencia entre nombrar UN fichero y nombrar
+      // una clase de ficheros, y por eso el texto que decía «escribe `spec.ts`» se reescribió.
+      expect(ES_PLANTILLA.test('*.spec.ts')).toBe(true);
     });
 
     it('AC-02: reconoce una ruta inexistente cuando se la fabrica', () => {

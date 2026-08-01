@@ -14,7 +14,7 @@ está en [`HISTORY.log`](HISTORY.log), que es append-only y la tiene íntegra co
 **Hallazgos PTSA**: **42** registrados, **1** activo (`H-042`). **Deuda técnica**: **5** abiertas de **22** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **186 encabezados · 0 realmente abiertos.**
+`npm run indice:estado`. **187 encabezados · 0 realmente abiertos.**
 
 > **Aviso para quien regenere ese índice.** `HISTORY.log` tiene que estar en **LF**. Al anotar esta tanda
 > lo convertí sin querer a CRLF y `indice-de-estado.ts` dejó de reconocer **las 166 entradas** —en
@@ -52,7 +52,7 @@ checkpoints de delta sync necesitan una base con historia y la base está vacía
 
 ---
 
-## Entregado: 31 PT · 64 de 64 hallazgos
+## Entregado: 32 PT · 64 de 64 hallazgos
 
 | PT | Qué cierra | Hallazgos |
 |---|---|---|
@@ -87,6 +87,7 @@ checkpoints de delta sync necesitan una base con historia y la base está vacía
 | **PT-232** | La documentación refleja lo medido | 057 |
 | **PT-233** | **Hallazgo nuevo:** ADMIN sin reservas de conexión | **063** |
 | **PT-235** | El punto ciego de la guarda de PT-213: las claves nombradas | (cobertura) |
+| **PT-236** | 8 citas rotas invisibles + 13 servicios de ADMIN sin inventariar | (cobertura) |
 
 **Dos hallazgos nuevos aparecieron durante la tanda** y tienen PT propio, no se colaron en otro:
 

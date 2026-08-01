@@ -8,7 +8,7 @@ All injectable NestJS services across services.
 > declaraba uno más estrecho —sólo `src/api/src/modules/**` y un único fichero de ADMIN—, así que el
 > documento **se leía como completo y nombraba 39 de 48**. Las dos frases no podían ser ciertas a la
 > vez. Se amplía el origen, que es lo que el título ya prometía. Lo vigila
-> `inventario-de-servicios-completo.spec.ts`.
+> `inventarios-completos.spec.ts`.
 
 ---
 
@@ -61,17 +61,6 @@ All injectable NestJS services across services.
 | `AuctionSchedulerService` | Every 60s | `lock:auction-close` (Redis) | Close expired auctions, start scheduled auctions |
 
 Source: `src/api/src/modules/scheduler/auction-scheduler.service.ts`
-
----
-
-## Admin Services (`src/admin/src/`)
-
-| Service | Responsibility |
-|---|---|
-| `AppService` | All API proxy calls (wraps `AdminApiClient`); dashboard stats, user/auction management |
-| `AdminApiClient` | HTTP client for API calls with `ADMIN_API_KEY` auth |
-
-Source: `src/admin/src/app.service.ts`, `src/admin/src/shared/admin-api-client.service.ts`
 
 ---
 
@@ -138,15 +127,46 @@ con el fichero donde se lee, que es la regla desde PT-090.
 
 ## ADMIN Services (`src/admin/src/`)
 
+> **Completado el 2026-07-31 (PT-236). Antes nombraba 8 de 21, y la guarda estaba en verde.**
+>
+> El motivo es la parte que importa: `C3` comparaba **nombres de clase** contra el documento entero, y
+> **18 de los 19 servicios de módulo de ADMIN se llaman igual que uno del API** — `AuditService`,
+> `CmsService`, `KycService`, `OrdersService`, `UsersService`, `WithdrawalsService`… La fila del API
+> satisfacía la comprobación del de ADMIN, así que trece servicios podían faltar **sin que nada
+> protestara**. Es un falso *negativo* por medir por nombre: la otra cara del falso positivo que
+> `core-sin-superficie-huerfana.spec.ts` ya documenta, y más caro, porque no se ve.
+>
+> Lo vigila `inventarios-completos.spec.ts` con `C3-bis`, que resuelve **por sección**: un servicio de
+> ADMIN sólo cuenta si lo nombra una sección cuyo encabezado diga `src/admin/src`.
+>
+> Había además **dos** secciones de ADMIN —«Admin Services» y «ADMIN Services»— con contenidos
+> distintos. Se funden aquí: dos tablas para un mismo alcance son dos respuestas a la misma pregunta.
+
 | Service | Fichero | Qué hace |
 |---|---|---|
+| `AppService` | `app.service.ts` | Todas las llamadas de proxy al API; estadísticas del panel |
 | `AdminApiClient` | `shared/admin-api-client.service.ts` | Cliente HTTP hacia el API, con su propio refresco de JWT |
 | `AuctionsAdminService` | `modules/auctions/auctions.service.ts` | Moderación de subastas desde el panel |
+| `AuditService` | `modules/audit/audit.service.ts` | Consulta y exportación del registro inmutable |
+| `CfdiService` | `modules/cfdi/cfdi.service.ts` | Facturas CFDI: emisión y cancelación |
+| `CmsService` | `modules/cms/cms.service.ts` | Contenido editable del sitio |
+| `CommissionsService` | `modules/commissions/commissions.service.ts` | Configuración de comisiones y su recaudación |
 | `ConfigurationService` | `modules/configuration/configuration.service.ts` | Configuración de pago y almacenamiento |
+| `DisputesService` | `modules/disputes/disputes.service.ts` | Resolución de disputas; dispara el reembolso |
+| `KycService` | `modules/kyc/kyc.service.ts` | Revisión de identidad: aprobar, rechazar, pedir corrección |
 | `LotsService` | `modules/lots/lots.service.ts` | Lotes |
 | `ModerationService` | `modules/moderation/moderation.service.ts` | Cola de moderación |
+| `NotificationsService` | `modules/notifications/notifications.service.ts` | Campañas y notificaciones por segmento |
+| `OrdersService` | `modules/orders/orders.service.ts` | Pedidos desde el panel |
+| `PaymentsService` | `modules/payments/payments.service.ts` | Pagos, anomalías y traza por referencia |
 | `ReconciliationService` | `modules/reconciliation/reconciliation.service.ts` | Conciliación de pagos |
+| `RefundsService` | `modules/refunds/refunds.service.ts` | Flujo de reembolsos |
 | `ReportsService` | `modules/reports/reports.service.ts` | Informes del panel |
+| `SeoService` | `modules/seo/seo.service.ts` | Metadatos SEO y sitemap |
+| `UsersService` | `modules/users/users.service.ts` | Gestión de cuentas |
+| `WithdrawalsService` | `modules/withdrawals/withdrawals.service.ts` | Cola de retiros: aprobar, rechazar y marcar pagado (`PT-216`) |
+
+Source: `src/admin/src/**/*.service.ts` — **21 servicios**, que son todos los que existen.
 
 ## Observabilidad (`src/api/src/common/observability/`)
 
