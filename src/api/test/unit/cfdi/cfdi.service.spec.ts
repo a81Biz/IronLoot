@@ -1,6 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { ServiceUnavailableException } from '@nestjs/common';
 import { CfdiService } from '@/modules/cfdi/cfdi.service';
+import { CfdiPacRegistry } from '@/modules/cfdi/cfdi-pac.registry';
 import { PrismaService } from '@/database/prisma.service';
 import { SystemConfigService } from '@/modules/system-config/system-config.service';
 
@@ -17,6 +18,9 @@ describe('CfdiService — CFDI_ENABLED toggle', () => {
     const mod = await Test.createTestingModule({
       providers: [
         CfdiService,
+        // PT-237 — El registro de PAC entra aqui porque `CfdiService` ya no decide solo si la
+        // facturacion puede encenderse: se lo pregunta al registro, que hoy responde cero.
+        CfdiPacRegistry,
         { provide: PrismaService, useValue: prisma },
         { provide: SystemConfigService, useValue: cfg },
       ],
@@ -36,9 +40,21 @@ describe('CfdiService — CFDI_ENABLED toggle', () => {
     expect(c.enabled).toBe(false);
   });
 
-  it('updateConfig() persists the enabled flag', async () => {
-    await service.updateConfig({ enabled: true }, 'admin');
-    expect(cfg.set).toHaveBeenCalledWith('CFDI_ENABLED', 'true', 'admin');
+  // PT-237 — **Este caso cambio porque el contrato cambio, no para que pasara.**
+  //
+  // Afirmaba que `enabled: true` se persiste siempre. Eso era justo el defecto: el interruptor
+  // encendia un subsistema que no podia funcionar —sin ningun PAC integrado— y a partir de ahi
+  // `generate()` escribia filas `PENDING` que nadie avanza. Hoy activar exige un PAC disponible.
+  //
+  // Se conserva la mitad que sigue siendo cierta y sigue importando: **apagar siempre se puede**.
+  it('updateConfig() persists the enabled flag when turning it OFF', async () => {
+    await service.updateConfig({ enabled: false }, 'admin');
+    expect(cfg.set).toHaveBeenCalledWith('CFDI_ENABLED', 'false', 'admin');
+  });
+
+  it('updateConfig() refuses to turn it ON while no PAC is integrated', async () => {
+    await expect(service.updateConfig({ enabled: true }, 'admin')).rejects.toThrow(/PAC/i);
+    expect(cfg.set).not.toHaveBeenCalledWith('CFDI_ENABLED', 'true', 'admin');
   });
 
   it('when enabled but PAC not configured, it does not report "disabled" (falls through)', async () => {

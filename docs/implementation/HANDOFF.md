@@ -14,7 +14,7 @@ está en [`HISTORY.log`](HISTORY.log), que es append-only y la tiene íntegra co
 **Hallazgos PTSA**: **42** registrados, **1** activo (`H-042`). **Deuda técnica**: **5** abiertas de **22** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **187 encabezados · 0 realmente abiertos.**
+`npm run indice:estado`. **188 encabezados · 0 realmente abiertos.**
 
 > **Aviso para quien regenere ese índice.** `HISTORY.log` tiene que estar en **LF**. Al anotar esta tanda
 > lo convertí sin querer a CRLF y `indice-de-estado.ts` dejó de reconocer **las 166 entradas** —en
@@ -52,7 +52,7 @@ checkpoints de delta sync necesitan una base con historia y la base está vacía
 
 ---
 
-## Entregado: 32 PT · 64 de 64 hallazgos
+## Entregado: 33 PT · 64 de 64 hallazgos
 
 | PT | Qué cierra | Hallazgos |
 |---|---|---|
@@ -88,6 +88,7 @@ checkpoints de delta sync necesitan una base con historia y la base está vacía
 | **PT-233** | **Hallazgo nuevo:** ADMIN sin reservas de conexión | **063** |
 | **PT-235** | El punto ciego de la guarda de PT-213: las claves nombradas | (cobertura) |
 | **PT-236** | 8 citas rotas invisibles + 13 servicios de ADMIN sin inventariar | (cobertura) |
+| **PT-237** | La facturacion pedia elegir un PAC que no se podia elegir | `TD-001` |
 
 **Dos hallazgos nuevos aparecieron durante la tanda** y tienen PT propio, no se colaron en otro:
 
@@ -177,6 +178,10 @@ S-005 se midió sobre salida generada en la misma sesión.
 
 2. **El texto legal** (`TD-028`, puntos `L-01`…`L-08`). Bloqueado por asesoría jurídica, no por
    priorización nuestra. Es lo único que falta para cerrar `H-041` del todo.
+
+   Junto a él, la otra dependencia externa: **integrar un PAC** (`TD-001`). `PT-237` dejó el sistema
+   diciendo la verdad —cero PAC integrados, la facturación no puede activarse— pero integrarlo exige
+   contrato y credenciales con un PAC certificado. Ninguna de las dos es trabajo de desarrollo.
 
 3. **`R-054` (dirección de envío, `TD-026`) y `R-055` (subida de imágenes, `TD-027`).** Los dos
    pendientes de producto con impacto directo: hoy el vendedor tiene que enviar un objeto físico y la

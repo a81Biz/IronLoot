@@ -35,6 +35,33 @@ al inventario y **esta deuda y H-005 se reabren con él**.
 `docs/implementation/evidence/PT-155/hallazgos.md`. La opción C es subconjunto de la B; la B exige datos
 fiscales y una autorización legal que **no se pueden pedir retroactivamente** a quien ya vendió.
 
+**Enmienda del 2026-07-31 (PT-237) — la deuda sigue cerrada; lo que estaba mal era la interfaz que la
+rodeaba.** La deuda está bien declarada y el `PRD` es honesto (E10 `✗ No funcional`, `RF-81` stub). Lo que
+se encontró al revisar es que **el panel se había construido como si la integración existiera**:
+
+- La pantalla ofrecía *«URL del PAC»* como **texto libre**, aceptando una decisión que el sistema no podía
+  honrar: no sabía qué PAC era, no validaba que fuese uno conocido, y no tenía adaptador para ninguno.
+- El interruptor `CFDI_ENABLED` **se dejaba encender**, y a partir de ahí `generate()` escribía
+  `status: 'PENDING'` y **acto seguido lanzaba**. Medido: **cero** puntos del sistema leen un `cfdiRecord`
+  en `PENDING` para avanzarlo —sólo se **cuentan**, en `admin.service.ts:270`—, así que cada intento dejaba
+  una fila muerta y el contador de «CFDI pendientes» del panel **sólo podía crecer**.
+- El mensaje que recibía el operador —y el texto de la propia pantalla— decían *«implementa
+  `ICfdiPacProvider` en `@ironloot/core integrations`»*, y **`integrations/` se retiró entero en PT-193**
+  (`TD-024`) por no tener implementadores. La instrucción mandaba a un sitio que no existe: H-016 dentro
+  del código que se ejecuta.
+
+**Medido antes de tocar nada: `cfdi_records` tenía CERO filas.** El daño era **latente, no realizado**,
+porque la facturación está apagada por defecto — que es exactamente donde estaba el peligro, igual que en
+`H-029`: *el día que alguien lo encendiera, creería estar a un paso de facturar y no lo estaría.*
+
+**Lo que PT-237 cambió, y lo que NO.** Un PAC se elige ahora de un conjunto declarado (`CfdiPacRegistry`,
+mismo patrón que `PaymentProviderRegistry`), **hoy vacío**; activar exige un PAC disponible; `generate()`
+no escribe estados que nadie avanza; y los mensajes nombran lo que existe.
+
+**No se integró ningún PAC, y esta deuda no se reabre por ello.** Sigue siendo lo que siempre fue: un
+tercero contratado y una decisión fiscal. Lo que cambió es que el sistema **ya lo dice** en vez de ofrecer
+un formulario que sugiere lo contrario. Lo vigila `seleccion-de-pac.spec.ts`.
+
 ### TD-002 — Stripe y Hey Banco: el código está; faltan las credenciales
 **Status:** **REESCRITA 2026-07-29 por PT-181 — el enunciado anterior era falso.** Sigue abierta, pero por
 otro motivo del que decía.  

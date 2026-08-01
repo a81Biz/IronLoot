@@ -42,7 +42,7 @@ Tres `.env.example` (raíz, `src/api`, `src/admin`). Marcadas 🔒=secreto, ⚠�
 `AUCTION_SOFT_CLOSE_WINDOW_SEC`(120) · `PAYMENT_EXPIRATION_HOURS`(72) · `DISPUTE_WINDOW_DAYS`(14) · `REQUIRE_AUCTION_MODERATION`(false) · `AUCTION_MIN_INCREMENT_AMOUNT`(10, **aplicado**; AUD-009 corregido) · `AUCTION_MIN/MAX_DURATION_HOURS`(1/720) · `REQUIRE_EMAIL_VERIFICATION`(true) · `REQUIRE_KYC_FOR_SELLERS`(true).
 
 ### Email / Storage / CFDI
-`MAIL_*` (usado por NotificationsModule; **única ruta de configuración del correo** desde PT-191) · `STORAGE_PROVIDER/BUCKET/REGION` · `STORAGE_ACCESS_KEY/SECRET_KEY`🔒 · `CFDI_RFC_EMISOR` · `CFDI_PAC_URL` · `CFDI_PAC_API_KEY`🔒.
+`MAIL_*` (usado por NotificationsModule; **única ruta de configuración del correo** desde PT-191) · `STORAGE_PROVIDER/BUCKET/REGION` · `STORAGE_ACCESS_KEY/SECRET_KEY`🔒 · `CFDI_RFC_EMISOR` · **`CFDI_PAC_PROVIDER`** · `CFDI_PAC_URL` · `CFDI_PAC_API_KEY`🔒 — desde PT-237 el PAC **se elige** de `CfdiPacRegistry` (hoy vacío: cero integrados), y `CFDI_ENABLED` no puede activarse sin uno disponible. Ver `TD-001`.
 
 ### URLs / CORS / Logging
 `BASE_URL`/`CLIENT_URL`/`ADMIN_URL`/`API_URL` · `ALLOWED_ORIGINS`⚠️(vacío en prod falla) · `BASE/CLIENT/ADMIN_ENABLED` · `LOG_LEVEL` · `TRACE_ENABLED`.
