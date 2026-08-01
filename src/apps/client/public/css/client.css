@@ -12,7 +12,7 @@
   --cl-gold-dark:  #a8832e;
   --cl-white:      #F6F6F6;
   --cl-surface:    #FFFFFF;
-  --cl-text-muted: #6B7280;
+  --cl-text-muted: #5C6470;   /* PT-211 (H-UI-034) — era #6B7280: 4,47:1 sobre #F6F6F6 */
   --cl-border:     rgba(49, 54, 63, 0.18);
 
   --ff-heading: 'Montserrat', system-ui, sans-serif;
