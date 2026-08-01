@@ -818,3 +818,10 @@ select.form-control { cursor: pointer; }
 
 /* PT-224 — `.justify-center` la usa la 404 y no estaba definida. */
 .justify-center { justify-content: center; }
+
+/* PT-205 (H-UI-007) — La celda de acciones de «Mis subastas».
+   `.fila-acciones` agrupa los botones sin que se peguen; `.accion-subasta` es el gancho que el JS
+   delega (la CSP no permite `onclick=`, PT-096). Las dos las exigio la guarda de PT-224 al escribir
+   este PT: usar una clase que ningun CSS define no falla, solo se ve mal. */
+.fila-acciones { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.accion-subasta { white-space: nowrap; }
