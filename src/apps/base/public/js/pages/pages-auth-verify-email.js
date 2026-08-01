@@ -20,7 +20,10 @@ if (token) {
     if (res.ok) {
       el.innerHTML = '<div class="alert alert-success">¡Correo verificado! <a href="/auth/login">Iniciar sesión</a></div>';
     } else {
-      el.innerHTML = '<div class="alert alert-error">Token inválido o expirado. <a href="/auth/recovery">Solicitar nuevo enlace</a></div>';
+      // PT-214 — Esto enlazaba a `/auth/recovery`, que es recuperar CONTRASEÑA: un enlace de
+      // verificacion caducado no se arregla cambiando la contraseña. Ahora manda al reenvio, que es
+      // lo que este PT acaba de crear.
+      el.innerHTML = '<div class="alert alert-error">Ese enlace no es válido o ya caducó. <a href="/auth/verify-email-pending">Pedir uno nuevo</a></div>';
     }
   }).catch(() => {
     document.getElementById('verifyStatus').innerHTML = '<div class="alert alert-error">Error de conexión.</div>';

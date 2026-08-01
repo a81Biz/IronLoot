@@ -1,6 +1,6 @@
 # Inventory — API Endpoints
 
-**157 rutas** en `src/api` bajo el prefijo `/api/v1/`.
+**158 rutas** en `src/api` bajo el prefijo `/api/v1/`.
 **Medido** el 2026-07-29 (PT-188) y actualizado el 2026-07-30 (PT-191) sobre
 `src/api/src/modules/**/*.controller.ts`.
 
@@ -164,6 +164,7 @@ Los flujos de entrada son `Public` por necesidad. `register` y `login` van a **5
 | POST | `/auth/register` | Public | — |
 | POST | `/auth/reset-password` | Public | — |
 | POST | `/auth/verify-email` | Public | — |
+| POST | `/auth/resend-verification` | Public | Reenvia el enlace de verificacion (PT-214). Respuesta opaca: no revela si la cuenta existe. 3/min |
 
 ## Bids — 4 rutas
 

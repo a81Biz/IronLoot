@@ -1,0 +1,100 @@
+{% extends "layouts/admin.html" %}
+
+{# PT-216 (R-027 · H-UI-008) — La cola de retiros.
+
+   El `Manual de Administrador §3` la describia en cinco pasos con pantalla —«cada una muestra vendedor,
+   monto y metodo (CLABE + titular)»— y `grep -rn "withdraw" src/admin` devolvia CERO resultados.
+
+   RN-66: la aprobacion es SIEMPRE manual, y se marca PAID **solo tras** confirmar el SPEI. Por eso la
+   referencia del pago es obligatoria en el ultimo paso: es lo que permite reconciliar despues. #}
+
+{% block content %}
+
+{% if aviso %}
+<div class="alert alert-info" role="status">{{ aviso }}</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header">
+    <h2>Cola de retiros</h2>
+    <form method="GET" action="/withdrawals" class="filtros">
+      <select name="status" class="form-control">
+        <option value="" {% if not statusFilter %}selected{% endif %}>Todos</option>
+        <option value="REQUESTED" {% if statusFilter == 'REQUESTED' %}selected{% endif %}>Solicitados</option>
+        <option value="APPROVED" {% if statusFilter == 'APPROVED' %}selected{% endif %}>Aprobados</option>
+        <option value="PAID" {% if statusFilter == 'PAID' %}selected{% endif %}>Pagados</option>
+        <option value="REJECTED" {% if statusFilter == 'REJECTED' %}selected{% endif %}>Rechazados</option>
+      </select>
+      <button type="submit" class="btn btn-sm">Filtrar</button>
+    </form>
+  </div>
+
+  <p class="text-muted">
+    Los fondos <strong>ya están reservados</strong> del disponible del vendedor desde que solicitó
+    (RN-65). Aprobar no mueve dinero: autoriza la transferencia. <strong>Marca «pagado» sólo después de
+    haber ejecutado el SPEI</strong> — es lo que dice RN-66, y la referencia es lo que permite
+    reconciliarlo. Rechazar reintegra el importe automáticamente.
+  </p>
+
+  <div class="table-wrap">
+    <table class="table">
+      <thead>
+        <tr>
+          <th>Solicitado</th>
+          <th>Vendedor</th>
+          <th>Monto</th>
+          <th>Destino</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% if withdrawals and withdrawals.length %}
+          {% for w in withdrawals %}
+          <tr>
+            <td>{{ w.createdAt }}</td>
+            <td><code>{{ w.userId }}</code></td>
+            <td><strong>MXN {{ w.amount }}</strong></td>
+            <td>
+              <code>{{ w.paymentMethodId }}</code>
+              {% if w.paymentMethod %}
+                <div class="text-muted">{{ w.paymentMethod.holderName }} — {{ w.paymentMethod.clabe }}</div>
+              {% endif %}
+            </td>
+            <td><span class="badge">{{ w.status }}</span></td>
+            <td>
+              {% if w.status == 'REQUESTED' %}
+                <form method="POST" action="/withdrawals/{{ w.id }}/approve" class="en-linea">
+                  <button type="submit" class="btn btn-sm btn-primary">Aprobar</button>
+                </form>
+              {% endif %}
+
+              {% if w.status == 'APPROVED' %}
+                <form method="POST" action="/withdrawals/{{ w.id }}/mark-paid" class="fila-accion">
+                  <input type="text" name="reference" class="form-control" required
+                         placeholder="Referencia del SPEI">
+                  <button type="submit" class="btn btn-sm btn-primary">Marcar pagado</button>
+                </form>
+              {% endif %}
+
+              {% if w.status == 'REQUESTED' or w.status == 'APPROVED' %}
+                <form method="POST" action="/withdrawals/{{ w.id }}/reject" class="fila-accion">
+                  <input type="text" name="reason" class="form-control" required placeholder="Motivo">
+                  <button type="submit" class="btn btn-sm btn-danger">Rechazar</button>
+                </form>
+              {% endif %}
+
+              {% if w.payoutReference %}
+                <div class="text-muted">Ref.: {{ w.payoutReference }}</div>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="6" class="text-muted">No hay solicitudes con este filtro.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}

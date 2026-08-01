@@ -33,8 +33,23 @@
         <label for="password">Contraseña</label>
         <input class="form-control" type="password" id="password" name="password" required minlength="8">
       </div>
+      {# PT-219 (H-UI-030) — El registro NO presentaba ni enlazaba los terminos ni el aviso de
+         privacidad, y no recogia ningun acto afirmativo: la aceptacion era tacita («Al usar IronLoot
+         aceptas estos terminos»), mientras el onboarding de vendedor SI tiene casilla explicita. Dos
+         criterios en el mismo producto para la misma cosa.
+         Se recogen datos personales, asi que el aviso tiene que estar EN EL PUNTO de recogida. #}
+      <div class="form-group">
+        <label class="etiqueta-consentimiento">
+          <input type="checkbox" id="acepta" name="acepta" required>
+          <span>
+            He leído y acepto los <a href="/terms" target="_blank" rel="noopener">términos de uso</a>,
+            el <a href="/privacy" target="_blank" rel="noopener">aviso de privacidad</a> y el
+            <a href="/cookies" target="_blank" rel="noopener">uso de cookies</a>.
+          </span>
+        </label>
+      </div>
       <button type="submit" class="btn btn-primary btn-full btn-lg">Registrarme</button>
-      <div id="registerError" class="alert alert-error oculto mensaje-accion"></div>
+      <div id="registerError" class="alert alert-error oculto mensaje-accion" role="status" aria-live="polite"></div>
     </form>
 
     <div class="auth-footer">

@@ -1282,3 +1282,146 @@ se ha vuelto a medir contra el. Que reemitir cueste algo es lo que hace que `FRE
 evidencias (38 validas + 2 ausentes). **Se deja como estaba en vez de mejorarlo por deduccion**: la
 proxima emision que lo mida lo movera si toca. Es la diferencia entre medir y suponer, que es de lo que
 va todo este ciclo.
+
+
+---
+
+## S-014 — 2026-07-31 · AUDITORÍA DIRIGIDA (no delta sync)
+
+**Disparador:** `audit PTSA` tras la tanda FDGE `PT-204`…`PT-233`, para registrar lo que la auditoría de
+interfaz del 2026-07-31 encontró.
+
+**Qué se hizo:** registrar **cuatro hallazgos** —`H-038`…`H-041`— con su evidencia `E-041`, todos
+`CERRADA` por los PT de la tanda.
+
+**Qué NO se hizo, y por qué se dice:** **no se ha emitido puntuación.** Los cinco checkpoints no se
+re-ejecutaron: `audit:domain` y `audit:reliability` necesitan una base **con historia**, y la base está
+vacía porque `run-all.sh` la truncó — medido en `E-041` (`total: 0`). Emitir un Health sobre eso sería
+inventar un veredicto, que es justo lo que `PT-180` enseñó a no hacer. **`freshness` sigue `STALE`** desde
+que la tanda tocó `auditable_patterns`, y se restaura con `resume PTSA` cuando haya datos.
+
+### Los cuatro hallazgos, y por qué son cuatro y no sesenta y cuatro
+
+La auditoría produjo **62 hallazgos `H-UI-XXX`** más **dos** aparecidos durante la corrección. Aquí se
+registran las **cuatro familias** que los explican, cada una citando los `H-UI` que cubre y el PT que la
+cerró. El detalle individual vive en el informe de auditoría, en las tres matrices de cobertura de
+`docs/implementation/ROADMAP.md` y en `changes/PT-204-232-tanda-fpge-004/tasks.md`.
+
+Un hallazgo por síntoma habría dado sesenta y cuatro fichas que se leen una vez; **uno por causa** da
+cuatro que sirven para la próxima auditoría.
+
+| Hallazgo | Dim | Sev | Qué explica | Cerrado por |
+|---|:--:|---|---|---|
+| **H-038** | D2 | CRÍTICA | El instrumento certificó 100 con once P0 vivos: la unidad de auditoría es el producto de datos, no la pantalla | PT-213, PT-232 |
+| **H-039** | D1 | CRÍTICA | El producto no distinguía «no hay datos» de «el contrato está roto» — 7 de los 11 P0 | PT-204, PT-213 |
+| **H-040** | D1 | CRÍTICA | Capacidades declaradas ✅ cuya interfaz no existía: publicar, cobrar, aprobar retiros, calificar, 2FA | PT-205, PT-215, PT-216, PT-225, PT-227 |
+| **H-041** | D1 | ALTA | El producto afirmaba al usuario cosas que sus propias reglas niegan | PT-208, PT-212, PT-219, PT-230, PT-232 |
+
+### Lo que esta sesión deja dicho
+
+**`H-038` es el hallazgo, y los otros tres son su consecuencia.** Un certificado Clase A convivía con un
+escaparate apagado porque la definición de producto dejaba fuera al usuario. Las catorce reglas de
+dominio se cumplían sobre las filas de la base — **y se habrían seguido cumpliendo con el catálogo
+apagado**.
+
+**Y una cifra que no se moverá, dicha por adelantado:** cerrar estos cuatro hallazgos **no sube el Health
+de 100**, porque nunca llegaron a penalizarlo. Quien mire `score-history.json` verá 100 antes y 100
+después. Lo que cambia no es el número: es que **el registro ya no calla lo que pasó**.
+
+**Pendiente de método, propuesto en `FPGE-005`:** incorporar la pantalla como producto auditable, o un
+checkpoint que renderice las rutas SSR contra datos reales y falle si una lista queda vacía teniendo
+filas en la base. Es una decisión de la especificación de PTSA, no de un PT de desarrollo.
+
+
+---
+
+## S-015 — 2026-07-31 · DELTA SYNC
+
+**Disparador:** `resume PTSA`, tercer paso de la secuencia `run-all.sh` → suite de navegador →
+`resume PTSA` pedida por el humano.
+
+**Los cinco checkpoints, ejecutados.** Por primera vez desde S-005 los dos de delta sync corren **con
+una base con historia**, generada por `run-all.sh` en esta misma sesión:
+
+| Checkpoint | Resultado |
+|---|---|
+| `audit:schema` (D2) | **OK** — las migraciones reproducen `schema.prisma` |
+| `audit:check` (D2) | **OK** — 0 avisos, línea base vacía a propósito |
+| `audit:observability` (D3) | **OK** — sin silencios nuevos · `trace_completeness = 100 %` (2 de 2 ciclos) |
+| `audit:domain` (D1.N1) | **14 de 14 reglas OK** · `rubric_compliance_score = 100` |
+| `audit:reliability` (D5) | `SIN_DATOS` — 3 ciclos frente a 20. Muestra insuficiente |
+
+**Cobertura de D1: del 50 % al 100 %.** S-013 midió D1 sobre datos que ya estaban en la base; ésta lo
+mide sobre **salida generada en la misma sesión**, que es lo que `[A5]` pide. Las diez reglas `CR` y las
+cinco `R-5.x` se cumplen sobre 1 subasta cerrada, 1 pedido, 3 ciclos de pago, 2 pagos acreditados y 1
+retiro completo.
+
+**`cross_coherence_verified = sin_datos`**, y eso **no es un aprobado**: 4 de 5 comprobaciones midieron y
+salieron OK; la quinta —«toda disputa cuelga de un pedido»— no tenía filas que comparar porque la suite
+no abre ninguna disputa. El instrumento se niega a pronunciarse, que es lo que PT-149 construyó.
+
+---
+
+### Un hallazgo ALTA, y es el primero activo en catorce sesiones
+
+**`H-042` — un webhook de PayPal con firma fabricada obtuvo `SIGNATURE_OK` y llegó a intentar la
+captura.** Evidencia `E-042`.
+
+`QA-PP-15` falló con `HTTP 400` en **las tres corridas** de la suite. Reproducido a mano: con las cinco
+cabeceras presentes y la firma `ZmFsc2E=`, el log encadena *«Received PayPal webhook»* →
+***«Capturing PayPal order X»*** → *«PayPal respondio 404»*. **Lo único que detuvo el flujo fue que el
+identificador de pedido no existía.** Y la traza registra `SIGNATURE_OK`.
+
+Se deja **ABIERTA** y se asigna a `PT-234` como **INVESTIGATION**: `verifyWebhookSignature` sí se llama
+antes de capturar y sí consulta el endpoint de PayPal — lo que falta por medir es **por qué respondió
+`SUCCESS`**. Tres hipótesis sin separar: permisividad del sandbox, cuerpo mal formado en la consulta, o
+un `PAYPAL_WEBHOOK_ID` que no corresponde. **No se toca el código sin saberlo**: es el camino por el que
+entra dinero.
+
+**No lo introdujo la tanda de hoy** — `git diff master -- src/api/src/modules/payments/` está vacío.
+Apareció al ejecutar la suite, que es el paso que llevaba pendiente.
+
+---
+
+## SCORES — S-015
+
+```
+D1 = 100    14/14 reglas sobre salida real de esta sesión · rubric 100
+D2 =  85    -15 por H-042 (ALTA, activa)
+D3 = 100    sin silencios nuevos · trace_completeness 100 %
+D4 = 100    20 guardas de documentación en verde
+
+Health = (100×0.30) + (85×0.30) + (100×0.30) + (100×0.10) = 95.5
+Risk   = min(100, (4×2) × 4) = 32
+Conf   = 90×0.40 + 100×0.25 + 95×0.20 + 100×0.15 = 95.0
+Clase  = A
+```
+
+**Regla del Agua Potable: NO activada.** D1 = 100. Se dice porque `[A4]` lo exige.
+
+**Health baja de 100 a 95.5, y eso es la mejora.** Un `H-042` activo penalizando es lo que un certificado
+debe hacer cuando hay un defecto conocido en el camino del dinero. El 100 anterior no era mejor: era el
+mismo sistema sin nadie que hubiera ejecutado la suite.
+
+**`coverage` sube de 80 a 90**: D1 pasa del 50 % al 100 % y D3 mide sobre ciclos reales. D5 sigue al 0 %
+—3 ciclos de 20—, que es lo único que impide llegar a 100.
+
+**`freshness` vuelve a `FRESH`**, medido: los cinco checkpoints se re-ejecutaron sobre el árbol de
+trabajo actual.
+
+---
+
+### Lo que esta sesión deja dicho
+
+**La secuencia importaba, y se nota en los números.** `run-all.sh` genera la historia; sin ella, `D1` y
+`D5` devuelven `SIN_DATOS` y el score se emite sobre una cobertura que nadie mira. Ejecutarla **antes**
+de medir es la diferencia entre `D1` al 50 % de S-013 y al 100 % de hoy.
+
+**Y la suite de navegador encontró tres cosas que 1.441 pruebas unitarias no vieron:** dos regresiones de
+la tanda —`{{ self.title() }}`, sintaxis de Jinja2 que Nunjucks no implementa, con **500 en todas las
+páginas públicas**; y el desbordamiento de 4 px a 768 px que sólo aparece en modo `headed`— y `H-042`,
+que llevaba ahí desde antes.
+
+Las dos regresiones pasaron `tsc`, ESLint y 1.441 pruebas. **Ninguna herramienta estática puede ver que
+una plantilla no renderiza.** Es exactamente lo que `H-038` dice de la unidad de auditoría, cobrado en la
+misma jornada.

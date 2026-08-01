@@ -1,13 +1,34 @@
 {% extends "layouts/client.html" %}
 {% block title %}Notificaciones — IronLoot{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/pages-notifications.js" defer></script>
+{% endblock %}
 {% block page_title %}Notificaciones{% endblock %}
 {% block content %}
+{# PT-217 (ausencia A-17) — La lista distinguia leida/no leida SOLO por color, no habia forma de
+   marcarlas, y ninguna llevaba a la subasta u orden que la origino: un callejon sin salida justo en el
+   mecanismo que RN-23 existe para crear (el aviso de «te han superado» es como un comprador vuelve). #}
 <div class="card">
+  <div class="d-flex justify-between align-center mb-2">
+    <div class="card-title">Tus avisos</div>
+    <button type="button" class="btn btn-sm btn-ghost" id="marcarTodas">Marcar todas como leídas</button>
+  </div>
+  <div id="msgNotif" class="alert oculto mensaje-accion" role="status" aria-live="polite"></div>
   {% if notifications and notifications.items %}
     {% for n in notifications.items %}
     <div class="notif-linea{% if not n.read %} notif-linea--sin-leer{% endif %}">
-      <div class="texto-pequeno{% if not n.read %} notif-sin-leer{% endif %}">{{ n.message }}</div>
-      <div class="nota-ayuda">{{ n.createdAt }}</div>
+      <div class="texto-pequeno{% if not n.read %} notif-sin-leer{% endif %}">
+        {% if not n.read %}<span class="badge badge-warning">Sin leer</span> {% endif %}{{ n.message }}
+      </div>
+      <div class="nota-ayuda">{{ n.createdAt | fecha }}</div>
+      <div class="fila-acciones">
+        {% if n.auctionId %}<a href="/auctions/{{ n.auctionId }}" class="btn btn-sm btn-ghost">Ver subasta</a>{% endif %}
+        {% if n.orderId %}<a href="/orders/{{ n.orderId }}" class="btn btn-sm btn-ghost">Ver orden</a>{% endif %}
+        {% if not n.read %}
+          <button type="button" class="btn btn-sm btn-ghost accion-notificacion" data-id="{{ n.id }}">Marcar leída</button>
+        {% endif %}
+      </div>
     </div>
     {% endfor %}
   {% else %}

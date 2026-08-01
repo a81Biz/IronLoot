@@ -1,3 +1,9 @@
+// PT-228 (H-UI-046) — **El boton se bloquea mientras la peticion esta en vuelo.**
+//
+// Sin esto, un doble clic dispara la accion dos veces — y en los formularios de dinero eso son dos
+// movimientos. El estandar ya existia dentro del repositorio: `pages-orders-detail.js` (PT-174) lo
+// hacia, y se aplicaba en UNO de doce ficheros. Lo vigila
+// `src/api/test/unit/web-views/feedback-de-formularios.spec.ts`.
 // PT-096 - Extraido de views/pages/auction/detail.html
 //
 // Vivia dentro de la plantilla, lo que obligaba a `script-src 'unsafe-inline'` en la CSP de todo
@@ -73,6 +79,8 @@ const auctionId =
 
   // Place a bid via the BFF proxy (relative path → server-side injects the Bearer token)
   document.getElementById('bidForm').addEventListener('submit', async (e) => {
+    const _boton = e.target.querySelector('button[type="submit"]');
+    if (_boton) _boton.disabled = true;
     e.preventDefault();
     const msg = document.getElementById('bidMsg');
     const amount = parseFloat(document.getElementById('bidAmount').value);

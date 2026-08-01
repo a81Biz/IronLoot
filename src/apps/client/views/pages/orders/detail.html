@@ -6,14 +6,34 @@
 <div class="card">
   <div class="d-flex justify-between align-center mb-2">
     <div><strong>Orden:</strong> {{ order.id }}</div>
-    <span class="badge badge-info">{{ order.status }}</span>
+    <span class="badge {{ order.status | badge }}">{{ order.status | estado }}</span>
   </div>
+  {# PT-230 (H-UI-049) — La orden mostraba subasta, monto, vendedor y fecha. Sin desglose economico y
+     sin contraparte: el vendedor tenia que enviar un articulo fisico y esta pantalla no decia a donde,
+     y el comprador no sabia que se descontó. `terms.html` remite a «las tarifas actuales en tu panel de
+     vendedor» — un panel que no mostraba ninguna comision. #}
   <table class="ancho-total texto-pequeno">
     <tr><td class="col-160 texto-tenue">Subasta</td><td>{{ order.auction.title | default(order.auctionId) }}</td></tr>
     <tr><td class="texto-tenue">Monto total</td><td><strong>MXN {{ order.totalAmount }}</strong></td></tr>
-    <tr><td class="texto-tenue">Vendedor</td><td>{{ order.seller.username | default(order.sellerId) }}</td></tr>
-    <tr><td class="texto-tenue">Fecha</td><td>{{ order.createdAt }}</td></tr>
+    {% if esVendedor %}
+      {% if order.commissionAmount %}
+      <tr><td class="texto-tenue">Comisión de plataforma</td><td>− MXN {{ order.commissionAmount }}</td></tr>
+      <tr><td class="texto-tenue">Tu neto</td><td><strong>MXN {{ order.sellerNet | default(order.totalAmount) }}</strong></td></tr>
+      {% endif %}
+      <tr><td class="texto-tenue">Comprador</td><td>{{ order.buyer.displayName | default(order.buyerId) }}</td></tr>
+    {% else %}
+      <tr><td class="texto-tenue">Vendedor</td><td>{{ order.seller.displayName | default(order.sellerId) }}</td></tr>
+    {% endif %}
+    <tr><td class="texto-tenue">Fecha</td><td>{{ order.createdAt | fecha }}</td></tr>
   </table>
+
+  {% if esVendedor and not order.shipment %}
+  <p class="nota-ayuda">
+    El neto de esta venta está en tu <a href="/wallet">saldo pendiente de liquidar</a>. Pasa a
+    disponible 72 h después de que el comprador confirme la recepción, o al vencer los 14 días de
+    disputa.
+  </p>
+  {% endif %}
 </div>
 {% if order.status == 'PENDING_PAYMENT' %}
 <div class="card">
@@ -26,9 +46,9 @@
   <div class="card-title">Envío</div>
   <p>Transportista: {{ order.shipment.provider }}</p>
   <p>Tracking: {{ order.shipment.trackingNumber | default('Pendiente') }}</p>
-  <p>Estado: {{ order.shipment.status }}</p>
-  {% if order.shipment.shippedAt %}<p class="texto-tenue texto-pequeno">Enviado: {{ order.shipment.shippedAt }}</p>{% endif %}
-  {% if order.shipment.deliveredAt %}<p class="texto-tenue texto-pequeno">Recepción confirmada: {{ order.shipment.deliveredAt }}</p>{% endif %}
+  <p>Estado: <span class="badge {{ order.shipment.status | badge }}">{{ order.shipment.status | estado }}</span></p>
+  {% if order.shipment.shippedAt %}<p class="texto-tenue texto-pequeno">Enviado: {{ order.shipment.shippedAt | fecha }}</p>{% endif %}
+  {% if order.shipment.deliveredAt %}<p class="texto-tenue texto-pequeno">Recepción confirmada: {{ order.shipment.deliveredAt | fecha }}</p>{% endif %}
 </div>
 {% endif %}
 
@@ -71,6 +91,50 @@
   <div id="msgRecepcion" class="alert oculto"></div>
 </div>
 {% endif %}
+{# PT-225 (H-UI-016) — Calificar a la contraparte. `RN-43` lo permite tras la entrega y NO habia
+   ninguna pantalla para hacerlo: `/reputation` mostraba dos promedios que no podian alimentarse por
+   ningun camino, asi que dirian «Sin calificaciones» para siempre. #}
+{% if order.shipment and order.shipment.status == 'DELIVERED' %}
+<div class="card">
+  <div class="card-title">Califica a {% if esVendedor %}tu comprador{% else %}tu vendedor{% endif %}</div>
+  <p class="texto-tenue texto-pequeno">
+    La reputación es lo que permite a desconocidos confiar entre sí. Sólo puedes calificar una vez.
+  </p>
+  <form id="ratingForm" data-orden="{{ order.id }}">
+    <div class="form-group">
+      <label for="score">Puntuación</label>
+      <select class="form-control" id="score" required>
+        <option value="5">5 — Perfecto</option>
+        <option value="4">4 — Bien</option>
+        <option value="3">3 — Correcto</option>
+        <option value="2">2 — Con problemas</option>
+        <option value="1">1 — Mal</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label for="comment">Comentario <span class="text-muted">(opcional)</span></label>
+      <textarea class="form-control redimensiona-vertical" id="comment" rows="3"
+                placeholder="Qué tal fue el trato, el embalaje, los tiempos…"></textarea>
+    </div>
+    <button type="submit" class="btn btn-primary">Enviar calificación</button>
+    <div id="ratingMsg" class="alert oculto mensaje-accion" role="status" aria-live="polite"></div>
+  </form>
+</div>
+{% endif %}
+
+{# PT-220 (H-UI-021) — El acceso a la disputa DESDE la orden. No existia: el unico camino era teclear
+   el UUID a mano en `/disputes/create`. #}
+{% if esComprador and order.status in ['PAID', 'SHIPPED', 'DELIVERED'] %}
+<div class="card">
+  <div class="card-title">¿Algo salió mal?</div>
+  <p class="texto-tenue texto-pequeno">
+    Tienes 14 días desde la entrega para abrir una disputa sobre esta compra. El equipo media y
+    resuelve.
+  </p>
+  <a href="/disputes/create?orderId={{ order.id }}" class="btn btn-ghost">Abrir una disputa</a>
+</div>
+{% endif %}
+
 {% else %}
   <p>Orden no encontrada. <a href="/orders">Volver</a></p>
 {% endif %}
@@ -78,4 +142,5 @@
 
 {% block scripts %}
 <script src="/js/pages/pages-orders-detail.js" defer></script>
+<script src="/js/pages/pages-ratings.js" defer></script>
 {% endblock %}

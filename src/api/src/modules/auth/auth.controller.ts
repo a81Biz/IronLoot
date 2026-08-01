@@ -176,6 +176,39 @@ export class AuthController {
     return this.authService.verifyEmail(dto.token);
   }
 
+  /**
+   * PT-214 (H-UI-025, H-UI-064) — Reenvío del correo de verificación.
+   *
+   * `register()` justificaba capturar el fallo de envío diciendo que «el usuario tiene la vía de
+   * reenvío». **No la tenía**: no había ruta ni método. Con `RN-03`/`BC-06` haciendo la verificación
+   * obligatoria, una cuenta cuyo correo no llegó quedaba inutilizable sin remedio.
+   *
+   * `@Throttle` a 3/min: es un endpoint público que dispara un envío de correo, así que sin límite es
+   * un amplificador para inundar el buzón de un tercero.
+   *
+   * La respuesta es **siempre la misma**, exista o no la cuenta: distinguirlas lo convertiría en un
+   * oráculo de enumeración de correos. Misma decisión, y mismo motivo, que `forgot-password`.
+   */
+  @Post('resend-verification')
+  @Public()
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Resend the email verification link',
+    description:
+      'Always returns success, whether or not the account exists, to prevent email enumeration.',
+  })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiResponse({ status: 200, type: MessageResponseDto })
+  async resendVerification(@Body() dto: ForgotPasswordDto): Promise<MessageResponseDto> {
+    await this.authService.resendVerification(dto.email);
+    return {
+      message:
+        'Si esa cuenta existe y todavía no está verificada, te hemos enviado un enlace nuevo. ' +
+        'Revisa también la carpeta de spam.',
+    };
+  }
+
   // ===========================================
   // FORGOT PASSWORD
   // ===========================================

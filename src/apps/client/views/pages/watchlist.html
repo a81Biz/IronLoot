@@ -1,16 +1,26 @@
 {% extends "layouts/client.html" %}
-{% block title %}Watchlist — IronLoot{% endblock %}
+{% block title %}Watchlist — IronLoot<div id="msgWatchlist" class="alert oculto mensaje-accion" role="status" aria-live="polite"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/pages-watchlist.js" defer></script>
+{% endblock %}
 {% block page_title %}Watchlist{% endblock %}
 {% block content %}
 <div class="card">
-  {% if items and items.length > 0 %}
+  {% if watchlist and watchlist.items.length > 0 %}
     <div class="rejilla-auto">
-      {% for item in items %}
+      {% for item in watchlist.items %}
       <div class="caja-clara">
         <h3 class="texto-medio">{{ item.auction.title }}</h3>
         <div class="cifra-destacada">MXN {{ item.auction.currentPrice }}</div>
+        {# PT-215 (H-UI-017) — Sin boton de quitar, esta lista solo podia crecer. Y sin boton de
+           añadir en ninguna parte, no podia ni crecer: `grep -rn watchlist` sobre plantillas y JS
+           devolvia SOLO el enlace del menu y esta pagina. #}
         <div class="fila-acciones-mt">
           <a href="{{ baseUrl }}/auctions/{{ item.auctionId }}" class="btn btn-sm btn-secondary">Ver subasta</a>
+          <button type="button" class="btn btn-sm btn-ghost accion-watchlist"
+                  data-accion="quitar" data-id="{{ item.auctionId }}">Dejar de seguir</button>
         </div>
       </div>
       {% endfor %}

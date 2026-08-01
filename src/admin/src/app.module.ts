@@ -14,6 +14,8 @@ import { ReconciliationModule } from "./modules/reconciliation/reconciliation.mo
 import { SeoModule } from "./modules/seo/seo.module";
 import { CmsModule } from "./modules/cms/cms.module";
 import { RefundsModule } from "./modules/refunds/refunds.module";
+// PT-216 (H-UI-008) — La cola de retiros que el Manual de Administrador §3 describia y no existia.
+import { WithdrawalsModule } from "./modules/withdrawals/withdrawals.module";
 import { DisputesModule } from "./modules/disputes/disputes.module";
 import { LotsModule } from "./modules/lots/lots.module";
 import { CommissionsModule } from "./modules/commissions/commissions.module";
@@ -36,6 +38,7 @@ import { AuctionsAdminModule } from "./modules/auctions/auctions.module";
     SeoModule,
     CmsModule,
     RefundsModule,
+    WithdrawalsModule,
     DisputesModule,
     LotsModule,
     CommissionsModule,

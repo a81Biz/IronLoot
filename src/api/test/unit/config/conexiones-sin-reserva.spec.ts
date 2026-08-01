@@ -64,6 +64,18 @@ export const VARIABLES_DE_CONEXION = [
   'API_URL',
   'BASE_URL',
   'CLIENT_URL',
+  // PT-233 — **La reaparicion que S-013 predijo, palabra por palabra.**
+  //
+  // Su §SIGUIENTE·4 decia: «la lista de variables de conexion de la guarda es su limite, y ya mordio
+  // una vez. Cualquier variable nueva que apunte a un servicio hay que añadirla ahi — no hay nada que
+  // lo recuerde». `ADMIN_API_URL` llevaba `|| 'http://localhost:3000'` y **no estaba en la lista**:
+  // la guarda de H-035 recorria ADMIN entero y no veia la unica reserva que tenia.
+  //
+  // Dentro del contenedor `localhost:3000` no es el API: es el propio ADMIN, donde no escucha nadie.
+  // El panel arranca `healthy` y todas sus llamadas se pierden — el modo de fallo exacto de H-035.
+  'ADMIN_API_URL',
+  // PT-218 — A donde apunta «Ver sitio» es tambien una conexion.
+  'PUBLIC_SITE_URL',
 ];
 
 /** Ficheros `.ts` de un servicio, sin pruebas. */

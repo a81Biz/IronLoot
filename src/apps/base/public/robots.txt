@@ -1,0 +1,13 @@
+# PT-223 (H-UI-039) — No existia ningun robots.txt.
+#
+# El descubrimiento organico es el canal natural de un marketplace de lotes unicos, y este fichero es lo
+# primero que un buscador pide. Se declara el sitemap aqui porque es la unica forma de que lo encuentre
+# sin que alguien lo registre a mano en cada buscador.
+
+User-agent: *
+Allow: /
+
+# Las rutas de autenticacion no aportan nada a un indice y meten ruido de rastreo.
+Disallow: /auth/
+
+Sitemap: /sitemap.xml

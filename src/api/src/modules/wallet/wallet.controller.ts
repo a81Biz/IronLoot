@@ -60,14 +60,38 @@ export class WalletController {
   @Log({ message: 'Get wallet history' })
   @ApiOperation({ summary: 'Get wallet transaction history' })
   @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({
+    name: 'types',
+    required: false,
+    type: String,
+    description: 'Tipos de asiento separados por coma. Ej.: DEBIT_ORDER,CREDIT_SALE',
+  })
   @ApiResponse({ status: 200, type: TransactionHistoryDto })
   async getHistory(
     @Request() req: AuthenticatedRequest,
     @Query('limit', new ParseIntPipe({ optional: true })) limit?: number,
+    @Query('page', new ParseIntPipe({ optional: true })) page?: number,
+    @Query('types') types?: string,
   ): Promise<TransactionHistoryDto> {
-    const history = await this.walletService.getHistory(req.user.id, limit);
+    // PT-229 (H-UI-044) — **`page` y `types` se ignoraban aqui.**
+    //
+    // El portal llamaba con `?page=N` y con `?types=DEBIT_ORDER,CREDIT_SALE` desde PT-067, y este
+    // controlador no declaraba ninguno de los dos: la paginacion no existia y «Mis pagos» mostraba el
+    // ledger COMPLETO, duplicando «Historial» en vez de filtrarlo.
+    //
+    // El filtro por tipos ya estaba implementado en el servicio. Lo unico que faltaba era pasarlo.
+    const tipos = types
+      ? (types
+          .split(',')
+          .map((t) => t.trim())
+          .filter(Boolean) as never[])
+      : undefined;
+
+    const historia = await this.walletService.getHistory(req.user.id, limit, tipos, page);
+
     return {
-      transactions: history.map((tx) => ({
+      transactions: historia.items.map((tx) => ({
         id: tx.id,
         type: tx.type,
         amount: Number(tx.amount),
@@ -76,6 +100,9 @@ export class WalletController {
         createdAt: tx.createdAt,
         referenceId: tx.referenceId || '',
       })),
+      total: historia.total,
+      page: historia.page,
+      limit: historia.limit,
     };
   }
 

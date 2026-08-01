@@ -1,5 +1,10 @@
 {% extends "layouts/client.html" %}
-{% block title %}Mis subastas — IronLoot{% endblock %}
+{% block title %}Mis subastas — IronLoot<div id="msgSubasta" class="alert oculto mensaje-accion" role="status" aria-live="polite"></div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/pages-seller-auctions.js" defer></script>
+{% endblock %}
 {% block page_title %}Mis subastas{% endblock %}
 {% block top_bar_actions %}<a href="/auctions/create" class="btn btn-primary">+ Nueva subasta</a>{% endblock %}
 {% block content %}
@@ -12,11 +17,23 @@
           {% for a in auctions.items %}
           <tr>
             <td>{{ a.title }}</td>
-            <td><span class="badge badge-info">{{ a.status }}</span></td>
+            <td><span class="badge {{ a.status | badge }}">{{ a.status | estado }}</span></td>
             <td>MXN {{ a.currentPrice | default(a.startingPrice) }}</td>
-            <td>{{ a.endsAt | default('—') }}</td>
-            <td>
-              {% if a.status == 'DRAFT' %}<a href="/auctions/{{ a.id }}/edit" class="btn btn-sm btn-ghost">Editar</a>{% endif %}
+            <td>{{ a.endsAt | fecha }}</td>
+            {# PT-205 (H-UI-007) — Aqui solo habia «Editar». No existia NINGUNA accion de publicar en
+               todo el portal: `grep -rn "publish"` sobre plantillas y JS daba cero. Una subasta creada
+               se quedaba en DRAFT para siempre, y la suite de QA la publicaba por `fetch` desde la
+               consola — asi es como nadie lo noto. RN-11 dice que publicar es accion del dueño. #}
+            <td class="fila-acciones">
+              {% if a.status == 'DRAFT' %}
+                <a href="/auctions/{{ a.id }}/edit" class="btn btn-sm btn-ghost">Editar</a>
+                <button type="button" class="btn btn-sm btn-primary accion-subasta"
+                        data-accion="publicar" data-id="{{ a.id }}" data-titulo="{{ a.title }}">Publicar</button>
+              {% endif %}
+              {% if a.status in ['DRAFT', 'PUBLISHED', 'PENDING_MODERATION'] %}
+                <button type="button" class="btn btn-sm btn-ghost accion-subasta"
+                        data-accion="cancelar" data-id="{{ a.id }}" data-titulo="{{ a.title }}">Cancelar</button>
+              {% endif %}
             </td>
           </tr>
           {% endfor %}

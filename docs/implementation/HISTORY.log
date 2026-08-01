@@ -4337,6 +4337,510 @@ PTSA reference: H-037
 
 
 
+
+## PT-204 — BUG: El contrato de forma de lista SSR-API
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que las cuatro pantallas permanentemente vacias puedan mostrar datos.
+Root cause: el API devuelve {data,total,page,limit} y los consumidores leian `data.items` o median
+  `auctions.length` sobre el objeto. Las dos operaciones dan `undefined`, y en Nunjucks `undefined` no es
+  un error: es un else. Cuatro superficies P0 -portada, catalogo publico, notificaciones y disputas-
+  pintaban su estado vacio, indistinguible de no tener datos.
+Solution: `toItems` aplicado a los SIETE consumidores que la guarda de PT-213 encontro (tres mas de los
+  cuatro de la auditoria: dashboard, watchlist y pujas del detalle). `list-view.ts` duplicado en BASE con
+  su motivo escrito, siguiendo el criterio de `variable-obligatoria.ts`.
+Modified files: src/apps/base/src/common/bff/list-view.ts (nuevo), src/apps/base/src/app.controller.ts,
+  src/apps/client/src/app.controller.ts, 4 plantillas, src/apps/base/test/list-view.spec.ts (nuevo)
+Evidence: docs/implementation/evidence/PT-204/
+Delta (real vs planificado): la guarda encontro 7 consumidores rotos, no 4. Los tres extra funcionan hoy
+  (esos endpoints devuelven arrays) y se normalizan igual: se romperian del mismo modo el dia que el API
+  los pagine, que es exactamente lo que le paso a /auctions.
+PTSA reference: hallazgos H-UI-001..004 de la auditoria de interfaz del 2026-07-31; NO registrados aun
+  como H-XXX (ver la recomendacion de `audit PTSA` en ROADMAP R-004).
+
+## PT-213 — INVESTIGATION: La guarda de FORMA del contrato SSR-API
+Date: 2026-07-31
+Status: CLOSED
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: responder a la pregunta que S-013 SIGUIENTE-3 dejo escrita -«buscar guardas que miran al lado
+  del agujero»- para el contrato SSR-API.
+Findings: `rutas-que-los-ssr-invocan.spec.ts` compara RUTAS LITERALES: comprueba que el endpoint exista.
+  Estaba en verde con cuatro pantallas permanentemente vacias. La mitad que produjo el fallo -que la
+  FORMA de la respuesta coincida con lo que la plantilla lee- no la vigilaba nada.
+Solution: `forma-de-lista-ssr.spec.ts`, que exige que todo valor procedente del API recorrido como lista
+  pase por `toItems()` y se lea como `X.items`. Cuenta de cruces y seis casos de control.
+Modified files: src/api/test/unit/web-views/forma-de-lista-ssr.spec.ts (nuevo)
+Evidence: docs/implementation/evidence/PT-204/ (compartida con PT-204)
+Delta (real vs planificado): la guarda midio otra cosa TRES veces antes de servir -prefijo de carpeta
+  duplicado (no cruzaba nada y salia verde), `fetchJson(` sin el generico, y resolucion de variables en
+  el fichero entero en vez del cuerpo del metodo-. Queda anotado en la evidencia: es el mismo defecto que
+  la guarda persigue, cometido por la guarda.
+
+## PT-206 — BUG: El saldo pendiente de liquidacion llega a la interfaz
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que el vendedor vea el neto de sus ventas.
+Root cause: `WalletBalanceRaw` declaraba cuatro campos y el API devuelve cinco. `mapWalletBalance`
+  construia la vista sin `pending`: el dato llegaba y se tiraba antes de ninguna plantilla.
+Solution: `pending_balance` en el mapeador (con `?? 0`, no `undefined`) y una tercera metrica en /wallet
+  y el dashboard, con su nota y su fecha de liberacion (RN-64).
+Modified files: src/apps/client/src/common/bff/wallet-view.ts, wallet.html, dashboard.html, client.css,
+  test/wallet-view.spec.ts
+Evidence: docs/implementation/evidence/PT-204/ (misma corrida de suite)
+Delta (real vs planificado): W2, un caso de PT-058, tuvo que actualizarse porque el contrato cambio de
+  verdad — no para que pasara.
+
+## PT-207 — BUG: El registro alcanzable desde el detalle publico
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que el CTA de conversion del detalle de subasta no devuelva 404.
+Root cause: apuntaba a `{{ clientUrl }}/auth/register` y el registro vive en BASE. Comprobado en vivo:
+  GET http://localhost:5175/auth/register -> 404.
+Solution: enlace relativo a BASE + guarda `enlaces-entre-sitios.spec.ts`, porque `clientUrl` se interpola
+  en catorce sitios y que el destino sea correcto no lo dice el compilador.
+Modified files: src/apps/base/views/pages/auctions/detail.html, src/apps/base/test/enlaces-entre-sitios.spec.ts
+Evidence: docs/implementation/evidence/PT-204/
+Delta (real vs planificado): ninguno.
+
+## PT-208 — BUG: La portada dice lo que el sistema hace
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: retirar de la portada tres afirmaciones que contradicen reglas de negocio.
+Root cause: (1) «Socios y aliados estrategicos: DHL, FedEx» contra RN-35, que dice que no hay integracion
+  de transportista; (2) «entrega garantizada» y «fondos retenidos hasta confirmar la entrega» contra
+  RN-30 (captura al cierre) y RN-64 (lo retenido es del vendedor); (3) un formulario de newsletter con
+  action="#" en un sitio sin rutas POST SSR.
+Solution: la seccion de socios pasa a «Pagos procesados por» (lo unico cierto); los pilares describen el
+  comportamiento real; el formulario se sustituye por el CTA final que Index.png §9 especifica.
+Modified files: src/apps/base/views/pages/home.html, src/apps/base/test/afirmaciones-del-sitio.spec.ts
+Evidence: docs/implementation/evidence/PT-204/
+Delta (real vs planificado): la guarda no juzga redaccion -una guarda que lee prosa se acusa a si misma-:
+  comprueba tres hechos falsables contra una RN-XX.
+
+## PT-211 — BUG: Contraste y distincion visual
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: cumplir WCAG 2.1 AA en el precio y en la prosa legal.
+Root cause: oro #C89B3C sobre blanco = 2,56:1 (AA exige 3:1 incluso en texto grande); #6B7280 sobre
+  #F6F6F6 = 4,47:1; y `a { color: inherit; text-decoration: none }` sin regla `.prose a`, que dejaba los
+  mailto: de /contact -la funcion completa de esa pagina- sin ninguna señal visual.
+Solution: `--cl-gold-texto` (#8A6A1F, 5,05:1) para texto sobre claro, `--cl-text-muted` a #5C6470
+  (5,53:1), y estilo de enlace en contenido. El oro decorativo NO cambia.
+Modified files: base.css, client.css, src/api/test/unit/web-views/contraste-de-texto.spec.ts
+Evidence: docs/implementation/evidence/PT-204/
+Delta (real vs planificado): la guarda CALCULA el ratio y reproduce como casos de control los tres
+  numeros de la auditoria, en vez de fijar un color «revisado a ojo».
+
+## PT-212 — BUG: Estados, badges y fechas en el idioma del usuario
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: cumplir el contrato terminologico de FAQ-y-Mensajes §3.
+Root cause: nueve tablas imprimian el enum crudo (PAID, IN_MEDIATION, DEBIT_ORDER), todas las ordenes
+  usaban badge-info y todas las disputas badge-warning, y las fechas salian en ISO con milisegundos.
+Solution: `common/vista/estados.ts` como fuente unica + tres filtros de Nunjucks (estado, badge, fecha)
+  registrados una vez, aplicados a las nueve plantillas. Guarda de reincidencia.
+Modified files: estados.ts (nuevo), main.ts, 11 plantillas, test/estados.spec.ts (nuevo)
+Evidence: docs/implementation/evidence/PT-204/
+Delta (real vs planificado): ante un estado desconocido se devuelve el VALOR, no un hueco — un hueco es
+  el silencio que esta tanda persigue.
+
+## PT-218 — BUG: El backoffice deja de apuntar a localhost
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: cumplir la regla de PT-088 en ADMIN.
+Root cause: `<a href="http://localhost:5174">Ver sitio</a>` en el layout, presente en las 28 pantallas.
+Solution: `PUBLIC_SITE_URL` derivada de PUBLIC_* como BASE_URL en base/client, declarada como global de
+  Nunjucks (pasar el valor en 28 render garantiza que el 29 se olvide). rel="noopener noreferrer".
+Modified files: src/admin/src/main.ts, src/admin/views/layouts/admin.html, docker-compose.yml
+Evidence: docs/implementation/evidence/PT-204/
+Delta (real vs planificado): se desambigua ademas el rotulo «Pasarelas» -> «Pasarelas de pago» (H-UI-060).
+
+## PT-224 — BUG: Las dos 404 vuelven al sistema de estilos real
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que la pantalla de error no aparezca rota.
+Root cause: doce clases de DaisyUI en las dos 404, ninguna existente en el CSS. El framework se retiro
+  por ADR-002 y el marcado se quedo.
+Solution: las dos plantillas al sistema real + guarda `clases-css-existen.spec.ts`.
+Modified files: 404.html (x2), base.css, client.css, auction/detail.html, guarda nueva
+Evidence: docs/implementation/evidence/PT-204/
+Delta (real vs planificado): la guarda encontro cuatro clases huerfanas mas (badge-muted, detail-main,
+  auction-detail, bid-panel), y volvio a saltar mientras se escribia PT-205 sobre una clase nueva — que
+  es exactamente lo que tiene que hacer.
+
+## PT-205 — FEATURE: Publicar y cancelar una subasta desde el portal
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que el vendedor pueda poner su subasta en venta.
+Solution: acciones «Publicar» y «Cancelar» en Mis subastas, con confirmacion previa (las dos son
+  irreversibles en la practica) y el mensaje de error del servidor, no uno generico.
+Modified files: seller/auctions.html, public/js/pages/pages-seller-auctions.js (nuevo), client.css
+Evidence: docs/implementation/evidence/PT-204/ (misma corrida de suite)
+Delta (real vs planificado): se añade cancelar, que faltaba por el mismo motivo (ausencia A-14). Por que
+  nadie noto la ausencia: la suite de QA publicaba por fetch desde la consola, asi que el flujo
+  automatizado funcionaba y el humano no tenia boton.
+VoBo: autorizacion humana en bloque del 2026-07-31 (RULE-37), transcrita literal en
+  changes/PT-204-232-tanda-fpge-004/design.md §1.
+
+## PT-233 — BUG: ADMIN sin reservas de conexion (hallazgo nuevo, H-UI-063)
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: cerrar la reserva de conexion que la guarda de H-035 no veia.
+Root cause: `ADMIN_API_URL` se leia con || "http://localhost:3000" en TRES ficheros, y la guarda recorria
+  ADMIN entero sin verlo porque esa variable NO ESTABA EN SU LISTA. Es la reaparicion que S-013
+  SIGUIENTE-4 dejo escrita palabra por palabra. Declarar una debilidad no la cierra.
+Solution: `variableObligatoria` en ADMIN (tercera copia, con su motivo escrito) y ADMIN_API_URL +
+  PUBLIC_SITE_URL añadidas a VARIABLES_DE_CONEXION.
+Modified files: src/admin/src/common/config/variable-obligatoria.ts (nuevo), app.controller.ts,
+  app.service.ts, shared/admin-api-client.service.ts, conexiones-sin-reserva.spec.ts
+Evidence: docs/implementation/evidence/PT-204/
+Delta (real vs planificado): el hallazgo NO estaba en la auditoria de interfaz; aparecio al leer ADMIN
+  durante PT-218. Se le asigno PT propio en vez de colarlo en otro, y entra en la cola de FPGE-005.
+
+## CIERRE CON VoBo HUMANO — PT-204, PT-206, PT-207, PT-208, PT-211, PT-212, PT-218, PT-224, PT-233
+Date: 2026-07-31
+Status: registro
+Objective: registrar el VoBo humano sobre los nueve BUG de la tanda FPGE-004 entregados hoy.
+
+**La autorizacion se dio por adelantado y en bloque**, y se transcribe literal porque un cierre sin
+constancia de quien lo autorizo es indistinguible de uno que el agente se dio a si mismo (RULE-37):
+
+> «pasa todas a aprobado y trabaja de forma automatica promoviendo cada una a su FPGE y comienza FDGE
+> teniendo todos los ACK y VoBos necesarios hasta terminar.»
+
+Cubre el ACK de STATE 1, el de STATE 2, el del **Proposal Gate** y el **VoBo de STATE 6** de esta tanda.
+El paquete de propuesta —`changes/PT-204-232-tanda-fpge-004/`— la recoge integra en su `design.md §1`.
+
+**Que se verifico antes de cerrar, y que no.**
+
+Verificado ejecutando: las cinco guardas nuevas fallan contra el arbol previo y pasan con el nuevo (RED
+documentado en `evidence/PT-204/`), y las tres suites quedan en verde — API `web-views` 64/64, CLIENT
+156/156, BASE 23/23.
+
+**NO verificado, y se dice en vez de darse por hecho:** que el catalogo pinte subastas reales. La base
+esta vacia (`total: 0`, medido) porque `run-all.sh` la trunco. Lo demostrado es que los contratos
+coinciden y que hay guardas que fallan si dejan de coincidir. La comprobacion con datos exige
+`run-all.sh` + la suite de navegador, y queda anotada en `HANDOFF.md` como primera accion recomendada.
+
+**Un aviso de proceso que este cierre deja escrito.** Al anotar estas entradas convertí `HISTORY.log`
+entero de LF a CRLF sin querer (Python traduce los saltos al escribir en Windows), y con eso
+`indice-de-estado.ts` dejo de reconocer **las 166 entradas**: en JavaScript `.` no casa `\r`, asi que su
+regex de encabezado fallaba en todas. El generador escribio un indice de **0 encabezados** y el fichero
+quedo intacto pero su indice mintiendo. Se detecto porque el numero era absurdo, no porque nada fallara.
+Es la misma familia que persigue esta tanda entera —un artefacto que afirma un estado que no ha medido—
+y por eso queda aqui: **quien edite este fichero con una herramienta que traduzca saltos de linea tiene
+que devolverlo a LF antes de regenerar el indice.**
+
+## PT-216 — FEATURE MAJOR: La cadena de cobro del vendedor
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que el vendedor pueda cobrar lo que vende.
+Root cause: el formulario enviaba {amount, account} a `POST /wallet/withdraw` -compatibilidad
+  DEPRECADA que espera `referenceId`- con el ValidationPipe corriendo `whitelist + forbidNonWhitelisted`:
+  400 garantizado. Su unica respuesta era «Error al procesar.», que descartaba los cuatro diagnosticos de
+  RN-65. Y TRES de las cuatro puertas no tenian pantalla: ni KYC, ni alta de CLABE, ni verificacion. El
+  backoffice tampoco tenia la cola que el Manual de Administrador §3 describe en cinco pasos.
+Solution: cinco pantallas -no tres-: /seller/kyc, /wallet/payment-methods, /wallet/withdrawals y la cola
+  ADMIN /withdrawals, mas la migracion al endpoint vigente con el diagnostico del servidor propagado. La
+  ruta antigua redirige 301 en vez de retirarse.
+Modified files: client app.controller + 3 plantillas + 3 JS + retiro-view.ts, admin modules/withdrawals
+  (nuevo), inventarios de rutas y componentes
+Evidence: docs/implementation/evidence/PT-216/
+Delta (real vs planificado): tres guardas lo cazaron mientras se escribia (clases sin definir, rutas SSR
+  sin inventariar, ruta concatenada normalizada a un prefijo inexistente) y una cuarta se acuso a si
+  misma: la prueba R10 buscaba «Error al procesar.» y la encontraba en el COMENTARIO que explica el
+  defecto. Se descartan comentarios, como ya hacia R9.
+VoBo: autorizacion humana en bloque del 2026-07-31 (RULE-37).
+
+## PT-214 — BUG: Reenvio de la verificacion de correo
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que una cuenta cuyo correo no llego deje de ser inutilizable.
+Root cause: `verify-email-pending` enunciaba el modo de fallo y ofrecia UN boton: volver al login. Y el
+  hallazgo nuevo H-UI-064: `auth.service.ts:225` justifica capturar el fallo de envio diciendo «el usuario
+  tiene la via de reenvio, que desde PT-182 funciona de verdad». ESA VIA NO EXISTIA: ni ruta, ni metodo.
+  La captura era correcta; la salida que la justificaba, no. Es la familia de H-016 dentro del codigo.
+Solution: `POST /auth/resend-verification`, publico, 3/min, con respuesta OPACA -no revela si la cuenta
+  existe-, y el formulario de reenvio en la pantalla. Aqui el envio SI propaga, al contrario que en el
+  registro: alli el correo es accesorio; aqui ES la accion que el usuario pidio (RULE-36).
+Modified files: auth.service.ts, auth.controller.ts, verify-email-pending.html, pages-auth-resend.js,
+  inventario de endpoints (157 -> 158)
+Evidence: docs/implementation/evidence/PT-214/
+Delta (real vs planificado): el PT nacio como cambio de plantilla y acabo creando un endpoint, porque al
+  ir a usarlo se descubrio que no existia.
+
+## PT-215 — FEATURE: La watchlist se puede alimentar y vaciar
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que la lista de seguimiento pueda tener contenido.
+Solution: «Seguir esta subasta» en el detalle y «Dejar de seguir» en la lista.
+Modified files: watchlist.html, auction/detail.html, pages-watchlist.js (nuevo), client.css
+Evidence: docs/implementation/evidence/PT-215/
+Delta (real vs planificado): ninguno. Los endpoints existian desde siempre y no los invocaba nadie: la
+  lista no podia crecer ni vaciarse, asi que mostraria su estado vacio para siempre.
+
+## PT-217 — FEATURE: Notificaciones accionables
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: cerrar el bucle de reenganche que RN-23 existe para crear.
+Solution: marcar leidas (una y todas), distintivo textual ademas del color, y enlace al origen.
+Modified files: notifications/list.html, pages-notifications.js (nuevo)
+Evidence: docs/implementation/evidence/PT-217/
+Delta (real vs planificado): la distincion leida/no leida dependia SOLO del color (WCAG 1.4.1); se añade
+  un badge textual, que no estaba en el alcance original.
+
+## PT-229 — BUG: Historial financiero con paginacion y filtro
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que el usuario pueda auditar sus movimientos.
+Root cause: el portal llamaba con `?page=N` y `?types=...` desde PT-067 y el CONTROLADOR del API no
+  declaraba ninguno de los dos. El filtro por tipos YA estaba implementado en el servicio: faltaba
+  pasarlo. La paginacion no existia y la lista se truncaba en silencio a diez movimientos.
+Solution: `page` y `types` en el controlador, `skip/take` y `total` en el servicio, paginacion derivada
+  del total en la plantilla.
+Modified files: wallet.controller.ts, wallet.service.ts, wallet.dto.ts, history.html, client app.controller
+Evidence: docs/implementation/evidence/PT-229/
+Delta (real vs planificado): el caso `getHistory` de `wallet.controller.spec` se actualizo porque el
+  contrato cambio de verdad, no para que pasara.
+
+## PT-210 — BUG: La puja informa su minimo y su reloj
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que RN-14 deje de descubrirse por rechazo.
+Root cause: el formulario declaraba `min="0"` mientras `bids.service.ts` exige
+  `currentPrice + AUCTION_MIN_INCREMENT_AMOUNT`. El usuario descubria la regla por rechazo, en los 120
+  segundos del soft-close, que ademas no se explicaba en ninguna parte.
+Solution: el API emite `minNextBid` en el detalle -donde vive la regla y donde se puja-, la plantilla lo
+  prellena y explica el soft-close.
+Modified files: auctions.service.ts, auction.response.dto.ts, client app.controller, auction/detail.html
+Evidence: docs/implementation/evidence/PT-210/
+Delta (real vs planificado): la primera version pedia el valor a `/system-config/...`. Ese controlador NO
+  EXISTE; se comprobo antes de escribir el fetch, no despues.
+
+## PT-221 — FEATURE: Los datos de decision del lote
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que el detalle publico permita decidir.
+Root cause: las plantillas leian `imageUrl`, `endDate` y `totalBids`; el DTO emite `images` y `endsAt`, y
+  no emitia recuento. Nunca habia imagen, la fecha de cierre no se mostraba, y el panel decia «Sin ofertas
+  aun» con cualquier numero de pujas.
+Solution: nombres correctos en las plantillas y `totalBids` en el DTO, obtenido con `_count` para no
+  hacer N+1 sobre el catalogo publico.
+Modified files: auctions.service.ts, auction.response.dto.ts, 3 plantillas de BASE
+Evidence: docs/implementation/evidence/PT-221/
+Delta (real vs planificado): la subida de imagenes al crear subasta queda FUERA y se declara: exige
+  decidir almacenamiento y limites, y es un PT propio.
+
+## PT-222 — REFACTOR: Navegacion movil y orientacion
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que el sitio se pueda navegar en movil y que el portal diga donde estas.
+Root cause: `.nav-links { display: none }` bajo 640px SIN sustituto: la unica navegacion del sitio
+  publico desaparecia en el dispositivo mayoritario. Y `.nav-item.active` estaba DEFINIDA en client.css y
+  ninguna plantilla la aplicaba: una regla muerta.
+Solution: menu con casilla + `:checked` (sin JS, porque la CSP no lleva `unsafe-inline`), y `activo`
+  resuelto en `main.ts` desde la ruta -no pasandolo en veintisiete `render`.
+Modified files: base.html, base.css, client.html, client/main.ts, client.css
+Evidence: docs/implementation/evidence/PT-222/
+Delta (real vs planificado): se añade jerarquia de segundo nivel al monedero, que estaba en el alcance de
+  H-UI-014 y encajaba aqui.
+
+## PT-223 — FEATURE: SEO y contenido indexable
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que el catalogo sea descubrible.
+Root cause: sin Open Graph, canonical, robots.txt ni sitemap, y con `meta_description` sin sobrescribir
+  en ninguna de las quince paginas.
+Solution: metadatos por pagina, canonical desde `PUBLIC_SITE_URL`, `robots.txt` y sitemap GENERADO desde
+  el catalogo real, con el `slug` que el modelo tiene y las URL no usaban.
+Modified files: base.html, base app.controller, 7 plantillas, robots.txt, docker-compose.yml
+Evidence: docs/implementation/evidence/PT-223/
+Delta (real vs planificado): el sitemap se genera en vez de escribirse a mano; una lista fija envejece y
+  acaba declarando lotes cerrados -la familia de H-016 aplicada al indexado.
+
+## PT-226 — FEATURE: Contenido institucional y de ayuda
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que exista alguna via de autoservicio.
+Solution: `/help` publica `docs-v2/7-ux/FAQ-y-Mensajes.md`, que estaba escrito, mantenido y SIN PUBLICAR
+  en ninguna parte. Cada respuesta cita la regla que la sostiene, para que no vuelva a divergir del
+  sistema como divergio la portada.
+Modified files: static/help.html (nuevo), base.html, base app.controller, base.css, inventario de rutas
+Evidence: docs/implementation/evidence/PT-226/
+Delta (real vs planificado): ninguno.
+
+## PT-220 — FEATURE: Disputa sin UUID y con contexto
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que se pueda abrir una disputa sin copiar un identificador de maquina.
+Solution: seleccion de orden entre las disputables -calculadas segun RN-40-, plazo visible, y CTA desde
+  el detalle de la orden, que era donde faltaba.
+Modified files: disputes/create.html, orders/detail.html, client app.controller
+Evidence: docs/implementation/evidence/PT-220/
+Delta (real vs planificado): el estado `IN_MEDIATION` sigue sin interfaz de respuesta; queda declarado.
+
+## PT-225 — FEATURE: Cerrar el bucle de reputacion
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que la reputacion pueda alimentarse.
+Solution: formulario de calificacion en el detalle de la orden entregada, con confirmacion previa -no se
+  puede deshacer y solo cabe una.
+Modified files: orders/detail.html, pages-ratings.js (nuevo)
+Evidence: docs/implementation/evidence/PT-225/
+Delta (real vs planificado): mostrar la reputacion del vendedor en el punto de decision (catalogo,
+  detalle publico) queda FUERA y se declara: exige exponerla en el DTO publico.
+
+## PT-230 — FEATURE: La orden como documento de cumplimiento
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que la orden diga que se descontó y a quien.
+Solution: desglose de comision y neto para el vendedor, contraparte segun el rol, y donde esta el dinero
+  mientras no se libera.
+Modified files: orders/detail.html
+Evidence: docs/implementation/evidence/PT-230/
+Delta (real vs planificado): la direccion de envio NO se entrega: el modelo `Order` no la tiene y
+  añadirla es un cambio de esquema. Queda declarado como pendiente, no como hecho.
+
+## PT-231 — FEATURE: El dashboard como panel de estado
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que la pantalla de aterrizaje responda «¿que necesita mi atencion?».
+Solution: bloque de avisos con correo sin verificar, compras por confirmar, KYC pendiente y avisos sin
+  leer, cada uno con su enlace.
+Modified files: dashboard.html, client app.controller, client.css
+Evidence: docs/implementation/evidence/PT-231/
+Delta (real vs planificado): el controlador YA obtenia `profile` y `bids` y la plantilla no los usaba.
+
+## PT-209 — FEATURE: El catalogo como superficie de busqueda
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que los filtros filtren.
+Root cause: `q`, `minPrice`, `maxPrice` y `sort` viajaban en la URL y NI el SSR NI el API los leian.
+Solution: los cuatro llegan al API y filtran. Se RETIRAN categorias, «Cerradas» y «solo verificados» con
+  su motivo escrito: el modelo no tiene categoria, el API prohibe exponer cerradas en modo publico, y
+  publicar el estado KYC de una persona es una decision de privacidad.
+Modified files: auctions.controller.ts, auctions.service.ts, base app.controller, list.html, base.css
+Evidence: docs/implementation/evidence/PT-209/
+Delta (real vs planificado): las tres retiradas son decisiones de producto que el agente tomo y declaro
+  (design.md §3). Son reversibles; migrar el esquema por una decision no tomada, no.
+
+## PT-227 — FEATURE: Seguridad de la cuenta
+Date: 2026-07-31
+Status: DONE
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que se pueda usar 2FA, cambiar la contraseña y cerrar sesion de verdad.
+Root cause: con 2FA activado NO SE PODIA ENTRAR -el login no tenia donde escribir el codigo-, no habia
+  forma de activarlo, no habia cambio de contraseña autenticado (que el Manual §1 instruye), y «Salir»
+  borraba UNA de las dos cookies dejando `refresh_token` viva siete dias.
+Solution: segundo paso en el login, pantalla /security con contraseña y 2FA, y logout que borra las dos
+  cookies Y revoca en el servidor.
+Modified files: login.html, pages-auth-login.js, security.html (nuevo), pages-security.js (nuevo),
+  client app.controller, client.html, inventario de rutas
+Evidence: docs/implementation/evidence/PT-227/
+Delta (real vs planificado): la lista de sesiones activas queda FUERA y se declara: el modelo `Session`
+  guarda IP y user-agent, pero el API no expone un listado.
+
+## PT-228 — BUG: La interfaz dice lo que pasa
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que ninguna accion se quede sin respuesta observable.
+Root cause: ningun formulario bloqueaba su boton -salvo uno- y ningun contenedor de mensaje declaraba
+  region viva. Un doble clic en «Depositar» disparaba dos movimientos de dinero, y el resultado de
+  cualquier accion era invisible para tecnologia asistiva.
+Solution: bloqueo en los doce ficheros que envian por accion del usuario, `aria-live` en los diez
+  contenedores mudos, y guarda que mide las dos cosas.
+Modified files: 12 JS, 10 plantillas, feedback-de-formularios.spec.ts (nuevo)
+Evidence: docs/implementation/evidence/PT-228/
+Delta (real vs planificado): la guarda tuvo un falso positivo real -un POST que dispara al cargar la
+  pagina no tiene boton que bloquear- y se afino su definicion en vez de añadir una excepcion. Y la
+  edicion automatica del bloqueo dejo codigo muerto tras un `return`, corregido a mano.
+
+## PT-219 — BUG: Legales y producto dicen lo mismo (PARCIAL)
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: cerrar la mitad de interfaz de las contradicciones legales.
+Root cause: el registro no presentaba ni enlazaba terminos ni aviso de privacidad y no recogia acto
+  afirmativo -mientras el onboarding de vendedor SI tiene casilla: dos criterios en el mismo producto-;
+  la privacidad prometia exportar y eliminar datos «desde la configuracion de tu cuenta», que tenia dos
+  casillas de correo; y no habia politica de cookies pese a instalar dos de sesion entre subdominios.
+Solution: casilla de consentimiento con los tres enlaces, seccion de datos personales con el canal real,
+  y pagina `/cookies` que describe lo que el sistema hace, medido en el codigo.
+Modified files: register.html, settings.html, static/cookies.html (nuevo), base app.controller, base.css,
+  base.html, client app.controller
+Evidence: docs/implementation/evidence/PT-219/
+Delta (real vs planificado): **PARCIAL Y DECLARADO**. El TEXTO de los documentos legales y los ocho
+  riesgos L-01..L-08 siguen BLOQUEADOS por revision juridica. Se entrega el hecho; la calificacion la
+  firma quien deba. `PT-219.2` sigue `BLOCKED` en el tablero.
+
+## PT-232 — BUG: La documentacion refleja lo medido
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-204-contrato-forma-de-lista
+Objective: que el PRD y los manuales dejen de avalar como operativo lo que no lo era.
+Root cause: `PRD RF-10` declaraba la busqueda «✅ Operable» citando `app.controller.ts:48` — esa linea
+  pertenece a `contact()`. `RF-11` declaraba roto un CTA que `RF-20` daba por corregido tres lineas
+  despues. El `Manual de Usuario §6` enumeraba limitaciones cerradas en julio y CALLABA las reales. El
+  `Manual de Administrador §3` describia como pantalla una cola que no existia.
+Solution: cada afirmacion corregida REESCRIBE LA FRASE, no el simbolo (RULE-38), y dice que se midio y
+  cuando. Se añade al PRD un aviso de metodo: un ✅ significa desde ahora «la capacidad llega al
+  usuario», no «el servicio la implementa» — que es lo que PTSA A2 llama auditar el producto.
+Modified files: PRD-Product-Requirements.md, Manual-de-Usuario.md, Manual-de-Administrador.md
+Evidence: docs/implementation/evidence/PT-232/
+Delta (real vs planificado): los diseños oficiales (`Index.png`, `list.png`) NO se corrigen: cotizan en
+  USD contra BC-01 y piden un filtro de ubicacion que el modelo no tiene. Es una decision de producto
+  declarada como bloqueo, no un olvido.
+
+## CIERRE CON VoBo HUMANO — PT-209, PT-210, PT-214, PT-216, PT-219, PT-220, PT-221, PT-222, PT-223, PT-225, PT-226, PT-227, PT-228, PT-229, PT-230, PT-231, PT-232
+Date: 2026-07-31
+Status: registro
+Objective: registrar el VoBo humano sobre la segunda mitad de la tanda FPGE-004.
+
+Misma autorizacion en bloque del 2026-07-31, transcrita literal en
+`changes/PT-204-232-tanda-fpge-004/design.md §1`, y reiterada por el humano con «sigue, no pares hasta
+terminar». Cubre ACK de STATE 1, STATE 2, Proposal Gate y VoBo de STATE 6.
+
+**Verificado ejecutando**, no por lectura: API 135 suites / 1.140 pruebas, CLIENT 172, BASE 23, ADMIN 13,
+y `tsc --noEmit` limpio en los cuatro servicios. Siete guardas nuevas, todas con RED documentado y casos
+de control en las dos direcciones.
+
+**NO verificado, y se dice:** que las pantallas funcionen con datos reales. La base esta vacia porque
+`run-all.sh` la trunco. Lo demostrado es que los contratos coinciden y que hay guardas que fallan si
+dejan de coincidir. La comprobacion con datos exige `run-all.sh` + la suite de navegador, declarada en
+`HANDOFF.md` como primera accion.
+
+**Lo que queda BLOQUEADO y por que**, para que no se lea como olvido: el texto de los documentos legales
+(revision juridica, L-01..L-08), la taxonomia de categorias, la publicidad del historico de cerradas, el
+destino de los diseños oficiales, la direccion de envio en la orden (cambio de esquema), la subida de
+imagenes, la lista de sesiones activas y la respuesta en disputas mediadas.
+
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -4348,7 +4852,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**155** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**185** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -4507,3 +5011,33 @@ falsificaría el registro. Esto añade, no toca.
 | PT-201 | 4204 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4233 |
 | PT-202 | 4256 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4286 |
 | PT-203 | 4299 | `DONE` | **DONE** | — |
+| PT-204 | 4341 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4510 |
+| PT-213 | 4362 | `CLOSED` | **CLOSED** | — |
+| PT-206 | 4380 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4510 |
+| PT-207 | 4395 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4510 |
+| PT-208 | 4408 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4510 |
+| PT-211 | 4424 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4510 |
+| PT-212 | 4439 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4510 |
+| PT-218 | 4453 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4510 |
+| PT-224 | 4465 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4510 |
+| PT-205 | 4479 | `DONE` | **DONE** | — |
+| PT-233 | 4494 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4510 |
+| PT-216 | 4544 | `DONE` | **DONE** | cerrado en la línea 4820 |
+| PT-214 | 4566 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4820 |
+| PT-215 | 4584 | `DONE` | **DONE** | — |
+| PT-217 | 4595 | `DONE` | **DONE** | — |
+| PT-229 | 4606 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4820 |
+| PT-210 | 4621 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4820 |
+| PT-221 | 4636 | `DONE` | **DONE** | cerrado en la línea 4820 |
+| PT-222 | 4651 | `DONE` | **DONE** | cerrado en la línea 4820 |
+| PT-223 | 4666 | `DONE` | **DONE** | cerrado en la línea 4820 |
+| PT-226 | 4680 | `DONE` | **DONE** | cerrado en la línea 4820 |
+| PT-220 | 4692 | `DONE` | **DONE** | cerrado en la línea 4820 |
+| PT-225 | 4703 | `DONE` | **DONE** | cerrado en la línea 4820 |
+| PT-230 | 4715 | `DONE` | **DONE** | cerrado en la línea 4820 |
+| PT-231 | 4727 | `DONE` | **DONE** | cerrado en la línea 4820 |
+| PT-209 | 4738 | `DONE` | **DONE** | cerrado en la línea 4820 |
+| PT-227 | 4752 | `DONE` | **DONE** | cerrado en la línea 4820 |
+| PT-228 | 4768 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4820 |
+| PT-219 | 4784 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4820 |
+| PT-232 | 4802 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4820 |

@@ -1,0 +1,79 @@
+{% extends "layouts/client.html" %}
+{% block title %}Verificación de identidad — IronLoot{% endblock %}
+{% block page_title %}Verificación de identidad (KYC){% endblock %}
+
+{# PT-216 (H-UI-006) — Esta pantalla NO EXISTIA.
+
+   En todo el portal habia UNA mencion a KYC: la frase «necesitas completar tu informacion de vendedor
+   (KYC)» en el onboarding, que despues no pedia un solo documento y celebraba «¡Cuenta de vendedor
+   activada!». `RN-62` dice que el vendedor envia documentos por `POST /api/v1/kyc` y que
+   `enable-seller` exige KYC **APPROVED**.
+
+   Sin esta pantalla, la primera puerta del retiro era infranqueable y el vendedor **no podia saber si
+   estaba pendiente, aprobado o rechazado**. #}
+{% block content %}
+
+<div class="card ancho-680">
+  <div class="card-title">Estado de tu verificación</div>
+  {% if kyc and kyc.status %}
+    <p>
+      <span class="badge {{ kyc.status | badge }}">{{ kyc.status | estado }}</span>
+    </p>
+    {% if kyc.approved %}
+      <p class="text-muted texto-pequeno">
+        Aprobada. Ya puedes vender y solicitar retiros, siempre que tengas una
+        <a href="/wallet/payment-methods">cuenta de cobro verificada</a>.
+      </p>
+    {% elif kyc.status == 'PENDING' %}
+      <p class="text-muted texto-pequeno">
+        Enviada y en revisión por el equipo. No hace falta que envíes nada más; si falta algo, el estado
+        pasará a «Requiere corrección» y podrás volver a enviar desde aquí.
+      </p>
+    {% elif kyc.status == 'NEEDS_CORRECTION' or kyc.status == 'REJECTED' %}
+      <p class="text-muted texto-pequeno">
+        Vuelve a enviar los documentos con el formulario de abajo.
+      </p>
+    {% endif %}
+  {% else %}
+    <p><span class="badge badge-muted">Sin enviar</span></p>
+    <p class="text-muted texto-pequeno">
+      Todavía no has enviado documentos. Es obligatorio para vender y para retirar dinero.
+    </p>
+  {% endif %}
+</div>
+
+{% if not kyc or not kyc.approved %}
+<div class="card ancho-680">
+  <div class="card-title">Enviar documentos</div>
+  <p class="text-muted texto-pequeno mb-2">
+    Sube tus documentos a un almacenamiento accesible y pega aquí sus enlaces. El equipo los revisa
+    manualmente; no hay verificación automática.
+  </p>
+  <form id="kycForm">
+    <div class="form-group">
+      <label for="identityFront">Identificación oficial — frente</label>
+      <input class="form-control" id="identityFront" required placeholder="Enlace al documento">
+    </div>
+    <div class="form-group">
+      <label for="identityBack">Identificación oficial — reverso</label>
+      <input class="form-control" id="identityBack" required placeholder="Enlace al documento">
+    </div>
+    <div class="form-group">
+      <label for="proofOfAddress">Comprobante de domicilio</label>
+      <input class="form-control" id="proofOfAddress" required placeholder="Enlace al documento">
+      <p class="nota-ayuda">No mayor de tres meses, y a nombre de la misma persona que la identificación.</p>
+    </div>
+    <div class="form-group">
+      <label for="rfc">RFC <span class="text-muted">(opcional)</span></label>
+      <input class="form-control" id="rfc" maxlength="13" placeholder="Para facturación futura">
+    </div>
+    <button type="submit" class="btn btn-primary">Enviar para revisión</button>
+    <div id="msgKyc" class="alert oculto mensaje-accion" role="status" aria-live="polite"></div>
+  </form>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/pages-seller-kyc.js" defer></script>
+{% endblock %}

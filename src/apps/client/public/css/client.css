@@ -12,7 +12,7 @@
   --cl-gold-dark:  #a8832e;
   --cl-white:      #F6F6F6;
   --cl-surface:    #FFFFFF;
-  --cl-text-muted: #6B7280;
+  --cl-text-muted: #5C6470;   /* PT-211 (H-UI-034) — era #6B7280: 4,47:1 sobre #F6F6F6 */
   --cl-border:     rgba(49, 54, 63, 0.18);
 
   --ff-heading: 'Montserrat', system-ui, sans-serif;
@@ -803,3 +803,62 @@ select.form-control { cursor: pointer; }
 .notif-linea { padding: .75rem; border-bottom: 1px solid #f0f2f5; }
 .notif-linea--sin-leer { background: #fffbf0; }
 .notif-sin-leer { font-weight: 600; }
+
+/* PT-206 (H-UI-011) — La nota que acompaña a cada saldo.
+   Las tres cifras del monedero significan cosas distintas y ninguna lo decía: «disponible» es lo
+   retirable, «retenido» es dinero del COMPRADOR bloqueado por sus pujas, y «pendiente» es el neto de
+   las VENTAS que aún no ha vencido su holdback (RN-64). Sin la nota, la tercera cifra sería una cuarta
+   pregunta en vez de una respuesta. */
+.stat-nota {
+  margin-top: 0.4rem;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  color: var(--cl-text-muted);
+}
+
+/* PT-224 — `.justify-center` la usa la 404 y no estaba definida. */
+.justify-center { justify-content: center; }
+
+/* PT-205 (H-UI-007) — La celda de acciones de «Mis subastas».
+   `.fila-acciones` agrupa los botones sin que se peguen; `.accion-subasta` es el gancho que el JS
+   delega (la CSP no permite `onclick=`, PT-096). Las dos las exigio la guarda de PT-224 al escribir
+   este PT: usar una clase que ningun CSS define no falla, solo se ve mal. */
+.fila-acciones { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.accion-subasta { white-space: nowrap; }
+
+/* PT-216 — Jerarquia de segundo nivel en el menu del monedero y la lista de requisitos del retiro.
+   Las cuatro operaciones colgaban de una sola entrada «Wallet»: depositar es el prerrequisito de
+   cualquier puja (RN-22) y estaba a dos clics detras de un rotulo generico. */
+.nav-item--hijo { padding-left: 2.5rem; font-size: 0.82rem; opacity: 0.85; }
+
+.lista-requisitos { list-style: none; padding: 0; margin: 0; }
+.lista-requisitos li { padding: 0.5rem 0 0.5rem 1.6rem; position: relative; font-size: 0.875rem; }
+.lista-requisitos li::before { position: absolute; left: 0; font-weight: 700; }
+.requisito-ok::before { content: "OK"; color: #065f46; font-size: 0.7rem; }
+.requisito-falta::before { content: "!"; color: #991b1b; }
+.accion-verificar { white-space: nowrap; }
+
+/* PT-215 / PT-217 — Ganchos de las acciones nuevas. Los exigio la guarda de PT-224 al escribirlas:
+   una clase que ningun CSS define no falla, solo se ve mal. */
+.accion-watchlist { white-space: nowrap; }
+.accion-notificacion { white-space: nowrap; }
+
+/* PT-229 — La paginacion del historial. Existia en `base.css` y no en `client.css`: la guarda de
+   PT-224 la caza en cuanto se usa, que es exactamente para lo que esta. */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 1rem 0 0;
+  font-size: 0.875rem;
+}
+.pagination a { color: var(--cl-gold-texto, #8A6A1F); text-decoration: underline; }
+.current-page { color: var(--cl-text-muted); }
+
+/* PT-231 — El bloque «Necesita tu atención» del dashboard. Se distingue del resto de tarjetas porque
+   es lo único de la pantalla que pide una acción, no que informe. */
+.card--atencion { border-left: 3px solid #92400e; }
+
+/* PT-227 — El QR de la verificación en dos pasos. */
+.qr-2fa { max-width: 200px; margin: 0.75rem 0; }

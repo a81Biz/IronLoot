@@ -5,6 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="{% block meta_description %}IronLoot — Plataforma de subastas en línea{% endblock %}">
   <title>{% block title %}IronLoot{% endblock %}</title>
+
+  {# PT-223 (H-UI-039) — No habia Open Graph, ni canonical, ni robots, ni meta por pagina: las quince
+     paginas compartian la misma descripcion, y una subasta compartida en redes salia sin titulo y sin
+     imagen. El descubrimiento organico es el canal natural de un marketplace de lotes unicos. #}
+  {# PT-223 — Los valores de Open Graph vienen del CONTROLADOR, no de leer los bloques de la plantilla.
+
+     La primera version escribia `{{ self.title() }}`: eso es **sintaxis de Jinja2**, y Nunjucks no
+     implementa `self`. Resultado: `Unable to call self["title"]` y **500 en TODAS las paginas publicas**.
+     No lo caza ningun tipo ni ninguna prueba unitaria — lo caza arrancar el sitio, que es justo el paso
+     que estaba pendiente cuando se escribio. #}
+  {% if canonical %}<link rel="canonical" href="{{ canonical }}">{% endif %}
+  <meta property="og:site_name" content="IronLoot">
+  <meta property="og:type" content="{{ ogTipo | default('website') }}">
+  <meta property="og:title" content="{{ ogTitulo | default('IronLoot — Subastas en línea con fondos protegidos') }}">
+  <meta property="og:description" content="{{ ogDescripcion | default('Compra y vende en subastas en tiempo real. Tus pujas quedan respaldadas por saldo real.') }}">
+  {% if canonical %}<meta property="og:url" content="{{ canonical }}">{% endif %}
+  {% if ogImagen %}<meta property="og:image" content="{{ ogImagen }}">{% endif %}
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -34,9 +52,21 @@
           <text x="46" y="38" font-family="'Montserrat', system-ui, sans-serif" font-weight="600" font-size="13" letter-spacing="2.5" fill="#C89B3C">LOOT</text>
         </svg>
       </a>
+      {# PT-222 (H-UI-012) — Debajo de 640px `.nav-links` se ocultaba y NO habia sustituto: la unica
+         navegacion del sitio publico desaparecia en el dispositivo mayoritario, y desde una pagina
+         interior no habia forma de llegar al catalogo salvo volver a la portada.
+         La casilla + `:checked` es el patron sin JavaScript: la CSP no lleva `unsafe-inline` y un
+         `onclick=` no funcionaria (PT-096). #}
+      <input type="checkbox" id="menu-movil" class="menu-toggle-input" hidden>
+      <label for="menu-movil" class="menu-toggle" aria-label="Abrir menú">
+        <span class="menu-toggle-barra"></span>
+        <span class="menu-toggle-barra"></span>
+        <span class="menu-toggle-barra"></span>
+      </label>
       <div class="nav-links">
         <a href="/auctions" class="nav-link">Subastas</a>
-        <a href="/about" class="nav-link">Acerca de</a>
+        <a href="/about" class="nav-link">Cómo funciona</a>
+        <a href="/help" class="nav-link">Ayuda</a>
       </div>
       <div class="nav-auth">
         <a href="/auth/login" class="btn btn-ghost">Iniciar sesión</a>
@@ -71,8 +101,20 @@
         <h4>Plataforma</h4>
         <nav class="footer-links">
           <a href="/auctions">Subastas activas</a>
-          <a href="/about">Cómo funciona</a>
+          <a href="/help">Centro de ayuda</a>
           <a href="/auth/register">Crear cuenta</a>
+        </nav>
+      </div>
+      {# PT-226 (ausencias A-10/A-11) — La columna «Soporte» no contenia ningun recurso de soporte, y
+         «Como funciona» y «Acerca de» apuntaban AL MISMO destino. `Index.png §10` y `list.png §9`
+         especifican Centro de ayuda, Guias, Blog y Preguntas frecuentes: aqui se publica lo que ya
+         existe escrito (`docs-v2/7-ux/FAQ-y-Mensajes.md`), en vez de prometer lo que no hay. #}
+      <div class="footer-col">
+        <h4>Recursos</h4>
+        <nav class="footer-links">
+          <a href="/help">Centro de ayuda</a>
+          <a href="/help#faq">Preguntas frecuentes</a>
+          <a href="/help#comisiones">Tarifas y comisiones</a>
         </nav>
       </div>
       <div class="footer-col">
@@ -85,8 +127,9 @@
       <div class="footer-col">
         <h4>Legal</h4>
         <nav class="footer-links">
-          <a href="/static/terms">Términos de uso</a>
+          <a href="/terms">Términos de uso</a>
           <a href="/privacy">Privacidad</a>
+          <a href="/cookies">Cookies</a>
         </nav>
       </div>
     </div>

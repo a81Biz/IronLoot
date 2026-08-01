@@ -113,20 +113,28 @@ describe('WalletController', () => {
 
   describe('getHistory', () => {
     it('should return history', async () => {
-      // Mock getWallet to return a wallet (impl detail, but verified via service)
-      // Actually controller calls service.getHistory directly now.
-      // And the service.getHistory returns an array of Ledgers.
-      // The controller returns { transactions: [...] }
-
-      const mockHistory = [
-        { id: 'tx-1', type: 'DEPOSIT', amount: 100, createdAt: new Date(), referenceId: 'ref-1' },
-      ];
+      // PT-229 (H-UI-044) — **El contrato de `getHistory` cambio de verdad, y este caso lo describia.**
+      //
+      // Devolvia un array plano y ahora devuelve `{ items, total, page, limit }`, porque sin `total` la
+      // interfaz no puede paginar sin adivinar — que es lo que llevo al catalogo a la heuristica
+      // `length >= 12` de H-UI-043. El caso se actualiza porque la forma cambio, no para que pase.
+      const mockHistory = {
+        items: [
+          { id: 'tx-1', type: 'DEPOSIT', amount: 100, createdAt: new Date(), referenceId: 'ref-1' },
+        ],
+        total: 1,
+        page: 1,
+        limit: 10,
+      };
       mockWalletService.getHistory.mockResolvedValue(mockHistory);
 
       const result = await controller.getHistory(mockRequest);
       expect(result.transactions).toBeDefined();
       expect(result.transactions[0].id).toBe('tx-1');
-      expect(service.getHistory).toHaveBeenCalledWith('user-123', undefined);
+      // `total` viaja: es lo que permite dibujar la paginacion sin heuristicas.
+      expect(result.total).toBe(1);
+      // Y los dos parametros que el portal enviaba desde PT-067 y este controlador DESCARTABA.
+      expect(service.getHistory).toHaveBeenCalledWith('user-123', undefined, undefined, undefined);
     });
   });
 });

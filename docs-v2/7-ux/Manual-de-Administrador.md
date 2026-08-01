@@ -62,7 +62,13 @@
 2. **Aprobar** (`PATCH /admin/kyc/:id/approve`) habilita `isSeller` y desbloquea vender y retirar (`RN-62`). Rechazar/pedir corrección según el caso.
 
 ### Procesar un retiro del vendedor (PT-072) — payout manual
-1. `GET /admin/withdrawals[?status=REQUESTED]` → cola de solicitudes. Cada una muestra vendedor, monto y método (CLABE + titular).
+
+> **Corregido en PT-232.** Este procedimiento se describía como flujo **de pantalla** y esa pantalla
+> **no existía**: `grep -rn "withdraw" src/admin` devolvía cero resultados. El administrador habría
+> tenido que operar por API a mano para pagar a los vendedores. La entrega `PT-216`, en **Finanzas →
+> Retiros**.
+
+1. **Finanzas → Retiros** (`/withdrawals`, filtrable por estado) → cola de solicitudes. Cada una muestra vendedor, monto y método (CLABE + titular).
 2. **Aprobar** (`PATCH /admin/withdrawals/:id/approve`): REQUESTED→APPROVED (los fondos ya están reservados desde que el vendedor solicitó, `RN-65`).
 3. **Ejecutar la transferencia SPEI manualmente** desde la banca a la CLABE del titular.
 4. **Marcar pagado** (`PATCH /admin/withdrawals/:id/mark-paid`): APPROVED→PAID; registra `payoutReference`. ⚠️ Marca PAID **sólo tras** confirmar el SPEI (`RN-66`, `PayoutProvider` manual).

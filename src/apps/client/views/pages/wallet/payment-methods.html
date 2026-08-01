@@ -1,0 +1,99 @@
+{% extends "layouts/client.html" %}
+{% block title %}Métodos de cobro — IronLoot{% endblock %}
+{% block page_title %}Métodos de cobro{% endblock %}
+
+{# PT-216 (H-UI-006) — Esta pantalla NO EXISTIA.
+
+   `RN-63` exige CLABE de 18 digitos con digito verificador valido **y nombre del titular**, y `RN-65`
+   hace de «tener un metodo valido» la segunda puerta del retiro. El `Manual de Usuario §4` decia
+   «Registra tu cuenta bancaria (CLABE) en metodos de pago» — una pantalla que no habia por ninguna
+   parte.
+
+   La verificacion (PT-092) es la tercera puerta: el sistema envia un importe pequeño con un codigo, y
+   el titular lo confirma. Sin ella, el destino del retiro es una afirmacion del usuario, no un hecho:
+   una CLABE ajena bien escrita pasa el digito verificador igual que la propia. #}
+{% block content %}
+
+<div class="card">
+  <div class="card-title">Mis cuentas de cobro</div>
+  <div class="table-responsive">
+    <table>
+      <thead><tr><th>Alias</th><th>Tipo</th><th>Destino</th><th>Verificación</th><th>Acciones</th></tr></thead>
+      <tbody>
+        {% if metodos and metodos.items.length %}
+          {% for m in metodos.items %}
+          <tr>
+            <td>{{ m.alias | default('—') }}</td>
+            <td>{{ m.type | default('BANK') }}</td>
+            <td><code>{{ m.maskedTarget | default(m.clabe) | default(m.paypalEmail) | default('—') }}</code></td>
+            <td>
+              {% if m.isVerified %}
+                <span class="badge badge-success">Verificada</span>
+              {% else %}
+                <span class="badge badge-warning">Sin verificar</span>
+              {% endif %}
+            </td>
+            <td class="fila-acciones">
+              {% if not m.isVerified %}
+                <button type="button" class="btn btn-sm btn-primary accion-verificar"
+                        data-id="{{ m.id }}">Verificar</button>
+              {% endif %}
+            </td>
+          </tr>
+          {% endfor %}
+        {% else %}
+          <tr><td colspan="5" class="text-center text-muted">No tienes ninguna cuenta registrada.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+  <div id="msgVerificar" class="alert oculto mensaje-accion" role="status" aria-live="polite"></div>
+</div>
+
+{# ── Confirmar el código de la verificación ──────────────────────── #}
+<div class="card ancho-600 oculto" id="cajaConfirmar">
+  <div class="card-title">Confirmar el código</div>
+  <p class="text-muted texto-pequeno mb-2" id="instruccionesVerificacion"></p>
+  <form id="confirmarForm">
+    <div class="form-group">
+      <label for="token">Código de 6 caracteres</label>
+      <input class="form-control" id="token" maxlength="6" required
+             placeholder="Búscalo en el concepto del movimiento">
+    </div>
+    <button type="submit" class="btn btn-primary">Confirmar</button>
+  </form>
+</div>
+
+{# ── Alta de cuenta bancaria ─────────────────────────────────────── #}
+<div class="card ancho-600">
+  <div class="card-title">Registrar una cuenta bancaria (CLABE)</div>
+  <form id="clabeForm">
+    <div class="form-group">
+      <label for="holderName">Nombre del titular</label>
+      <input class="form-control" id="holderName" required
+             placeholder="Como aparece en tu estado de cuenta">
+      <p class="nota-ayuda">Tiene que coincidir con el titular de la cuenta: es lo que verifica la transferencia.</p>
+    </div>
+    <div class="form-group">
+      <label for="clabe">CLABE</label>
+      <input class="form-control" id="clabe" required inputmode="numeric" maxlength="18"
+             pattern="[0-9]{18}" placeholder="18 dígitos">
+      <p class="nota-ayuda">18 dígitos. Se comprueba el dígito verificador antes de guardarla.</p>
+    </div>
+    <div class="form-group">
+      <label for="bankName">Banco <span class="text-muted">(opcional)</span></label>
+      <input class="form-control" id="bankName" placeholder="BBVA, Banorte…">
+    </div>
+    <div class="form-group">
+      <label for="alias">Alias <span class="text-muted">(opcional)</span></label>
+      <input class="form-control" id="alias" maxlength="40" placeholder="Mi cuenta principal">
+    </div>
+    <button type="submit" class="btn btn-primary">Registrar cuenta</button>
+    <div id="msgClabe" class="alert oculto mensaje-accion" role="status" aria-live="polite"></div>
+  </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/js/pages/pages-wallet-payment-methods.js" defer></script>
+{% endblock %}

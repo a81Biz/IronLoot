@@ -1,3 +1,9 @@
+// PT-228 (H-UI-046) — **El boton se bloquea mientras la peticion esta en vuelo.**
+//
+// Sin esto, un doble clic dispara la accion dos veces — y en los formularios de dinero eso son dos
+// movimientos. El estandar ya existia dentro del repositorio: `pages-orders-detail.js` (PT-174) lo
+// hacia, y se aplicaba en UNO de doce ficheros. Lo vigila
+// `src/api/test/unit/web-views/feedback-de-formularios.spec.ts`.
 // PT-096 - Extraido de views/pages/auth/login.html
 //
 // Vivia dentro de la plantilla, lo que obligaba a `script-src 'unsafe-inline'` en la CSP de todo
@@ -12,10 +18,19 @@
 // servidor, pero el codigo ya no.
 const CLIENT = document.body.dataset.clientUrl || '';
 document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  const _boton = e.target.querySelector('button[type="submit"]');
+  if (_boton) _boton.disabled = true;
   e.preventDefault();
   const errEl = document.getElementById('loginError');
   errEl.style.display = 'none';
-  const body = { email: e.target.email.value, password: e.target.password.value };
+  // PT-227 (H-UI-022) — El codigo de 2FA viaja solo si se escribio: mandar `twoFactorCode: ''` a una
+  // cuenta sin 2FA seria una propiedad vacia que el DTO no espera.
+  const codigo = document.getElementById('twoFactorCode');
+  const body = {
+    email: e.target.email.value,
+    password: e.target.password.value,
+    ...(codigo && codigo.value.trim() ? { twoFactorCode: codigo.value.trim() } : {}),
+  };
   try {
     const res = await fetch('/api/v1/auth/login', {
       method: 'POST',
@@ -26,12 +41,24 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const data = await res.json();
     if (res.ok) {
       window.location.href = CLIENT + '/dashboard';
+    } else if (/2FA|two.?factor/i.test(String(data.message || ''))) {
+      // **La rama que faltaba.** El API responde «2FA code required» y antes eso se pintaba como un
+      // error terminal: el usuario leia un mensaje en ingles tecnico y no tenia ninguna accion posible.
+      document.getElementById('grupo2fa').classList.remove('oculto');
+      document.getElementById('twoFactorCode').focus();
+      errEl.textContent = codigo && codigo.value.trim()
+        ? 'Ese codigo no es valido. Revisa tu app y vuelve a intentarlo.'
+        : 'Tu cuenta tiene verificacion en dos pasos. Escribe el codigo de tu app.';
+      errEl.style.display = 'block';
+    if (_boton) _boton.disabled = false;
     } else {
       errEl.textContent = data.message || 'Credenciales incorrectas.';
       errEl.style.display = 'block';
+    if (_boton) _boton.disabled = false;
     }
   } catch {
     errEl.textContent = 'Error de conexión. Intenta de nuevo.';
     errEl.style.display = 'block';
+    if (_boton) _boton.disabled = false;
   }
 });

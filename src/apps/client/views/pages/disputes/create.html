@@ -1,23 +1,60 @@
 {% extends "layouts/client.html" %}
 {% block title %}Abrir disputa — IronLoot{% endblock %}
-{% block page_title %}Abrir disputa{% endblock %}
+{% block page_title %}Abrir una disputa{% endblock %}
+
+{# PT-220 (R-035 · H-UI-021) — Aquí se pedía «ID de la orden — UUID de la orden» en un `input` de texto
+   libre, y NINGUNA pantalla generaba el enlace con `?orderId=`: el único camino era copiar un
+   identificador de máquina a mano, en el peor momento posible.
+
+   Y no se comunicaba ninguna de las cuatro precondiciones de `RN-40`: el plazo de 14 días, que sólo
+   cabe una disputa por orden, qué estados admite y que hay que ser participante. #}
+
 {% block content %}
-<div class="card ancho-600">
+<div class="card ancho-680">
+  <p class="text-muted texto-pequeno mb-2">
+    Una disputa es para cuando algo salió mal <strong>después</strong> de la compra: no llegó, llegó
+    distinto de lo descrito, o llegó dañado. Tienes <strong>{{ ventanaDias }} días</strong> desde la
+    entrega, y sólo puedes abrir <strong>una por orden</strong>. El equipo media y resuelve; si se
+    resuelve a tu favor, el reembolso entra en tu monedero en ese mismo momento.
+  </p>
+
+  {% if disputables and disputables.length %}
   <form id="disputeForm">
     <div class="form-group">
-      <label for="orderId">ID de la orden</label>
-      <input class="form-control" id="orderId" value="{{ orderId | default('') }}" required placeholder="UUID de la orden">
+      <label for="orderId">¿Sobre qué compra?</label>
+      <select class="form-control" id="orderId" required>
+        <option value="">Elige una orden…</option>
+        {% for o in disputables %}
+        <option value="{{ o.id }}" {% if o.id == orderId %}selected{% endif %}>
+          {{ o.auction.title | default(o.id) }} — MXN {{ o.totalAmount }} ({{ o.status | estado }})
+        </option>
+        {% endfor %}
+      </select>
     </div>
     <div class="form-group">
-      <label for="reason">Motivo de la disputa</label>
-      <textarea class="form-control redimensiona-vertical" id="reason" rows="4" required placeholder="Describe el problema con detalle…"></textarea>
+      <label for="reason">¿Qué pasó?</label>
+      <textarea class="form-control redimensiona-vertical" id="reason" rows="5" required
+                placeholder="Describe el problema con detalle: qué esperabas, qué recibiste y cuándo."></textarea>
+      <p class="nota-ayuda">
+        Cuanto más concreto seas, antes se resuelve. Si tienes fotos o mensajes con el vendedor,
+        menciónalos: el equipo puede pedírtelos.
+      </p>
     </div>
     <button type="submit" class="btn btn-primary">Abrir disputa</button>
-    <div id="disputeMsg" class="alert oculto mensaje-accion"></div>
+    <div id="disputeMsg" class="alert oculto mensaje-accion" role="status" aria-live="polite"></div>
   </form>
+  {% else %}
+  <div class="empty-state">
+    <p><strong>No tienes ninguna compra sobre la que abrir una disputa ahora mismo.</strong></p>
+    <p class="text-muted texto-pequeno">
+      Sólo se puede disputar una orden pagada, enviada o entregada, y que no tenga ya una disputa
+      abierta. Si crees que falta alguna, revísala en <a href="/orders">tus órdenes</a>.
+    </p>
+  </div>
+  {% endif %}
 </div>
 {% endblock %}
-{% block scripts %}
-<script src="/js/pages/pages-disputes-create.js"></script>
 
+{% block scripts %}
+<script src="/js/pages/pages-disputes-create.js" defer></script>
 {% endblock %}

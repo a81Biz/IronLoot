@@ -81,6 +81,13 @@
         <span class="material-symbols-outlined">currency_exchange</span>
         <span>Reembolsos</span>
       </a>
+      {# PT-216 (H-UI-008) — Faltaba la cola de retiros: `grep -rn "withdraw" src/admin` daba CERO,
+         mientras el Manual de Administrador §3 la describia en cinco pasos con pantalla. Sin ella el
+         dinero del vendedor se queda en REQUESTED con los fondos ya reservados de su disponible. #}
+      <a href="/withdrawals" class="nav-item {% if activePage == 'withdrawals' %}active{% endif %}">
+        <span class="material-symbols-outlined">account_balance</span>
+        <span>Retiros</span>
+      </a>
       <a href="/reconciliation" class="nav-item {% if activePage == 'reconciliation' %}active{% endif %}">
         <span class="material-symbols-outlined">balance</span>
         <span>Conciliación</span>
@@ -129,7 +136,7 @@
       </a>
       <a href="/settings" class="nav-item {% if activePage == 'settings' %}active{% endif %}">
         <span class="material-symbols-outlined">settings</span>
-        <span>Pasarelas</span>
+        <span>Pasarelas de pago</span>
       </a>
     </nav>
 
@@ -151,7 +158,7 @@
     <header class="top-bar">
       <h1 class="page-title">{{ title }}</h1>
       <div class="top-bar-right">
-        <a href="http://localhost:5174" target="_blank" class="btn btn-ghost btn-sm">
+        <a href="{{ baseUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm">
           <span class="material-symbols-outlined">open_in_new</span>
           Ver sitio
         </a>

@@ -9,6 +9,8 @@ import * as nunjucks from "nunjucks";
 import * as cookieParser from "cookie-parser";
 import * as session from "express-session";
 import helmet from "helmet";
+// PT-233 (H-UI-063) / PT-218 (H-UI-040) — Sin reserva: RULE-17 tambien en ADMIN.
+import { variableObligatoria } from "./common/config/variable-obligatoria";
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -143,11 +145,27 @@ async function bootstrap() {
 
   const viewsPath = join(__dirname, "..", "views");
 
-  nunjucks.configure(viewsPath, {
+  const entorno = nunjucks.configure(viewsPath, {
     autoescape: true,
     express: app.getHttpAdapter().getInstance(),
     watch: true,
   });
+
+  /**
+   * PT-218 (H-UI-040) — **A dónde apunta «Ver sitio».**
+   *
+   * El layout llevaba `<a href="http://localhost:5174">` escrito a mano, presente en las 28 pantallas del
+   * panel. `CLAUDE.md` lo prohíbe con todas las letras desde PT-088:
+   *
+   * > *Nunca escribir un `localhost:<puerto>` en una URL que salga del sistema.*
+   *
+   * En cualquier entorno que no sea la máquina de quien desplegó, ese enlace no abre nada.
+   *
+   * Se declara como **global de Nunjucks** y no como dato de cada `render`: son 28 pantallas repartidas
+   * en 19 controladores, y pasar el mismo valor 28 veces garantiza que la 29.ª se olvide. Es la lección
+   * de PT-140 aplicada a la plantilla — un dato en muchos sitios sin declarar cuál manda se desvía.
+   */
+  entorno.addGlobal("baseUrl", variableObligatoria("PUBLIC_SITE_URL"));
 
   app.useStaticAssets(join(__dirname, "..", "public"));
   app.setBaseViewsDir(viewsPath);

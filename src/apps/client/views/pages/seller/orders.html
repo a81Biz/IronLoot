@@ -13,8 +13,8 @@
             <td><a href="/orders/{{ order.id }}"><code>{{ order.id | truncate(8, true, '') }}…</code></a></td>
             <td>{{ order.buyer.username | default('—') }}</td>
             <td>MXN {{ order.totalAmount }}</td>
-            <td><span class="badge badge-info">{{ order.status }}</span></td>
-            <td>{{ order.shipment.status | default('Pendiente') }}</td>
+            <td><span class="badge {{ order.status | badge }}">{{ order.status | estado }}</span></td>
+            <td>{% if order.shipment %}<span class="badge {{ order.shipment.status | badge }}">{{ order.shipment.status | estado }}</span>{% else %}<span class="badge badge-muted">Sin declarar</span>{% endif %}</td>
           </tr>
           {% endfor %}
         {% else %}

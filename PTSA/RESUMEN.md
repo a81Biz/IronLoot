@@ -1,199 +1,142 @@
 # PTSA V3 — RESUMEN DE AUDITORÍA
 ## IronLoot Auction Platform v1.0.0
 
-**Sesión**: S-013 — **delta sync** | **Fecha**: 2026-07-30
-**Disparador**: `resume PTSA`, para restaurar la frescura que `PT-202` había dejado en `STALE` al medir
-que `PT-200` tocó un fichero del alcance auditable.
-**auditoria_estado**: CERRADA_SIN_HALLAZGOS_ACTIVOS
-**audit_commit**: `98e445b3fe0c099001c58aa62699e410d9d3562a`
+**Sesión**: S-015 — **delta sync** | **Fecha**: 2026-07-31
+**Disparador**: `resume PTSA`, tercer paso de la secuencia `run-all.sh` → suite de navegador →
+`resume PTSA`.
+**auditoria_estado**: CERRADA_CON_HALLAZGO_ACTIVO
 
 ---
 
 ## SCORES — CLASE A
 
-| Métrica | S-011 | S-012 | **S-013** | Cambio |
-|---|---|---|---|---|
-| **Health Score** | 100 | 100 | **100 / 100** | — |
-| **Risk Score** | 0 | 0 | **0 / 100** | — |
-| **Confidence** | 91.0 | 91.0 | **91.0 / 100** | — |
-| **Clasificación** | A | A | **A** | — |
-
-> **La cabecera de este documento decía `S-011` con la tabla comparando `S-009` y `S-010`.** Se corrige
-> al sobrescribir: un resumen que anuncia una sesión y tabula otras dos es la misma clase de defecto que
-> `PT-200` midió en `HANDOFF.md` — un documento que se presenta como vigente y arrastra lo anterior.
+| Métrica | S-013 | **S-015** | Cambio |
+|---|---|---|---|
+| **Health Score** | 100 | **95.5 / 100** | **−4.5** |
+| **Risk Score** | 0 | **32 / 100** | +32 |
+| **Confidence** | 91.0 | **95.0 / 100** | **+4.0** |
+| **Clasificación** | A | **A** | — |
 
 ```
-Health = (100×0.30) + (100×0.30) + (100×0.30) + (100×0.10) = 100
-Risk   = min(100, 0 × 4) = 0                    Risk_bruto = 0 — cero hallazgos activos
-Conf   = 80×0.40 + 100×0.25 + 95×0.20 + 100×0.15 = 91.0
+Health = (100×0.30) + (85×0.30) + (100×0.30) + (100×0.10) = 95.5
+Risk   = min(100, (4×2) × 4) = 32            Risk_bruto = 8 — un hallazgo ALTA activo
+Conf   = 90×0.40 + 100×0.25 + 95×0.20 + 100×0.15 = 95.0
 ```
 
 **Regla del Agua Potable: NO activada.** D1 = 100. Se dice porque `[A4]` lo exige.
 
-> **S-012 — la frescura se restaura MIDIENDO, y aparece un hallazgo en la propia evidencia.**
+> ## El Health baja, y eso es la mejora
 >
-> `PT-202` dejó el certificado en `STALE` porque `PT-200` tocó `10-Technical-Debt.md`, del alcance
-> auditable. Este sync lo resuelve volviendo a ejecutar **los cinco checkpoints**, no reetiquetando.
-> Deriva medida sobre `ffbdf14`: **cero** ficheros de `auditable_patterns`.
+> Cuatro sesiones seguidas emitiendo **100 con cero hallazgos activos** medían, sobre todo, **que nadie
+> había ejecutado la suite de navegador**. Hoy se ejecutó, y encontró `H-042` en el camino del dinero.
 >
-> **`H-037` (D4, MEDIA), cerrado antes de emitir.** Dos hallazgos citaban evidencia que **nunca se
-> capturó** —`H-008 → E-011` y `H-036 → E-040`—. Verificado en git que ninguna se borró: `[A6]` intacto.
-> `E-040` se escribe con la salida real y se re-verifica ejecutando; **`E-011` no se fabrica**, se
-> declara perdida en una `## Revisión` de `H-008` — rehacerla hoy sería inventar procedencia.
+> Un certificado que baja cuando aparece un defecto conocido está haciendo su trabajo. El 100 anterior no
+> era un sistema mejor: era el mismo sistema con menos gente mirando.
 >
-> **Corregir una cita rota no siempre es crear lo citado.** A veces es decir que no existe.
->
-> **Y un error mío, que dejó algo mejor de lo que había:** empecé este sync creyendo que el `91.0` se
-> arrastraba sin desglose guardado. Es falso — `RESUMEN.md` y `F9` lo guardan desde **S-005**; yo
-> buscaba `Confidence = ` y el artefacto dice `Conf = `. Medí los cuatro insumos igual, sin mirarlos, y
-> **dan exactamente los mismos**. Es la primera reproducción independiente del número.
->
-> **Sobre D1, con precisión:** se midió sobre la **misma salida real** que generó S-011 y que sigue en
-> la base. Es medición sobre datos reales, no sobre datos nuevos, y la diferencia se dice.
-
----
-
-## ⚠ Los mismos cuatro números por CUARTA vez, y ése es el dato
-
-En cada intervalo entre emisiones ha aparecido trabajo real: **tres** hallazgos entre S-005 y S-006, **dos** entre
-S-006 y S-007 —uno ALTA—, **uno** entre S-007 y S-008. Seis defectos reales, todos cerrados antes de emitir, y
-los cuatro números sin moverse.
-
-**La estabilidad de este 100 mide que se cierra lo que se encuentra, NO que no haya nada que encontrar.**
-
-### Y el hallazgo de hoy lo encontró la recomendación de ayer
-
-S-007 cerró diciendo: *«ejercitar caminos de fallo… los candidatos siguientes son los otros terceros: la pasarela
-de pago, Redis, el almacenamiento»*. **El primero de la lista tenía el defecto**, y eso no es mérito del barrido:
-es la señal de que H-033 no era un caso aislado del correo, sino **la forma de este sistema al hablar con un
-tercero**. Antes de hoy, sólo **dos** ficheros del API declaraban un tope — y los dos se escribieron hoy.
-
-Y los tres avisos siguen vigentes uno por uno:
-
-**1. El Health llega a 100 en parte porque el alcance se estrechó, no sólo porque se arreglara.** H-005
-—la facturación fiscal— se cerró **aceptándola como limitación declarada** por decisión del humano. Lo que
-legitima ese cierre es que **la declaración de valor se corrigió a la vez** (`F-1 § U-006`): el producto ya
-**no promete** emitir CFDI, y `P-012` pasó a `FUERA_DE_ALCANCE_V1`. El hueco que D1 mide —entre lo declarado
-y lo entregado— se cerró **por el lado de la declaración**. El sistema sigue sin emitir facturas.
-
-**2. La Confianza está a UN punto del umbral de A.** 91.0 contra un mínimo de 90. La baja **la cobertura de
-D5, que es 0 %** — y desde esta emisión eso es una **limitación declarada** (`F-1 § U-007`), no un pendiente: la
-fiabilidad operacional **no está demostrada** y se dice. Dos ciclos no son una serie, y desde PT-180 el
-instrumento se niega a pronunciarse en vez de inventarse un veredicto. Cualquier pérdida de cobertura tumba la
-Clase A.
-
-**3. Cero hallazgos activos no es cero defectos: es cero defectos CONOCIDOS.** Tercera emisión consecutiva en
-que un barrido dirigido encuentra defectos que **ninguna prueba señalaba**. Un `0` en esta columna mide lo que
-se ha buscado — y hoy quedó claro **dónde** buscar: los dos de esta corrida vivían en el **camino de fallo**,
-que nunca se había ejecutado. El camino feliz estaba probado; el otro, nunca.
+> **Y la Confianza sube al mismo tiempo** —91.0 → 95.0—, que es lo que tiene que pasar: se sabe **más**
+> sobre el sistema, y parte de lo que se sabe es un defecto.
 
 ---
 
 ## SCORES POR DIMENSIÓN
 
-| Dimensión | S-009 | **S-010** | Penaliza hoy |
+| Dimensión | S-013 | **S-015** | Penaliza hoy |
 |---|---|---|---|
 | D1 Alineación de Dominio | 100 | **100** | — |
-| D2 Integridad Arquitectónica | 100 | **100** | — |
+| D2 Integridad Arquitectónica | 100 | **85** | `H-042` (ALTA, −15) |
 | D3 Observabilidad y Recuperación | 100 | **100** | — |
 | D4 Fidelidad Documental | 100 | **100** | — |
 
-**D5**: `SIN_DATOS` **por muestra insuficiente**, no por ausencia de datos. `health_unstable: false`.
+**D5**: `SIN_DATOS` por muestra insuficiente — **3 ciclos frente a 20**. `health_unstable: false`.
 Alucinación y drift `NO_APLICA` (sistema determinista).
 
 ---
 
-## LO QUE CERRÓ ESTA CORRIDA
+## LOS CINCO CHECKPOINTS, EJECUTADOS
 
-**Ningún hallazgo nuevo. Un hallazgo reabierto, una limitación declarada y una deuda de registro.**
+Por primera vez desde S-005, los dos de delta sync corren **con una base con historia**, generada por
+`run-all.sh` en esta misma sesión:
 
-### H-035 — reabierta, y el motivo es el propio cierre
-
-Se cerró en S-009 diciendo que la guarda mira `src/api/src` y que ADMIN, BASE y CLIENT quedaban fuera **«escrito
-como pendiente, no dado por hecho»**. Eso era mejor que callarlo y **peor que medirlo**:
-
-| Servicio | Reservas a `localhost` |
+| Checkpoint | Resultado |
 |---|---|
-| **API** | **1** — `paypal.provider.ts:311`, que S-009 declaró limpio |
-| ADMIN | 0 |
-| **BASE** | **3** — dos en el controlador y **una en el proxy del BFF** |
-| **CLIENT** | **3** — dos en el controlador y una en el guard de sesión |
+| `audit:schema` (D2) | **OK** — las migraciones reproducen `schema.prisma` |
+| `audit:check` (D2) | **OK** — 0 avisos; la línea base está vacía a propósito |
+| `audit:observability` (D3) | **OK** — sin silencios nuevos · `trace_completeness = 100 %` |
+| `audit:domain` (D1.N1) | **14 de 14 reglas OK** · `rubric_compliance_score = 100` |
+| `audit:reliability` (D5) | `SIN_DATOS` — muestra insuficiente |
 
-**Seis, no cuatro.** Y la del API la ocultó **la propia guarda**: su lista de variables de conexión tenía seis
-nombres y `CLIENT_URL` no estaba. `E-038` había declarado esa debilidad con estas palabras —*«una variable de
-conexión nueva que nadie añada a esa lista no se vigilará»*— y **se cumplió en la corrida siguiente**. Declarar
-una debilidad no la cierra.
+**`cross_coherence_verified = sin_datos`, y eso NO es un aprobado.** 4 de 5 comprobaciones midieron y
+salieron OK; la quinta —«toda disputa cuelga de un pedido»— **no tenía filas que comparar**, porque la
+suite no abre ninguna disputa. El instrumento se niega a pronunciarse: es lo que PT-149 construyó.
 
-**Las dos caras son las del proxy del BFF:** sin `API_URL`, el sitio manda *todas* sus llamadas a su propio
-contenedor y **arranca `healthy` sin funcionar**.
+---
 
-Cerrada: `variableObligatoria()` **aborta nombrando la variable** —comprobado en vivo—, el API pasa a
-`clientOrigin()`, y la guarda cubre **los cuatro servicios** con un caso por servicio.
+## EL HALLAZGO
 
-### D5 — limitación declarada de v1.0
+### `H-042` — un webhook con firma fabricada obtuvo `SIGNATURE_OK` · **ALTA · ABIERTA**
 
-Cuatro corridas del checkpoint, el mismo resultado: `SIN_DATOS` por muestra insuficiente. Se declara en
-`F-1 § U-007` que **la fiabilidad operacional no está demostrada**, con su reapertura escrita: con volumen real
-de producción los 20 ciclos aparecen solos y la declaración caduca sin otra decisión.
+`QA-PP-15` falló con `HTTP 400` en **las tres corridas** de la suite. Reproducido a mano: con las cinco
+cabeceras presentes y la firma `ZmFsc2E=`, el log del API encadena
 
-**Lo que no dice:** que el sistema sea poco fiable. Dice que **no se puede afirmar que lo sea**.
+```
+Received PayPal webhook CHECKOUT.ORDER.APPROVED (WH-FALSO)
+Capturing PayPal order X                    ← ya está capturando
+PayPal respondio 404                        ← sólo falla porque el pedido no existe
+```
 
-### PT-187 — el registro decía «pendiente» de 102 cosas cerradas
+y la traza registra **`SIGNATURE_OK`**.
 
-`HISTORY.log` es append-only, así que la línea `Status:` es histórica: **102 entradas dicen
-`VALIDATION_PENDING` estando cerradas**. Costó tiempo real — se reportó **PT-147 como pendiente** llevando horas
-cerrado, y el humano lo señaló con razón. **El fichero lo decía, y el agente repitió el fichero en vez de
-medirlo.**
+**Lo único que detuvo el flujo fue un 404 ajeno**, no la comprobación que `RN-50` exige.
 
-Resuelto con un índice **generado** al final del propio fichero: añade, no reescribe. Reescribir las 102 líneas
-se leería mejor y borraría el momento en que se supo cada cosa.
+**Se deja ABIERTA a propósito.** `verifyWebhookSignature` sí se llama antes de capturar y sí consulta el
+endpoint de PayPal: lo que falta por medir es **por qué respondió `SUCCESS`**. Tres hipótesis sin
+separar —permisividad del sandbox, cuerpo mal formado, `PAYPAL_WEBHOOK_ID` que no corresponde—, y ninguna
+se cierra escribiendo código. Asignado a **`PT-234`** como INVESTIGATION.
 
-**Y su primera ejecución encontró un defecto de proceso del agente**, que es para lo que se escribió: cinco BUG
-—PT-182 … PT-186— escritos con `Status: DONE` **directamente**, cuando FDGE STATE 6 dice que *el agente no cierra
-bugs*. El VoBo estaba dado de antemano, así que el resultado era correcto; lo que faltaba era **la constancia**.
-Y un cierre sin constancia de quién lo autorizó **es indistinguible de uno que el agente se dio a sí mismo**.
-De ahí **RULE-37**.
+**No lo introdujo la tanda de hoy:** `git diff master -- src/api/src/modules/payments/` está vacío.
 
-### Tres veces más, mis propias guardas midieron otra cosa
+---
 
-Van cuatro en la jornada, y el patrón es siempre el mismo: **comprobar que exista una cadena en vez de una
-relación.** Hoy: un regex terminado en `$` con la bandera `m` —que casa fin de *línea*— cortaba cada bloque de
-VoBo en su encabezado, así que la guarda comprobaba títulos; y `SIN_DECLARAR` se trataba como «abierto», lo que
-acusaba a seis entradas anteriores al campo `Status:`. **Un desconocido no es un pendiente.**
+## LO QUE LA SUITE ENCONTRÓ Y 1.441 PRUEBAS UNITARIAS NO
 
-### Lo que cerraron las corridas anteriores, para referencia
+Dos **regresiones de la tanda `PT-204`…`PT-233`**, corregidas en el acto:
 
-**S-009**: H-035 (la reserva del cerrojo). **S-008**: H-034. **S-007**: H-032 y H-033. **S-006**: H-029, H-030,
-H-031. Evidencias `E-034` … `E-039`.
+1. **`{{ self.title() }}`** en el layout de BASE — sintaxis de **Jinja2**, que Nunjucks no implementa.
+   **500 en todas las páginas públicas.** Pasó `tsc`, ESLint y las 1.441 pruebas.
+2. **Desbordamiento de 4 px a 768 px**, reproducible **sólo en modo `headed`**: PT-226 añadió un tercer
+   enlace al menú y con la barra de desplazamiento la fila deja de caber. El umbral del menú móvil pasa
+   de 640 a 820 px, medido.
+
+Y **dos fallos de la propia suite**, que probaba una versión anterior del producto: no marcaba la casilla
+de consentimiento que `PT-219` hizo obligatoria, y por eso `bootstrap` daba 2/12 con todo lo demás
+`BLOCKED` por «login falló» — un síntoma que no se parece en nada a su causa.
+
+**Ninguna herramienta estática puede ver que una plantilla no renderiza.** Es `H-038` cobrado el mismo
+día en que se registró.
 
 ---
 
 ## COBERTURA DECLARADA — `[A8]`
 
-Sin cambios respecto a S-005. **Este delta sync no amplía cobertura: confirma correcciones.**
+| Dimensión | S-013 | **S-015** | Por qué |
+|---|---:|---:|---|
+| D1 Dominio | 50 % | **100 %** | 14 de 14 reglas sobre **salida generada en esta sesión**, no sobre datos preexistentes |
+| D2 Integridad | 100 % | **100 %** | Esquema verificado contra la base y contra el modelo; 0 vulnerabilidades |
+| D3 Observabilidad | 100 % | **100 %** | Silencios en línea base · `trace_completeness` 100 % sobre 2 ciclos reales |
+| D4 Documental | 100 % | **100 %** | 20 guardas de documentación en verde |
+| **D5 Fiabilidad** | 0 % | **0 %** | **3 ciclos frente a 20.** Sigue siendo lo único que impide `coverage = 100` |
 
-| Dimensión | Cobertura | Por qué |
-|---|---:|---|
-| D1 Dominio | **100 %** | 14 de 14 reglas medidas, las 14 cumplen |
-| D2 Integridad | 100 % | Esquema verificado en la base **y contra el modelo**; 0 vulnerabilidades |
-| D3 Observabilidad | 100 % | Silencios en línea base, `trace_completeness` 100 %, endpoints en vivo en los dos estados |
-| D4 Documental | 100 % | 135 pruebas en 12 guardas de documentación |
-| **D5 Fiabilidad** | **0 %** | **Limitación declarada de v1.0** (`F-1 § U-007`): 2 ciclos resueltos frente a 20, y cada uno exige aprobación manual en la pasarela |
-
-**D5 al 0 % sigue siendo la afirmación más importante de esta tabla.** No es que el sistema sea poco fiable:
-es que **no se puede afirmar que lo sea**. Subirlo exige volumen de ciclos de pago, no otra corrida igual.
-
-Suite completa en verde al cerrar: **973 pruebas / 120 suites**.
+Suite completa al cerrar: **1.441 pruebas / 161 suites** (API 1.140 · CLIENT 172 · CORE 93 · BASE 23 ·
+ADMIN 13). Suite de navegador: **209 de 210** comprobaciones, el único fallo es `QA-PP-15` = `H-042`.
 
 ---
 
 ## HALLAZGOS
 
-**Activos: 0.** **Cerrados: 35** — H-001 … H-035. **H-030 revisada**, no reabierta.
+**Activos: 1** (`H-042`). **Cerrados: 41** — `H-001` … `H-041`.
 
-Ninguno se cerró por inferencia: los técnicos, ejecutando; H-005, por decisión humana fechada y con la
-declaración de valor enmendada a la vez. Y cuando una parte de un cierre resultó falsa —H-030— **se anotó en su
-ficha en vez de reescribirla**: `[A6]`.
+`H-038`…`H-041`, registrados en `S-014`, recogen los 64 hallazgos de la auditoría de interfaz como cuatro
+familias —una por causa, no una por síntoma— y nacieron `CERRADA` por la tanda `PT-204`…`PT-233`.
 
 ---
 
@@ -201,24 +144,20 @@ ficha en vez de reescribirla**: `[A6]`.
 
 `VALIDADO` **11** · `FUERA_DE_ALCANCE_V1` **1** (`P-012 CfdiRecord`).
 
-`P-012` **no pasa a `VALIDADO`**: el producto no se genera, y marcarlo validado sería falso. Sale del
-inventario que v1.0 entrega, con su motivo escrito y su reapertura declarada — si v1.1 vuelve a prometer la
-factura, `P-012` vuelve y **H-005 se reabre con él**. `[A6]`: no se degrada ni se borra.
+`P-004 Payment` **conserva `VALIDADO`**: `H-042` es un defecto del camino de verificación, no de la
+salida del producto — los 3 ciclos medidos cuadran y ningún depósito se acreditó dos veces (`R-5.1c`).
+Se dice porque la tentación de degradarlo existe y sería inexacto.
 
 ---
 
 ## SIGUIENTE
 
-1. **Volumen de ciclos de pago.** Es lo único que sube D5 del 0 %, y con ello la Confianza por encima del
-   filo de 91. Hacen falta **20 ciclos resueltos**; hoy hay 2.
-2. **La decisión fiscal, cuando haya PAC.** Los tres modelos siguen medidos en
-   `evidence/PT-155/hallazgos.md`. La opción C es subconjunto de la B, y la B exige datos que **no se pueden
-   pedir retroactivamente**.
-3. **La pregunta que abrió H-035, aplicada al resto de las reglas:** ¿qué otra `RULE-NN` tiene guarda para la
-   parte fácil de medir y no para la que causó su incidente? Hoy ha dado dos hallazgos (H-035 y el alcance de su
-   propia guarda). No es buscar código sospechoso: es buscar **guardas que miran al lado del agujero**.
-4. **Y una que sale del PT-187:** la lista de variables de conexión de la guarda es su límite, y ya mordió una
-   vez. Cualquier variable nueva que apunte a un servicio hay que añadirla ahí — no hay nada que lo recuerde.
-4. **Y seguir mirando dónde el código promete algo.** Un nombre que dice «verifica», una respuesta que dice
-   «enviado», una variable que declara una espera, **una prueba que dice «no lanza»**. Ahí un defecto puede
-   vivir años sin que nada se ponga rojo — y una de esas cuatro formas era, hoy, una prueba nuestra.
+1. **`PT-234` — `H-042`.** Es el único hallazgo activo y está en el camino del dinero. Su Discovery tiene
+   que **separar las tres hipótesis midiendo**, no elegir una.
+2. **Volumen de ciclos de pago.** Único camino para sacar D5 del 0 % y la Confianza por encima de 95.
+   Hacen falta 20 ciclos resueltos; hoy hay 3.
+3. **Una disputa en la suite.** Es la única de las cinco coherencias inter-producto que no pudo medirse,
+   y basta con que una fase abra una.
+4. **Y la lección de hoy, aplicada:** la suite de navegador encontró en una corrida lo que 1.441 pruebas
+   unitarias no ven. **Ejecutarla no es opcional antes de emitir un certificado** — es la diferencia
+   entre medir el producto y medir sus piezas.

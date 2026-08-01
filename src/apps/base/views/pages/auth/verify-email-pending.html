@@ -1,6 +1,10 @@
 {% extends "layouts/base.html" %}
 {% block title %}Revisa tu correo — IronLoot{% endblock %}
 
+{% block scripts %}
+<script src="/js/pages/pages-auth-resend.js" defer></script>
+{% endblock %}
+
 {% block content %}
 <div class="auth-wrapper">
   <div class="auth-card">
@@ -23,6 +27,19 @@
       <p>Te enviamos un enlace de verificación. Haz clic en él para activar tu cuenta.</p>
       <p class="pie-formulario">¿No lo ves? Revisa la carpeta de spam. El enlace expira en 24 horas.</p>
     </div>
+
+    {# PT-214 (H-UI-025) — Esta pantalla enunciaba el modo de fallo —«¿No lo ves? Revisa la carpeta de
+       spam»— y ofrecia UN solo boton: volver al login. Con RN-03/BC-06 haciendo la verificacion
+       obligatoria, una cuenta cuyo correo no llegara quedaba inutilizable, sin remedio, en su primer
+       minuto de vida. Y `FAQ-y-Mensajes §2` prescribe exactamente esto: «reenvia verificacion». #}
+    <form id="resendForm" class="auth-form">
+      <div class="form-group">
+        <label for="email">¿No te llegó? Escribe tu correo y te lo enviamos de nuevo</label>
+        <input class="form-control" type="email" id="email" name="email" required autocomplete="email">
+      </div>
+      <button type="submit" class="btn btn-outline btn-full">Reenviar enlace</button>
+      <div id="resendMsg" class="alert oculto mensaje-accion" role="status" aria-live="polite"></div>
+    </form>
 
     <div class="auth-footer">
       <a href="/auth/login" class="btn btn-ghost btn-full">Volver a inicio de sesión</a>

@@ -704,7 +704,26 @@ export class WalletService {
     return this.prisma.$transaction(execute);
   }
 
-  async getHistory(userId: string, limit = 10, types?: LedgerType[]): Promise<Ledger[]> {
+  /**
+   * PT-229 (R-048 · H-UI-044) — El historial pagina de verdad, y devuelve el total.
+   *
+   * El filtro por `types` **ya estaba aqui** desde siempre; lo descartaba el controlador. Y la
+   * paginacion no existia: el portal llamaba con `?page=N`, el parametro se ignoraba y la lista se
+   * truncaba en silencio a los diez ultimos movimientos.
+   *
+   * En un sistema cuyo valor declarado es la trazabilidad financiera (`RN-26`, ledger inmutable), que
+   * el usuario no pueda auditar sus propios movimientos antiguos es un defecto del producto, no un
+   * detalle de interfaz.
+   *
+   * Devuelve tambien `total` porque sin el la interfaz no puede dibujar paginacion sin adivinar — que
+   * es lo que hacia el catalogo con su heuristica `length >= 12` (H-UI-043).
+   */
+  async getHistory(
+    userId: string,
+    limit = 10,
+    types?: LedgerType[],
+    page = 1,
+  ): Promise<{ items: Ledger[]; total: number; page: number; limit: number }> {
     const wallet = await this.getWallet(userId);
     const whereClause: any = { walletId: wallet.id };
 
@@ -712,11 +731,20 @@ export class WalletService {
       whereClause.type = { in: types };
     }
 
-    return this.prisma.ledger.findMany({
-      where: whereClause,
-      orderBy: { createdAt: 'desc' },
-      take: limit,
-    });
+    const tamano = Math.max(1, Number(limit) || 10);
+    const pagina = Math.max(1, Number(page) || 1);
+
+    const [items, total] = await Promise.all([
+      this.prisma.ledger.findMany({
+        where: whereClause,
+        orderBy: { createdAt: 'desc' },
+        skip: (pagina - 1) * tamano,
+        take: tamano,
+      }),
+      this.prisma.ledger.count({ where: whereClause }),
+    ]);
+
+    return { items, total, page: pagina, limit: tamano };
   }
 
   /**

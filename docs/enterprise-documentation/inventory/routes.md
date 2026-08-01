@@ -28,6 +28,9 @@ All frontend routes across BASE, CLIENT, and ADMIN services.
 | GET | `/auth/verify-email-pending` | `pages/auth/verify-email-pending.html` | Public | — |
 | GET | `/about` | `pages/static/about.html` | Public | — |
 | GET | `/privacy` | `pages/static/privacy.html` | Public | — |
+| GET | `/help` | `pages/static/help.html` | Public | Centro de ayuda (PT-226): publica el FAQ que ya existía escrito |
+| GET | `/cookies` | `pages/static/cookies.html` | Public | Política de cookies (PT-219) |
+| GET | `/sitemap.xml` | — (XML generado) | Public | Sitemap derivado del catálogo real (PT-223) |
 | GET | `/terms` | — | Public | 301 → /static/terms |
 | GET | `/static/terms` | `pages/static/terms.html` | Public | — |
 | POST | `/api/*` | — | BFF proxy | Proxied to API with cookie token |
@@ -44,13 +47,17 @@ All routes protected by `ClientAuthGuard` (redirects to BASE `/auth/login` if un
 |---|---|---|---|
 | GET | `/dashboard` | `pages/dashboard.html` | `/users/me`, `/wallet`, `/bids/my?limit=5`, `/auctions?status=ACTIVE&limit=6` |
 | GET | `/profile` | `pages/profile.html` | `/users/me` |
-| GET | `/settings` | `pages/settings.html` | `/users/settings` |
+| GET | `/settings` | `pages/settings.html` | `/users/me/settings` (corregido en PT-132) |
+| GET | `/security` | `pages/security.html` | `/users/me` — contraseña y 2FA (PT-227) |
 | GET | `/my-bids` | `pages/bids/my.html` | `/bids/my?page=N` |
 | GET | `/auctions/won-auctions` | `pages/won-auctions.html` | `/orders?role=buyer` |
 | GET | `/auctions/watchlist` | `pages/watchlist.html` | `/watchlist` |
 | GET | `/wallet` | `pages/wallet.html` | `/wallet` |
 | GET | `/wallet/deposit` | `pages/wallet/deposit.html` | — |
-| GET | `/wallet/withdraw` | `pages/wallet/withdraw.html` | — |
+| GET | `/wallet/withdraw` | redirección 301 → `/wallet/withdrawals` (PT-216) | — |
+| GET | `/wallet/withdrawals` | `pages/wallet/withdrawals.html` | `/wallet/withdrawals` + `/wallet/payment-methods` + `/kyc/me` + `/wallet/balance` |
+| GET | `/wallet/payment-methods` | `pages/wallet/payment-methods.html` | `/wallet/payment-methods` |
+| GET | `/seller/kyc` | `pages/seller/kyc.html` | `/kyc/me` |
 | GET | `/wallet/history` | `pages/wallet/history.html` | `/wallet/history?page=N` |
 | GET | `/payments` | `pages/payments.html` | `/wallet/history?types=DEBIT_ORDER,CREDIT_SALE` |
 | GET | `/orders` | `pages/orders/list.html` | `/orders?page=N` |
@@ -100,6 +107,7 @@ Auth: session-based (`req.session.isAdmin`). All routes protected by `AdminAuthG
 | GET | `/seo` | SEO config | SEO metadata |
 | GET | `/cms` | CMS content | Content management |
 | GET | `/refunds` | Refunds list | Refund management |
+| GET | `/withdrawals` | Cola de retiros (PT-216) | Aprobar, rechazar y marcar pagado (RN-66) |
 | GET | `/disputes` | Disputes list | Dispute management |
 | GET | `/commissions` | Commission config | Commission management |
 | GET | `/configuration` | System config | Runtime configuration |
@@ -113,6 +121,9 @@ Source: `src/admin/src/app.module.ts` (18 admin modules)
 | Sitio | Ruta | Qué es |
 |---|---|---|
 | BASE | `/contact` | Página de contacto pública. |
+| BASE | `/help` | Centro de ayuda: FAQ, tarifas y estados (PT-226). |
+| BASE | `/cookies` | Qué cookies instala el sistema y para qué (PT-219). |
+| BASE | `/sitemap.xml` | Sitemap generado desde el catálogo, con `slug` (PT-223). |
 | CLIENT | `/wallet/deposit/return` | **La ruta canónica de retorno de TODAS las pasarelas** (ADR-042). Antes cada proveedor volvía a una ruta distinta y **ninguna existía**, así que un pago real acababa en 404 después de haber cobrado. El `status` que llega por la URL **no es fuente de verdad** —lo escribe el navegador—: la página pregunta a `GET /payments/status/:reference` (ADR-043). Un ciclo abierto se informa **pendiente**, jamás fallido: efectivo y SPEI tardan horas, y decir «falló» provoca un segundo pago. |
 
 Que la ruta de retorno de los pagos no estuviera en el inventario de rutas es exactamente la clase de omisión
@@ -193,6 +204,10 @@ administrador** (`AdminDualAuthGuard`); no se repite en cada fila.
 | GET | `/refunds` | `modules/refunds/refunds.controller.ts` |
 | POST | `/refunds/:id/status` | `modules/refunds/refunds.controller.ts` |
 | POST | `/refunds/create` | `modules/refunds/refunds.controller.ts` |
+| GET | `/withdrawals` | `modules/withdrawals/withdrawals.controller.ts` |
+| POST | `/withdrawals/:id/approve` | `modules/withdrawals/withdrawals.controller.ts` |
+| POST | `/withdrawals/:id/reject` | `modules/withdrawals/withdrawals.controller.ts` |
+| POST | `/withdrawals/:id/mark-paid` | `modules/withdrawals/withdrawals.controller.ts` |
 | GET | `/reports` | `modules/reports/reports.controller.ts` |
 | GET | `/reports/download/:type` | `modules/reports/reports.controller.ts` |
 | GET | `/seo` | `modules/seo/seo.controller.ts` |

@@ -1267,6 +1267,35 @@
       "findings_new": [],
       "findings_active": 0,
       "notes": "Sync corto: PT-203 amplio RULE-31 y con ello toco 11-Conventions.md, del alcance auditable, caducando S-012 en el acto de reforzar el contrato. Cinco checkpoints re-ejecutados, cero hallazgos nuevos. evidence_validity se deja en 95 en vez de subirlo por deduccion: la proxima emision que lo mida lo movera."
+    },
+    {
+      "session": "S-015",
+      "date": "2026-07-31",
+      "type": "delta_sync",
+      "health": 95.5,
+      "risk": 32,
+      "confidence": 95.0,
+      "confidence_breakdown": {
+        "coverage": 90,
+        "freshness": 100,
+        "evidence_validity": 95,
+        "autonomy": 100
+      },
+      "class": "A",
+      "dimensions": {
+        "D1": 100,
+        "D2": 85,
+        "D3": 100,
+        "D4": 100
+      },
+      "freshness": "FRESH",
+      "commits_since_audit": 0,
+      "coverage": "D1 100% (14/14 sobre salida real de la sesion) · D2 100% · D3 100% · D4 100% · D5 0% (3 de 20 ciclos)",
+      "findings_new": [
+        "H-042"
+      ],
+      "findings_active": 1,
+      "notes": "Primer delta sync con base CON HISTORIA desde S-005: run-all.sh la genero en la misma sesion, y por eso D1 sube del 50% al 100% de cobertura. Health BAJA de 100 a 95.5 por H-042 (ALTA, activa): un webhook de PayPal con firma fabricada obtuvo SIGNATURE_OK y llego a intentar la captura; solo lo detuvo un 404 de PayPal. Se deja ABIERTA y se asigna a PT-234 como INVESTIGATION en vez de parchear a ciegas el camino del dinero. La suite de navegador encontro ademas dos regresiones de la tanda PT-204..PT-233 que 1.441 pruebas unitarias, tsc y ESLint no vieron: sintaxis de Jinja2 en una plantilla Nunjucks (500 en TODAS las paginas publicas) y un desbordamiento de 4px a 768px visible solo en modo headed."
     }
   ]
 }

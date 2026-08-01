@@ -30,8 +30,19 @@
         <label for="password">Contraseña</label>
         <input class="form-control" type="password" id="password" name="password" required autocomplete="current-password">
       </div>
+      {# PT-227 (H-UI-022) — El segundo paso. Con 2FA activado, el API lanza «2FA code required» y este
+         formulario NO tenia donde escribirlo: el JS pintaba ese texto como error y no habia salida.
+         Quien activara 2FA quedaba **bloqueado de forma permanente**.
+         Nace oculto y lo muestra el JS cuando el API lo pide: enseñarlo siempre confundiria al 99 % de
+         los usuarios que no tienen 2FA. #}
+      <div class="form-group oculto" id="grupo2fa">
+        <label for="twoFactorCode">Código de verificación</label>
+        <input class="form-control" type="text" id="twoFactorCode" name="twoFactorCode"
+               inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+               placeholder="6 dígitos de tu app">
+      </div>
       <button type="submit" class="btn btn-primary btn-full btn-lg">Entrar</button>
-      <div id="loginError" class="alert alert-error oculto mensaje-accion"></div>
+      <div id="loginError" class="alert alert-error oculto mensaje-accion" role="status" aria-live="polite"></div>
     </form>
 
     <div class="auth-footer">

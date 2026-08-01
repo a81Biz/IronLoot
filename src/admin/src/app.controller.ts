@@ -11,11 +11,12 @@ import {
 } from "@nestjs/common";
 import { AppService } from "./app.service";
 import { AdminAuthGuard } from "./auth/auth.guard";
+// PT-233 (H-UI-063) — Sin reserva: RULE-17 tambien en ADMIN.
+import { variableObligatoria } from "./common/config/variable-obligatoria";
 
 @Controller()
 export class AppController {
-  private readonly apiUrl =
-    process.env.ADMIN_API_URL || "http://localhost:3000";
+  private readonly apiUrl = variableObligatoria("ADMIN_API_URL");
 
   constructor(private readonly appService: AppService) {}
 

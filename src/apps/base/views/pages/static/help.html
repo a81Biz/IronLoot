@@ -1,0 +1,110 @@
+{% extends "layouts/base.html" %}
+{% block title %}Centro de ayuda — IronLoot{% endblock %}
+{% block meta_description %}Cómo funcionan las subastas, el monedero, los envíos, las disputas y las comisiones de IronLoot.{% endblock %}
+
+{# PT-226 (R-045 · ausencias A-10/A-11) — **No existía ninguna vía de autoservicio de ayuda.**
+
+   El pie tenía una columna «Soporte» sin ningún recurso de soporte, y «Cómo funciona» y «Acerca de»
+   apuntaban al MISMO destino. `Index.png §10` y `list.png §9` especifican Centro de ayuda, Guías, Blog
+   y Preguntas frecuentes.
+
+   Lo que se publica aquí NO es contenido inventado: es `docs-v2/7-ux/FAQ-y-Mensajes.md`, que estaba
+   escrito, mantenido y **sin publicar en ninguna parte**. Cada respuesta cita la regla que la sostiene,
+   para que no vuelva a divergir del sistema como divergió la portada (H-UI-028). #}
+
+{% block content %}
+<div class="page-header">
+  <h1>Centro de ayuda</h1>
+</div>
+
+<div class="prose ancho-720">
+
+  <h2 id="faq">Preguntas frecuentes</h2>
+
+  <h3>¿Por qué no puedo iniciar sesión tras registrarme?</h3>
+  <p>
+    Hay que <strong>verificar el correo</strong> primero: el enlace llega al registrarte y caduca en 24
+    horas. Si no llegó, puedes <a href="/auth/verify-email-pending">pedir que te lo reenviemos</a>. Las
+    cuentas suspendidas o baneadas no pueden acceder.
+  </p>
+
+  <h3>¿Por qué se retienen fondos al pujar?</h3>
+  <p>
+    Al pujar se <strong>retiene</strong> el importe de tu monedero, para que nadie puje con dinero que no
+    tiene. Si alguien te supera, se <strong>libera automáticamente</strong> y vuelve a estar disponible.
+    Si ganas, se cobra al cerrar la subasta y se genera la orden.
+  </p>
+
+  <h3>¿Qué es el «soft-close»?</h3>
+  <p>
+    Si alguien puja en los últimos segundos, la subasta se <strong>extiende</strong> un poco para darte
+    oportunidad de responder. Es lo que evita que se gane una subasta pujando en el último instante.
+  </p>
+
+  <h3>¿Cuándo cobro lo que vendí?</h3>
+  <p>
+    El neto de la venta —importe menos comisión— entra a tu monedero como <strong>saldo pendiente de
+    liquidar</strong>, no como disponible. Pasa a disponible <strong>72 horas después de que el comprador
+    confirme que recibió</strong> el artículo, o al vencer la ventana de disputa de 14 días, lo que
+    ocurra antes. Puedes verlo en <a href="/auth/login">tu monedero</a>.
+  </p>
+
+  <h3>¿Qué necesito para retirar dinero?</h3>
+  <p>Tres cosas, en este orden:</p>
+  <ol>
+    <li><strong>Identidad verificada (KYC)</strong>: envías tus documentos y el equipo los aprueba.</li>
+    <li><strong>Una cuenta bancaria registrada</strong>: CLABE de 18 dígitos a tu nombre.</li>
+    <li><strong>Esa cuenta verificada</strong>: te enviamos un importe pequeño con un código que tienes
+        que confirmar. Sirve para comprobar que la cuenta es tuya de verdad.</li>
+  </ol>
+  <p>
+    El retiro lo aprueba un administrador y la transferencia es SPEI. El límite es de
+    <strong>5.000 MXN al día</strong>. Si se rechaza, el importe se te reintegra.
+  </p>
+
+  <h3>¿Cuánto tiempo tengo para abrir una disputa?</h3>
+  <p>
+    <strong>14 días</strong> desde la entrega. El equipo media y resuelve; si se resuelve a tu favor, el
+    reembolso entra en tu monedero en ese mismo momento.
+  </p>
+
+  <h3>¿Me pueden facturar (CFDI)?</h3>
+  <p>
+    <strong>Todavía no.</strong> La facturación fiscal no está disponible en esta versión. Se dice aquí
+    en vez de dejar que lo descubras al pedirla.
+  </p>
+
+  <h2 id="comisiones">Tarifas y comisiones</h2>
+  <p>
+    IronLoot cobra una <strong>comisión al vendedor</strong> sobre cada venta completada. El comprador no
+    paga comisión. La tasa puede ser distinta por vendedor, y la que se te aplica aparece en el detalle
+    de cada orden y en el desglose de tu venta.
+  </p>
+  <p>
+    Depositar y retirar no tienen coste por parte de IronLoot; tu banco o la pasarela de pago pueden
+    aplicar los suyos.
+  </p>
+
+  <h2 id="estados">Estados que verás</h2>
+  <table class="tabla-ayuda">
+    <thead><tr><th>Dónde</th><th>Qué significa</th></tr></thead>
+    <tbody>
+      <tr><td>Subasta: Borrador</td><td>La creaste y aún no la has publicado. Sólo la ves tú.</td></tr>
+      <tr><td>Subasta: Publicada</td><td>Visible y lista para recibir pujas.</td></tr>
+      <tr><td>Subasta: Activa</td><td>Ya tiene pujas y el reloj corre.</td></tr>
+      <tr><td>Orden: Pagada</td><td>Ganaste y se cobró. El vendedor tiene que enviar.</td></tr>
+      <tr><td>Orden: Enviada</td><td>El vendedor declaró el envío. Cuando lo recibas, confírmalo.</td></tr>
+      <tr><td>Orden: Entregada</td><td>Confirmaste la recepción. Empieza el plazo de pago al vendedor.</td></tr>
+      <tr><td>Retiro: Solicitado</td><td>El importe ya está reservado de tu disponible.</td></tr>
+      <tr><td>Retiro: Pagado</td><td>La transferencia SPEI se ejecutó.</td></tr>
+    </tbody>
+  </table>
+
+  <h2 id="contacto">¿No encuentras tu respuesta?</h2>
+  <p>
+    Escríbenos a <a href="mailto:soporte@ironloot.com">soporte@ironloot.com</a>. Si tu pregunta es sobre
+    vender, <a href="mailto:vendedores@ironloot.com">vendedores@ironloot.com</a>. Respondemos en 24–48
+    horas hábiles. Más vías en <a href="/contact">Contacto</a>.
+  </p>
+</div>
+{% endblock %}
