@@ -9,12 +9,12 @@ está en [`HISTORY.log`](HISTORY.log), que es append-only y la tiene íntegra co
 **Pruebas**: API **1.140** (135 suites) · CLIENT **172** (14) · BASE **23** (4) · ADMIN **13** (2).
 *(Medido el 2026-07-31 al cerrar la tanda. `tsc --noEmit` limpio en los cuatro servicios.)*
 
-**Reglas duras**: **40** `RULE-NN` (RULE-39…42 las añade la tanda FPGE-004). **Guardas de documentación**: **20** suites.
+**Reglas duras**: **40** `RULE-NN` (RULE-39…42 las añade la tanda FPGE-004). **Guardas de documentación**: **21** suites.
 
 **Hallazgos PTSA**: **42** registrados, **1** activo (`H-042`). **Deuda técnica**: **5** abiertas de **22** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **188 encabezados · 0 realmente abiertos.**
+`npm run indice:estado`. **189 encabezados · 0 realmente abiertos.**
 
 > **Aviso para quien regenere ese índice.** `HISTORY.log` tiene que estar en **LF**. Al anotar esta tanda
 > lo convertí sin querer a CRLF y `indice-de-estado.ts` dejó de reconocer **las 166 entradas** —en
@@ -52,7 +52,7 @@ checkpoints de delta sync necesitan una base con historia y la base está vacía
 
 ---
 
-## Entregado: 33 PT · 64 de 64 hallazgos
+## Entregado: 34 PT · 64 de 64 hallazgos
 
 | PT | Qué cierra | Hallazgos |
 |---|---|---|
@@ -89,6 +89,7 @@ checkpoints de delta sync necesitan una base con historia y la base está vacía
 | **PT-235** | El punto ciego de la guarda de PT-213: las claves nombradas | (cobertura) |
 | **PT-236** | 8 citas rotas invisibles + 13 servicios de ADMIN sin inventariar | (cobertura) |
 | **PT-237** | La facturacion pedia elegir un PAC que no se podia elegir | `TD-001` |
+| **PT-238** | `TS18003` permanente en la raiz: el tsconfig que existe para `ts-node` | (ruido) |
 
 **Dos hallazgos nuevos aparecieron durante la tanda** y tienen PT propio, no se colaron en otro:
 

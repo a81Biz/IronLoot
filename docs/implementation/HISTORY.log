@@ -4957,6 +4957,46 @@ el rechazo del API redirige con el motivo—, no ejerciendolo. La suite de naveg
 contratado y una decision fiscal. Lo que cambio es que el sistema ya lo dice en vez de ofrecer un
 formulario que sugiere lo contrario.
 
+## PT-238 — BUG: TS18003 permanente en el tsconfig de la raiz
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-238-tsconfig-raiz-sin-entradas
+Objective: quitar un error rojo permanente en la raiz sin cambiar lo que el fichero hace.
+Root cause: el `tsconfig.json` de la raiz NO compila nada y es a proposito — existe por `ts-node`,
+  porque `npm run indice:estado` se ejecuta desde la raiz y ts-node busca ahi sus opciones (PT-200 lo
+  restituyo tras un borrado accidental). Su `include: []` tambien es deliberado: si reclamara ficheros
+  comprobaria el monorepo entero pisando a los cuatro proyectos que si compilan. TypeScript emite
+  TS18003 cuando un config no tiene entradas Y no declara `files` ni `references`: le faltaba la forma
+  de decir «se lo que hago». Ni el mensaje ni el diseño estaban mal.
+Solution: `references: []`. Medido con tsc, no de memoria: `include: []` da TS18003, `files: []` da
+  TS18002 —cambia un error por otro—, y `include: []` + `references: []` no da error. El motivo queda
+  escrito en el propio fichero, no solo en este registro.
+Modified files: tsconfig.json, src/api/test/unit/documentacion/tsconfig-de-la-raiz.spec.ts (nuevo),
+  docs/implementation/HANDOFF.md
+Evidence: docs/implementation/evidence/PT-238/
+Delta (real vs planned): el riesgo real no era el error sino romper `indice:estado`, que es la razon de
+  que el fichero exista; se verifico ejecutandolo. Y se comprobo —no se supuso— que nada del repositorio
+  parsea ese tsconfig con JSON.parse antes de escribirle comentarios: los docker-compose montan solo los
+  de cada servicio.
+PTSA reference: ninguna. Es ruido de editor, no un defecto de producto. Pero un aviso constante que no
+  significa nada enseña a ignorar los avisos — la familia de H-014, H-015 y H-017.
+
+## CIERRE CON VoBo HUMANO — PT-238
+Date: 2026-07-31
+Status: registro
+Objective: registrar el VoBo humano sobre PT-238, que es un BUG y por RULE-37 no puede cerrarse sin un
+  bloque que lo nombre.
+
+Autorizacion del 2026-07-31: «arreglalo», sobre la explicacion previa que ya nombraba la causa medida y
+la correccion propuesta.
+
+**Verificado ejecutando:** `tsc -p tsconfig.json` sin salida, `npm run indice:estado` arrancando con 188
+encabezados, `npm run typecheck` limpio en los cuatro subproyectos, y 1.494 pruebas en las cinco suites.
+
+**NO verificado, y se dice:** que el editor deje de mostrarlo. Depende del servidor de TypeScript de
+VS Code, que cachea la configuracion; puede requerir recargar la ventana. Lo que si esta verificado es
+que `tsc` —la misma herramienta que alimenta ese diagnostico— ya no lo emite.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -4968,7 +5008,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**188** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**189** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -5160,3 +5200,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-235 | 4844 | `DONE` | **DONE** | — |
 | PT-236 | 4864 | `DONE` | **DONE** | — |
 | PT-237 | 4893 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4934 |
+| PT-238 | 4960 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4984 |
