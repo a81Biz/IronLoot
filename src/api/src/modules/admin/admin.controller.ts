@@ -373,7 +373,18 @@ export class AdminController {
   @Put('configuration/cfdi')
   @ApiOperation({ summary: 'Update CFDI configuration' })
   updateCfdiConfig(
-    @Body() body: { rfcEmisor?: string; pacUrl?: string; pacApiKey?: string; adminUser?: string },
+    // PT-237 — `enabled` y `pacProvider` faltaban en este tipo aunque ADMIN los enviaba: viajaban
+    // por el `...data` sin estar declarados. Un cuerpo que no nombra lo que recibe no se puede leer
+    // para saber que acepta el endpoint.
+    @Body()
+    body: {
+      enabled?: boolean;
+      rfcEmisor?: string;
+      pacProvider?: string;
+      pacUrl?: string;
+      pacApiKey?: string;
+      adminUser?: string;
+    },
   ) {
     const { adminUser, ...data } = body;
     return this.adminService.updateCfdiConfig(data, adminUser ?? 'admin');

@@ -4890,6 +4890,73 @@ Delta (real vs planned): no estaba planificado. Salio de comprobar si los invent
 PTSA reference: D4 (fidelidad documental). No abre hallazgo nuevo: es la misma familia que H-016, con
   su leccion ya escrita — un documento con citas rotas se lee con confianza y es falso.
 
+## PT-237 — BUG: la facturacion pedia elegir un PAC que no se podia elegir
+Date: 2026-07-31
+Status: VALIDATION_PENDING
+Branch: fix/PT-237-seleccion-de-pac
+Objective: que el sistema no pida una decision que no puede recibir, ni escriba un estado que nadie
+  avanza, sin fingir una integracion que sigue siendo una dependencia externa.
+Root cause: la interfaz de configuracion del CFDI se construyo como si la integracion existiera.
+  (1) `generate()` escribia `status: PENDING` y ACTO SEGUIDO lanzaba. Medido: CERO puntos del sistema
+      leen un `cfdiRecord` en PENDING para avanzarlo — solo se CUENTAN, en admin.service.ts:270. Cada
+      intento dejaba una fila muerta y el contador de «CFDI pendientes» del panel solo podia crecer.
+  (2) El mensaje —y el texto de la propia pantalla— decian «implementa ICfdiPacProvider en
+      @ironloot/core integrations», y `integrations/` se retiro ENTERO en PT-193 (TD-024) por no tener
+      implementadores. La instruccion mandaba a un sitio que no existe: H-016 dentro del codigo que se
+      ejecuta, leida por quien esta intentando facturar.
+  (3) `pacUrl` era un input de texto libre: el sistema aceptaba una decision que no sabia interpretar,
+      no validaba que el PAC fuera conocido y no tenia adaptador para ninguno.
+Solution: `CfdiPacRegistry` con all()/available()/resolve(), mismo patron que PaymentProviderRegistry —
+  hoy CERO adaptadores registrados, y esa cifra es la respuesta honesta. `CFDI_PAC_PROVIDER` es la
+  eleccion y se valida contra el registro. Activar exige un PAC disponible; apagar siempre se puede.
+  `generate()` deja `ERROR` con el motivo, nunca `PENDING`. Los mensajes nombran lo que existe. La
+  pantalla ofrece un `select` y explica por que esta vacio, citando TD-001. Y el POST de ADMIN dejo de
+  redirigir con `saved=1` cuando el API rechaza: anunciaba «Guardado» tras un fallo.
+Modified files: src/api/src/modules/cfdi/cfdi-pac.registry.ts (nuevo),
+  src/api/src/modules/cfdi/cfdi.service.ts, src/api/src/modules/cfdi/cfdi.module.ts,
+  src/api/src/modules/admin/admin.controller.ts,
+  src/admin/src/modules/configuration/configuration.controller.ts,
+  src/admin/views/pages/cfdi-config.html, src/api/.env.example,
+  docs/enterprise-documentation/10-Technical-Debt.md,
+  docs-v2/4-ingenieria/Integraciones-y-Configuracion.md,
+  src/api/test/unit/cfdi/seleccion-de-pac.spec.ts (nuevo), src/api/test/unit/cfdi/cfdi.service.spec.ts
+Evidence: docs/implementation/evidence/PT-237/
+Delta (real vs planned): medido antes de tocar nada, `cfdi_records` tenia CERO filas: el daño era
+  LATENTE, no realizado, porque la facturacion esta apagada por defecto — que es donde estaba el
+  peligro, igual que H-029. Dos guardas me acusaron durante el trabajo y las dos tenian razon: RULE-17
+  (CFDI_PAC_PROVIDER leida sin declarar — es clave de system_config, y la regla no distingue de donde se
+  lee) y RULE-31 (evidence/PT-237 citada antes de existir). Ninguna se silencio. Lateral ya resuelto:
+  `src/packages/core/dist/integrations/` seguia en disco con la interfaz retirada — tsc no borra la
+  salida de fuentes eliminadas—; esta en .gitignore, asi que es staleness de maquina, no del repositorio.
+PTSA reference: enmienda TD-001, que sigue CERRADA. No se integro ningun PAC y no se reabre por ello:
+  sigue siendo un tercero contratado y una decision fiscal. Lo que cambio es que el sistema YA LO DICE.
+
+## CIERRE CON VoBo HUMANO — PT-237
+Date: 2026-07-31
+Status: registro
+Objective: registrar el VoBo humano sobre PT-237, que es un BUG y por RULE-37 no puede cerrarse sin un
+  bloque que lo nombre.
+
+Autorizacion del 2026-07-31: «revisa que no falte nada. solo puede faltar lo de la seleccion del
+proveedor de facturas, trabaja bajo el marco de trabajo establecido para cada cosa que falte y trabaja
+hasta que no falte nada.» Es continuacion de la autorizacion en bloque de la misma fecha, transcrita
+literal en `changes/PT-204-232-tanda-fpge-004/design.md §1`. Cubre ACK de STATE 1, STATE 2, Proposal Gate
+y VoBo de STATE 6.
+
+**Verificado ejecutando:** API 144 suites / 1.189 pruebas, `tsc --noEmit` limpio en API y ADMIN.
+`seleccion-de-pac.spec.ts` con 9 casos, RED documentado y control en las dos direcciones.
+
+**Verificado sobre la base real, antes de tocar nada:** `cfdi_records` tenia CERO filas, y CERO puntos
+del sistema leen un `cfdiRecord` en PENDING para avanzarlo.
+
+**NO verificado, y se dice:** el comportamiento de la pantalla en un navegador. El formulario se
+comprobo por su contrato —la vista recibe `proveedores` y `hayProveedores`, el POST mapea `pacProvider`,
+el rechazo del API redirige con el motivo—, no ejerciendolo. La suite de navegador no cubre ADMIN.
+
+**Y NO se integro ningun PAC.** TD-001 sigue cerrada como limitacion declarada: exige un tercero
+contratado y una decision fiscal. Lo que cambio es que el sistema ya lo dice en vez de ofrecer un
+formulario que sugiere lo contrario.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -4901,7 +4968,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**187** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**188** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -5092,3 +5159,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-232 | 4802 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4820 |
 | PT-235 | 4844 | `DONE` | **DONE** | — |
 | PT-236 | 4864 | `DONE` | **DONE** | — |
+| PT-237 | 4893 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4934 |

@@ -45,12 +45,18 @@ export class ConfigurationController {
 
   @Get("configuration/cfdi")
   @UseGuards(AdminAuthGuard)
-  async cfdiConfig(@Req() req, @Res() res, @Query("saved") saved?: string) {
+  async cfdiConfig(
+    @Req() req,
+    @Res() res,
+    @Query("saved") saved?: string,
+    @Query("error") error?: string,
+  ) {
     const config = await this.configurationService.getCfdiConfig();
     return res.render("pages/cfdi-config", {
       title: "Configuración CFDI",
       config,
       saved: saved === "1",
+      error,
       adminUser: req.session.adminUser,
       activePage: "cfdi",
     });
@@ -59,15 +65,32 @@ export class ConfigurationController {
   @Post("configuration/cfdi")
   @UseGuards(AdminAuthGuard)
   async saveCfdiConfig(@Body() body: any, @Req() req, @Res() res) {
-    await this.configurationService.updateCfdiConfig(
-      {
-        enabled: body.enabled === "on" || body.enabled === "true",
-        rfcEmisor: body.rfcEmisor,
-        pacUrl: body.pacUrl,
-        pacApiKey: body.pacApiKey || undefined,
-      },
-      req.session.adminUser,
-    );
+    // PT-237 — **Si el API rechaza, la pantalla lo dice; no redirige con `saved=1`.**
+    //
+    // Antes redirigia siempre, asi que un rechazo del API —hoy los hay: activar sin PAC integrado, o
+    // elegir un PAC que no existe— se leia como «Guardado». Es `RULE-41`: una accion anuncia su
+    // resultado, y el peor resultado posible es anunciar el contrario del que ocurrio.
+    try {
+      await this.configurationService.updateCfdiConfig(
+        {
+          enabled: body.enabled === "on" || body.enabled === "true",
+          rfcEmisor: body.rfcEmisor,
+          pacProvider: body.pacProvider,
+          pacUrl: body.pacUrl,
+          pacApiKey: body.pacApiKey || undefined,
+        },
+        req.session.adminUser,
+      );
+    } catch (e) {
+      const motivo =
+        (e as { response?: { data?: { message?: string } }; message?: string })
+          ?.response?.data?.message ??
+        (e as Error)?.message ??
+        "No se pudo guardar la configuracion";
+      return res.redirect(
+        `/configuration/cfdi?error=${encodeURIComponent(motivo)}`,
+      );
+    }
     return res.redirect("/configuration/cfdi?saved=1");
   }
 

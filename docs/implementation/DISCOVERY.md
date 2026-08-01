@@ -5602,3 +5602,81 @@ ND-002, *«una afirmación de ausencia envejece de la peor manera»*.
 Root Cause **100 %** (medido, no inferido) · Architecture **100 %** · Solution **95 %** — la única
 decisión abierta es cuánto de `HANDOFF` puede vigilarse sin producir falsos positivos, y se resuelve en el
 plan declarando explícitamente qué **no** se comprueba.
+
+---
+
+## PT-237 — BUG: la facturación pide elegir un PAC que no se puede elegir
+
+**Fecha:** 2026-07-31 · **Complejidad:** STANDARD · **Origen:** revisión final «que no falte nada».
+
+### Qué
+
+El módulo `cfdi` ofrece **configurar un PAC** —proveedor autorizado de certificación, quien timbra una
+factura ante el SAT— y **activar la facturación**. Las dos cosas se pueden hacer desde el panel. Ninguna
+de las dos sirve para nada, y hacerlas **empeora** el estado del sistema.
+
+### Dónde
+
+- `src/api/src/modules/cfdi/cfdi.service.ts:38-83` — `generate()`
+- `src/admin/views/pages/cfdi-config.html:34` — el campo `pacUrl`, texto libre
+- `src/api/src/modules/admin/admin.service.ts:270` — el contador del panel
+
+### Cuándo
+
+Al pulsar «Generar» sobre un pedido con `CFDI_ENABLED=true` y los dos campos rellenos.
+
+### Cómo — los tres defectos, en orden de gravedad
+
+**1. Escribe un estado que nadie puede avanzar.** `generate()` hace `upsert` a `status: 'PENDING'`
+(líneas 69-73) y **acto seguido lanza** `NotImplementedException` (línea 78). Medido: **ningún** punto
+del sistema lee un `cfdiRecord` en `PENDING` para avanzarlo —sólo se **cuentan**, en
+`admin.service.ts:270`—. Así que cada intento deja una fila muerta y **el panel muestra un contador de
+«CFDI pendientes» que sólo puede crecer**. Es una métrica que miente al operador y le pide una acción
+que no existe. La familia de H-011: un estado que se escribe sin que nada lo cierre.
+
+**2. La instrucción que recibe el operador apunta a un paquete retirado.** El mensaje dice:
+
+> *«implement a concrete `ICfdiPacProvider` (`@ironloot/core integrations`)»*
+
+**`integrations/` se retiró entero en PT-193 (`TD-024`)**, y su propio `index.ts` lo deja escrito:
+declaraba `IPaymentProvider`, `IEmailService`, `IStorageService` **y los tipos del CFDI**, y ninguno
+tenía implementadores. Quien siga la instrucción va a un sitio que no existe. Es H-016 dentro del
+código que se ejecuta: **una cita rota se lee con confianza y es falsa**, y ésta la lee alguien que
+está intentando facturar.
+
+**3. No hay selección de proveedor: hay un campo de texto.** `pacUrl` es `<input type="url">` libre.
+El sistema **no sabe** qué PAC es, no valida que sea uno conocido, y no tiene adaptador para ninguno.
+Ofrecer «configura tu PAC» sin un conjunto de PAC posibles es pedir una decisión que el sistema no
+puede recibir. El módulo `payments` resolvió exactamente esta pregunta con `PaymentProviderRegistry`
+—resolución por clave o alias, `all()` y `available()`, y garantías exigidas a todo adaptador
+registrado (`provider-guarantees.spec`)—. `cfdi` no tiene nada de eso.
+
+### Por qué — la causa raíz
+
+`TD-001` declara el stub del PAC **correctamente**, y el `PRD` es honesto: E10 marcada `✗ No funcional`,
+`RF-81` marcada stub. **El producto no promete facturar.** El defecto no es que falte la integración
+—ésa es una dependencia externa, con un PAC certificado y un contrato, y sigue fuera de alcance—.
+
+El defecto es que **la interfaz de configuración se construyó como si la integración existiera**: campos
+que se guardan, un interruptor que se enciende y un botón que escribe filas. Un stub que **no hace nada**
+es honesto; un stub que **acepta configuración y escribe estado** simula estar a un paso de funcionar.
+
+### Impacto
+
+| Quién | Qué le pasa |
+|---|---|
+| Operador del panel | Ve un contador de CFDI pendientes que crece y no puede resolver |
+| Quien intente habilitar la facturación | Sigue una instrucción que le manda a un paquete inexistente |
+| Los datos | `cfdi_records` acumula filas `PENDING` sin destino |
+
+**No hay impacto sobre el comprador ni sobre el dinero**: la factura no se promete en v1.0 y el pedido se
+completa sin ella. Es un defecto de **operación y de verdad**, no de negocio.
+
+### Confianzas
+
+- **Root Cause Confidence: 100 %** — leído en el código y medido: cero lectores de `PENDING`, cero
+  implementadores del puerto, `integrations/` inexistente.
+- **Architecture Confidence: 95 %** — el patrón a seguir ya existe y está probado en `payments`.
+- **Solution Confidence: 90 %** — la parte que no se puede resolver (el adaptador real) queda declarada,
+  no simulada. Es exactamente lo que `TD-001` ya dice.
+
