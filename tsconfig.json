@@ -1,7 +1,23 @@
 {
+  // Este fichero NO compila nada, y es a propósito.
+  //
+  // Existe por `ts-node`, no por `tsc`: `npm run indice:estado` ejecuta
+  // `node --require ts-node/register/transpile-only src/api/scripts/indice-de-estado.ts` desde la
+  // raíz, y ts-node busca aquí sus opciones. Sin él fallaba con TS5109 en el host y EROFS en el
+  // contenedor — lo restituyó PT-200 después de que un commit de frontend lo borrara.
+  //
+  // `include: []` es deliberado: si reclamara ficheros, comprobaría el monorepo entero desde arriba
+  // pisando a los cuatro proyectos que sí compilan (api, admin, base, client). `npm run typecheck`
+  // delega en esos cuatro.
+  //
+  // `references: []` es lo único que evita un TS18003 permanente en la raíz. Medido (PT-238):
+  // `include: []` da TS18003; `files: []` da TS18002; `include: []` + `references: []` no da error.
+  // TypeScript sólo calla cuando el config declara `files` o `references`. NO lo quites por parecer
+  // inútil: lo es para compilar, no para callar. Lo vigila `tsconfig-de-la-raiz.spec.ts`.
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
     "moduleResolution": "node"
   },
-  "include": []
+  "include": [],
+  "references": []
 }
