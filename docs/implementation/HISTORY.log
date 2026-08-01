@@ -4841,6 +4841,26 @@ destino de los diseños oficiales, la direccion de envio en la orden (cambio de 
 imagenes, la lista de sesiones activas y la respuesta en disputas mediadas.
 
 
+## PT-235 — REFACTOR: la guarda de forma de listas no juzgaba las claves nombradas
+Date: 2026-07-31
+Status: DONE
+Branch: master
+Objective: cerrar el punto ciego que el grafo de conocimiento delato en la guarda de PT-213.
+Root cause: `usosDeLista()` descartaba TODA expresion con punto, asi que
+  `{% for tx in history.transactions %}` no se juzgaba ni para bien ni para mal — la forma exacta del
+  defecto que PT-213 existe para impedir, escrita con otra clave. El comentario ademas decia «mas de
+  un punto» y el codigo excluia cualquiera.
+Solution: `modo` gana el valor `clave`; una expresion `X.algo` con UN punto se juzga contra
+  `CLAVES_DECLARADAS`, un mapa clave -> motivo. Se admite declarandola, no callandola. `x.y.z` sigue
+  sin juzgarse y ahora consta por que.
+Modified files: src/api/test/unit/web-views/forma-de-lista-ssr.spec.ts
+Evidence: docs/implementation/evidence/PT-235/
+Delta (real vs planned): no estaba planificado. Los tres casos que el grafo señalo —`disputables`,
+  `providers` y `history.transactions`— resultaron CORRECTOS los tres; el defecto estaba en la guarda,
+  que no los miraba. Verificado que la ampliacion actua sobre codigo real: al retirar la declaracion
+  acusa `pages/payments.html`.
+PTSA reference: amplia la cobertura de H-039 (RULE-39). No abre hallazgo: no habia defecto de producto.
+
 ---
 
 ## ÍNDICE DE ESTADO — generado, no escrito a mano
@@ -4852,7 +4872,7 @@ Existe porque `HISTORY.log` es **append-only**: un cierre se anota más abajo, e
 línea `Status:` de una entrada **es histórica y no el estado de hoy**. Reescribirla se leería mejor y
 falsificaría el registro. Esto añade, no toca.
 
-**185** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
+**186** encabezados · **0** realmente abiertos · **0** sin `Status:` declarado.
 
 | PT | Línea | `Status:` escrito | Estado real | Dónde consta el cierre |
 |---|---:|---|---|---|
@@ -5041,3 +5061,4 @@ falsificaría el registro. Esto añade, no toca.
 | PT-228 | 4768 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4820 |
 | PT-219 | 4784 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4820 |
 | PT-232 | 4802 | `VALIDATION_PENDING` | **CLOSED** | cerrado en la línea 4820 |
+| PT-235 | 4844 | `DONE` | **DONE** | — |

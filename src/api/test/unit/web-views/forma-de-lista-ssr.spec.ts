@@ -81,11 +81,35 @@ const NORMALIZADORES = ['toItems(', 'mapBidsList('];
  */
 const ORIGEN_API = /\b(?:apiGet|fetchJson)\s*(?:<[^>]*>)?\s*\(/;
 
+/**
+ * Las claves nombradas que una plantilla puede recorrer sin pasar por un normalizador, **con su
+ * motivo**. Una por línea, y el motivo no es decorativo: es lo que impide que esta lista crezca
+ * hasta volver a tapar el defecto que la guarda persigue.
+ *
+ * Hasta aquí `usosDeLista` descartaba **toda** expresión con punto, así que
+ * `{% for tx in history.transactions %}` no se juzgaba ni para bien ni para mal. Esa es la forma
+ * exacta del defecto original —el catálogo leía `data.items` sobre `{data,total,page,limit}`—, sólo
+ * que con la clave escrita de otra manera. Una clave nombrada que **no** coincida con lo que el API
+ * emite da `undefined`, y en Nunjucks `undefined` es un `{% else %}`: pantalla vacía, cero errores.
+ *
+ * Se admite declarándola, no callándola.
+ */
+export const CLAVES_DECLARADAS = new Map<string, string>([
+  [
+    'history.transactions',
+    'wallet.controller.ts mapea `items` del servicio a `transactions` en su respuesta: es la clave ' +
+      'de dominio del ledger, no un envoltorio de paginación. Verificado en la respuesta del API.',
+  ],
+]);
+
 export interface UsoDeLista {
   /** Nombre de la variable tal y como la plantilla la nombra. */
   variable: string;
-  /** `items` si se lee `X.items`; `crudo` si se recorre `X` o se mide `X.length`. */
-  modo: 'items' | 'crudo';
+  /**
+   * `items` si se lee `X.items`; `crudo` si se recorre `X` o se mide `X.length`; `clave` si se
+   * recorre `X.algo` — una clave nombrada, que sólo pasa si está en `CLAVES_DECLARADAS`.
+   */
+  modo: 'items' | 'crudo' | 'clave';
 }
 
 /**
@@ -97,7 +121,7 @@ export interface UsoDeLista {
 export function usosDeLista(plantilla: string): UsoDeLista[] {
   const usos = new Map<string, UsoDeLista>();
 
-  const anotar = (variable: string, modo: 'items' | 'crudo'): void => {
+  const anotar = (variable: string, modo: 'items' | 'crudo' | 'clave'): void => {
     // `items` gana sobre `crudo`: si en algún punto se lee `X.items`, el contrato es `{items}`.
     const previo = usos.get(variable);
     if (previo?.modo === 'items') return;
@@ -109,7 +133,11 @@ export function usosDeLista(plantilla: string): UsoDeLista[] {
     const expr = m[1];
     if (expr.endsWith('.items')) anotar(expr.slice(0, -'.items'.length), 'items');
     else if (!expr.includes('.')) anotar(expr, 'crudo');
-    // `x.y.items` o `a.b` con más de un punto no es una variable de primer nivel: no se juzga.
+    // `X.algo` con UN punto es una clave nombrada: se juzga contra `CLAVES_DECLARADAS`. Antes se
+    // descartaba, y con ella el caso `history.transactions` — la misma forma que el defecto original.
+    else if (expr.split('.').length === 2) anotar(expr, 'clave');
+    // `x.y.z` con más de un punto sigue sin juzgarse: nada de este repositorio lo usa hoy, y una
+    // guarda que opina sobre lo que no ha visto acaba acusando a código correcto.
   }
 
   // NOMBRE.length · NOMBRE.items.length
@@ -338,9 +366,25 @@ describe('La FORMA de las listas SSR↔API — PT-213 (R-051)', () => {
         cruzadas++;
 
         for (const uso of usosDeLista(vista.contenido)) {
-          const expr = claves.get(uso.variable);
+          // Una clave nombrada (`history.transactions`) se resuelve por su RAÍZ: la variable que el
+          // controlador devuelve es `history`; `transactions` es la clave que el API emite dentro.
+          const raiz = uso.modo === 'clave' ? uso.variable.split('.')[0] : uso.variable;
+          const expr = claves.get(raiz);
           if (expr === undefined) continue;
           if (!vieneDelApi(expr, cuerpo)) continue;
+
+          if (uso.modo === 'clave') {
+            if (!CLAVES_DECLARADAS.has(uso.variable)) {
+              fallos.push(
+                `${nombreSitio} ${plantilla}: la plantilla recorre «${uso.variable}», una clave ` +
+                  `nombrada de un valor que viene del API y que nadie ha declarado. Si el API no ` +
+                  `emite esa clave, da undefined y Nunjucks lo pinta como lista vacía — sin error. ` +
+                  `Normalízala con toItems() y léela como .items, o declárala en CLAVES_DECLARADAS ` +
+                  `con el motivo y la comprobación que lo sostiene.`,
+              );
+            }
+            continue;
+          }
 
           if (uso.modo === 'crudo') {
             fallos.push(
@@ -434,6 +478,24 @@ describe('La FORMA de las listas SSR↔API — PT-213 (R-051)', () => {
       expect(usosDeLista('{% if o.items %}{% for x in o.items %}{% endfor %}{% endif %}')).toEqual([
         { variable: 'o', modo: 'items' },
       ]);
+    });
+
+    it('C7: una clave nombrada recorrida como lista se juzga, y sólo pasa si está declarada', () => {
+      // El agujero que este caso cierra lo encontró leer la guarda, no ejecutarla. `usosDeLista`
+      // descartaba TODA expresión con punto, así que `{% for tx in history.transactions %}` no se
+      // juzgaba: ni para bien ni para mal. Y ésa es la forma exacta del defecto original —el catálogo
+      // leía `data.items` sobre `{data,…}`—, sólo que con la clave escrita de otra manera.
+      //
+      // Lo correcto no es prohibirla: el API emite `{transactions}` a propósito, y la plantilla la lee
+      // bien. Lo correcto es que **conste por qué se admite**, que es lo que separa una excepción
+      // declarada de un silencio.
+      const usos = usosDeLista('{% for tx in history.transactions %}{% endfor %}');
+      expect(usos).toEqual([{ variable: 'history.transactions', modo: 'clave' }]);
+
+      // Declarada → pasa.
+      expect(CLAVES_DECLARADAS.has('history.transactions')).toBe(true);
+      // No declarada → no pasa. Sin esta mitad, la lista podría vaciarse y el caso seguiría verde.
+      expect(CLAVES_DECLARADAS.has('history.inventada')).toBe(false);
     });
   });
 });

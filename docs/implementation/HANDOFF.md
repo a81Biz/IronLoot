@@ -14,7 +14,7 @@ está en [`HISTORY.log`](HISTORY.log), que es append-only y la tiene íntegra co
 **Hallazgos PTSA**: **42** registrados, **1** activo (`H-042`). **Deuda técnica**: **5** abiertas de **22** registradas.
 
 **Estado de cada PT**: el **ÍNDICE DE ESTADO** al final de [`HISTORY.log`](HISTORY.log) — generado con
-`npm run indice:estado`. **185 encabezados · 0 realmente abiertos.**
+`npm run indice:estado`. **186 encabezados · 0 realmente abiertos.**
 
 > **Aviso para quien regenere ese índice.** `HISTORY.log` tiene que estar en **LF**. Al anotar esta tanda
 > lo convertí sin querer a CRLF y `indice-de-estado.ts` dejó de reconocer **las 166 entradas** —en
@@ -52,7 +52,7 @@ checkpoints de delta sync necesitan una base con historia y la base está vacía
 
 ---
 
-## Entregado: 30 PT · 62 de 62 hallazgos
+## Entregado: 31 PT · 64 de 64 hallazgos
 
 | PT | Qué cierra | Hallazgos |
 |---|---|---|
@@ -86,6 +86,7 @@ checkpoints de delta sync necesitan una base con historia y la base está vacía
 | **PT-231** | El dashboard como panel de estado | 055 |
 | **PT-232** | La documentación refleja lo medido | 057 |
 | **PT-233** | **Hallazgo nuevo:** ADMIN sin reservas de conexión | **063** |
+| **PT-235** | El punto ciego de la guarda de PT-213: las claves nombradas | (cobertura) |
 
 **Dos hallazgos nuevos aparecieron durante la tanda** y tienen PT propio, no se colaron en otro:
 
@@ -167,11 +168,49 @@ S-005 se midió sobre salida generada en la misma sesión.
 
 ## Siguientes acciones, en orden
 
-1. **`PT-234` — `H-042`.** Es el único hallazgo activo. Su Discovery separa las tres hipótesis midiendo.
-   pinta subastas de verdad, y no sólo que el contrato coincide.
-2. **PT-216** — el P0 con más impacto de negocio pendiente y el único `L`. Empezarlo antes que los cinco
-   `S` restantes: los `S` caben en una sesión y éste no.
-3. **`audit PTSA`** para registrar los 62 hallazgos y que la mejora sea medible.
-4. **Decidir los cuatro bloqueos de producto**; dos frenan PT-209 por completo.
-5. **FPGE-005** cuando lo anterior esté. La cola ya tiene un ítem —`H-UI-063`, cerrado por PT-233— y
-   recibirá lo que salga del `audit PTSA`.
+1. **`PT-234` — `H-042`.** El **único hallazgo activo**, y está en el camino del dinero: un webhook de
+   PayPal con firma fabricada obtuvo `SIGNATURE_OK` y llegó a intentar la captura. Es INVESTIGATION,
+   no BUG: su Discovery separa **midiendo** las tres hipótesis —modo sandbox que no verifica, cabeceras
+   ausentes tratadas como válidas, o `SUCCESS` emitido antes de verificar—. **No se parchea a ciegas
+   una ruta de cobro.**
+
+2. **El texto legal** (`TD-028`, puntos `L-01`…`L-08`). Bloqueado por asesoría jurídica, no por
+   priorización nuestra. Es lo único que falta para cerrar `H-041` del todo.
+
+3. **`R-054` (dirección de envío, `TD-026`) y `R-055` (subida de imágenes, `TD-027`).** Los dos
+   pendientes de producto con impacto directo: hoy el vendedor tiene que enviar un objeto físico y la
+   pantalla no dice a dónde, y los lotes se publican sin una sola foto teniendo el campo `images`.
+
+4. **`R-052` — ¿es la pantalla un producto auditable?** La pregunta que dejó `H-038` y que `ADR-061`
+   sólo resolvió a medias: un `✅` del PRD ya significa «llega al usuario», pero la unidad de auditoría
+   de PTSA sigue siendo el producto de datos. Es una decisión de **la especificación de PTSA**, no un
+   PT de desarrollo.
+
+5. **`FPGE` cuando 1 esté cerrado.** La cola vive en `docs/implementation/ROADMAP.md`.
+
+**Lo que ya NO está pendiente**, porque este bloque lo declaró hasta hoy y era falso: `PT-216` está
+entregado, los 62 hallazgos ya se registraron en `S-014`, y `FPGE-005` ya corrió. Se anota en vez de
+borrarse porque un registro de estado que lista como pendiente algo terminado es exactamente el defecto
+que `PT-140` midió — cuarenta y cuatro tareas `BLOCKED` ya fusionadas.
+
+---
+
+## Lo que conviene saber antes de tocar nada
+
+**El orden es `run-all.sh` → suite de navegador → `resume PTSA`.** Los checkpoints `audit:domain` y
+`audit:reliability` necesitan una base **con historia**, y `run-all.sh` es lo que la genera: medir antes
+es medir lo que la corrida va a borrar. La diferencia se midió — `D1` pasó del 50 % al 100 % de cobertura
+sólo por respetar el orden.
+
+**`run-all.sh` trunca la base de datos.** Copia antes si contiene salida real que sostenga una validación.
+
+**`HISTORY.log` es LF y append-only.** Escribirlo desde Python en Windows sin `newline=''` lo convierte a
+CRLF, y entonces `npm run indice:estado` deja de casar **todas** las entradas y escribe «0 encabezados»
+**sin dar error**. Se detectó porque el número era absurdo, no porque algo protestara. Las entradas nuevas
+van **arriba** del separador `---` del índice, o el generador aborta — con un mensaje claro, eso sí.
+
+**Antes de fiarte de una guarda, léela con desconfianza.** `forma-de-lista-ssr.spec.ts` se ha equivocado
+**cuatro veces** midiendo otra cosa, **las cuatro estando en verde**: la ruta de plantilla con doble
+prefijo, `fetchJson(` buscado como subcadena literal, la resolución de variable fuera del ámbito del
+método, y la exclusión de toda expresión con punto (`PT-235`). Ninguna se encontró ejecutándola — tres
+leyéndola y **una cruzando el grafo de conocimiento**, que no comparte los supuestos de quien la escribió.
