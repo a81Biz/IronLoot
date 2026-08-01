@@ -1,11 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { AdminApiClient } from "./shared/admin-api-client.service";
+// PT-233 (H-UI-063) — Sin reserva: RULE-17 tambien en ADMIN.
+import { variableObligatoria } from "./common/config/variable-obligatoria";
 
 @Injectable()
 export class AppService {
   private readonly logger = new Logger(AppService.name);
-  private readonly apiUrl =
-    process.env.ADMIN_API_URL || "http://localhost:3000";
+  private readonly apiUrl = variableObligatoria("ADMIN_API_URL");
 
   constructor(private readonly apiClient: AdminApiClient) {}
 

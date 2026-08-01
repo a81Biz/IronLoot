@@ -1,4 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
+// PT-233 (H-UI-063) — Sin reserva: RULE-17 tambien en ADMIN.
+import { variableObligatoria } from "../common/config/variable-obligatoria";
 
 /**
  * Singleton HTTP client for admin SSR → API calls.
@@ -9,8 +11,7 @@ import { Injectable, Logger } from "@nestjs/common";
 @Injectable()
 export class AdminApiClient {
   private readonly logger = new Logger(AdminApiClient.name);
-  private readonly apiUrl =
-    process.env.ADMIN_API_URL || "http://localhost:3000";
+  private readonly apiUrl = variableObligatoria("ADMIN_API_URL");
   private readonly apiKey = process.env.ADMIN_API_KEY || "dev-admin-key";
   private readonly username = process.env.ADMIN_USERNAME || "admin";
   private readonly password = process.env.ADMIN_PASSWORD || "admin";

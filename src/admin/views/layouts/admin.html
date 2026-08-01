@@ -129,7 +129,7 @@
       </a>
       <a href="/settings" class="nav-item {% if activePage == 'settings' %}active{% endif %}">
         <span class="material-symbols-outlined">settings</span>
-        <span>Pasarelas</span>
+        <span>Pasarelas de pago</span>
       </a>
     </nav>
 
@@ -151,7 +151,7 @@
     <header class="top-bar">
       <h1 class="page-title">{{ title }}</h1>
       <div class="top-bar-right">
-        <a href="http://localhost:5174" target="_blank" class="btn btn-ghost btn-sm">
+        <a href="{{ baseUrl }}" target="_blank" rel="noopener noreferrer" class="btn btn-ghost btn-sm">
           <span class="material-symbols-outlined">open_in_new</span>
           Ver sitio
         </a>
